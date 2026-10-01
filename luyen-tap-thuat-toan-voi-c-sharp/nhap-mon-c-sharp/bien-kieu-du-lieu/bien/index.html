@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài 1 – Biến là chiếc hộp trong bộ nhớ</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#0b1220; --line:#334155; --text:#e2e8f0; --dim:#94a3b8;
+    --amber:#f59e0b; --ok:#22c55e; --bad:#ef4444;
+    color-scheme:dark; --t-int:#3b82f6; --t-double:#a855f7; --t-string:#22c55e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+  header{padding:16px 20px 8px;max-width:1200px;margin:0 auto}
+  h1{margin:0;font-size:clamp(20px,3vw,28px)}
+  header p{margin:4px 0 0;color:var(--dim)}
+  .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px}
+  .parts button.on{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  main{max-width:1200px;margin:0 auto;padding:8px 20px 28px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border-radius:16px;padding:14px 16px}
+  .card h2{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+  /* code */
+  #code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:clamp(14px,1.6vw,18px);min-height:190px}
+  .line{padding:3px 8px;border-radius:6px;border-left:4px solid transparent;white-space:pre-wrap;word-break:break-word;opacity:.75}
+  .line.active{background:rgba(245,158,11,.16);border-left-color:var(--amber);opacity:1}
+  .line.err{background:rgba(239,68,68,.18);border-left-color:var(--bad);opacity:1}
+  .line .n{color:#64748b;display:inline-block;width:22px;user-select:none}
+  .kw{color:#c084fc}.ty{color:#60a5fa}.num{color:#fbbf24}.str{color:#4ade80}.fn{color:#fbbf24}.cm{color:#64748b}
+  mark{background:rgba(245,158,11,.35);color:inherit;border-radius:4px;padding:0 2px;outline:1px solid var(--amber)}
+  mark.bad{background:rgba(239,68,68,.35);outline-color:var(--bad)}
+  #out{margin-top:12px;background:var(--panel2);border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;min-height:64px}
+  #out .h{font-family:system-ui,sans-serif;font-size:12px;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+  #out div.o{color:var(--ok)}
+  /* shelf */
+  #shelf{min-height:330px;padding-top:76px;position:relative;display:flex;flex-wrap:wrap;gap:28px;align-content:flex-start;justify-content:center}
+  #shelf::after{content:"";position:absolute;left:14px;right:14px;bottom:16px;height:10px;border-radius:6px;background:linear-gradient(#475569,#334155)}
+  #empty{position:absolute;inset:60px 0 0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--dim);padding:0 24px}
+  .boxwrap{position:relative;width:150px;text-align:center;margin-bottom:26px}
+  .tag{display:inline-block;background:#fde68a;color:#422006;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace;padding:3px 12px;border-radius:6px 6px 14px 14px;font-size:17px;position:relative;margin-bottom:-6px;z-index:2;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+  .box{position:relative;height:104px;background:linear-gradient(#92400e,#78350f);border-radius:6px 6px 10px 10px;border:3px solid var(--tc,#3b82f6);display:flex;align-items:center;justify-content:center}
+  .box::before{content:"";position:absolute;left:-6px;right:-6px;top:-10px;height:14px;background:#b45309;border-radius:5px;border:2px solid var(--tc,#3b82f6)}
+  .slot{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+  .chip{background:#fff7ed;color:#1c1917;font-weight:800;font-size:28px;min-width:62px;padding:6px 14px;border-radius:12px;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  .chip.ghost{position:absolute;text-decoration:line-through;color:#991b1b;pointer-events:none}
+  .empty-chip{color:#fcd34d;font-size:14px;border:2px dashed #fcd34d;border-radius:10px;padding:8px 10px}
+  .typechip{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);background:var(--tc);color:#fff;font-size:13px;font-weight:700;padding:2px 12px;border-radius:999px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  .t-int{--tc:var(--t-int)}.t-double{--tc:var(--t-double)}.t-string{--tc:var(--t-string)}
+  .errmsg{position:absolute;left:-30px;right:-30px;top:calc(100% + 6px);color:#fecaca;background:rgba(127,29,29,.8);border-radius:8px;font-size:12.5px;padding:4px 8px}
+  .bubble{position:absolute;left:50%;transform:translateX(-50%);top:-62px;background:#fff;color:#0f172a;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace;padding:6px 14px;border-radius:12px;white-space:nowrap;z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  .bubble::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#fff}
+  .badge{display:none;position:absolute;width:24px;height:24px;border-radius:50%;background:var(--amber);color:#1c1300;font-weight:800;font-size:14px;line-height:24px;text-align:center;z-index:6;font-family:system-ui,sans-serif}
+  #shelf.anatomy .badge{display:block}
+  .b1{top:-12px;left:-6px}.b2{right:-4px;bottom:-30px}.b3{right:-12px;top:-12px}
+  #legend{display:none;margin:0 0 10px;padding:10px 12px;background:rgba(245,158,11,.1);border:1px solid var(--amber);border-radius:10px;font-size:15px;position:absolute;left:14px;right:14px;top:10px}
+  #legend b{display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--amber);color:#1c1300;text-align:center;font-size:12px;line-height:20px;margin-right:4px}
+  #shelf.anatomy #legend{display:block}
+  #legend span{display:inline-block;margin-right:14px}
+  /* caption & controls */
+  #bottom{grid-column:1/-1}
+  #cap{font-size:clamp(17px,2.2vw,22px);font-weight:600;min-height:64px}
+  #cap small{display:block;color:var(--amber);font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+  .quiz{margin-top:12px;border:2px solid var(--amber);border-radius:14px;padding:14px;background:rgba(245,158,11,.07)}
+  .quiz .q{font-weight:700;font-size:clamp(16px,2vw,20px);margin-bottom:10px}
+  .quiz .stop{color:var(--amber);font-size:13px;font-weight:800;letter-spacing:.05em;margin-bottom:4px}
+  .opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:16px;cursor:pointer}
+  .opt:hover:not(:disabled){border-color:var(--amber)}
+  .opt.right{border-color:var(--ok);background:rgba(34,197,94,.15)}
+  .opt.wrong{border-color:var(--bad);background:rgba(239,68,68,.12)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:8px;font-size:15px;color:var(--dim)}
+  .fb.good{color:#86efac}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .controls button{font:inherit;font-size:15px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .controls button.primary{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .controls button:disabled{opacity:.4;cursor:not-allowed}
+  .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
+  .dot{flex:none;width:11px;height:11px;min-width:11px;border-radius:50%;background:#334155;border:0;padding:0;cursor:pointer}
+  .dot.done{background:#64748b}.dot.cur{background:var(--amber);transform:scale(1.35)}.dot.q{border-radius:3px}
+  #full{position:absolute;right:20px;top:18px;background:var(--amber);color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
+  .hint{color:var(--dim);font-size:13px;margin-top:8px}
+
+  /* chế độ gọn khi khung hiển thị thấp (ví dụ khối HTML Preview của LMS) */
+  @media (max-height:760px){
+    header{padding:8px 16px 2px} h1{font-size:19px} header p{display:none}
+    .parts{margin-top:6px;gap:6px} .parts button{padding:4px 10px;font-size:12.5px}
+    main{padding:6px 16px 12px;gap:10px}
+    .card{padding:8px 12px;border-radius:12px} .card h2{margin-bottom:4px;font-size:11px}
+    #code{min-height:0;font-size:14px} .line{padding:1px 6px}
+    #out{margin-top:6px;padding:6px 10px;min-height:0;font-size:14px}
+    #shelf{min-height:200px;padding-top:50px;gap:20px}
+    .boxwrap{width:118px;margin-bottom:22px} .box{height:74px}
+    .chip{font-size:22px;padding:3px 10px;min-width:48px} .tag{font-size:14px}
+    .bubble{top:-46px;font-size:14px;padding:4px 10px}
+    #legend{font-size:12px;padding:5px 8px;top:4px}
+    #cap{font-size:15px;min-height:0} #cap small{font-size:11px;margin-bottom:0}
+    .controls{margin-top:6px} .controls button{padding:5px 12px;font-size:13px}
+    .hint{display:none}
+    .quiz{padding:8px;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}
+    .quiz .stop,.quiz .q,.quiz .fb{grid-column:1/-1} .quiz .q{font-size:15px;margin-bottom:0} .quiz .stop{font-size:11px;margin-bottom:0}
+    .opt{margin:0;padding:6px 10px;font-size:13.5px}
+    .fb{margin-top:2px;font-size:13px}
+  }
+  @media (max-height:760px) and (max-width:900px){ .quiz{grid-template-columns:1fr} }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bài 1 – Biến là gì? <span style="color:var(--amber)">Biến là một chiếc hộp</span></h1>
+  <p>Bấm <b>Tiếp →</b> (hoặc phím mũi tên) để chạy từng dòng lệnh. Khi gặp ⏸ điểm dừng, hãy trả lời trước khi đi tiếp.</p>
+  <div class="parts" id="parts"></div>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Mã nguồn C#</h2>
+    <div id="code"></div>
+    <div id="out"></div>
+  </section>
+
+  <section class="card">
+    <h2>Bộ nhớ (RAM) – kệ đựng các hộp</h2>
+    <div id="shelf">
+      <div id="legend">
+        <span><b>1</b>Nhãn = tên biến</span>
+        <span><b>2</b>Loại hộp = kiểu dữ liệu</span>
+        <span><b>3</b>Đồ bên trong = giá trị</span>
+      </div>
+      <div id="empty"></div>
+    </div>
+  </section>
+
+  <section class="card" id="bottom">
+    <div id="cap"></div>
+    <div id="quiz"></div>
+    <div class="controls">
+      <button id="prev">← Lùi</button>
+      <button id="next" class="primary">Tiếp →</button>
+      <button id="play">▶ Tự chạy</button>
+      <button id="restart">↺ Làm lại</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="hint">Ô vuông nhỏ ở góc phải là các điểm dừng hỏi đáp. Phím tắt: ← → để lùi/tiếp, Space để tự chạy.</div>
+  </section>
+</main>
+
+<script>
+/* ============ Nội dung bài học ============ */
+const PARTS = ['1. Hộp có nhãn, loại, giá trị', '2. Gán lại & điểm dừng 1', '3. Không có biến thì sao?', '4. Có biến: gọn và dễ sửa'];
+
+const CODE_NO_VAR = [
+  'Console.WriteLine((8 + 7 + 9) / 3);',
+  'if (8 > (8 + 7 + 9) / 3) Console.WriteLine("Bạn 1 cao hơn TB");',
+  'if (7 > (8 + 7 + 9) / 3) Console.WriteLine("Bạn 2 cao hơn TB");',
+  'if (9 > (8 + 7 + 9) / 3) Console.WriteLine("Bạn 3 cao hơn TB");'
+];
+
+const STEPS = [
+  /* ---- Phần 1 ---- */
+  { part:0, code:[], line:-1, boxes:[], out:[],
+    cap:'Bộ nhớ máy tính giống một cái kệ. Mỗi <b>biến</b> là một <b>chiếc hộp</b> đặt trên kệ đó.' },
+  { part:0, code:['int score;'], line:0, anatomy:true,
+    boxes:[{id:'score',type:'int',v:null,fx:'create'}],
+    cap:'Khai báo biến = tạo ra một chiếc hộp mới. Hộp có 3 phần: <b>nhãn</b> (score), <b>loại hộp</b> (int – chỉ chứa số nguyên) và <b>đồ bên trong</b> (hiện còn trống).' },
+  { part:0, code:['int score;','score = 10;'], line:1,
+    boxes:[{id:'score',type:'int',v:10,fx:'set'}],
+    cap:'Phép gán <code>=</code> nghĩa là <b>bỏ đồ vào hộp</b>. Giá trị 10 được đặt vào hộp có nhãn score.' },
+  /* ---- Phần 2 ---- */
+  { part:1, code:['int score;','score = 10;','score = 15;'], line:2,
+    boxes:[{id:'score',type:'int',v:15,old:10,fx:'set'}],
+    cap:'Gán lại: đồ cũ bị lấy ra, đồ mới được đặt vào. Một hộp tại một thời điểm chỉ chứa <b>MỘT</b> giá trị – số 10 đã mất.' },
+  { part:1, code:['int score;','score = 10;','score = 15;','score = "mười";'], line:3, errLine:3,
+    boxes:[{id:'score',type:'int',v:15,fx:'reject',err:'Lỗi: hộp int không nhận chữ'}],
+    cap:'Hộp có <b>loại</b>: hộp <code>int</code> chỉ nhận số nguyên. Cố nhét chữ vào sẽ bị trình biên dịch từ chối – hộp vẫn giữ 15.' },
+  { part:1, code:['int x = 5;'], line:0,
+    boxes:[{id:'x',type:'int',v:5,fx:'create'}],
+    cap:'Thử ví dụ khác. Vừa khai báo vừa bỏ đồ vào hộp: hộp <code>x</code> đang chứa <b>5</b>.' },
+  { part:1, code:['int x = 5;','x = x + 3;'], line:1,
+    boxes:[{id:'x',type:'int',v:5}],
+    quiz:'q1',
+    cap:'Dòng <code>x = x + 3;</code> sắp chạy. Hãy dự đoán trước khi xem máy tính làm.' },
+  { part:1, code:['int x = 5;','x = x + 3;'], line:1,
+    boxes:[{id:'x',type:'int',v:5,fx:'compute',calc:'5 + 3 = 8'}],
+    cap:'Máy tính xử lý <b>vế phải trước</b>: mở hộp x, lấy ra xem được 5, rồi tính 5 + 3 = 8.' },
+  { part:1, code:['int x = 5;','x = x + 3;'], line:1,
+    boxes:[{id:'x',type:'int',v:8,old:5,fx:'set'}],
+    cap:'Sau đó mới <b>đặt kết quả 8 vào hộp x</b>, thay cho số 5. Vậy hộp <code>x</code> chứa <b>8</b>.' },
+  /* ---- Phần 3 ---- */
+  { part:2, code:CODE_NO_VAR.slice(0,1), line:0, boxes:[], out:['8'],
+    emptyMsg:'<span>Chương trình này <b>không dùng biến</b> nên trên kệ không có hộp nào.</span>',
+    cap:'Tính điểm trung bình của 3 bạn (8, 7, 9) mà <b>không dùng biến</b>. Chạy được, in ra 8. Nhưng hãy thêm yêu cầu…' },
+  { part:2, code:CODE_NO_VAR.map((l,i)=> i===0 ? l : l).map(l=>l.replace(/\(8 \+ 7 \+ 9\) \/ 3/g,'«(8 + 7 + 9) / 3»')), line:-1, boxes:[], out:['8','Bạn 3 cao hơn TB'],
+    emptyMsg:'Vẫn chưa có hộp nào – chương trình không "nhớ" được gì cả.',
+    cap:'Thêm yêu cầu: so từng bạn với điểm trung bình. Cùng một phép tính <mark>(8 + 7 + 9) / 3</mark> phải viết lại <b>4 lần</b>.' },
+  { part:2, code:CODE_NO_VAR.map(l=>l.replace(/\(8 \+ 7 \+ 9\) \/ 3/g,'«(8 + 7 + 9) / 3»')), line:-1, boxes:[], out:['8','Bạn 3 cao hơn TB'],
+    emptyMsg:'Vẫn chưa có hộp nào.',
+    quiz:'q2',
+    cap:'Hãy nhìn đoạn code bên trái và suy nghĩ về cách nó được viết.' },
+  { part:2, code:CODE_NO_VAR.map(l=>l.replace(/\b7\b/g,'«!7»')), line:-1, boxes:[], out:['8','Bạn 3 cao hơn TB'],
+    emptyMsg:'<span>Muốn đổi điểm bạn 2 từ 7 thành 10 phải tìm và sửa <b>5 chỗ</b>.</span>',
+    cap:'Điểm bạn 2 đổi từ 7 thành 10? Phải tìm và sửa <b>5 chỗ</b> (tô đỏ). Sót một chỗ là kết quả sai mà không báo lỗi.' },
+  /* ---- Phần 4 ---- */
+  { part:3, code:['int diem1 = 8;','int diem2 = 7;','int diem3 = 9;'], line:2, out:[],
+    boxes:[{id:'diem1',type:'int',v:8,fx:'create'},{id:'diem2',type:'int',v:7,fx:'create'},{id:'diem3',type:'int',v:9,fx:'create'}],
+    cap:'Có biến: mỗi con số được cất vào một hộp có <b>tên dễ hiểu</b>. Từ giờ chỉ cần gọi tên hộp.' },
+  { part:3, code:['int diem1 = 8;','int diem2 = 7;','int diem3 = 9;','double tb = (diem1 + diem2 + diem3) / 3.0;','Console.WriteLine(tb);'], line:3, out:['8'],
+    boxes:[{id:'diem1',type:'int',v:8},{id:'diem2',type:'int',v:7},{id:'diem3',type:'int',v:9},{id:'tb',type:'double',v:8,fx:'create'}],
+    cap:'Tính <b>một lần</b>, cất kết quả vào hộp <code>tb</code> (loại <code>double</code> – số thực). Cần dùng lại thì chỉ cần viết <code>tb</code>.' },
+  { part:3, code:['int diem1 = 8;','«int diem2 = 10;»','int diem3 = 9;','double tb = (diem1 + diem2 + diem3) / 3.0;','Console.WriteLine(tb);'], line:1, out:['9'],
+    boxes:[{id:'diem1',type:'int',v:8},{id:'diem2',type:'int',v:10,old:7,fx:'set'},{id:'diem3',type:'int',v:9},{id:'tb',type:'double',v:9,old:8,fx:'set'}],
+    cap:'Đổi điểm bạn 2 chỉ cần sửa <b>MỘT chỗ</b>. Chạy lại: <code>tb</code> tự được tính lại thành 9.' },
+  { part:3, code:['int diem1 = 8;','int diem2 = 10;','int diem3 = 9;','double tb = (diem1 + diem2 + diem3) / 3.0;','Console.WriteLine(tb);'], line:-1, out:['9'], summary:true,
+    boxes:[{id:'diem1',type:'int',v:8},{id:'diem2',type:'int',v:10},{id:'diem3',type:'int',v:9},{id:'tb',type:'double',v:9}],
+    cap:'<b>Tóm tắt:</b> biến = hộp có <b>nhãn + loại + giá trị</b> • gán = thay đồ trong hộp • biến giúp chương trình <b>nhớ</b>, <b>tái sử dụng</b> và <b>sửa một chỗ</b>.' }
+];
+
+const QUIZ = {
+  q1:{ q:'Sau khi chạy  x = 5;  x = x + 3;  hộp x đang chứa gì?',
+       opts:[
+         {t:'3', fb:'Hộp không chứa "phần cộng thêm". Nó chứa kết quả của cả phép tính.'},
+         {t:'5', fb:'5 là giá trị cũ. Dòng x = x + 3 đã ghi đè lên nó.'},
+         {t:'8', ok:true, fb:'Đúng! Lấy 5 trong hộp, cộng 3 được 8, rồi đặt 8 vào hộp x.'},
+         {t:'53', fb:'Đây là phép toán số học, không phải ghép chuỗi: 5 + 3 = 8.'}
+       ]},
+  q2:{ q:'Nếu không có biến, chương trình tính điểm trung bình sẽ gặp khó khăn gì?',
+       opts:[
+         {t:'Máy tính không thực hiện được phép chia.', fb:'Phép chia chạy bình thường – dòng đầu đã in ra 8.'},
+         {t:'Phải viết lặp lại các con số và phép tính ở nhiều chỗ, không lưu lại kết quả để dùng lại; đổi một điểm là phải sửa nhiều nơi, dễ sót.', ok:true, fb:'Đúng! Không có "hộp" để nhớ, chương trình phải tính lại và lặp lại mọi thứ.'},
+         {t:'Chương trình chắc chắn chạy chậm hơn rất nhiều.', fb:'Tốc độ không phải vấn đề chính. Khó khăn thật sự là code dài, lặp, khó đọc và khó sửa.'},
+         {t:'Không thể in kết quả ra màn hình.', fb:'In ra màn hình vẫn làm được (xem Console.WriteLine ở trên).'}
+       ]}
+};
+
+/* ============ Công cụ hiển thị ============ */
+const $ = s => document.querySelector(s);
+const solved = {};           // quiz đã trả lời đúng
+let cur = 0, timer = null;
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlPlain(s){
+  return s
+    .replace(/\b(int|double|string)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(if|else|for|while)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(Console)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(WriteLine)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="num">$1</span>');
+}
+function hl(line){
+  const parts = esc(line).split(/(&quot;.*?&quot;|"[^"]*")/);
+  return parts.map((p,i)=> i%2 ? '<span class="str">'+p+'</span>' : hlPlain(p)).join('')
+    .replace(/«!(.*?)»/g,'<mark class="bad">$1</mark>')
+    .replace(/«(.*?)»/g,'<mark>$1</mark>');
+}
+function chipHTML(v){ return v==null ? '<span class="empty-chip">trống</span>' : '<div class="chip">'+(typeof v==='string'?'"'+v+'"':v)+'</div>'; }
+const ease = 'cubic-bezier(.2,.9,.3,1.25)';
+
+function renderCode(s){
+  const el = $('#code');
+  if(!s.code.length){ el.innerHTML = '<div class="line cm">// Chưa có dòng lệnh nào</div>'; return; }
+  el.innerHTML = s.code.map((l,i)=>
+    '<div class="line'+(i===s.line?' active':'')+(i===s.errLine?' err':'')+'"><span class="n">'+(i+1)+'</span>'+hl(l)+'</div>').join('');
+}
+function renderOut(s){
+  const o = s.out||[];
+  $('#out').innerHTML = '<div class="h">Kết quả in ra (Console)</div>'+(o.length? o.map(x=>'<div class="o">&gt; '+esc(x)+'</div>').join('') : '<div style="color:#475569">&nbsp;</div>');
+}
+
+function renderBoxes(s, animate){
+  const shelf = $('#shelf');
+  shelf.classList.toggle('anatomy', !!s.anatomy);
+  const empty = $('#empty');
+  empty.innerHTML = s.boxes.length ? '' : (s.emptyMsg || 'Kệ bộ nhớ đang trống.');
+  empty.style.display = s.boxes.length ? 'none' : 'flex';
+
+  const keep = new Set(s.boxes.map(b=>b.id));
+  shelf.querySelectorAll('.boxwrap').forEach(w=>{ if(!keep.has(w.dataset.id)) w.remove(); });
+
+  s.boxes.forEach(b=>{
+    let w = shelf.querySelector('.boxwrap[data-id="'+b.id+'"]');
+    const isNew = !w;
+    if(isNew){
+      w = document.createElement('div');
+      w.className = 'boxwrap t-'+b.type; w.dataset.id = b.id;
+      w.innerHTML = '<span class="tag">'+b.id+'<span class="badge b1">1</span></span>'+
+        '<div class="box"><span class="badge b3">3</span><div class="slot"></div><span class="typechip">'+b.type+'<span class="badge b2" style="right:-14px;bottom:-6px">2</span></span></div>';
+      shelf.appendChild(w);
+    }
+    const slot = w.querySelector('.slot');
+    w.querySelectorAll('.errmsg,.bubble').forEach(x=>x.remove());
+
+    // nội dung hộp
+    slot.innerHTML = chipHTML(b.v);
+    const chip = slot.firstElementChild;
+
+    if(b.err){ const e = document.createElement('div'); e.className='errmsg'; e.textContent=b.err; w.appendChild(e); }
+    if(b.calc){ const c = document.createElement('div'); c.className='bubble'; c.textContent=b.calc; w.appendChild(c); }
+
+    if(!animate) return;
+    if(isNew || b.fx==='create'){
+      w.animate([{transform:'translateY(-30px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:550,easing:ease});
+      if(b.v!=null && chip.classList.contains('chip'))
+        chip.animate([{transform:'translateY(-80px)',opacity:0},{transform:'none',opacity:1}],{duration:600,delay:300,easing:ease,fill:'backwards'});
+    }
+    if(b.fx==='set' && chip.classList.contains('chip')){
+      if(b.old!=null){
+        const g = document.createElement('div'); g.className='chip ghost'; g.textContent=b.old; slot.appendChild(g);
+        g.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(-70px) rotate(-8deg)',opacity:0}],{duration:900,easing:'ease-out',fill:'forwards'}).onfinish=()=>g.remove();
+      }
+      chip.animate([{transform:'translateY(-90px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:650,delay:b.old!=null?350:0,easing:ease,fill:'backwards'});
+    }
+    if(b.fx==='reject'){
+      w.querySelector('.box').animate([{transform:'translateX(0)'},{transform:'translateX(-12px)'},{transform:'translateX(12px)'},{transform:'translateX(-9px)'},{transform:'translateX(9px)'},{transform:'none'}],{duration:500});
+    }
+    if(b.fx==='compute'){
+      const bub = w.querySelector('.bubble');
+      bub.animate([{opacity:0,transform:'translateX(-50%) translateY(14px) scale(.7)'},{opacity:1,transform:'translateX(-50%)'}],{duration:500,easing:ease});
+      chip.animate([{transform:'scale(1)'},{transform:'scale(1.25)'},{transform:'scale(1)'}],{duration:600});
+    }
+  });
+}
+
+function renderQuiz(s){
+  const host = $('#quiz'); host.innerHTML = '';
+  if(!s.quiz) return;
+  const Q = QUIZ[s.quiz];
+  const box = document.createElement('div'); box.className='quiz';
+  box.innerHTML = '<div class="stop">⏸ ĐIỂM DỪNG – TRẢ LỜI TRƯỚC KHI ĐI TIẾP</div><div class="q">'+esc(Q.q)+'</div>';
+  const fb = document.createElement('div'); fb.className='fb';
+  const btns = Q.opts.map((o,i)=>{
+    const b = document.createElement('button'); b.className='opt'; b.textContent = String.fromCharCode(65+i)+'. '+o.t; box.appendChild(b); return b;
+  });
+  const lock = ()=>btns.forEach(b=>b.disabled=true);
+  btns.forEach((b,i)=>{
+    b.onclick = ()=>{
+      const o = Q.opts[i];
+      if(o.ok){ b.classList.add('right'); fb.className='fb good'; fb.textContent='✔ '+o.fb; solved[s.quiz]=true; lock(); updateNav(); }
+      else { b.classList.add('wrong'); b.disabled=true; fb.className='fb'; fb.textContent='✘ '+o.fb+' Hãy thử lại.'; }
+    };
+  });
+  box.appendChild(fb);
+  if(solved[s.quiz]){
+    const i = Q.opts.findIndex(o=>o.ok); btns[i].classList.add('right'); fb.className='fb good'; fb.textContent='✔ '+Q.opts[i].fb; lock();
+  }
+  host.appendChild(box);
+}
+
+function render(animate){
+  const s = STEPS[cur];
+  renderCode(s); renderOut(s); renderBoxes(s, animate); renderQuiz(s);
+  $('#cap').innerHTML = '<small>'+PARTS[s.part]+'</small>'+s.cap;
+  document.querySelectorAll('#parts button').forEach((b,i)=>b.classList.toggle('on',i===s.part));
+  document.querySelectorAll('.dot').forEach((d,i)=>{ d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur); });
+  updateNav();
+}
+function blocked(){ const s = STEPS[cur]; return !!(s.quiz && !solved[s.quiz]); }
+function updateNav(){
+  $('#prev').disabled = cur===0;
+  $('#next').disabled = cur===STEPS.length-1 || blocked();
+  $('#next').textContent = blocked() ? '⏸ Hãy trả lời' : 'Tiếp →';
+  if(blocked()) stopPlay();
+}
+function go(i, animate=true){ cur = Math.max(0, Math.min(STEPS.length-1, i)); render(animate); }
+function next(){ if(!blocked() && cur<STEPS.length-1) go(cur+1,true); else if(cur===STEPS.length-1) stopPlay(); }
+function prev(){ if(cur>0) go(cur-1,false); }
+function stopPlay(){ if(timer){ clearInterval(timer); timer=null; } $('#play').textContent='▶ Tự chạy'; }
+function startPlay(){
+  if(cur===STEPS.length-1) go(0,false);
+  $('#play').textContent='⏸ Dừng';
+  timer = setInterval(()=>{ if(blocked()||cur===STEPS.length-1){ stopPlay(); return; } next(); }, 4200);
+}
+
+/* ============ Khởi tạo ============ */
+(function init(){
+  try{ if(window.self!==window.top) $('#full').hidden=false; }catch(e){ $('#full').hidden=false; }
+  $('#full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=$('#fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+  const firstOfPart = PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
+  PARTS.forEach((p,i)=>{
+    const b = document.createElement('button'); b.textContent=p;
+    b.onclick = ()=>{ stopPlay(); go(firstOfPart[i],false); };
+    $('#parts').appendChild(b);
+  });
+  STEPS.forEach((s,i)=>{
+    const d = document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (điểm dừng)':'');
+    d.onclick = ()=>{ stopPlay(); go(i,false); };
+    $('#dots').appendChild(d);
+  });
+  $('#next').onclick = next; $('#prev').onclick = prev;
+  $('#play').onclick = ()=> timer ? stopPlay() : startPlay();
+  $('#restart').onclick = ()=>{ stopPlay(); for(const k in solved) delete solved[k]; go(0,true); };
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key===' ' && e.target.tagName!=='BUTTON'){ e.preventDefault(); timer?stopPlay():startPlay(); }
+  });
+  go(0,true);
+})();
+</script>
+</body>
+</html>
