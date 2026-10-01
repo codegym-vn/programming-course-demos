@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiểu dữ liệu trong C#</title>
+<style>
+  /* Bố cục: thanh terminal trên cùng • IDE bên trái • tủ RAM bên phải • robot + lời thoại + điều khiển bên dưới */
+  :root{
+    color-scheme:dark;
+    --bg:#0b0f17; --panel:#121826; --panel2:#0a0e15; --line:#263042; --text:#e6edf3; --dim:#8b98a9;
+    --lime:#a3e635; --pink:#f472b6; --cyan:#22d3ee; --yellow:#facc15; --ok:#4ade80; --bad:#f87171;
+    --t-int:#22d3ee; --t-double:#c084fc; --t-decimal:#fb923c; --t-string:#a3e635; --t-bool:#facc15; --t-char:#2dd4bf;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
+    background-image:radial-gradient(rgba(34,211,238,.06) 1px,transparent 1px);background-size:22px 22px}
+  button{font:inherit}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding-inline:20px}
+
+  /* ---- thanh trên ---- */
+  header{padding-block:14px 6px}
+  .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .term{font-family:var(--mono);font-size:clamp(17px,2.4vw,24px);font-weight:700;margin:0}
+  .term .p{color:var(--lime)} .term .c{color:var(--dim);font-weight:400}
+  .term .t{color:var(--text)}
+  .cursor{display:inline-block;width:.55em;height:1em;background:var(--lime);vertical-align:-2px;margin-left:4px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .xp{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;position:relative}
+  .xpbar{width:150px;height:12px;border-radius:999px;background:#1c2433;border:1px solid var(--line);overflow:hidden}
+  .xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan));transition:width .6s}
+  .lvl{background:#1c2433;border:1px solid var(--line);padding:2px 10px;border-radius:999px;color:var(--yellow)}
+  .toast{position:absolute;right:0;top:-4px;color:var(--yellow);font-weight:800;pointer-events:none;opacity:0}
+  .sub{margin:2px 0 0;color:var(--dim);font-size:14px}
+  .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:13px}
+  .parts button.on{background:var(--lime);color:#111;border-color:var(--lime);font-weight:700}
+
+  main.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding-block:8px 24px}
+  @media (max-width:900px){main.wrap{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+  /* ---- IDE ---- */
+  .ide{background:#1e1e1e;border-radius:12px;overflow:hidden;border:1px solid #3c3c3c}
+  .bar{background:#2d2d2d;display:flex;align-items:center;gap:7px;padding:6px 12px;font-size:13px;color:#ccc}
+  .bar i{width:11px;height:11px;border-radius:50%}
+  .bar .tab{background:#1e1e1e;color:#fff;padding:3px 12px;border-radius:6px 6px 0 0;margin-left:8px;font-family:var(--mono);font-size:12.5px}
+  .bar .lang{margin-left:auto;color:#9cdcfe;font-family:var(--mono);font-size:12px}
+  #code{font-family:var(--mono);font-size:clamp(14px,1.5vw,17px);color:#d4d4d4;padding:8px 0;min-height:170px}
+  .eline{display:flex}
+  .eline .ln{width:42px;flex:none;text-align:right;padding-right:14px;color:#858585;user-select:none}
+  .eline .cd{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;padding-right:12px}
+  .eline.act{background:#2a2d2e} .eline.act .ln{color:#c6c6c6}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.num{color:#b5cea8}.str{color:#ce9178}.fn{color:#dcdcaa}.id{color:#9cdcfe}.cm{color:#6a9955}.ph{color:#f472b6;font-weight:700}
+  .squig{text-decoration:underline wavy #f14c4c;text-underline-offset:4px}
+  .caret{display:inline-block;width:2px;height:1.1em;background:#aeafad;vertical-align:text-bottom;animation:blink 1s steps(1) infinite}
+  .anno{margin:2px 12px 4px 42px;padding:4px 10px;border-radius:6px;font-size:13.5px;background:rgba(241,76,76,.15);border-left:4px solid #f14c4c;color:#ffc2c2;animation:fade .35s}
+  .anno b{color:#fff;font-family:var(--mono)}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+  .out{background:#141414;border:1px solid #3c3c3c;border-radius:12px;overflow:hidden}
+  .out .tabs{display:flex;align-items:center;gap:4px;background:#2d2d2d;padding:4px 8px;font-size:12.5px;font-family:var(--mono)}
+  .out .tabs span{padding:2px 10px;border-radius:6px;color:#9d9d9d}
+  .out .tabs span.on{background:#3a3a3a;color:#fff}
+  .out .st{margin-left:auto}
+  .st.okk{color:var(--ok)} .st.ko{color:var(--bad)}
+  #obody{padding:6px 12px;font-family:var(--mono);font-size:13.5px;min-height:56px;color:#bdbdbd}
+  table.el{border-collapse:collapse;width:100%;font-size:13px}
+  table.el th,table.el td{text-align:left;padding:3px 6px;border-bottom:1px solid #2f2f2f}
+  table.el th{color:#8a8a8a;font-weight:600}
+  .ecode{color:var(--bad);font-weight:700}
+
+  /* ---- tủ RAM ---- */
+  .ram{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px 14px;min-height:300px;display:flex;flex-direction:column}
+  .ram h2{margin:0 0 8px;font-family:var(--mono);font-size:12.5px;color:var(--dim);font-weight:600;letter-spacing:.04em}
+  .ram h2 b{color:var(--cyan)}
+  #stage{flex:1;position:relative;min-height:220px}
+  .cabinet{display:flex;flex-wrap:wrap;gap:14px 12px;align-content:flex-start;padding:12px;border-radius:10px;
+    background:repeating-linear-gradient(90deg,#161e2e 0 14px,#141b29 14px 28px);border:2px solid #2b364a;min-height:200px}
+  .cab-empty{color:var(--dim);font-family:var(--mono);font-size:14px;margin:auto;text-align:center;padding:30px 10px}
+  .drawer{position:relative;border:3px solid var(--tc);border-radius:8px;background:linear-gradient(#1c2638,#162032);padding:20px 8px 8px;min-width:78px;text-align:center}
+  .drawer::after{content:"";position:absolute;left:50%;top:6px;width:26px;height:5px;margin-left:-13px;border-radius:3px;background:var(--tc);opacity:.8}
+  .dtag{position:absolute;left:-6px;top:-13px;background:#fde68a;color:#3a2a00;font-family:var(--mono);font-weight:800;font-size:13px;padding:1px 8px;border-radius:5px;transform:rotate(-4deg);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+  .dval{font-family:var(--mono);font-weight:800;font-size:22px;color:#fff;min-height:34px;display:flex;align-items:center;justify-content:center;gap:3px;position:relative}
+  .dval .q{color:var(--pink)}
+  .dval .empty{font-size:12px;color:var(--dim);border:1px dashed var(--dim);border-radius:6px;padding:2px 6px;font-weight:600}
+  .letter{display:inline-flex;width:24px;height:28px;align-items:center;justify-content:center;background:#0f2a12;border:1px solid var(--lime);border-radius:5px;font-size:17px}
+  .bytes{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:6px auto 4px;max-width:150px}
+  .bytes i{width:9px;height:9px;border-radius:2px;background:var(--tc);opacity:.85}
+  .dtype{font-family:var(--mono);font-size:11.5px;color:var(--tc);font-weight:700}
+  .t-int{--tc:var(--t-int)}.t-double{--tc:var(--t-double)}.t-decimal{--tc:var(--t-decimal)}.t-string{--tc:var(--t-string)}.t-bool{--tc:var(--t-bool)}.t-char{--tc:var(--t-char)}
+  .drawer.reject{border-color:var(--bad);box-shadow:0 0 0 4px rgba(248,113,113,.25)}
+  .drawer.reject .rej{position:absolute;right:-8px;top:-12px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;font-family:var(--mono)}
+  .fly{position:absolute;left:50%;top:0;font-family:var(--mono);font-weight:800;color:var(--bad);text-decoration:line-through;pointer-events:none}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:2px;background:var(--cyan)}
+
+  /* ---- bản đồ nhóm kiểu ---- */
+  .groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  @media (max-width:520px){.groups{grid-template-columns:1fr}}
+  .grp{border:2px solid var(--gc);border-radius:12px;padding:10px;background:#111827}
+  .grp h3{margin:0 0 6px;font-family:var(--mono);font-size:15px;color:var(--gc)}
+  .grp p{margin:0 0 8px;font-size:12.5px;color:var(--dim)}
+  .chip{display:inline-block;margin:3px 3px 0 0;padding:2px 8px;border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:700;background:#0b1220;border:1px solid var(--tc);color:var(--tc)}
+  .chip small{color:var(--dim);font-weight:400}
+
+  /* ---- robot + lời thoại ---- */
+  #bottom{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .talk{display:flex;gap:12px;align-items:flex-start}
+  #bot{width:64px;height:64px;flex:none}
+  .bubble{position:relative;flex:1;min-width:0;background:#0f1522;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+  .bubble::before{content:"";position:absolute;left:-8px;top:18px;border:8px solid transparent;border-left:0;border-right-color:var(--line)}
+  #cap{font-size:clamp(16px,2vw,20px);font-weight:600}
+  #cap small{display:block;font-family:var(--mono);color:var(--lime);font-size:12px;font-weight:700;letter-spacing:.03em}
+  code{font-family:var(--mono);background:rgba(148,163,184,.16);padding:0 5px;border-radius:5px;font-size:.92em}
+
+  /* ---- checkpoint ---- */
+  .quiz{margin-top:10px;border:2px dashed var(--pink);border-radius:14px;padding:12px;background:rgba(244,114,182,.06)}
+  .qhead{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;font-weight:800;color:var(--pink);letter-spacing:.04em}
+  .qhead .hp{margin-left:auto;color:var(--yellow)}
+  .q{font-weight:700;font-size:clamp(15px,1.9vw,19px);margin:4px 0 8px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){.opts{grid-template-columns:1fr}}
+  .opt{text-align:left;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:#0f1522;color:var(--text);font-size:15px;cursor:pointer}
+  .opt code{background:none;padding:0}
+  .opt:hover:not(:disabled){border-color:var(--pink)}
+  .opt.right{border-color:var(--ok);background:rgba(74,222,128,.13)}
+  .opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:8px;font-size:14.5px;color:var(--dim)}
+  .fb.good{color:#86efac}
+  .mrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 0;border-bottom:1px dashed #263042}
+  .mrow .lab{width:170px;flex:none;font-weight:600;font-size:14.5px}
+  .mrow .lab code{font-size:12px}
+  .mrow .pick{display:flex;gap:5px;flex-wrap:wrap}
+  .pk{font-family:var(--mono);font-size:13px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:#0f1522;color:var(--dim);cursor:pointer}
+  .pk.sel{border-color:var(--cyan);color:#fff;background:#0e2a33}
+  .mrow.good .pk.sel{border-color:var(--ok);background:rgba(74,222,128,.15)}
+  .mrow.bad .pk.sel{border-color:var(--bad);background:rgba(248,113,113,.12)}
+  .mrow .mfb{flex-basis:100%;font-size:13px;color:var(--dim);padding-left:178px}
+  .mrow.good .mfb{color:#86efac} .mrow.bad .mfb{color:#fca5a5}
+  @media (max-width:640px){.mrow .lab{width:100%}.mrow .mfb{padding-left:0}}
+  .check{margin-top:8px;font-family:var(--mono);font-weight:800;padding:7px 14px;border-radius:8px;border:0;background:var(--pink);color:#1a0010;cursor:pointer}
+  .check:disabled{opacity:.4;cursor:not-allowed}
+
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .controls button{font-family:var(--mono);font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .controls button.primary{background:var(--lime);color:#111;border-color:var(--lime);font-weight:800}
+  .controls button:disabled{opacity:.4;cursor:not-allowed}
+  .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
+  .dot{flex:none;width:11px;height:11px;border-radius:50%;background:#263042;border:0;padding:0;cursor:pointer}
+  .dot.done{background:#4b5b73}.dot.cur{background:var(--lime);transform:scale(1.35)}.dot.q{border-radius:2px;transform:rotate(45deg)}
+  .dot.q.cur{transform:rotate(45deg) scale(1.35)}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:6px;font-family:var(--mono)}
+
+  /* ---- chế độ gọn cho khung thấp (khối HTML Preview của LMS) ---- */
+  @media (max-height:760px){
+    header{padding-block:6px 2px} .term{font-size:17px} .sub{display:none}
+    .parts{margin-top:5px;gap:5px} .parts button{padding:3px 9px;font-size:12px}
+    main.wrap{gap:8px;padding-block:5px 10px} .col{gap:6px}
+    .bar{padding:3px 10px} #code{min-height:0;font-size:13px;padding:4px 0}
+    .anno{font-size:12px;padding:2px 8px}
+    .out .tabs{padding:2px 8px;font-size:11.5px} #obody{min-height:0;padding:3px 10px;font-size:12.5px}
+    .ram{min-height:0;padding:6px 10px 8px} .ram h2{margin-bottom:4px;font-size:11.5px}
+    #stage{min-height:0} .cabinet{min-height:150px;padding:10px 8px;gap:14px 8px}
+    .drawer{padding:16px 6px 6px;min-width:70px} .dval{font-size:18px;min-height:26px} .letter{width:20px;height:24px;font-size:14px}
+    .bytes i{width:7px;height:7px} .legend{display:none}
+    .grp{padding:6px 8px} .grp h3{font-size:13px;margin-bottom:2px} .grp p{display:none} .chip{font-size:12px}
+    #bottom{padding:8px 10px} #bot{width:44px;height:44px} .bubble{padding:5px 10px}
+    #cap{font-size:14.5px} #cap small{font-size:11px}
+    .quiz{padding:8px;margin-top:6px} .q{font-size:14.5px;margin:2px 0 5px}
+    .opt{padding:5px 10px;font-size:13.5px} .opts{gap:5px}
+    .mrow{padding:2px 0} .mrow .lab{font-size:13px;width:150px} .pk{font-size:12px;padding:2px 7px} .mrow .mfb{padding-left:158px;font-size:12px}
+    .fb{font-size:13px;margin-top:4px} .check{padding:4px 12px;margin-top:5px}
+    .controls{margin-top:6px} .controls button{padding:4px 11px;font-size:12.5px}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topline">
+    <h1 class="term"><span class="p">~/csharp $</span> <span class="t">run kieu-du-lieu</span><span class="cursor"></span></h1>
+    <div class="xp" aria-live="polite">
+      <span>XP</span><span class="xpbar"><i id="xpfill"></i></span><span id="xptxt">0/300</span><span class="lvl" id="lvl">Newbie</span>
+      <span class="toast" id="toast"></span>
+    </div>
+  </div>
+  <p class="sub">Giới thiệu các kiểu dữ liệu trong C#. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
+  <div class="parts" id="parts"></div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <section class="ide" aria-label="Trình soạn thảo code">
+      <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab" id="fname">Program.cs</span><span class="lang">C#</span></div>
+      <div id="code"></div>
+    </section>
+    <section class="out" aria-label="Kết quả biên dịch">
+      <div class="tabs"><span id="tab-out">Output</span><span id="tab-err">Danh sách lỗi</span><span class="st" id="status"></span></div>
+      <div id="obody"></div>
+    </section>
+  </div>
+
+  <section class="ram" aria-label="Minh họa bộ nhớ">
+    <h2 id="stitle"></h2>
+    <div id="stage"></div>
+    <div class="legend" id="legend"><span><i></i>= 1 byte</span><span>int 4 byte</span><span>double 8 byte</span><span>decimal 16 byte</span><span>bool 1 byte</span></div>
+  </section>
+
+  <section id="bottom" aria-label="Lời giải thích và điều khiển">
+    <div class="talk">
+      <svg id="bot" viewBox="0 0 64 64" aria-hidden="true">
+        <line x1="32" y1="5" x2="32" y2="12" stroke="#22d3ee" stroke-width="3"/>
+        <circle cx="32" cy="5" r="3.5" fill="#f472b6"/>
+        <rect x="9" y="12" width="46" height="36" rx="11" fill="#1f2937" stroke="#22d3ee" stroke-width="3"/>
+        <circle id="eyeL" cx="24" cy="28" r="4" fill="#a3e635"/>
+        <circle id="eyeR" cx="40" cy="28" r="4" fill="#a3e635"/>
+        <path id="mouth" d="M24 39 L40 39" stroke="#a3e635" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path id="sweat" d="M53 13 q4 6 0 9 q-4 -3 0 -9z" fill="#38bdf8" opacity="0"/>
+        <rect x="20" y="50" width="24" height="9" rx="3" fill="#1f2937" stroke="#22d3ee" stroke-width="2"/>
+      </svg>
+      <div class="bubble"><div id="cap"></div></div>
+    </div>
+    <div id="quiz"></div>
+    <div class="controls">
+      <button id="prev">← Lùi</button>
+      <button id="next" class="primary">Tiếp →</button>
+      <button id="play">▶ Tự chạy</button>
+      <button id="restart">↺ Làm lại</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="hint">// ← → lùi/tiếp • Space tự chạy • ◆ là checkpoint</div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   DỮ LIỆU BÀI HỌC – sửa nội dung ở đây
+   ===================================================================== */
+const PARTS = ['1. RAM là dãy ngăn tủ', '2. C# kiểm tra kiểu', '3. Bản đồ kiểu', '4. Tìm lỗi'];
+
+const SIZE = {int:4, double:8, decimal:16, bool:1, char:2};   // byte
+const D = (id,type,v,extra={}) => Object.assign({id,type,v},extra);
+
+const STEPS = [
+  /* ---------- Phần 1 ---------- */
+  { part:0, view:'ram', file:'Program.cs', lines:[], drawers:[], mood:'neutral', out:['Sẵn sàng.'],
+    cap:'Hãy tưởng tượng RAM là một <b>dãy ngăn tủ</b>. Mỗi biến là một ngăn có nhãn. <b>Kiểu dữ liệu</b> quyết định ngăn to bao nhiêu và đựng được loại đồ gì.' },
+  { part:0, view:'ram', lines:['int tuoi = 20;'], typeIdx:[0], act:0, mood:'happy',
+    drawers:[D('tuoi','int',20,{fx:'create'})],
+    cap:'<code>int</code> tạo một <b>ngăn nhỏ 4 byte</b>, chỉ đựng số nguyên. Nhãn là <code>tuoi</code>, bên trong là 20.' },
+  { part:0, view:'ram', lines:['int tuoi = 20;','double chieuCao = 1.72;'], typeIdx:[1], act:1, mood:'happy',
+    drawers:[D('tuoi','int',20), D('chieuCao','double',1.72,{fx:'create'})],
+    cap:'<code>double</code> tạo <b>ngăn to gấp đôi (8 byte)</b>, đựng được số có phần thập phân như 1.72.' },
+  { part:0, view:'ram', lines:['int tuoi = 20;','double chieuCao = 1.72;','string ten = "An";'], typeIdx:[2], act:2, mood:'happy',
+    drawers:[D('tuoi','int',20), D('chieuCao','double',1.72), D('ten','string','An',{fx:'create'})],
+    cap:'<code>string</code> tạo <b>ngăn đựng chữ</b>, to nhỏ tùy độ dài chuỗi. (Thực tế chuỗi được cất ở một vùng nhớ riêng, ta sẽ học sau.)' },
+  { part:0, view:'ram', lines:['int tuoi = 20;','double chieuCao = 1.72;','string ten = "An";'], act:-1, mood:'neutral',
+    drawers:[D('tuoi','int',20), D('chieuCao','double',1.72), D('ten','string','An')], status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Ghi nhớ: <b>kiểu dữ liệu = kích thước ngăn + loại đồ được phép cất</b>. Đếm các ô vuông nhỏ để so kích thước.' },
+
+  /* ---------- Phần 2 ---------- */
+  { part:1, view:'ram', lines:['int tuoi = 20;','double chieuCao = 1.72;','string ten = "An";','int x = ⟦"hello"⟧;'], typeIdx:[3], act:3, mood:'sweat',
+    annot:{line:3, html:'<b>CS0029</b>: Cannot implicitly convert type \'string\' to \'int\''},
+    drawers:[D('tuoi','int',20), D('chieuCao','double',1.72), D('ten','string','An'), D('x','int',null,{fx:'reject',fly:'"hello"'})],
+    status:'ko', errs:[{code:'CS0029',msg:"Cannot implicitly convert type 'string' to 'int'",line:4}],
+    cap:'C# kiểm tra kiểu <b>ngay khi biên dịch</b>: chữ "hello" không được cất vào ngăn <code>int</code>. Dòng đó đỏ lên trước cả khi chạy.' },
+  { part:1, view:'ram', file:'Checkpoint1.cs', lines:['int a = 5;','string b = "5";','int c = b;'], typeIdx:[0,1,2], act:-1, mood:'think', quiz:'q1',
+    drawers:[D('a','int',5), D('b','string','5'), D('c','int','?')],
+    cap:'Checkpoint! Ba dòng code mới. Dòng nào sẽ làm trình biên dịch báo lỗi?' },
+  { part:1, view:'ram', file:'Checkpoint1.cs', lines:['int a = 5;','string b = "5";','int c = ⟦b⟧;'], act:2, mood:'sweat',
+    annot:{line:2, html:'<b>CS0029</b>: Cannot implicitly convert type \'string\' to \'int\''},
+    drawers:[D('a','int',5), D('b','string','5'), D('c','int',null,{fx:'reject',fly:'"5"'})],
+    status:'ko', errs:[{code:'CS0029',msg:"Cannot implicitly convert type 'string' to 'int'",line:3}],
+    cap:'Dòng 3 lỗi. <code>"5"</code> có dấu nháy nên là <b>chữ</b>, dù trông giống số. C# không tự đổi chữ sang số nguyên.' },
+
+  /* ---------- Phần 3 ---------- */
+  { part:2, view:'groups', file:'Program.cs', lines:['// Bản đồ các kiểu dữ liệu của chương'], act:-1, mood:'happy',
+    cap:'Bản đồ cho cả chương: ba nhóm kiểu hay gặp là <b>số</b>, <b>chữ</b> và <b>đúng/sai</b>. Mỗi nhóm sẽ được học kỹ ở các bài sau.' },
+  { part:2, view:'groups', file:'DonHang.cs', lines:['// Đơn hàng của khách','??? soLuong;','??? giaTien;','??? tenKhach;','??? daThanhToan;'], typeIdx:[1,2,3,4], act:-1, mood:'think', quiz:'q2',
+    cap:'Checkpoint! Bạn đang viết chương trình bán hàng. Chọn kiểu phù hợp cho từng biến.' },
+  { part:2, view:'ram', file:'DonHang.cs', lines:['// Đơn hàng của khách','int soLuong = 3;','decimal giaTien = 125000m;','string tenKhach = "An";','bool daThanhToan = false;'], typeIdx:[1,2,3,4], act:-1, mood:'happy',
+    drawers:[D('soLuong','int',3,{fx:'create'}), D('giaTien','decimal','125000',{fx:'create'}), D('tenKhach','string','An',{fx:'create'}), D('daThanhToan','bool','false',{fx:'create'})],
+    status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Với tiền, <code>decimal</code> được khuyên dùng vì tính chính xác hơn với số thập phân (chữ <code>m</code> đánh dấu số decimal). <code>bool</code> chỉ cần 1 byte cho true/false.' },
+
+  /* ---------- Phần 4 ---------- */
+  { part:3, view:'ram', file:'Diem.cs', lines:['int diem = 8.5;'], typeIdx:[0], act:0, mood:'think', quiz:'q3',
+    drawers:[D('diem','int','?')],
+    cap:'Checkpoint cuối! Dòng code này có lỗi. Lỗi ở đâu?' },
+  { part:3, view:'ram', file:'Diem.cs', lines:['int diem = ⟦8.5⟧;'], act:0, mood:'sweat',
+    annot:{line:0, html:'<b>CS0266</b>: Cannot implicitly convert type \'double\' to \'int\'. An explicit conversion exists (are you missing a cast?)'},
+    drawers:[D('diem','int',null,{fx:'reject',fly:'8.5'})],
+    status:'ko', errs:[{code:'CS0266',msg:"Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)",line:1}],
+    cap:'<code>8.5</code> là <b>double</b>, có phần lẻ nên không cất vừa ngăn <code>int</code>. C# không tự làm tròn để tránh mất dữ liệu âm thầm.' },
+  { part:3, view:'ram', file:'Diem.cs', lines:['double diem = 8.5;'], typeIdx:[0], act:0, mood:'happy',
+    drawers:[D('diem','double',8.5,{fx:'create'})], status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Sửa: đổi sang ngăn <code>double</code>. Hết lỗi, điểm 8.5 nằm gọn trong ngăn 8 byte.' },
+  { part:3, view:'ram', file:'Diem.cs', lines:['double diem = 8.5;'], act:-1, mood:'happy', summary:true,
+    drawers:[D('diem','double',8.5)], status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'<b>Tổng kết:</b> kiểu quyết định kích thước và loại giá trị • C# bắt lỗi sai kiểu ngay khi biên dịch • có 3 nhóm chính: số, chữ, đúng/sai • giá trị phải khớp kiểu của ngăn.' }
+];
+
+const GROUPS = [
+  {name:'Số', color:'var(--t-int)', note:'đếm, đo, tính toán', items:[['int','20'],['double','1.72'],['decimal','125000m']]},
+  {name:'Chữ', color:'var(--t-string)', note:'tên, câu, ký tự', items:[['char',"'A'"],['string','"An"']]},
+  {name:'Đúng / Sai', color:'var(--t-bool)', note:'chỉ có 2 giá trị', items:[['bool','true / false']]}
+];
+
+const QUIZ = {
+  q1:{ type:'mcq', q:'Dòng nào gây lỗi khi biên dịch?',
+    opts:[
+      {t:'Dòng 1: <code>int a = 5;</code>', fb:'5 là số nguyên, cất vào ngăn int là hợp lệ.'},
+      {t:'Dòng 2: <code>string b = "5";</code>', fb:'"5" có dấu nháy là chữ, cất vào ngăn string là hợp lệ.'},
+      {t:'Dòng 3: <code>int c = b;</code>', ok:true, fb:'Đúng! b là string. C# không tự đổi string sang int, nên báo lỗi CS0029.'},
+      {t:'Không dòng nào, vì b chứa 5', fb:'b chứa chữ "5", không phải số 5. Với C#, kiểu quan trọng hơn vẻ ngoài.'}
+    ]},
+  q2:{ type:'match', q:'Chọn kiểu phù hợp nhất cho từng biến:',
+    choices:['int','double','decimal','string','char','bool'],
+    rows:[
+      {label:'Số lượng sản phẩm', v:'soLuong', ok:['int'], good:'Số lượng là số nguyên → int.',
+       fb:{double:'Không có 2,5 sản phẩm. Số lượng là số nguyên → int.', decimal:'Số lượng không có phần lẻ → int là đủ.', string:'Lưu số dưới dạng chữ thì không cộng trừ được.', char:'char chỉ chứa 1 ký tự.', bool:'bool chỉ có true/false.'}},
+      {label:'Giá tiền', v:'giaTien', ok:['decimal','double'], good:'decimal là lựa chọn tốt nhất cho tiền.',
+       okfb:{double:'Chạy được, nhưng với tiền nên dùng decimal để tránh sai số làm tròn.'},
+       fb:{int:'Giá có thể có phần lẻ và cần tính chính xác. int sẽ mất phần lẻ.', string:'Lưu giá dưới dạng chữ thì không tính tổng được.', char:'char chỉ chứa 1 ký tự.', bool:'bool chỉ có true/false.'}},
+      {label:'Tên khách', v:'tenKhach', ok:['string'], good:'Tên là một chuỗi ký tự → string.',
+       fb:{char:'char chỉ chứa 1 ký tự. Tên có nhiều ký tự → string.', int:'Tên là chữ, không phải số.', double:'Tên là chữ, không phải số.', decimal:'Tên là chữ, không phải số.', bool:'bool chỉ có true/false.'}},
+      {label:'Đã thanh toán chưa', v:'daThanhToan', ok:['bool'], good:'Chỉ có 2 khả năng → bool (true/false).',
+       fb:{string:'Lưu "rồi"/"chưa" dễ gõ sai. Chỉ có 2 khả năng → bool.', int:'Dùng 0/1 cũng được nhưng bool rõ nghĩa hơn.', char:'Chỉ có 2 khả năng → bool.', double:'Chỉ có 2 khả năng → bool.', decimal:'Chỉ có 2 khả năng → bool.'}}
+    ]},
+  q3:{ type:'mcq', q:'Tìm lỗi trong dòng:  int diem = 8.5;',
+    opts:[
+      {t:'Thiếu dấu chấm phẩy', fb:'Dòng đã có dấu ; ở cuối.'},
+      {t:'8.5 là số thực (double), không cất vừa ngăn int', ok:true, fb:'Đúng! C# báo CS0266 vì đổi double sang int có thể mất phần lẻ.'},
+      {t:'Không lỗi, C# tự làm tròn thành 9', fb:'C# không tự làm tròn khi gán. Muốn đổi phải ép kiểu (int)8.5, lúc đó còn 8 và mất .5.'},
+      {t:'Tên biến diem không hợp lệ', fb:'diem là tên hợp lệ: chữ cái, không dấu, không khoảng trắng.'}
+    ]}
+};
+
+/* =====================================================================
+   PHẦN XỬ LÝ – thường không cần sửa
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const solved = {}, misses = {};
+let cur = 0, timer = null, typerId = 0, xp = 0;
+const ease = 'cubic-bezier(.2,.9,.3,1.25)';
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlPlain(s){
+  return s
+    .replace(/\?\?\?/g,'<span class="ph">???</span>')
+    .replace(/\b(int|double|decimal|string|bool|char|var|true|false)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(Console)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(WriteLine)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(tuoi|chieuCao|ten|x|a|b|c|soLuong|giaTien|tenKhach|daThanhToan|diem)\b/g,'<span class="id">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?m?)\b/g,'<span class="num">$1</span>');
+}
+function hl(line){
+  let e = esc(line), cm = '';
+  const k = e.indexOf('//');
+  if(k>=0){ cm = '<span class="cm">'+e.slice(k)+'</span>'; e = e.slice(0,k); }
+  const parts = e.split(/("[^"]*"?)/);
+  return parts.map((p,i)=> i%2 ? '<span class="str">'+p+'</span>' : hlPlain(p)).join('')
+    .replace(/⟦(.*?)⟧/g,'<span class="squig">$1</span>') + cm;
+}
+
+/* ---- editor ---- */
+function renderEditor(s, animate){
+  $('#fname').textContent = fileOf(cur);
+  const host = $('#code'); host.innerHTML = '';
+  const my = ++typerId;
+  if(!s.lines.length){ host.innerHTML = '<div class="eline"><span class="ln">1</span><span class="cd"><span class="cm">// Chưa có dòng code nào</span><span class="caret"></span></span></div>'; return; }
+  const rows = s.lines.map((text,i)=>{
+    const r = document.createElement('div'); r.className = 'eline'+(i===s.act?' act':'');
+    r.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="cd"></span>'; host.appendChild(r);
+    return {r, cd:r.querySelector('.cd'), text:text, plain:text.replace(/[⟦⟧]/g,''), i};
+  });
+  const typed = animate && s.typeIdx ? s.typeIdx.slice() : [];
+  rows.forEach(o=>{ if(!typed.includes(o.i)) o.cd.innerHTML = hl(o.text); });
+  const finish = ()=>{
+    if(my!==typerId) return;
+    rows.forEach(o=> o.cd.innerHTML = hl(o.text));
+    if(s.annot){ const a = document.createElement('div'); a.className='anno'; a.innerHTML = s.annot.html; rows[s.annot.line].r.after(a); }
+    if(animate) afterTyped(s);
+  };
+  if(!typed.length){ finish(); return; }
+  let qi = 0, ci = 0;
+  const tick = ()=>{
+    if(my!==typerId) return;
+    if(qi>=typed.length){ finish(); return; }
+    const o = rows[typed[qi]]; ci++;
+    o.cd.innerHTML = hl(o.plain.slice(0,ci)) + '<span class="caret"></span>';
+    if(ci>=o.plain.length){ qi++; ci=0; setTimeout(tick, 200); } else setTimeout(tick, 30);
+  };
+  setTimeout(tick, 200);
+}
+function fileOf(i){ for(let k=i;k>=0;k--) if(STEPS[k].file) return STEPS[k].file; return 'Program.cs'; }
+
+/* ---- output ---- */
+function renderOut(s){
+  const err = s.status==='ko';
+  $('#tab-out').classList.toggle('on', !err); $('#tab-err').classList.toggle('on', err);
+  const st = $('#status'); st.className = 'st';
+  if(s.status==='ok'){ st.textContent='✔ build ok'; st.classList.add('okk'); }
+  else if(err){ st.textContent='✘ build failed'; st.classList.add('ko'); }
+  else st.textContent='';
+  if(err){
+    $('#obody').innerHTML = '<table class="el"><tr><th>Mã</th><th>Mô tả</th><th>Dòng</th></tr>'+
+      s.errs.map(e=>'<tr><td class="ecode">'+e.code+'</td><td>'+esc(e.msg)+'</td><td>'+e.line+'</td></tr>').join('')+'</table>';
+  } else {
+    const o = s.out || [];
+    $('#obody').innerHTML = o.length ? o.map(x=>'<div>&gt; '+esc(x)+'</div>').join('') : '<div style="color:#666">&gt; (đang soạn code…)</div>';
+  }
+}
+
+/* ---- sân khấu: tủ RAM hoặc bản đồ nhóm ---- */
+function drawerHTML(d){
+  let val;
+  if(d.v==null) val = '<span class="empty">trống</span>';
+  else if(d.v==='?') val = '<span class="q">?</span>';
+  else if(d.type==='string') val = String(d.v).split('').map(ch=>'<span class="letter">'+esc(ch)+'</span>').join('');
+  else val = esc(d.v);
+  const n = SIZE[d.type];
+  const bytes = n ? '<div class="bytes">'+'<i></i>'.repeat(n)+'</div>' : '<div class="bytes" style="color:var(--dim);font-size:11px">tùy độ dài</div>';
+  const w = n ? Math.max(78, 64 + n*9) : 0;
+  return '<div class="drawer t-'+d.type+(d.fx==='reject'?' reject':'')+'" data-id="'+d.id+'"'+(w?' style="width:'+w+'px"':'')+'>'+
+    '<span class="dtag">'+d.id+'</span>'+(d.fx==='reject'?'<span class="rej">✘ sai kiểu</span>':'')+
+    '<div class="dval">'+val+'</div>'+bytes+'<div class="dtype">'+d.type+(n?' · '+n+' byte':'')+'</div></div>';
+}
+function renderStage(s, animate){
+  const st = $('#stage');
+  $('#legend').style.display = s.view==='ram' ? '' : 'none';
+  if(s.view==='groups'){
+    $('#stitle').innerHTML = '<b>map</b> các nhóm kiểu dữ liệu';
+    st.innerHTML = '<div class="groups">'+GROUPS.map(g=>
+      '<div class="grp" style="--gc:'+g.color+'"><h3>'+g.name+'</h3><p>'+g.note+'</p>'+
+      g.items.map(it=>'<span class="chip t-'+it[0]+'">'+it[0]+' <small>'+esc(it[1])+'</small></span>').join('')+'</div>').join('')+'</div>';
+    if(animate) st.querySelectorAll('.grp').forEach((g,i)=>g.animate([{opacity:0,transform:'translateY(16px) scale(.95)'},{opacity:1,transform:'none'}],{duration:450,delay:i*140,easing:ease,fill:'backwards'}));
+    return;
+  }
+  $('#stitle').innerHTML = '<b>RAM</b> // dãy ngăn tủ';
+  const ds = s.drawers || [];
+  st.innerHTML = '<div class="cabinet">'+(ds.length ? ds.map(drawerHTML).join('') : '<div class="cab-empty">[ tủ đang trống ]<br>mỗi dòng khai báo sẽ mở một ngăn</div>')+'</div>';
+}
+function afterTyped(s){
+  // hiệu ứng chạy sau khi gõ xong code của bước
+  (s.drawers||[]).forEach(d=>{
+    const el = document.querySelector('.drawer[data-id="'+d.id+'"]'); if(!el) return;
+    if(d.fx==='create'){
+      el.animate([{opacity:0,transform:'translateY(-18px) scale(.7)'},{opacity:1,transform:'none'}],{duration:500,easing:ease});
+      const v = el.querySelector('.dval'); v.animate([{opacity:0,transform:'translateY(-30px)'},{opacity:1,transform:'none'}],{duration:500,delay:250,easing:ease,fill:'backwards'});
+    }
+    if(d.fx==='reject'){
+      const f = document.createElement('span'); f.className='fly'; f.textContent = d.fly || '?'; el.querySelector('.dval').appendChild(f);
+      f.animate([{transform:'translate(-50%,-40px)',opacity:1},{transform:'translate(-50%,0)',opacity:1,offset:.45},{transform:'translate(-20%,-50px) rotate(25deg)',opacity:0}],{duration:1100,easing:'ease-out',fill:'forwards'}).onfinish=()=>f.remove();
+      el.animate([{transform:'none'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(-5px)'},{transform:'none'}],{duration:450,delay:450});
+    }
+  });
+}
+
+/* ---- robot ---- */
+const MOUTH = {neutral:'M24 39 L40 39', happy:'M22 36 Q32 47 42 36', sad:'M22 43 Q32 34 42 43', think:'M27 40 Q32 38 37 40', sweat:'M22 41 q5 -4 10 0 t10 0'};
+function mood(m, bounce=true){
+  $('#mouth').setAttribute('d', MOUTH[m]||MOUTH.neutral);
+  $('#sweat').setAttribute('opacity', m==='sweat'?1:0);
+  const ey = m==='think'?25:28, col = m==='sad'?'#f472b6':'#a3e635';
+  ['#eyeL','#eyeR'].forEach(e=>{ $(e).setAttribute('cy',ey); $(e).setAttribute('fill',col); });
+  if(bounce) $('#bot').animate([{transform:'translateY(0)'},{transform:'translateY(-7px)'},{transform:'translateY(0)'}],{duration:420,easing:'ease-out'});
+}
+
+/* ---- XP ---- */
+const LEVELS = [[0,'Newbie'],[100,'Junior'],[200,'Mid-level'],[300,'Senior ★']];
+function renderXP(){
+  $('#xpfill').style.width = Math.min(100, xp/3)+'%';
+  $('#xptxt').textContent = xp+'/300';
+  $('#lvl').textContent = LEVELS.filter(l=>xp>=l[0]).pop()[1];
+}
+function gain(key){
+  const g = [100,60,30][Math.min(misses[key]||0,2)];
+  xp += g; renderXP();
+  const t = $('#toast'); t.textContent = '+'+g+' XP';
+  t.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(-14px)',offset:.3},{opacity:0,transform:'translateY(-30px)'}],{duration:1400});
+}
+
+/* ---- checkpoint ---- */
+function renderQuiz(s){
+  const host = $('#quiz'); host.innerHTML = '';
+  if(!s.quiz) return;
+  const key = s.quiz, Q = QUIZ[key];
+  const box = document.createElement('div'); box.className='quiz';
+  box.innerHTML = '<div class="qhead">◆ CHECKPOINT <span class="hp">+100 XP nếu đúng ngay lần đầu</span></div><div class="q">'+esc(Q.q)+'</div>';
+  const fb = document.createElement('div'); fb.className='fb';
+  if(Q.type==='mcq'){
+    const grid = document.createElement('div'); grid.className='opts'; box.appendChild(grid);
+    const btns = Q.opts.map((o,i)=>{ const b=document.createElement('button'); b.className='opt'; b.innerHTML=String.fromCharCode(65+i)+'. '+o.t; grid.appendChild(b); return b; });
+    const lock = ()=>btns.forEach(b=>b.disabled=true);
+    btns.forEach((b,i)=> b.onclick = ()=>{
+      const o = Q.opts[i];
+      if(o.ok){ b.classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+o.fb; lock(); win(key); }
+      else { b.classList.add('wrong'); b.disabled=true; fb.className='fb'; fb.innerHTML='✘ '+o.fb+' Thử lại nhé.'; miss(key); }
+    });
+    if(solved[key]){ const i=Q.opts.findIndex(o=>o.ok); btns[i].classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+Q.opts[i].fb; lock(); }
+  } else {
+    const pick = {};
+    const rows = Q.rows.map(r=>{
+      const row = document.createElement('div'); row.className='mrow';
+      row.innerHTML = '<div class="lab">'+esc(r.label)+' <code>'+r.v+'</code></div><div class="pick"></div><div class="mfb"></div>';
+      const pk = row.querySelector('.pick');
+      Q.choices.forEach(c=>{
+        const b = document.createElement('button'); b.className='pk'; b.textContent=c;
+        b.onclick = ()=>{ if(solved[key]) return; pick[r.v]=c; pk.querySelectorAll('.pk').forEach(x=>x.classList.toggle('sel',x===b)); row.classList.remove('good','bad'); row.querySelector('.mfb').textContent=''; chk.disabled = Object.keys(pick).length<Q.rows.length; };
+        pk.appendChild(b);
+      });
+      box.appendChild(row); return {row,r};
+    });
+    const chk = document.createElement('button'); chk.className='check'; chk.textContent='▶ Kiểm tra'; chk.disabled=true; box.appendChild(chk);
+    const showAll = (answers)=>{
+      let all = true;
+      rows.forEach(({row,r})=>{
+        const c = answers[r.v], ok = r.ok.includes(c);
+        row.classList.toggle('good',ok); row.classList.toggle('bad',!ok);
+        row.querySelectorAll('.pk').forEach(x=>x.classList.toggle('sel',x.textContent===c));
+        row.querySelector('.mfb').textContent = ok ? ('✔ '+((r.okfb&&r.okfb[c])||r.good)) : ('✘ '+(r.fb[c]||'Chưa phù hợp.'));
+        if(!ok) all=false;
+      });
+      return all;
+    };
+    chk.onclick = ()=>{
+      if(showAll(pick)){ fb.className='fb good'; fb.textContent='✔ Chuẩn! Bạn đã chọn đúng kiểu cho cả 4 biến.'; chk.disabled=true; solved[key+'_ans']={...pick}; win(key); }
+      else { fb.className='fb'; fb.textContent='Còn dòng màu đỏ, đổi lựa chọn rồi bấm Kiểm tra lại.'; miss(key); }
+    };
+    if(solved[key]){ showAll(solved[key+'_ans']); chk.disabled=true; fb.className='fb good'; fb.textContent='✔ Chuẩn! Bạn đã chọn đúng kiểu cho cả 4 biến.'; }
+  }
+  box.appendChild(fb); host.appendChild(box);
+}
+function win(key){ if(!solved[key]){ solved[key]=true; gain(key); } mood('happy'); updateNav(); }
+function miss(key){ misses[key]=(misses[key]||0)+1; mood('sad'); }
+
+/* ---- điều hướng ---- */
+function render(animate){
+  const s = STEPS[cur];
+  renderStage(s, animate); renderEditor(s, animate); renderOut(s); renderQuiz(s);
+  mood(s.quiz && solved[s.quiz] ? 'happy' : s.mood, animate);
+  const extra = s.summary ? ' <br><small style="color:var(--yellow);margin-top:4px">XP của bạn: '+xp+'/300 – cấp '+$('#lvl').textContent+'</small>' : '';
+  $('#cap').innerHTML = '<small>'+PARTS[s.part]+' · bước '+(cur+1)+'/'+STEPS.length+'</small>'+s.cap+extra;
+  document.querySelectorAll('#parts button').forEach((b,i)=>b.classList.toggle('on',i===s.part));
+  document.querySelectorAll('.dot').forEach((d,i)=>{ d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur); });
+  updateNav();
+}
+function blocked(){ const s=STEPS[cur]; return !!(s.quiz && !solved[s.quiz]); }
+function updateNav(){
+  $('#prev').disabled = cur===0;
+  $('#next').disabled = cur===STEPS.length-1 || blocked();
+  $('#next').textContent = blocked() ? '◆ Trả lời đã' : 'Tiếp →';
+  if(blocked()) stopPlay();
+}
+function go(i, animate=true){ cur=Math.max(0,Math.min(STEPS.length-1,i)); render(animate); }
+function next(){ if(!blocked() && cur<STEPS.length-1) go(cur+1,true); else stopPlay(); }
+function prev(){ if(cur>0) go(cur-1,false); }
+function stopPlay(){ if(timer){clearInterval(timer);timer=null;} $('#play').textContent='▶ Tự chạy'; }
+function startPlay(){ if(cur===STEPS.length-1) go(0,false); $('#play').textContent='⏸ Dừng'; timer=setInterval(()=>{ if(blocked()||cur===STEPS.length-1){stopPlay();return;} next(); },5000); }
+
+(function init(){
+  const first = PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
+  PARTS.forEach((p,i)=>{ const b=document.createElement('button'); b.textContent=p; b.onclick=()=>{stopPlay();go(first[i],false);}; $('#parts').appendChild(b); });
+  STEPS.forEach((s,i)=>{ const d=document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (checkpoint)':''); d.setAttribute('aria-label',d.title); d.onclick=()=>{stopPlay();go(i,false);}; $('#dots').appendChild(d); });
+  $('#next').onclick=next; $('#prev').onclick=prev;
+  $('#play').onclick=()=> timer?stopPlay():startPlay();
+  $('#restart').onclick=()=>{ stopPlay(); for(const k in solved) delete solved[k]; for(const k in misses) delete misses[k]; xp=0; renderXP(); go(0,true); };
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight') next(); else if(e.key==='ArrowLeft') prev();
+    else if(e.key===' ' && e.target.tagName!=='BUTTON'){ e.preventDefault(); timer?stopPlay():startPlay(); }
+  });
+  renderXP(); go(0,true);
+})();
+</script>
+</body>
+</html>
