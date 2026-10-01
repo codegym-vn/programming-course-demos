@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài 2 – Khai báo và Khởi tạo</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#0b1220; --line:#334155; --text:#e2e8f0; --dim:#94a3b8;
+    --amber:#f59e0b; --ok:#22c55e; --bad:#ef4444; color-scheme:dark;
+    --t-int:#3b82f6; --t-double:#a855f7; --t-string:#22c55e; --t-unk:#94a3b8;
+    --ed:#1e1e1e; --ed-bar:#2d2d2d; --ed-line:#2a2d2e; --ed-ln:#858585;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+  header{padding:16px 20px 8px;max-width:1200px;margin:0 auto}
+  h1{margin:0;font-size:clamp(20px,3vw,28px)}
+  header p{margin:4px 0 0;color:var(--dim)}
+  .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px}
+  .parts button.on{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  main{max-width:1200px;margin:0 auto;padding:8px 20px 28px;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:16px}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border-radius:16px;padding:14px 16px;min-width:0}
+  .card h2{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+  .left{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+  /* ---- cửa sổ IDE ---- */
+  .ide{background:var(--ed);border-radius:12px;overflow:hidden;border:1px solid #3c3c3c}
+  .ide-bar{background:var(--ed-bar);display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:13px;color:#cccccc}
+  .ide-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .ide-bar .tab{background:var(--ed);padding:4px 12px;border-radius:6px 6px 0 0;margin-left:8px;color:#fff}
+  .ide-bar .lang{margin-left:auto;color:#9cdcfe;font-size:12px}
+  #code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:clamp(14px,1.6vw,18px);color:#d4d4d4;padding:8px 0;min-height:200px}
+  .eline{display:flex;gap:0;padding:1px 0}
+  .eline .ln{width:44px;text-align:right;padding-right:14px;color:var(--ed-ln);user-select:none;flex:none}
+  .eline .cd{white-space:pre-wrap;word-break:break-word;flex:1;min-width:0;padding-right:12px}
+  .eline.act{background:var(--ed-line)}
+  .eline.act .ln{color:#c6c6c6}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.num{color:#b5cea8}.str{color:#ce9178}.fn{color:#dcdcaa}.id{color:#9cdcfe}.cm{color:#6a9955}
+  .squig{text-decoration:underline wavy #f14c4c;text-underline-offset:4px}
+  .caret{display:inline-block;width:2px;height:1.1em;background:#aeafad;vertical-align:text-bottom;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .anno{margin:2px 12px 4px 44px;padding:5px 10px;border-radius:6px;font-family:system-ui,sans-serif;font-size:14px;animation:fade .4s}
+  .anno.err{background:rgba(241,76,76,.16);border-left:4px solid #f14c4c;color:#ffb4b4}
+  .anno.tip{background:#252526;border:1px solid #454545;color:#d4d4d4;font-family:ui-monospace,Menlo,Consolas,monospace;display:inline-block}
+  .anno b{color:#fff}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+
+  /* ---- bảng kết quả ---- */
+  .bp{background:#181818;border-radius:12px;border:1px solid #3c3c3c;overflow:hidden}
+  .bp-tabs{display:flex;align-items:center;gap:4px;background:var(--ed-bar);padding:4px 8px;font-size:13px}
+  .bp-tabs span{padding:3px 10px;border-radius:6px;color:#9d9d9d}
+  .bp-tabs span.on{background:#3a3a3a;color:#fff}
+  .bp-tabs .st{margin-left:auto;font-size:12px}
+  .st.okk{color:#4ade80}.st.ko{color:#f87171}
+  .bp-body{padding:8px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;min-height:70px;color:#d4d4d4}
+  .bp-body .o{color:#4ade80}
+  .bp-body .muted{color:#6b7280;font-family:system-ui,sans-serif;font-size:14px}
+  table.el{border-collapse:collapse;width:100%;font-family:system-ui,sans-serif;font-size:14px}
+  table.el td,table.el th{padding:4px 8px;text-align:left;border-bottom:1px solid #333}
+  table.el th{color:#9d9d9d;font-weight:600}
+  .code-tag{color:#f87171;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace}
+
+  /* ---- bộ nhớ ---- */
+  #shelf{min-height:330px;padding-top:30px;padding-bottom:36px;position:relative;display:flex;flex-wrap:wrap;gap:34px 22px;align-content:flex-start;justify-content:center}
+  #shelf::after{content:"";position:absolute;left:8px;right:8px;bottom:10px;height:10px;border-radius:6px;background:linear-gradient(#475569,#334155)}
+  #empty{position:absolute;inset:40px 0 0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--dim);padding:0 20px}
+  .boxwrap{position:relative;width:130px;text-align:center;margin-bottom:28px}
+  .tag{display:inline-block;background:#fde68a;color:#422006;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace;padding:3px 12px;border-radius:6px 6px 14px 14px;font-size:16px;position:relative;margin-bottom:-6px;z-index:2;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+  .box{position:relative;height:92px;background:linear-gradient(#92400e,#78350f);border-radius:6px 6px 10px 10px;border:3px solid var(--tc,#3b82f6);display:flex;align-items:center;justify-content:center;transition:border-color .3s}
+  .box::before{content:"";position:absolute;left:-6px;right:-6px;top:-10px;height:14px;background:#b45309;border-radius:5px;border:2px solid var(--tc,#3b82f6)}
+  .boxwrap.err .box{border-color:var(--bad);box-shadow:0 0 0 4px rgba(239,68,68,.35)}
+  .boxwrap.err .box::before{border-color:var(--bad)}
+  .slot{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+  .chip{background:#fff7ed;color:#1c1917;font-weight:800;font-size:26px;min-width:56px;padding:5px 12px;border-radius:12px;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  .empty-chip{color:#fcd34d;font-size:13px;border:2px dashed #fcd34d;border-radius:10px;padding:6px 8px}
+  .empty-chip.bad{color:#fecaca;border-color:#f87171}
+  .typechip{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);background:var(--tc);color:#fff;font-size:13px;font-weight:700;padding:2px 12px;border-radius:999px;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  .t-int{--tc:var(--t-int)}.t-double{--tc:var(--t-double)}.t-string{--tc:var(--t-string)}.t-unk{--tc:var(--t-unk)}
+
+  /* ---- chú thích & điều khiển ---- */
+  #bottom{grid-column:1/-1}
+  #cap{font-size:clamp(17px,2.2vw,22px);font-weight:600;min-height:64px}
+  #cap small{display:block;color:var(--amber);font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(148,163,184,.18);padding:1px 6px;border-radius:5px}
+  .quiz{margin-top:12px;border:2px solid var(--amber);border-radius:14px;padding:14px;background:rgba(245,158,11,.07)}
+  .quiz .q{font-weight:700;font-size:clamp(16px,2vw,20px);margin-bottom:10px}
+  .quiz .stop{color:var(--amber);font-size:13px;font-weight:800;letter-spacing:.05em;margin-bottom:4px}
+  .opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:16px;cursor:pointer}
+  .opt:hover:not(:disabled){border-color:var(--amber)}
+  .opt.right{border-color:var(--ok);background:rgba(34,197,94,.15)}
+  .opt.wrong{border-color:var(--bad);background:rgba(239,68,68,.12)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:8px;font-size:15px;color:var(--dim)}
+  .fb.good{color:#86efac}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .controls button{font:inherit;font-size:15px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .controls button.primary{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .controls button:disabled{opacity:.4;cursor:not-allowed}
+  .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
+  .dot{flex:none;width:11px;height:11px;min-width:11px;border-radius:50%;background:#334155;border:0;padding:0;cursor:pointer}
+  .dot.done{background:#64748b}.dot.cur{background:var(--amber);transform:scale(1.35)}.dot.q{border-radius:3px}
+  .hint{color:var(--dim);font-size:13px;margin-top:8px}
+
+  /* chế độ gọn khi khung hiển thị thấp (ví dụ khối HTML Preview của LMS) */
+  @media (max-height:760px){
+    header{padding:8px 16px 2px} h1{font-size:19px} header p{display:none}
+    .parts{margin-top:6px;gap:6px} .parts button{padding:4px 10px;font-size:12.5px}
+    main{padding:6px 16px 12px;gap:10px}
+    .card{padding:8px 12px;border-radius:12px} .card h2{margin-bottom:4px;font-size:11px}
+    .left{gap:8px}
+    #code{min-height:0;font-size:13.5px;padding:4px 0} .eline{padding:0}
+    .ide-bar{padding:3px 10px;font-size:12px}
+    .anno{font-size:12.5px;padding:2px 8px;margin-bottom:2px}
+    .bp-tabs{padding:2px 8px;font-size:12px} .bp-body{min-height:0;padding:4px 10px;font-size:13.5px}
+    table.el{font-size:12.5px}
+    #shelf{min-height:0;padding-top:22px;gap:26px 14px} #shelf::after{display:none}
+    .boxwrap{width:104px;margin-bottom:22px} .box{height:62px} .chip{font-size:20px;padding:2px 8px;min-width:42px} .tag{font-size:13px}
+    .empty-chip{font-size:11px;padding:3px 5px}
+    #cap{font-size:15px;min-height:0} #cap small{font-size:11px;margin-bottom:0}
+    .controls{margin-top:6px} .controls button{padding:5px 12px;font-size:13px}
+    .hint{display:none}
+    .quiz{padding:8px;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}
+    .quiz .stop,.quiz .q,.quiz .fb{grid-column:1/-1} .quiz .q{font-size:15px;margin-bottom:0} .quiz .stop{font-size:11px;margin-bottom:0}
+    .opt{margin:0;padding:6px 10px;font-size:13.5px}
+    .fb{margin-top:2px;font-size:13px}
+  }
+  @media (max-height:760px) and (max-width:900px){ .quiz{grid-template-columns:1fr} }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bài 2 – Khai báo và Khởi tạo <span style="color:var(--amber)">gõ code từng dòng</span></h1>
+  <p>Xem từng dòng lệnh được gõ vào Visual Studio / VS Code. Bấm <b>Tiếp →</b> (hoặc phím mũi tên) để đi tiếp. Khi gặp ⏸ điểm dừng, hãy trả lời trước.</p>
+  <div class="parts" id="parts"></div>
+</header>
+
+<main>
+  <div class="left">
+    <section class="ide">
+      <div class="ide-bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab">Program.cs</span><span class="lang">C#</span></div>
+      <div id="code"></div>
+    </section>
+    <section class="bp">
+      <div class="bp-tabs"><span id="tab-console">Console</span><span id="tab-errors">Danh sách lỗi</span><span class="st" id="status"></span></div>
+      <div class="bp-body" id="bpbody"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Bộ nhớ (RAM) – các hộp biến</h2>
+    <div id="shelf"><div id="empty"></div></div>
+  </section>
+
+  <section class="card" id="bottom">
+    <div id="cap"></div>
+    <div id="quiz"></div>
+    <div class="controls">
+      <button id="prev">← Lùi</button>
+      <button id="next" class="primary">Tiếp →</button>
+      <button id="play">▶ Tự chạy</button>
+      <button id="restart">↺ Làm lại</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="hint">Ô vuông nhỏ ở góc phải là các điểm dừng hỏi đáp. Phím tắt: ← → để lùi/tiếp, Space để tự chạy.</div>
+  </section>
+</main>
+
+<script>
+/* ============ Nội dung bài học ============ */
+const PARTS = ['1. Khai báo & khởi tạo', '2. var tự suy ra kiểu', '3. In kết quả', '4. Lỗi CS0165'];
+
+const L1='int age = 20;', L2='string name;', L3='var price = 9.5;',
+      L4='Console.WriteLine(age);', L5='Console.WriteLine(price * 2);',
+      L6='Console.WriteLine(name);', L6E='Console.WriteLine(⟦name⟧);', L2F='string name = "An";';
+
+const B_AGE  = {id:'age', type:'int', v:20};
+const B_NAME = {id:'name', type:'string', v:null, un:true};
+const B_PRICE_UNK = {id:'price', type:'unk', typeLabel:'var', v:9.5};
+const B_PRICE = {id:'price', type:'double', v:9.5};
+
+const STEPS = [
+  { part:0, lines:[], boxes:[], panel:'console', out:[],
+    cap:'Mở Visual Studio hoặc VS Code, tạo file <code>Program.cs</code>. Ta sẽ gõ từng dòng và xem bộ nhớ thay đổi bên phải.' },
+  { part:0, lines:[L1], typeIdx:[0], act:0, boxes:[{...B_AGE,fx:'create'}], panel:'console', out:[],
+    cap:'<b>Khai báo + khởi tạo</b> trong một dòng: kiểu <code>int</code>, tên <code>age</code>, giá trị ban đầu <code>20</code>. Hộp age được tạo và có sẵn đồ bên trong.' },
+  { part:0, lines:[L1,L2], typeIdx:[1], act:1, boxes:[B_AGE,{...B_NAME,fx:'create'}], panel:'console', out:[],
+    cap:'Chỉ <b>khai báo</b>, chưa khởi tạo: hộp <code>name</code> (kiểu string) đã được tạo nhưng <b>còn trống</b>. Dòng này chưa lỗi, lỗi chỉ xảy ra khi bạn dùng nó.' },
+  { part:1, lines:[L1,L2,L3], typeIdx:[2], act:2, boxes:[B_AGE,B_NAME,{...B_PRICE_UNK,fx:'create'}], panel:'console', out:[], quiz:'q3',
+    cap:'<code>var</code> nghĩa là "để trình biên dịch tự đoán kiểu từ giá trị bên phải". Hãy dự đoán kiểu của <code>price</code>.' },
+  { part:1, lines:[L1,L2,L3], act:2, annot:{line:2,kind:'tip',html:'(local variable) <b>double</b> price'}, boxes:[B_AGE,B_NAME,{...B_PRICE,fx:'set'}], panel:'console', out:[],
+    cap:'Rê chuột vào <code>price</code>, IDE hiện <b>double</b>. Giá trị <code>9.5</code> có phần thập phân nên là double. <code>var</code> không phải kiểu mới, kiểu được cố định ngay lúc biên dịch.' },
+  { part:2, lines:[L1,L2,L3,L4,L5], typeIdx:[3,4], act:4, boxes:[B_AGE,B_NAME,B_PRICE], panel:'console', out:[], quiz:'q1',
+    cap:'Thêm hai lệnh in. <b>Chưa chạy</b>, hãy dự đoán kết quả trước.' },
+  { part:2, lines:[L1,L2,L3,L4,L5], act:4, boxes:[B_AGE,B_NAME,B_PRICE], panel:'console', out:['20','19'], status:'ok',
+    cap:'Chạy chương trình: <code>age</code> in ra <b>20</b>, <code>price * 2</code> = 9.5 × 2 = <b>19</b>. Console in <b>giá trị</b> trong hộp chứ không in tên biến.' },
+  { part:3, lines:[L1,L2,L3,L4,L5,L6], typeIdx:[5], act:5, boxes:[B_AGE,B_NAME,B_PRICE], panel:'console', out:[], quiz:'q2',
+    cap:'Thêm dòng <code>Console.WriteLine(name);</code>. Hãy nhìn kỹ cả đoạn code và chọn dòng sẽ báo lỗi.' },
+  { part:3, lines:[L1,L2,L3,L4,L5,L6E], act:5, annot:{line:5,kind:'err',html:'<b>CS0165</b>: Use of unassigned local variable \'name\' (dùng biến cục bộ chưa được gán giá trị)'},
+    boxes:[B_AGE,{...B_NAME,err:true},B_PRICE], panel:'errors', out:[], status:'ko',
+    errs:[{code:'CS0165',msg:"Use of unassigned local variable 'name'",file:'Program.cs',line:6}],
+    cap:'Đây là lỗi <b>CS0165</b>: hộp <code>name</code> còn trống mà bạn đã lấy ra dùng. Đọc lỗi: mã lỗi, tên biến (name), dòng 6. Chương trình không chạy được.' },
+  { part:3, lines:[L1,L2F,L3,L4,L5,L6], typeIdx:[1], act:1, boxes:[B_AGE,{id:'name',type:'string',v:'An',fx:'set'},B_PRICE], panel:'console', out:['20','19','An'], status:'ok', errs:[],
+    cap:'Cách sửa: <b>gán giá trị ban đầu</b> cho name. Lỗi biến mất, 0 lỗi. Chạy lại in ra 20, 19 và An.' },
+  { part:3, lines:[L1,L2F,L3,L4,L5,L6], act:-1, boxes:[B_AGE,{id:'name',type:'string',v:'An'},B_PRICE], panel:'console', out:['20','19','An'], status:'ok', errs:[],
+    cap:'<b>Tóm tắt:</b> khai báo = tạo hộp • khởi tạo = bỏ đồ vào hộp lần đầu • <code>var</code> = để máy tự suy ra kiểu • dùng biến chưa có giá trị sẽ gặp <b>CS0165</b>.' }
+];
+
+const QUIZ = {
+  q3:{ q:'Với  var price = 9.5;  biến price sẽ có kiểu gì?',
+       opts:[
+         {t:'int', fb:'int chỉ chứa số nguyên. 9.5 có phần thập phân nên không thể là int.'},
+         {t:'float', fb:'Số thực viết thẳng như 9.5 mặc định là double. float cần viết 9.5f.'},
+         {t:'double', ok:true, fb:'Đúng! Số thực viết thẳng như 9.5 mặc định là double.'},
+         {t:'decimal', fb:'decimal cần hậu tố m (9.5m). Không có hậu tố thì là double.'}
+       ]},
+  q1:{ q:'Dự đoán kết quả khi chạy hai lệnh Console.WriteLine (age = 20, price = 9.5)?',
+       opts:[
+         {t:'20 và 19', ok:true, fb:'Đúng! In giá trị của age (20) và kết quả price * 2 = 19.'},
+         {t:'age và 19', fb:'Console.WriteLine in giá trị trong hộp, không in tên biến.'},
+         {t:'20 và 18', fb:'price là double nên giữ nguyên phần thập phân: 9.5 × 2 = 19, không bị cắt thành 9.'},
+         {t:'Báo lỗi vì price chưa có kiểu', fb:'price có kiểu double nhờ var, nên chạy bình thường.'}
+       ]},
+  q2:{ q:'Chương trình có 6 dòng như trên. Dòng nào sẽ báo lỗi?',
+       opts:[
+         {t:'Dòng 2:  string name;', fb:'Chỉ khai báo mà chưa gán giá trị thì chưa lỗi. Lỗi chỉ xuất hiện khi dùng biến.'},
+         {t:'Dòng 3:  var price = 9.5;', fb:'var có giá trị khởi tạo nên hợp lệ, kiểu là double.'},
+         {t:'Dòng 5:  Console.WriteLine(price * 2);', fb:'price đã có giá trị 9.5 nên dòng này chạy bình thường.'},
+         {t:'Dòng 6:  Console.WriteLine(name);', ok:true, fb:'Đúng! name vẫn còn trống mà dòng 6 đã dùng nó, nên báo lỗi CS0165.'}
+       ]}
+};
+
+/* ============ Công cụ hiển thị ============ */
+const $ = s => document.querySelector(s);
+const solved = {};
+let cur = 0, timer = null, typerId = 0;
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlPlain(s){
+  return s
+    .replace(/\b(int|string|var|double|float|decimal|bool)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(Console)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(WriteLine)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(age|name|price)\b/g,'<span class="id">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="num">$1</span>');
+}
+function hl(line){
+  const parts = esc(line).split(/(&quot;.*?&quot;|"[^"]*")/);
+  return parts.map((p,i)=> i%2 ? '<span class="str">'+p+'</span>' : hlPlain(p)).join('')
+    .replace(/⟦(.*?)⟧/g,'<span class="squig">$1</span>');
+}
+const ease = 'cubic-bezier(.2,.9,.3,1.25)';
+
+/* ---- editor với hiệu ứng gõ ---- */
+function renderEditor(s, animate){
+  const host = $('#code'); host.innerHTML = '';
+  const myId = ++typerId;
+  if(!s.lines.length){ host.innerHTML = '<div class="eline"><span class="ln">1</span><span class="cd"><span class="cm">// File trống – hãy bắt đầu gõ</span><span class="caret"></span></span></div>'; return; }
+  const rows = s.lines.map((text,i)=>{
+    const row = document.createElement('div'); row.className='eline'+(i===s.act?' act':'');
+    row.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="cd"></span>';
+    host.appendChild(row);
+    return {row, cd:row.querySelector('.cd'), text, i};
+  });
+  const typed = (animate && s.typeIdx) ? s.typeIdx.slice() : [];
+  rows.forEach(r=>{ if(!typed.includes(r.i)) r.cd.innerHTML = hl(r.text); });
+  const showAnno = ()=>{
+    if(myId!==typerId) return;
+    rows.forEach(r=>{ r.cd.innerHTML = hl(r.text); });
+    if(s.annot){
+      const a = document.createElement('div'); a.className='anno '+s.annot.kind; a.innerHTML = s.annot.html;
+      rows[s.annot.line].row.after(a);
+    }
+  };
+  if(!typed.length){ showAnno(); return; }
+  // gõ lần lượt từng dòng
+  let qi = 0, ci = 0;
+  const step = ()=>{
+    if(myId!==typerId) return;
+    if(qi>=typed.length){ showAnno(); return; }
+    const r = rows[typed[qi]];
+    ci++;
+    r.cd.innerHTML = hl(r.text.slice(0,ci)) + '<span class="caret"></span>';
+    if(ci>=r.text.length){ qi++; ci=0; setTimeout(step, 260); }
+    else setTimeout(step, 38);
+  };
+  setTimeout(step, 250);
+}
+
+/* ---- bảng kết quả / lỗi ---- */
+function renderPanel(s){
+  $('#tab-console').classList.toggle('on', s.panel==='console');
+  $('#tab-errors').classList.toggle('on', s.panel==='errors');
+  const st = $('#status'); st.className='st';
+  if(s.status==='ok'){ st.textContent='✔ Build thành công'; st.classList.add('okk'); }
+  else if(s.status==='ko'){ st.textContent='✘ Build thất bại – 1 lỗi'; st.classList.add('ko'); }
+  else st.textContent='';
+  const b = $('#bpbody');
+  if(s.panel==='errors'){
+    const e = s.errs||[];
+    b.innerHTML = '<table class="el"><tr><th>Mã</th><th>Mô tả</th><th>Tệp</th><th>Dòng</th></tr>'+
+      e.map(x=>'<tr><td class="code-tag">'+x.code+'</td><td>'+esc(x.msg)+'</td><td>'+x.file+'</td><td>'+x.line+'</td></tr>').join('')+'</table>';
+  } else {
+    const o = s.out||[];
+    b.innerHTML = o.length ? o.map(x=>'<div class="o">'+esc(x)+'</div>').join('') :
+      '<div class="muted">'+(s.errs && s.errs.length===0 && s.status==='ok' ? '' : 'Chưa chạy chương trình.')+'</div>';
+  }
+}
+
+/* ---- hộp biến ---- */
+function chipHTML(b){
+  if(b.v==null) return '<span class="empty-chip'+(b.err?' bad':'')+'">'+(b.un?'chưa gán':'trống')+'</span>';
+  return '<div class="chip">'+(typeof b.v==='string'?'"'+b.v+'"':b.v)+'</div>';
+}
+function renderBoxes(s, animate){
+  const shelf = $('#shelf'), empty = $('#empty');
+  empty.innerHTML = s.boxes.length ? '' : 'Kệ bộ nhớ đang trống.';
+  empty.style.display = s.boxes.length ? 'none' : 'flex';
+  const keep = new Set(s.boxes.map(b=>b.id));
+  shelf.querySelectorAll('.boxwrap').forEach(w=>{ if(!keep.has(w.dataset.id)) w.remove(); });
+  s.boxes.forEach(b=>{
+    let w = shelf.querySelector('.boxwrap[data-id="'+b.id+'"]'); const isNew = !w;
+    if(isNew){
+      w = document.createElement('div'); w.dataset.id=b.id;
+      w.innerHTML = '<span class="tag">'+b.id+'</span><div class="box"><div class="slot"></div><span class="typechip"></span></div>';
+      shelf.appendChild(w);
+    }
+    w.className = 'boxwrap t-'+b.type+(b.err?' err':'');
+    w.querySelector('.typechip').textContent = b.typeLabel || b.type;
+    const slot = w.querySelector('.slot'); slot.innerHTML = chipHTML(b);
+    const chip = slot.firstElementChild;
+    if(!animate) return;
+    if(isNew || b.fx==='create'){
+      w.animate([{transform:'translateY(-30px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:550,easing:ease});
+      if(b.v!=null) chip.animate([{transform:'translateY(-80px)',opacity:0},{transform:'none',opacity:1}],{duration:600,delay:300,easing:ease,fill:'backwards'});
+    } else if(b.fx==='set' && b.v!=null){
+      chip.animate([{transform:'translateY(-80px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:650,easing:ease,fill:'backwards'});
+    }
+    if(b.err){
+      w.querySelector('.box').animate([{transform:'translateX(0)'},{transform:'translateX(-10px)'},{transform:'translateX(10px)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'none'}],{duration:500});
+    }
+  });
+}
+
+/* ---- câu hỏi ---- */
+function renderQuiz(s){
+  const host = $('#quiz'); host.innerHTML = '';
+  if(!s.quiz) return;
+  const Q = QUIZ[s.quiz];
+  const box = document.createElement('div'); box.className='quiz';
+  box.innerHTML = '<div class="stop">⏸ ĐIỂM DỪNG – TRẢ LỜI TRƯỚC KHI ĐI TIẾP</div><div class="q">'+esc(Q.q)+'</div>';
+  const fb = document.createElement('div'); fb.className='fb';
+  const btns = Q.opts.map((o,i)=>{
+    const b = document.createElement('button'); b.className='opt'; b.textContent = String.fromCharCode(65+i)+'. '+o.t; box.appendChild(b); return b;
+  });
+  const lock = ()=>btns.forEach(b=>b.disabled=true);
+  btns.forEach((b,i)=>{
+    b.onclick = ()=>{
+      const o = Q.opts[i];
+      if(o.ok){ b.classList.add('right'); fb.className='fb good'; fb.textContent='✔ '+o.fb; solved[s.quiz]=true; lock(); updateNav(); }
+      else { b.classList.add('wrong'); b.disabled=true; fb.className='fb'; fb.textContent='✘ '+o.fb+' Hãy thử lại.'; }
+    };
+  });
+  box.appendChild(fb);
+  if(solved[s.quiz]){
+    const i = Q.opts.findIndex(o=>o.ok); btns[i].classList.add('right'); fb.className='fb good'; fb.textContent='✔ '+Q.opts[i].fb; lock();
+  }
+  host.appendChild(box);
+}
+
+function render(animate){
+  const s = STEPS[cur];
+  renderEditor(s, animate); renderPanel(s); renderBoxes(s, animate); renderQuiz(s);
+  $('#cap').innerHTML = '<small>'+PARTS[s.part]+'</small>'+s.cap;
+  document.querySelectorAll('#parts button').forEach((b,i)=>b.classList.toggle('on',i===s.part));
+  document.querySelectorAll('.dot').forEach((d,i)=>{ d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur); });
+  updateNav();
+}
+function blocked(){ const s = STEPS[cur]; return !!(s.quiz && !solved[s.quiz]); }
+function updateNav(){
+  $('#prev').disabled = cur===0;
+  $('#next').disabled = cur===STEPS.length-1 || blocked();
+  $('#next').textContent = blocked() ? '⏸ Hãy trả lời' : 'Tiếp →';
+  if(blocked()) stopPlay();
+}
+function go(i, animate=true){ cur = Math.max(0, Math.min(STEPS.length-1, i)); render(animate); }
+function next(){ if(!blocked() && cur<STEPS.length-1) go(cur+1,true); else if(cur===STEPS.length-1) stopPlay(); }
+function prev(){ if(cur>0) go(cur-1,false); }
+function stopPlay(){ if(timer){ clearInterval(timer); timer=null; } $('#play').textContent='▶ Tự chạy'; }
+function startPlay(){
+  if(cur===STEPS.length-1) go(0,false);
+  $('#play').textContent='⏸ Dừng';
+  timer = setInterval(()=>{ if(blocked()||cur===STEPS.length-1){ stopPlay(); return; } next(); }, 5200);
+}
+
+(function init(){
+  const firstOfPart = PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
+  PARTS.forEach((p,i)=>{
+    const b = document.createElement('button'); b.textContent=p;
+    b.onclick = ()=>{ stopPlay(); go(firstOfPart[i],false); };
+    $('#parts').appendChild(b);
+  });
+  STEPS.forEach((s,i)=>{
+    const d = document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (điểm dừng)':'');
+    d.onclick = ()=>{ stopPlay(); go(i,false); };
+    $('#dots').appendChild(d);
+  });
+  $('#next').onclick = next; $('#prev').onclick = prev;
+  $('#play').onclick = ()=> timer ? stopPlay() : startPlay();
+  $('#restart').onclick = ()=>{ stopPlay(); for(const k in solved) delete solved[k]; go(0,true); };
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key===' ' && e.target.tagName!=='BUTTON'){ e.preventDefault(); timer?stopPlay():startPlay(); }
+  });
+  go(0,true);
+})();
+</script>
+</body>
+</html>
