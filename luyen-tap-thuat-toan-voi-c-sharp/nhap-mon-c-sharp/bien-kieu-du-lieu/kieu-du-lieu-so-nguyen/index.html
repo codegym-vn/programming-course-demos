@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiểu số nguyên trong C#</title>
+<style>
+  /* Bố cục: thanh terminal • IDE bên trái • sân khấu minh họa bên phải (công tắc / thang bit / công tơ mét / quy tắc) • robot + điều khiển */
+  :root{
+    color-scheme:dark;
+    --bg:#0b0f17; --panel:#121826; --panel2:#0a0e15; --line:#263042; --text:#e6edf3; --dim:#8b98a9;
+    --lime:#a3e635; --pink:#f472b6; --cyan:#22d3ee; --yellow:#facc15; --ok:#4ade80; --bad:#f87171;
+    --t-byte:#facc15; --t-short:#fb923c; --t-int:#22d3ee; --t-long:#c084fc;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
+    background-image:radial-gradient(rgba(34,211,238,.06) 1px,transparent 1px);background-size:22px 22px}
+  button{font:inherit}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding-inline:20px}
+
+  header{padding-block:14px 6px}
+  .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .term{font-family:var(--mono);font-size:clamp(17px,2.4vw,24px);font-weight:700;margin:0}
+  .term .p{color:var(--lime)}
+  .cursor{display:inline-block;width:.55em;height:1em;background:var(--lime);vertical-align:-2px;margin-left:4px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .xp{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;position:relative}
+  .xpbar{width:150px;height:12px;border-radius:999px;background:#1c2433;border:1px solid var(--line);overflow:hidden}
+  .xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan));transition:width .6s}
+  .lvl{background:#1c2433;border:1px solid var(--line);padding:2px 10px;border-radius:999px;color:var(--yellow)}
+  .toast{position:absolute;right:0;top:-4px;color:var(--yellow);font-weight:800;pointer-events:none;opacity:0}
+  .sub{margin:2px 0 0;color:var(--dim);font-size:14px}
+  .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  .parts button.on{background:var(--lime);color:#111;border-color:var(--lime);font-weight:700}
+
+  main.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;padding-block:8px 24px}
+  @media (max-width:900px){main.wrap{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+  /* ---- IDE ---- */
+  .ide{background:#1e1e1e;border-radius:12px;overflow:hidden;border:1px solid #3c3c3c}
+  .bar{background:#2d2d2d;display:flex;align-items:center;gap:7px;padding:6px 12px;font-size:13px;color:#ccc}
+  .bar i{width:11px;height:11px;border-radius:50%}
+  .bar .tab{background:#1e1e1e;color:#fff;padding:3px 12px;border-radius:6px 6px 0 0;margin-left:8px;font-family:var(--mono);font-size:12.5px}
+  .bar .lang{margin-left:auto;color:#9cdcfe;font-family:var(--mono);font-size:12px}
+  #code{font-family:var(--mono);font-size:clamp(13px,1.4vw,16px);color:#d4d4d4;padding:8px 0;min-height:150px;overflow-x:auto}
+  .eline{display:flex}
+  .eline .ln{width:40px;flex:none;text-align:right;padding-right:14px;color:#858585;user-select:none}
+  .eline .cd{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;padding-right:12px}
+  .eline.act{background:#2a2d2e} .eline.act .ln{color:#c6c6c6}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.num{color:#b5cea8}.str{color:#ce9178}.fn{color:#dcdcaa}.id{color:#9cdcfe}.cm{color:#6a9955}
+  .squig{text-decoration:underline wavy #f14c4c;text-underline-offset:4px}
+  .caret{display:inline-block;width:2px;height:1.1em;background:#aeafad;vertical-align:text-bottom;animation:blink 1s steps(1) infinite}
+  .anno{margin:2px 12px 4px 40px;padding:4px 10px;border-radius:6px;font-size:13.5px;background:rgba(241,76,76,.15);border-left:4px solid #f14c4c;color:#ffc2c2;animation:fade .35s}
+  .anno b{color:#fff;font-family:var(--mono)}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+  .out{background:#141414;border:1px solid #3c3c3c;border-radius:12px;overflow:hidden}
+  .out .tabs{display:flex;align-items:center;gap:4px;background:#2d2d2d;padding:4px 8px;font-size:12.5px}
+  .out .tabs span{padding:2px 10px;border-radius:6px;color:#9d9d9d}
+  .out .tabs span.on{background:#3a3a3a;color:#fff}
+  .out .st{margin-left:auto;font-family:var(--mono)}
+  .st.okk{color:var(--ok)} .st.ko{color:var(--bad)}
+  #obody{padding:6px 12px;font-family:var(--mono);font-size:13.5px;min-height:56px;color:#bdbdbd}
+  #obody .o{color:var(--ok)}
+  #obody .muted{color:#666;font-family:var(--sans)}
+  table.el{border-collapse:collapse;width:100%;font-size:13px;font-family:var(--sans)}
+  table.el th,table.el td{text-align:left;padding:3px 6px;border-bottom:1px solid #2f2f2f}
+  table.el th{color:#8a8a8a;font-weight:600}
+  .ecode{color:var(--bad);font-weight:700;font-family:var(--mono)}
+
+  /* ---- sân khấu ---- */
+  .stagebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px 14px;min-height:300px;display:flex;flex-direction:column;min-width:0}
+  .stagebox h2{margin:0 0 8px;font-family:var(--mono);font-size:12.5px;color:var(--dim);font-weight:600;letter-spacing:.04em}
+  .stagebox h2 b{color:var(--cyan)}
+  #stage{flex:1;min-width:0}
+
+  /* công tắc */
+  .swrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .sw{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:var(--text);cursor:pointer;padding:0}
+  .sw .pv{font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .sw .tr{width:34px;height:58px;border-radius:18px;background:#1c2433;border:2px solid #34405a;position:relative;transition:background .2s,border-color .2s}
+  .sw .kn{position:absolute;left:3px;bottom:3px;width:24px;height:24px;border-radius:50%;background:#64748b;transition:transform .2s,background .2s}
+  .sw.on .tr{background:#1a2e0a;border-color:var(--lime);box-shadow:0 0 12px rgba(163,230,53,.45)}
+  .sw.on .kn{transform:translateY(-26px);background:var(--lime)}
+  .sw .bv{font-family:var(--mono);font-weight:800;font-size:16px}
+  .sw.on .bv{color:var(--lime)}
+  .readout{display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  .readout div{background:#0f1522;border:1px solid var(--line);border-radius:10px;padding:6px 14px;text-align:center;min-width:120px}
+  .readout small{display:block;color:var(--dim);font-size:12px}
+  .readout b{font-family:var(--mono);font-size:24px;color:var(--yellow);font-variant-numeric:tabular-nums}
+  .readout .bin{color:var(--lime);letter-spacing:.08em}
+  .rangeline{text-align:center;margin-top:10px;font-family:var(--mono);font-size:13.5px;color:var(--t-byte)}
+  .tip{text-align:center;color:var(--dim);font-size:12.5px;margin-top:4px}
+
+  /* thang bit */
+  .ladder{display:flex;flex-direction:column;gap:12px}
+  .mark{font-size:13.5px;color:var(--dim);margin-bottom:2px}
+  .mark b{font-family:var(--mono);color:var(--pink);font-size:15px}
+  .lrow{display:grid;grid-template-columns:78px minmax(0,1fr) 28px;gap:8px;align-items:center}
+  .lname{font-family:var(--mono);font-weight:800;color:var(--tc);font-size:15px;line-height:1.1}
+  .lname small{display:block;font-weight:400;color:var(--dim);font-size:11px;font-family:var(--sans)}
+  .strip{display:flex;gap:1px;height:18px;transform-origin:left center}
+  .strip i{flex:1;background:var(--tc);border-radius:2px;opacity:.85;min-width:2px}
+  .lrange{font-family:var(--mono);font-size:12px;color:var(--text);margin-top:3px;word-break:break-all;font-variant-numeric:tabular-nums}
+  .fit{font-weight:800;font-size:17px;text-align:center}
+  .fit.y{color:var(--ok)} .fit.n{color:var(--bad)} .fit.q{color:var(--pink)}
+  .t-byte{--tc:var(--t-byte)}.t-short{--tc:var(--t-short)}.t-int{--tc:var(--t-int)}.t-long{--tc:var(--t-long)}
+  .lrow.dim{opacity:.35}
+
+  /* công tơ mét */
+  .odo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .dial{width:170px;height:170px;flex:none}
+  .oright{min-width:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+  .otype{font-family:var(--mono);font-size:13px;color:var(--tc);font-weight:700}
+  .wheels{display:flex;gap:3px;background:#05070b;border:2px solid #2b364a;border-radius:10px;padding:6px 8px;box-shadow:inset 0 6px 10px rgba(0,0,0,.6)}
+  .wh{width:24px;height:36px;overflow:hidden;background:linear-gradient(#20293a,#121826 50%,#20293a);border-radius:5px;position:relative}
+  .wh .colm{display:flex;flex-direction:column;transition:transform .9s cubic-bezier(.3,.9,.3,1)}
+  .wh .colm span,.wh.sign span{height:36px;line-height:36px;text-align:center;font-family:var(--mono);font-weight:800;font-size:22px;color:#fff}
+  .wh.sign span{display:block}
+  .wh.sign.neg span{color:var(--bad)}
+  .seq{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:center;max-width:330px;min-height:20px}
+  .seq span{padding:0 2px;border-radius:4px}
+  .seq span.hit{color:#111;background:var(--yellow)}
+  .seq span.wrap{color:var(--bad);font-weight:800}
+  .minibits{display:flex;gap:3px}
+  .minibits i{width:14px;height:20px;border-radius:4px;background:#1c2433;border:1px solid #34405a;font-style:normal;font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;color:var(--dim)}
+  .minibits i.on{background:var(--lime);color:#111;border-color:var(--lime)}
+
+  /* quy tắc */
+  .rules{display:flex;flex-direction:column;gap:10px}
+  .rule{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:center;border:2px solid var(--tc);border-radius:12px;padding:8px 12px;background:#111827}
+  .rule .rt{font-family:var(--mono);font-weight:800;font-size:17px;color:var(--tc)}
+  .rule .rt small{display:block;font-family:var(--sans);font-weight:600;font-size:11.5px;color:var(--dim)}
+  .rule p{margin:0;font-size:14px}
+  .rule p b{color:var(--tc)}
+  .rule .ex{color:var(--dim);font-size:12.5px}
+
+  /* ---- robot + lời thoại ---- */
+  #bottom{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .talk{display:flex;gap:12px;align-items:flex-start}
+  #bot{width:64px;height:64px;flex:none}
+  .bubble{position:relative;flex:1;min-width:0;background:#0f1522;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+  .bubble::before{content:"";position:absolute;left:-8px;top:18px;border:8px solid transparent;border-left:0;border-right-color:var(--line)}
+  #cap{font-size:clamp(16px,2vw,20px);font-weight:600}
+  #cap small{display:block;color:var(--lime);font-size:12px;font-weight:700;letter-spacing:.03em}
+  code{font-family:var(--mono);background:rgba(148,163,184,.16);padding:0 5px;border-radius:5px;font-size:.92em}
+
+  /* ---- checkpoint ---- */
+  .quiz{margin-top:10px;border:2px dashed var(--pink);border-radius:14px;padding:12px;background:rgba(244,114,182,.06)}
+  .qhead{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--pink);letter-spacing:.04em}
+  .qhead .hp{margin-left:auto;color:var(--yellow)}
+  .q{font-weight:700;font-size:clamp(15px,1.9vw,19px);margin:4px 0 8px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){.opts{grid-template-columns:1fr}}
+  .opt{text-align:left;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:#0f1522;color:var(--text);font-size:15px;cursor:pointer}
+  .opt code{background:none;padding:0}
+  .opt:hover:not(:disabled){border-color:var(--pink)}
+  .opt.right{border-color:var(--ok);background:rgba(74,222,128,.13)}
+  .opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:8px;font-size:14.5px;color:var(--dim)}
+  .fb.good{color:#86efac}
+  .mrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 0;border-bottom:1px dashed #263042}
+  .mrow .lab{width:170px;flex:none;font-weight:600;font-size:14.5px}
+  .mrow .pick{display:flex;gap:5px;flex-wrap:wrap}
+  .pk{font-family:var(--mono);font-size:13px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);background:#0f1522;color:var(--dim);cursor:pointer}
+  .pk.sel{border-color:var(--cyan);color:#fff;background:#0e2a33}
+  .mrow.good .pk.sel{border-color:var(--ok);background:rgba(74,222,128,.15)}
+  .mrow.bad .pk.sel{border-color:var(--bad);background:rgba(248,113,113,.12)}
+  .mrow .mfb{flex:1;min-width:200px;font-size:13px;color:var(--dim)}
+  .mrow.good .mfb{color:#86efac} .mrow.bad .mfb{color:#fca5a5}
+  @media (max-width:640px){.mrow .lab{width:100%}}
+  .check{margin-top:8px;font-weight:800;padding:7px 14px;border-radius:8px;border:0;background:var(--pink);color:#1a0010;cursor:pointer}
+  .check:disabled{opacity:.4;cursor:not-allowed}
+
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .controls button{font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .controls button.primary{background:var(--lime);color:#111;border-color:var(--lime);font-weight:800}
+  .controls button:disabled{opacity:.4;cursor:not-allowed}
+  .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
+  .dot{flex:none;width:11px;height:11px;border-radius:50%;background:#263042;border:0;padding:0;cursor:pointer}
+  .dot.done{background:#4b5b73}.dot.cur{background:var(--lime);transform:scale(1.35)}.dot.q{border-radius:2px;transform:rotate(45deg)}
+  .dot.q.cur{transform:rotate(45deg) scale(1.35)}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:6px}
+
+  /* ---- chế độ gọn cho khung thấp (khối HTML Preview của LMS) ---- */
+  @media (max-height:760px){
+    header{padding-block:6px 2px} .term{font-size:17px} .sub{display:none}
+    .parts{margin-top:5px;gap:5px} .parts button{padding:3px 9px;font-size:12px}
+    main.wrap{gap:8px;padding-block:5px 10px} .col{gap:6px}
+    .bar{padding:3px 10px} #code{min-height:0;font-size:12.5px;padding:4px 0}
+    .anno{font-size:12px;padding:2px 8px}
+    .out .tabs{padding:2px 8px;font-size:11.5px} #obody{min-height:0;padding:3px 10px;font-size:12.5px}
+    .stagebox{min-height:0;padding:6px 10px 8px} .stagebox h2{margin-bottom:4px;font-size:11.5px}
+    .sw .tr{width:26px;height:42px} .sw .kn{width:18px;height:18px} .sw.on .kn{transform:translateY(-18px)} .sw .bv{font-size:13px} .sw .pv{font-size:10.5px}
+    .swrow{gap:6px} .readout{margin-top:6px} .readout div{padding:2px 10px;min-width:100px} .readout b{font-size:18px}
+    .rangeline{margin-top:4px;font-size:12px} .tip{display:none}
+    .ladder{gap:6px} .strip{height:12px} .lrange{font-size:11px;margin-top:1px} .lname{font-size:13px}
+    .dial{width:120px;height:120px} .wh{width:19px;height:28px} .wh .colm span,.wh.sign span{height:28px;line-height:28px;font-size:17px}
+    .minibits i{width:12px;height:16px;font-size:10px}
+    .rules{gap:5px} .rule{padding:4px 10px;grid-template-columns:96px minmax(0,1fr)} .rule .rt{font-size:14px} .rule p{font-size:12.5px} .rule .ex{font-size:11.5px}
+    #bottom{padding:8px 10px} #bot{width:44px;height:44px} .bubble{padding:5px 10px}
+    #cap{font-size:14.5px} #cap small{font-size:11px}
+    #bottom.hasquiz .talk{display:none}
+    .quiz{padding:8px;margin-top:6px} .q{font-size:14.5px;margin:2px 0 5px}
+    .opt{padding:5px 10px;font-size:13.5px} .opts{gap:5px}
+    .mrow{padding:2px 0} .mrow .lab{font-size:13px;width:130px} .pk{font-size:12px;padding:2px 8px} .mrow .mfb{font-size:12px;min-width:160px}
+    .fb{font-size:13px;margin-top:4px} .check{padding:4px 12px;margin-top:5px}
+    .controls{margin-top:6px} .controls button{padding:4px 11px;font-size:12.5px}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topline">
+    <h1 class="term"><span class="p">~/csharp $</span> run so-nguyen<span class="cursor"></span></h1>
+    <div class="xp" aria-live="polite">
+      <span>XP</span><span class="xpbar"><i id="xpfill"></i></span><span id="xptxt">0/300</span><span class="lvl" id="lvl">Newbie</span>
+      <span class="toast" id="toast"></span>
+    </div>
+  </div>
+  <p class="sub">Kiểu dữ liệu số nguyên trong C#: byte, short, int, long. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
+  <div class="parts" id="parts"></div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <section class="ide" aria-label="Trình soạn thảo code">
+      <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab" id="fname">Program.cs</span><span class="lang">C#</span></div>
+      <div id="code"></div>
+    </section>
+    <section class="out" aria-label="Kết quả">
+      <div class="tabs"><span id="tab-out">Console</span><span id="tab-err">Danh sách lỗi</span><span class="st" id="status"></span></div>
+      <div id="obody"></div>
+    </section>
+  </div>
+
+  <section class="stagebox" aria-label="Minh họa">
+    <h2 id="stitle"></h2>
+    <div id="stage"></div>
+  </section>
+
+  <section id="bottom" aria-label="Lời giải thích và điều khiển">
+    <div class="talk">
+      <svg id="bot" viewBox="0 0 64 64" aria-hidden="true">
+        <line x1="32" y1="5" x2="32" y2="12" stroke="#22d3ee" stroke-width="3"/>
+        <circle cx="32" cy="5" r="3.5" fill="#f472b6"/>
+        <rect x="9" y="12" width="46" height="36" rx="11" fill="#1f2937" stroke="#22d3ee" stroke-width="3"/>
+        <circle id="eyeL" cx="24" cy="28" r="4" fill="#a3e635"/>
+        <circle id="eyeR" cx="40" cy="28" r="4" fill="#a3e635"/>
+        <path id="mouth" d="M24 39 L40 39" stroke="#a3e635" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path id="sweat" d="M53 13 q4 6 0 9 q-4 -3 0 -9z" fill="#38bdf8" opacity="0"/>
+        <rect x="20" y="50" width="24" height="9" rx="3" fill="#1f2937" stroke="#22d3ee" stroke-width="2"/>
+      </svg>
+      <div class="bubble"><div id="cap"></div></div>
+    </div>
+    <div id="quiz"></div>
+    <div class="controls">
+      <button id="prev">← Lùi</button>
+      <button id="next" class="primary">Tiếp →</button>
+      <button id="play">▶ Tự chạy</button>
+      <button id="restart">↺ Làm lại</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="hint">← → lùi/tiếp • Space tự chạy • ◆ là checkpoint</div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   DỮ LIỆU BÀI HỌC – sửa nội dung ở đây
+   ===================================================================== */
+const PARTS = ['1. Bit & công tắc', '2. Tràn số', '3. Chọn kiểu', '4. Tìm lỗi'];
+
+const TYPES = [
+  {t:'byte',  bits:8,  range:'0 → 255'},
+  {t:'short', bits:16, range:'−32 768 → 32 767'},
+  {t:'int',   bits:32, range:'−2 147 483 648 → 2 147 483 647'},
+  {t:'long',  bits:64, range:'−9 223 372 036 854 775 808 → 9 223 372 036 854 775 807'}
+];
+
+const MAXLINES = [
+  'Console.WriteLine(byte.MaxValue);  // 255',
+  'Console.WriteLine(short.MaxValue); // 32767',
+  'Console.WriteLine(int.MaxValue);   // 2147483647',
+  'Console.WriteLine(long.MaxValue);  // 9223372036854775807'
+];
+
+const STEPS = [
+  /* ---------- Phần 1 ---------- */
+  { part:0, view:'bits', bits:{v:0}, file:'Bit.cs', lines:['// 1 byte = 8 bit = 8 công tắc','byte x = 0;'], typeIdx:[1], act:1, mood:'neutral',
+    cap:'Một <code>byte</code> gồm <b>8 bit</b>, giống 8 công tắc. Tắt = 0, bật = 1. Tất cả tắt thì giá trị là 0. Thử bấm vào công tắc xem!' },
+  { part:0, view:'bits', bits:{v:255, count:true}, file:'Bit.cs', lines:['// 1 byte = 8 bit = 8 công tắc','byte x = 255;'], act:1, mood:'happy',
+    cap:'Đếm từ 0 lên: mỗi công tắc có giá trị 128, 64, …, 1. Bật hết thì được 255. 8 công tắc cho <b>2⁸ = 256</b> giá trị, từ 0 đến 255.' },
+  { part:0, view:'ladder', file:'MaxValue.cs', lines:MAXLINES, typeIdx:[0,1,2,3], act:-1, mood:'happy',
+    out:['255','32767','2147483647','9223372036854775807'],
+    cap:'Thêm công tắc thì phạm vi tăng rất nhanh: <code>short</code> 16 bit, <code>int</code> 32 bit, <code>long</code> 64 bit. Mỗi bit thêm vào làm số giá trị <b>gấp đôi</b>.' },
+
+  /* ---------- Phần 2 ---------- */
+  { part:1, view:'odo', odo:{type:'int', v:2147483647}, file:'TranSo.cs', lines:['int max = int.MaxValue;'], typeIdx:[0], act:0, mood:'neutral',
+    cap:'Biến <code>max</code> đang giữ số lớn nhất của int: 2 147 483 647. Công tơ mét đã chạy tới vạch cuối.' },
+  { part:1, view:'odo', odo:{type:'int', from:2147483647, v:-2147483648, seq:['2 147 483 647','+1','−2 147 483 648']}, file:'TranSo.cs',
+    lines:['int max = int.MaxValue;','max++;','Console.WriteLine(max); // -2147483648'], typeIdx:[1,2], act:1, mood:'sweat', out:['-2147483648'],
+    cap:'Cộng thêm 1 thì <b>tràn số</b>: như công tơ mét hết số, nó quay vòng về số nhỏ nhất −2 147 483 648. C# mặc định <b>không báo lỗi</b>. Muốn bắt lỗi thì dùng <code>checked</code> (sẽ ném OverflowException).' },
+  { part:1, view:'odo', odo:{type:'byte', v:250}, file:'Byte.cs', lines:['byte b = 250;','b += 10;','Console.WriteLine(b);'], typeIdx:[0,1,2], act:1, mood:'think', quiz:'q1',
+    cap:'Checkpoint! Byte chỉ chứa 0 đến 255. Hãy dự đoán chương trình in ra gì.' },
+  { part:1, view:'odo', odo:{type:'byte', from:250, v:4, seq:['250','251','252','253','254','255','0','1','2','3','4']}, file:'Byte.cs',
+    lines:['byte b = 250;','b += 10;','Console.WriteLine(b);'], act:1, mood:'happy', out:['4'],
+    cap:'250 + 10 = 260 vượt 255, nên quay vòng: 255 → 0 rồi đếm tiếp tới 4. Phép tính: <b>260 − 256 = 4</b>.' },
+
+  /* ---------- Phần 3 ---------- */
+  { part:2, view:'rules', file:'Program.cs', lines:['int  tuoi    = 20;           // mặc định: int','long danSo   = 8000000000;   // vượt 2,1 tỉ: long','byte doDo    = 255;          // tiết kiệm bộ nhớ: byte'], typeIdx:[0,1,2], act:-1, mood:'happy',
+    cap:'Quy tắc thực tế: <b>mặc định dùng int</b>. Dùng <b>long</b> khi số có thể vượt khoảng 2,1 tỉ. Chỉ dùng <b>byte/short</b> khi thật sự cần tiết kiệm bộ nhớ.' },
+  { part:2, view:'ladder', file:'Program.cs', lines:['??? tuoi;','??? namSinh;','??? danSoTheGioi;'], typeIdx:[0,1,2], act:-1, mood:'think', quiz:'q2',
+    cap:'Checkpoint! Bài tập về phạm vi: chọn kiểu <b>nhỏ nhất</b> mà vẫn đủ chứa. Nhìn bảng phạm vi bên phải để suy luận.' },
+
+  /* ---------- Phần 4 ---------- */
+  { part:3, view:'ladder', mark:{label:'3 000 000 000'}, file:'SoLon.cs', lines:['int soLon = 3000000000;'], typeIdx:[0], act:0, mood:'think', quiz:'q3',
+    cap:'Checkpoint cuối! Dòng code này không biên dịch được. Vì sao?' },
+  { part:3, view:'ladder', mark:{label:'3 000 000 000', fit:['long']}, file:'SoLon.cs', lines:['int soLon = ⟦3000000000⟧;'], act:0, mood:'sweat',
+    annot:{line:0, html:'<b>CS0266</b>: Cannot implicitly convert type \'uint\' to \'int\'. An explicit conversion exists (are you missing a cast?)'},
+    status:'ko', errs:[{code:'CS0266',msg:"Cannot implicitly convert type 'uint' to 'int'. An explicit conversion exists (are you missing a cast?)",line:1}],
+    cap:'3 tỉ vượt giới hạn int (khoảng 2,1 tỉ). Số quá lớn được C# hiểu là kiểu khác (ở đây là <code>uint</code>), nên không gán thẳng vào int được. Trình biên dịch bắt lỗi <b>trước khi chạy</b>.' },
+  { part:3, view:'ladder', mark:{label:'3 000 000 000', fit:['long']}, file:'SoLon.cs', lines:['long soLon = 3000000000;'], typeIdx:[0], act:0, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Sửa: dùng <code>long</code>. Ngăn 64 bit chứa thoải mái 3 tỉ. Hết lỗi!' },
+  { part:3, view:'rules', file:'SoLon.cs', lines:['long soLon = 3000000000;'], act:-1, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'], summary:true,
+    cap:'<b>Tổng kết:</b> n bit chứa được 2ⁿ giá trị • vượt phạm vi khi tính toán thì <b>tràn số, quay vòng</b> (không báo lỗi) • hằng số quá lớn thì <b>lỗi biên dịch</b> • mặc định dùng int, số lớn dùng long.' }
+];
+
+const RULES = [
+  {t:'int', sub:'mặc định', text:'Dùng cho hầu hết số nguyên.', ex:'tuổi, điểm, số lượng, năm sinh, vòng lặp'},
+  {t:'long', sub:'số rất lớn', text:'Khi số có thể <b>vượt khoảng 2,1 tỉ</b>.', ex:'dân số thế giới, dung lượng file theo byte, mã giao dịch'},
+  {t:'byte', sub:'byte / short', text:'Chỉ khi <b>cần tiết kiệm bộ nhớ</b>.', ex:'ảnh: mỗi kênh màu 0–255; mảng hàng triệu phần tử nhỏ'}
+];
+
+const QUIZ = {
+  q1:{ type:'mcq', q:'byte b = 250;  b += 10;  Console.WriteLine(b);  in ra gì?',
+    opts:[
+      {t:'260', fb:'byte tối đa chỉ 255, không thể chứa 260.'},
+      {t:'4', ok:true, fb:'Đúng! 260 vượt 255 nên quay vòng: 260 − 256 = 4.'},
+      {t:'255', fb:'C# không "kẹt" ở giá trị lớn nhất mà quay vòng về 0 rồi đếm tiếp.'},
+      {t:'Lỗi biên dịch', fb:'b += 10 tự ép kết quả về byte nên vẫn biên dịch được. (Nếu viết b = b + 10 thì mới bị lỗi biên dịch.)'}
+    ]},
+  q2:{ type:'match', q:'Chọn kiểu NHỎ NHẤT đủ chứa:',
+    choices:['byte','short','int','long'],
+    rows:[
+      {label:'Tuổi người', ok:['byte'], good:'Tuổi không vượt 255 → byte là đủ.',
+       fb:{short:'Đủ chứa nhưng chưa nhỏ nhất: tuổi không quá 255 nên byte đủ.', int:'Đủ chứa nhưng chưa nhỏ nhất (dù thực tế dùng int vẫn ổn).', long:'Quá to so với nhu cầu.'}},
+      {label:'Năm sinh', ok:['short'], good:'Năm như 2005 vượt 255 nhưng dưới 32 767 → short.',
+       fb:{byte:'byte tối đa 255, năm sinh như 2005 không vừa.', int:'Đủ chứa nhưng chưa nhỏ nhất: short chứa tới 32 767.', long:'Quá to so với nhu cầu.'}},
+      {label:'Dân số thế giới', ok:['long'], good:'Hơn 8 tỉ người, vượt int (~2,1 tỉ) → long.',
+       fb:{int:'Dân số hơn 8 tỉ, vượt giới hạn int khoảng 2,1 tỉ.', short:'short tối đa 32 767, quá nhỏ.', byte:'byte tối đa 255, quá nhỏ.'}}
+    ]},
+  q3:{ type:'mcq', q:'Vì sao  int soLon = 3000000000;  bị lỗi?',
+    opts:[
+      {t:'3000000000 vượt int.MaxValue (≈ 2,1 tỉ), cần dùng long', ok:true, fb:'Đúng! int chỉ tới 2 147 483 647. Dùng long để chứa 3 tỉ.'},
+      {t:'Không lỗi, số sẽ tự tràn thành số âm', fb:'Tràn số chỉ xảy ra khi tính toán lúc chạy. Với hằng số viết sẵn quá lớn, trình biên dịch phát hiện và báo lỗi ngay.'},
+      {t:'Phải viết 3.000.000.000 có dấu chấm', fb:'Trong C#, dấu chấm là phần thập phân. Muốn dễ đọc có thể viết 3_000_000_000.'},
+      {t:'Tên biến soLon không hợp lệ', fb:'soLon là tên hợp lệ: chữ cái, không dấu, không khoảng trắng.'}
+    ]}
+};
+
+/* =====================================================================
+   PHẦN XỬ LÝ – thường không cần sửa
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const solved = {}, misses = {};
+let cur = 0, timer = null, typerId = 0, stageId = 0, xp = 0;
+const ease = 'cubic-bezier(.2,.9,.3,1.25)';
+const fmt = n => (n<0?'−':'') + Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlPlain(s){
+  return s
+    .replace(/\?\?\?/g,'<span style="color:#f472b6;font-weight:700">???</span>')
+    .replace(/\b(byte|short|int|long|uint|var|checked)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(Console)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(WriteLine|MaxValue)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(max|b|x|soLon|tuoi|namSinh|danSo|danSoTheGioi|doDo)\b/g,'<span class="id">$1</span>')
+    .replace(/\b(\d+)\b/g,'<span class="num">$1</span>');
+}
+function hl(line){
+  let e = esc(line), cm = '';
+  const k = e.indexOf('//');
+  if(k>=0){ cm = '<span class="cm">'+e.slice(k)+'</span>'; e = e.slice(0,k); }
+  return hlPlain(e).replace(/⟦(.*?)⟧/g,'<span class="squig">$1</span>') + cm;
+}
+function fileOf(i){ for(let k=i;k>=0;k--) if(STEPS[k].file) return STEPS[k].file; return 'Program.cs'; }
+
+/* ---- editor ---- */
+function renderEditor(s, animate){
+  $('#fname').textContent = fileOf(cur);
+  const host = $('#code'); host.innerHTML = '';
+  const my = ++typerId;
+  const rows = s.lines.map((text,i)=>{
+    const r = document.createElement('div'); r.className='eline'+(i===s.act?' act':'');
+    r.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="cd"></span>'; host.appendChild(r);
+    return {r, cd:r.querySelector('.cd'), text, plain:text.replace(/[⟦⟧]/g,''), i};
+  });
+  const typed = animate && s.typeIdx ? s.typeIdx.slice() : [];
+  rows.forEach(o=>{ if(!typed.includes(o.i)) o.cd.innerHTML = hl(o.text); });
+  const finish = ()=>{
+    if(my!==typerId) return;
+    rows.forEach(o=> o.cd.innerHTML = hl(o.text));
+    if(s.annot){ const a=document.createElement('div'); a.className='anno'; a.innerHTML=s.annot.html; rows[s.annot.line].r.after(a); }
+    renderOut(s, true);
+    if(animate) playStage(s);
+  };
+  if(!typed.length){ finish(); return; }
+  let qi=0, ci=0;
+  const tick = ()=>{
+    if(my!==typerId) return;
+    if(qi>=typed.length){ finish(); return; }
+    const o = rows[typed[qi]]; ci++;
+    o.cd.innerHTML = hl(o.plain.slice(0,ci)) + '<span class="caret"></span>';
+    if(ci>=o.plain.length){ o.cd.innerHTML = hl(o.plain); qi++; ci=0; setTimeout(tick,180); } else setTimeout(tick, 24);
+  };
+  setTimeout(tick, 200);
+}
+
+/* ---- console / lỗi ---- */
+function renderOut(s, done){
+  const err = s.status==='ko' && done;
+  $('#tab-out').classList.toggle('on', !err); $('#tab-err').classList.toggle('on', err);
+  const st = $('#status'); st.className='st';
+  if(done && s.status==='ok'){ st.textContent='✔ build ok'; st.classList.add('okk'); }
+  else if(err){ st.textContent='✘ build failed'; st.classList.add('ko'); }
+  else st.textContent='';
+  if(err){
+    $('#obody').innerHTML = '<table class="el"><tr><th>Mã</th><th>Mô tả</th><th>Dòng</th></tr>'+
+      s.errs.map(e=>'<tr><td class="ecode">'+e.code+'</td><td>'+esc(e.msg)+'</td><td>'+e.line+'</td></tr>').join('')+'</table>';
+  } else {
+    const o = (done && s.out) || [];
+    $('#obody').innerHTML = o.length ? o.map(x=>'<div class="o">'+esc(x)+'</div>').join('') : '<div class="muted">'+(s.quiz?'Chưa chạy – hãy dự đoán trước.':'…')+'</div>';
+  }
+}
+
+/* ---- sân khấu ---- */
+function renderStage(s, animate){
+  stageId++;
+  const st = $('#stage');
+  if(s.view==='bits'){
+    $('#stitle').innerHTML = '<b>byte</b> // 8 công tắc = 8 bit';
+    st.innerHTML = '<div class="swrow">'+[...Array(8)].map((_,k)=>'<button class="sw" data-k="'+k+'" aria-label="bit giá trị '+(128>>k)+'"><span class="pv">'+(128>>k)+'</span><span class="tr"><span class="kn"></span></span><span class="bv">0</span></button>').join('')+'</div>'+
+      '<div class="readout"><div><small>thập phân</small><b id="dec">0</b></div><div><small>nhị phân</small><b class="bin" id="bin">00000000</b></div></div>'+
+      '<div class="rangeline">byte · 8 bit · 0 → 255 · 2⁸ = 256 giá trị</div><div class="tip">Bấm vào công tắc để tự bật/tắt thử.</div>';
+    let v = (animate && s.bits.count) ? 0 : s.bits.v;
+    const set = n=>{ v=n; st.querySelectorAll('.sw').forEach((b,k)=>{ const on=(n>>(7-k))&1; b.classList.toggle('on',!!on); b.querySelector('.bv').textContent=on; });
+      $('#dec').textContent=n; $('#bin').textContent=n.toString(2).padStart(8,'0'); };
+    st.querySelectorAll('.sw').forEach((b,k)=> b.onclick=()=>set(v ^ (128>>k)));
+    set(v); st._set = set;
+    return;
+  }
+  if(s.view==='ladder'){
+    $('#stitle').innerHTML = '<b>bit</b> // càng nhiều công tắc, phạm vi càng rộng';
+    const m = s.mark;
+    st.innerHTML = '<div class="ladder">'+(m?'<div class="mark">Giá trị cần cất: <b>'+m.label+'</b></div>':'')+
+      TYPES.map(T=>{
+        let fit='';
+        if(m) fit = m.fit ? (m.fit.includes(T.t)?'<div class="fit y">✓</div>':'<div class="fit n">✘</div>') : '<div class="fit q">?</div>';
+        return '<div class="lrow t-'+T.t+(m&&m.fit&&!m.fit.includes(T.t)?' dim':'')+'"><div class="lname">'+T.t+'<small>'+T.bits+' bit · '+(T.bits/8)+' byte</small></div>'+
+          '<div><div class="strip" style="width:'+(T.bits/64*100)+'%">'+'<i></i>'.repeat(T.bits)+'</div><div class="lrange">'+T.range+'</div></div>'+(fit||'<div></div>')+'</div>';
+      }).join('')+'</div>';
+    if(animate && !s.mark){
+      st.querySelectorAll('.lrow').forEach((r,i)=>{
+        r.querySelector('.strip').animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:600,delay:i*380,easing:'cubic-bezier(.3,.9,.3,1)',fill:'backwards'});
+        r.querySelector('.lrange').animate([{opacity:0},{opacity:1}],{duration:500,delay:i*380,fill:'backwards'});
+      });
+    }
+    return;
+  }
+  if(s.view==='odo'){
+    const o = s.odo, T = TYPES.find(t=>t.t===o.type), n = o.type==='int'?10:3;
+    $('#stitle').innerHTML = '<b>'+o.type+'</b> // công tơ mét quay vòng';
+    const wheel = '<span class="wh"><span class="colm">'+[...Array(10)].map((_,d)=>'<span>'+d+'</span>').join('')+'</span></span>';
+    st.innerHTML = '<div class="odo t-'+o.type+'">'+dialSVG(o.type)+'<div class="oright"><div class="otype">'+o.type+' · '+T.bits+' bit · '+T.range+'</div>'+
+      '<div class="wheels">'+(o.type==='int'?'<span class="wh sign"><span>+</span></span>':'')+wheel.repeat(n)+'</div>'+
+      '<div class="seq" id="seq"></div>'+(o.type==='byte'?'<div class="minibits" id="mb">'+'<i>0</i>'.repeat(8)+'</div>':'')+'</div></div>';
+    const start = (animate && o.from!=null) ? o.from : o.v;
+    setOdo(o.type, start, false); setNeedle(o.type, start);
+    if(!(animate && o.from!=null) && o.seq) $('#seq').innerHTML = o.seq.map((x,i)=>'<span class="'+(i===o.seq.length-1?'hit':'')+'">'+x+'</span>').join(' ');
+    return;
+  }
+  if(s.view==='rules'){
+    $('#stitle').innerHTML = '<b>rules</b> // chọn kiểu số nguyên';
+    st.innerHTML = '<div class="rules">'+RULES.map(r=>'<div class="rule t-'+r.t+'"><div class="rt">'+(r.t==='byte'?'byte/short':r.t)+'<small>'+r.sub+'</small></div><div><p>'+r.text+'</p><div class="ex">Ví dụ: '+r.ex+'</div></div></div>').join('')+'</div>';
+    if(animate) st.querySelectorAll('.rule').forEach((r,i)=>r.animate([{opacity:0,transform:'translateX(20px)'},{opacity:1,transform:'none'}],{duration:450,delay:i*160,easing:ease,fill:'backwards'}));
+  }
+}
+
+/* công tơ mét */
+function setOdo(type, v, anim=true){
+  const n = type==='int'?10:3;
+  const digits = Math.abs(v).toString().padStart(n,'0').split('').map(Number);
+  document.querySelectorAll('.wh:not(.sign) .colm').forEach((c,i)=>{
+    if(!anim){ c.style.transition='none'; }
+    c.style.transform = 'translateY('+(-digits[i]*100/10)+'%)';
+    if(!anim){ void c.offsetHeight; c.style.transition=''; }
+  });
+  const sg = document.querySelector('.wh.sign');
+  if(sg){ sg.classList.toggle('neg', v<0); sg.querySelector('span').textContent = v<0?'−':'+'; }
+  const mb = document.getElementById('mb');
+  if(mb) [...mb.children].forEach((b,k)=>{ const on=(v>>(7-k))&1; b.classList.toggle('on',!!on); b.textContent=on; });
+}
+function angleOf(type, v){
+  const [mn,mx] = type==='int'?[-2147483648,2147483647]:[0,255];
+  return 12 + 336*(v-mn)/(mx-mn);
+}
+function setNeedle(type, v){ const g=document.getElementById('needle'); if(g) g.style.transform='rotate('+angleOf(type,v)+'deg)'; }
+function dialSVG(type){
+  const ticks = [...Array(25)].map((_,i)=>{ const a=(12+14*i)*Math.PI/180; const r1=62,r2=i%6===0?52:57;
+    return '<line x1="'+(80+r1*Math.sin(a)).toFixed(1)+'" y1="'+(80-r1*Math.cos(a)).toFixed(1)+'" x2="'+(80+r2*Math.sin(a)).toFixed(1)+'" y2="'+(80-r2*Math.cos(a)).toFixed(1)+'" stroke="#475569" stroke-width="2"/>'; }).join('');
+  return '<svg class="dial" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="70" fill="#0a0e15" stroke="#2b364a" stroke-width="4"/>'+ticks+
+    '<text x="96" y="22" fill="#4ade80" font-size="10" font-family="monospace" font-weight="700">MIN</text>'+
+    '<text x="40" y="22" fill="#f87171" font-size="10" font-family="monospace" font-weight="700">MAX</text>'+
+    '<path d="M74 10 L86 10" stroke="#facc15" stroke-width="3" stroke-dasharray="2 2"/>'+
+    '<text x="80" y="122" fill="#8b98a9" font-size="11" font-family="monospace" text-anchor="middle">'+type+'</text>'+
+    '<g id="needle" style="transform-origin:80px 80px"><line x1="80" y1="80" x2="80" y2="24" stroke="#facc15" stroke-width="4" stroke-linecap="round"/></g>'+
+    '<circle cx="80" cy="80" r="7" fill="#facc15"/></svg>';
+}
+
+/* hiệu ứng sau khi code gõ xong */
+function playStage(s){
+  const my = stageId;
+  if(s.view==='bits' && s.bits.count){
+    const st = $('#stage'), t0 = performance.now(), D = 3200;
+    const f = now=>{ if(my!==stageId) return; const p=Math.min(1,(now-t0)/D); st._set(Math.round(255*p*p)); if(p<1) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  }
+  if(s.view==='odo' && s.odo.from!=null){
+    const o = s.odo, a0 = angleOf(o.type,o.from); let a1 = angleOf(o.type,o.v); if(a1<=a0) a1 += 360;
+    const g = document.getElementById('needle'), seq = $('#seq');
+    seq.innerHTML = o.seq.map(x=>'<span>'+x+'</span>').join(' ');
+    const spans = [...seq.children], dur = o.type==='int'?1600:2200;
+    g.animate([{transform:'rotate('+a0+'deg)'},{transform:'rotate('+a1+'deg)'}],{duration:dur,easing:'ease-in-out',fill:'forwards'});
+    spans.forEach((sp,i)=> setTimeout(()=>{
+      if(my!==stageId) return;
+      spans.forEach(x=>x.classList.remove('hit')); sp.classList.add('hit');
+      const txt = o.seq[i];
+      if(o.type==='byte'){ const val=parseInt(txt,10); setOdo('byte',val); if(val===0) sp.classList.add('wrap'); }
+      if(o.type==='int' && i===o.seq.length-1){ setOdo('int',o.v); sp.classList.add('wrap'); }
+    }, (i+1)*dur/(spans.length+.5)));
+  }
+}
+
+/* ---- robot ---- */
+const MOUTH = {neutral:'M24 39 L40 39', happy:'M22 36 Q32 47 42 36', sad:'M22 43 Q32 34 42 43', think:'M27 40 Q32 38 37 40', sweat:'M22 41 q5 -4 10 0 t10 0'};
+function mood(m, bounce=true){
+  $('#mouth').setAttribute('d', MOUTH[m]||MOUTH.neutral);
+  $('#sweat').setAttribute('opacity', m==='sweat'?1:0);
+  const ey = m==='think'?25:28, col = m==='sad'?'#f472b6':'#a3e635';
+  ['#eyeL','#eyeR'].forEach(e=>{ $(e).setAttribute('cy',ey); $(e).setAttribute('fill',col); });
+  if(bounce) $('#bot').animate([{transform:'translateY(0)'},{transform:'translateY(-7px)'},{transform:'translateY(0)'}],{duration:420,easing:'ease-out'});
+}
+
+/* ---- XP ---- */
+const LEVELS = [[0,'Newbie'],[100,'Junior'],[200,'Mid-level'],[300,'Senior ★']];
+function renderXP(){ $('#xpfill').style.width=Math.min(100,xp/3)+'%'; $('#xptxt').textContent=xp+'/300'; $('#lvl').textContent=LEVELS.filter(l=>xp>=l[0]).pop()[1]; }
+function gain(key){
+  const g=[100,60,30][Math.min(misses[key]||0,2)]; xp+=g; renderXP();
+  const t=$('#toast'); t.textContent='+'+g+' XP';
+  t.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(-14px)',offset:.3},{opacity:0,transform:'translateY(-30px)'}],{duration:1400});
+}
+
+/* ---- checkpoint ---- */
+function renderQuiz(s){
+  const host=$('#quiz'); host.innerHTML='';
+  if(!s.quiz) return;
+  const key=s.quiz, Q=QUIZ[key];
+  const box=document.createElement('div'); box.className='quiz';
+  box.innerHTML='<div class="qhead">◆ CHECKPOINT <span class="hp">+100 XP nếu đúng ngay lần đầu</span></div><div class="q">'+esc(Q.q)+'</div>';
+  const fb=document.createElement('div'); fb.className='fb';
+  if(Q.type==='mcq'){
+    const grid=document.createElement('div'); grid.className='opts'; box.appendChild(grid);
+    const btns=Q.opts.map((o,i)=>{ const b=document.createElement('button'); b.className='opt'; b.innerHTML=String.fromCharCode(65+i)+'. '+o.t; grid.appendChild(b); return b; });
+    const lock=()=>btns.forEach(b=>b.disabled=true);
+    btns.forEach((b,i)=> b.onclick=()=>{
+      const o=Q.opts[i];
+      if(o.ok){ b.classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+o.fb; lock(); win(key); }
+      else { b.classList.add('wrong'); b.disabled=true; fb.className='fb'; fb.innerHTML='✘ '+o.fb+' Thử lại nhé.'; miss(key); }
+    });
+    if(solved[key]){ const i=Q.opts.findIndex(o=>o.ok); btns[i].classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+Q.opts[i].fb; lock(); }
+  } else {
+    const pick={};
+    const rows=Q.rows.map((r,ri)=>{
+      const row=document.createElement('div'); row.className='mrow';
+      row.innerHTML='<div class="lab">'+esc(r.label)+'</div><div class="pick"></div><div class="mfb"></div>';
+      const pk=row.querySelector('.pick');
+      Q.choices.forEach(c=>{
+        const b=document.createElement('button'); b.className='pk'; b.textContent=c;
+        b.onclick=()=>{ if(solved[key]) return; pick[ri]=c; pk.querySelectorAll('.pk').forEach(x=>x.classList.toggle('sel',x===b)); row.classList.remove('good','bad'); row.querySelector('.mfb').textContent=''; chk.disabled=Object.keys(pick).length<Q.rows.length; };
+        pk.appendChild(b);
+      });
+      box.appendChild(row); return {row,r};
+    });
+    const chk=document.createElement('button'); chk.className='check'; chk.textContent='▶ Kiểm tra'; chk.disabled=true; box.appendChild(chk);
+    const showAll=ans=>{
+      let all=true;
+      rows.forEach(({row,r},ri)=>{
+        const c=ans[ri], ok=r.ok.includes(c);
+        row.classList.toggle('good',ok); row.classList.toggle('bad',!ok);
+        row.querySelectorAll('.pk').forEach(x=>x.classList.toggle('sel',x.textContent===c));
+        row.querySelector('.mfb').textContent= ok ? '✔ '+r.good : '✘ '+(r.fb[c]||'Chưa phù hợp.');
+        if(!ok) all=false;
+      });
+      return all;
+    };
+    chk.onclick=()=>{
+      if(showAll(pick)){ fb.className='fb good'; fb.textContent='✔ Chuẩn! Lưu ý: khi viết code thật, tuổi và năm sinh vẫn thường dùng int cho đơn giản.'; chk.disabled=true; solved[key+'_ans']={...pick}; win(key); }
+      else { fb.className='fb'; fb.textContent='Còn dòng màu đỏ, đổi lựa chọn rồi bấm Kiểm tra lại.'; miss(key); }
+    };
+    if(solved[key]){ showAll(solved[key+'_ans']); chk.disabled=true; fb.className='fb good'; fb.textContent='✔ Chuẩn! Lưu ý: khi viết code thật, tuổi và năm sinh vẫn thường dùng int cho đơn giản.'; }
+  }
+  box.appendChild(fb); host.appendChild(box);
+}
+function win(key){ if(!solved[key]){ solved[key]=true; gain(key); } mood('happy'); updateNav(); }
+function miss(key){ misses[key]=(misses[key]||0)+1; mood('sad'); }
+
+/* ---- điều hướng ---- */
+function render(animate){
+  const s=STEPS[cur];
+  renderStage(s, animate); renderOut(s, !animate || !s.typeIdx); renderEditor(s, animate); renderQuiz(s);
+  $('#bottom').classList.toggle('hasquiz', !!s.quiz);
+  mood(s.quiz && solved[s.quiz] ? 'happy' : s.mood, animate);
+  const extra = s.summary ? '<br><small style="color:var(--yellow);margin-top:4px">XP của bạn: '+xp+'/300 – cấp '+$('#lvl').textContent+'</small>' : '';
+  $('#cap').innerHTML='<small>'+PARTS[s.part]+' · bước '+(cur+1)+'/'+STEPS.length+'</small>'+s.cap+extra;
+  document.querySelectorAll('#parts button').forEach((b,i)=>b.classList.toggle('on',i===s.part));
+  document.querySelectorAll('.dot').forEach((d,i)=>{ d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur); });
+  updateNav();
+}
+function blocked(){ const s=STEPS[cur]; return !!(s.quiz && !solved[s.quiz]); }
+function updateNav(){
+  $('#prev').disabled=cur===0;
+  $('#next').disabled=cur===STEPS.length-1 || blocked();
+  $('#next').textContent=blocked()?'◆ Trả lời đã':'Tiếp →';
+  if(blocked()) stopPlay();
+}
+function go(i, animate=true){ cur=Math.max(0,Math.min(STEPS.length-1,i)); render(animate); }
+function next(){ if(!blocked() && cur<STEPS.length-1) go(cur+1,true); else stopPlay(); }
+function prev(){ if(cur>0) go(cur-1,false); }
+function stopPlay(){ if(timer){clearInterval(timer);timer=null;} $('#play').textContent='▶ Tự chạy'; }
+function startPlay(){ if(cur===STEPS.length-1) go(0,false); $('#play').textContent='⏸ Dừng'; timer=setInterval(()=>{ if(blocked()||cur===STEPS.length-1){stopPlay();return;} next(); },5500); }
+
+(function init(){
+  const first=PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
+  PARTS.forEach((p,i)=>{ const b=document.createElement('button'); b.textContent=p; b.onclick=()=>{stopPlay();go(first[i],false);}; $('#parts').appendChild(b); });
+  STEPS.forEach((s,i)=>{ const d=document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (checkpoint)':''); d.setAttribute('aria-label',d.title); d.onclick=()=>{stopPlay();go(i,false);}; $('#dots').appendChild(d); });
+  $('#next').onclick=next; $('#prev').onclick=prev;
+  $('#play').onclick=()=> timer?stopPlay():startPlay();
+  $('#restart').onclick=()=>{ stopPlay(); for(const k in solved) delete solved[k]; for(const k in misses) delete misses[k]; xp=0; renderXP(); go(0,true); };
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight') next(); else if(e.key==='ArrowLeft') prev();
+    else if(e.key===' ' && e.target.tagName!=='BUTTON'){ e.preventDefault(); timer?stopPlay():startPlay(); }
+  });
+  renderXP(); go(0,true);
+})();
+</script>
+</body>
+</html>
