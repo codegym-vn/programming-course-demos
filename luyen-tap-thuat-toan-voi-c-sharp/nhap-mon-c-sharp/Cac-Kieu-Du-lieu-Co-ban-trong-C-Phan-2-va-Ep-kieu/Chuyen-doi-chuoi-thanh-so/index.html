@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thực hành: Chuyển đổi chuỗi thành số</title>
+<style>
+  /* Bố cục: thanh tiến độ • trình mô phỏng bên trái (luôn hiện) • các phần thực hành dạng tab bên phải */
+  :root{
+    color-scheme:dark;
+    --bg:#0b0f17; --panel:#121826; --panel2:#0f1522; --line:#263042; --text:#e6edf3; --dim:#8b98a9;
+    --lime:#a3e635; --pink:#f472b6; --cyan:#22d3ee; --yellow:#facc15; --ok:#4ade80; --bad:#f87171; --orange:#fb923c;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
+    background-image:radial-gradient(rgba(34,211,238,.06) 1px,transparent 1px);background-size:22px 22px}
+  button,input,select{font:inherit}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .wrap{max-width:1240px;margin:0 auto;padding-inline:20px}
+  code,.mono{font-family:var(--mono)}
+  code{background:rgba(148,163,184,.16);padding:0 5px;border-radius:5px;font-size:.92em}
+
+  header{padding-block:14px 6px}
+  .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .term{font-family:var(--mono);font-size:clamp(16px,2.2vw,22px);font-weight:700;margin:0}
+  .term .p{color:var(--lime)}
+  .ttl{font-size:clamp(17px,2.2vw,22px);font-weight:800;margin:2px 0 0}
+  .prog{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .pchip{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--dim)}
+  .pchip.done{border-color:var(--ok);color:var(--ok);background:rgba(74,222,128,.1)}
+  details.intro{margin-top:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 14px;font-size:14px}
+  details.intro summary{cursor:pointer;font-weight:700;color:var(--cyan)}
+  details.intro ul{margin:6px 0;padding-left:20px}
+
+  main.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;padding-block:10px 28px;align-items:start}
+  @media (max-width:960px){main.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+  .card h2{margin:0 0 8px;font-size:13px;color:var(--dim);font-weight:700;letter-spacing:.04em}
+  .card h2 b{color:var(--cyan);font-family:var(--mono)}
+
+  /* ---- trình mô phỏng ---- */
+  #sim{position:sticky;top:8px}
+  @media (max-width:960px){#sim{position:static}}
+  .lbl{font-size:13px;color:var(--dim);margin:6px 0 4px}
+  .presets{display:flex;gap:6px;flex-wrap:wrap}
+  .pre{font-family:var(--mono);font-size:14px;padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
+  .pre:hover{border-color:var(--cyan)}
+  .pre.on{border-color:var(--yellow);background:rgba(250,204,21,.12);color:var(--yellow)}
+  .pre .tick{color:var(--ok);margin-left:4px;font-size:12px}
+  .custom{display:flex;gap:6px;margin-top:6px}
+  .custom input{flex:1;min-width:0;background:#0b1220;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:6px 10px;font-family:var(--mono)}
+  .custom button{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .ide{margin-top:10px;background:#1e1e1e;border:1px solid #3c3c3c;border-radius:12px;overflow:hidden}
+  .bar{background:#2d2d2d;display:flex;align-items:center;gap:7px;padding:5px 12px;font-size:12.5px;color:#ccc}
+  .bar i{width:10px;height:10px;border-radius:50%}
+  .bar .tab{background:#1e1e1e;color:#fff;padding:2px 10px;border-radius:6px 6px 0 0;margin-left:8px;font-family:var(--mono)}
+  .code{padding:8px 14px;font-family:var(--mono);font-size:14.5px;color:#d4d4d4;white-space:pre-wrap;word-break:break-word}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.str{color:#ce9178}.fn{color:#dcdcaa}.cm{color:#6a9955}.id{color:#9cdcfe}.nul{color:#569cd6;font-style:italic}
+  .ws{background:rgba(250,204,21,.25);border-radius:2px}
+  .runs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+  @media (max-width:520px){.runs{grid-template-columns:1fr}}
+  .run{font-family:var(--mono);font-weight:800;font-size:13.5px;padding:9px 6px;border-radius:10px;border:2px solid var(--fc);background:var(--panel2);color:var(--fc);cursor:pointer;line-height:1.2}
+  .run:hover{background:#16213a}
+  .run small{display:block;font-family:var(--sans);font-weight:500;color:var(--dim);font-size:11px;margin-top:2px}
+  .f-parse{--fc:var(--cyan)} .f-try{--fc:var(--lime)} .f-conv{--fc:var(--orange)}
+  .results{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+  .res{display:grid;grid-template-columns:132px minmax(0,1fr);gap:8px;align-items:center;background:#141414;border:1px solid #333;border-left:5px solid var(--fc);border-radius:8px;padding:6px 10px;font-family:var(--mono);font-size:13.5px}
+  .res .fn-n{color:var(--fc);font-weight:800}
+  .res .v{word-break:break-word}
+  .res .v.ok{color:var(--ok)} .res .v.ex{color:#fca5a5} .res .v.f{color:var(--yellow)} .res .v.none{color:#666;font-family:var(--sans)}
+  .status{margin-top:10px;display:flex;align-items:center;gap:10px;min-height:52px}
+  #bot{width:52px;height:52px;flex:none}
+  .say{flex:1;font-size:14px;font-weight:600;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+  .say.crash{border-color:var(--bad);color:#fecaca;background:rgba(127,29,29,.35)}
+  .say.safe{border-color:var(--ok);color:#bbf7d0}
+
+  /* ---- tab ---- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .tabs button{background:var(--panel2);color:var(--dim);border:1px solid var(--line);padding:5px 11px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tabs button.on{background:var(--lime);color:#111;border-color:var(--lime);font-weight:800}
+  .tabs button .c{font-size:11px;margin-left:4px;opacity:.8}
+  .pane[hidden]{display:none}
+  .pane p{margin:4px 0 8px;font-size:14.5px}
+  .hintline{font-size:13px;color:var(--dim)}
+  table.log{border-collapse:collapse;width:100%;font-size:13px}
+  .tblwrap{overflow-x:auto}
+  table.log th,table.log td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+  table.log th{color:var(--dim);font-weight:700;font-size:12px}
+  table.log td.in{font-family:var(--mono);white-space:nowrap}
+  table.log td.cell{font-family:var(--mono);font-size:12.5px}
+  td.cell.ok{color:var(--ok)} td.cell.ex{color:#fca5a5} td.cell.f{color:var(--yellow)} td.cell.e{color:#4b5563}
+  .counter{margin:8px 0 0;font-weight:700;font-size:14px}
+  .counter.done{color:var(--ok)}
+  .q{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  .q .qt{font-weight:700;font-size:15px;margin-bottom:6px}
+  .opts{display:flex;gap:6px;flex-wrap:wrap}
+  .opt{padding:6px 12px;border-radius:8px;border:2px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer;font-size:14px}
+  .opt:hover:not(:disabled){border-color:var(--pink)}
+  .opt.right{border-color:var(--ok);background:rgba(74,222,128,.13)}
+  .opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1)}
+  .opt:disabled{cursor:default}
+  .fb{font-size:13.5px;margin-top:6px;color:var(--dim)}
+  .fb.good{color:#86efac} .fb.badf{color:#fca5a5}
+  .try{margin-top:6px;font-size:12.5px;padding:3px 10px;border-radius:7px;border:1px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer}
+  .ch{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  .ch .mk{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--dim)}
+  .ch.done{border-color:rgba(74,222,128,.5)} .ch.done .mk{border-color:var(--ok);background:var(--ok);color:#052e12}
+  .ch .ct{font-weight:700;font-size:14.5px} .ch .cs{font-size:13px;color:var(--dim);margin-top:2px}
+  .ch.done .cs{color:#86efac}
+  .blank{display:inline-block;margin:0 3px}
+  .blank select{background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:2px 6px;font-size:14px;max-width:100%}
+  .blank select.good{border-color:var(--ok);color:var(--ok)} .blank select.badb{border-color:var(--bad);color:#fca5a5}
+  .rule{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14.5px;line-height:2}
+  .btn{padding:7px 14px;border-radius:8px;border:0;background:var(--pink);color:#1a0010;font-weight:800;cursor:pointer}
+  .btn.alt{background:var(--lime);color:#111}
+  .fill input{width:64px;background:#0b1220;border:1px solid var(--yellow);border-radius:5px;color:var(--yellow);font-family:var(--mono);font-size:14px;padding:0 4px;text-align:center}
+  .fill input.good{border-color:var(--ok);color:var(--ok)} .fill input.badb{border-color:var(--bad);color:#fca5a5}
+  .term-out{background:#0b0b0b;border:1px solid #333;border-radius:10px;padding:8px 12px;font-family:var(--mono);font-size:13.5px;min-height:60px;margin-top:8px;color:#d4d4d4;white-space:pre-wrap}
+  .term-out .u{color:var(--yellow)} .term-out .g{color:var(--ok)} .term-out .r{color:#fca5a5}
+  .check{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:14.5px}
+  .check input{margin-top:4px;width:18px;height:18px;accent-color:var(--lime)}
+  .err-card{background:var(--panel2);border:1px solid var(--line);border-left:5px solid var(--bad);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:14.5px}
+  .err-card b{color:#fecaca}
+  .crit{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:14.5px}
+  .crit .mk{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:900;flex:none;color:var(--dim)}
+  .crit.done .mk{background:var(--ok);border-color:var(--ok);color:#052e12}
+  .crit .n{margin-left:auto;font-family:var(--mono);color:var(--dim)}
+  .alldone{margin-top:10px;padding:10px 14px;border-radius:12px;background:rgba(74,222,128,.12);border:2px solid var(--ok);color:#bbf7d0;font-weight:800;display:none}
+  .alldone.on{display:block}
+
+  /* chế độ gọn cho khung thấp (khối HTML Preview của LMS) */
+  @media (max-height:760px){
+    header{padding-block:6px 2px} .term{font-size:15px} .ttl{font-size:16px} details.intro{display:none}
+    main.wrap{gap:8px;padding-block:6px 12px}
+    .card{padding:8px 10px} .card h2{margin-bottom:4px;font-size:11.5px}
+    .pre{font-size:12.5px;padding:2px 8px} .lbl{margin:3px 0 2px;font-size:12px}
+    .custom{margin-top:4px} .custom input,.custom button{padding:3px 8px}
+    .ide{margin-top:6px} .code{padding:4px 10px;font-size:13px}
+    .runs{margin-top:6px} .run{padding:5px 4px;font-size:12.5px} .run small{display:none}
+    .results{margin-top:6px;gap:4px} .res{padding:3px 8px;font-size:12.5px;grid-template-columns:116px minmax(0,1fr)}
+    .status{margin-top:6px;min-height:0} #bot{width:38px;height:38px} .say{font-size:12.5px;padding:3px 8px}
+    #tasks{max-height:calc(100vh - 92px);overflow:auto}
+    .q,.ch{padding:6px 10px;margin-bottom:6px} .pane p{font-size:13.5px;margin:2px 0 6px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topline">
+    <div>
+      <h1 class="term"><span class="p">~/csharp $</span> practice parse</h1>
+      <div class="ttl">Thực hành: Chuyển đổi chuỗi thành số</div>
+    </div>
+    <div class="prog" id="prog" aria-live="polite"></div>
+  </div>
+  <details class="intro">
+    <summary>Mục tiêu và tình huống (bấm để xem)</summary>
+    <ul>
+      <li>Giải thích vì sao dữ liệu nhập từ bàn phím phải chuyển từ chuỗi sang số.</li>
+      <li>Dự đoán kết quả của <code>int.Parse</code>, <code>int.TryParse</code> và <code>Convert.ToInt32</code> với các đầu vào khác nhau.</li>
+      <li>Chọn hàm phù hợp để chương trình không bị dừng đột ngột khi người dùng nhập sai.</li>
+    </ul>
+    <div>Bạn viết chương trình hỏi tuổi người dùng. <code>Console.ReadLine()</code> trả về <b>chuỗi</b> <code>"25"</code> chứ không phải số 25. Nhưng người dùng có thể gõ <code>abc</code>, để trống hoặc gõ <code>12.5</code>. Hãy tự thử trong trình mô phỏng, rồi áp dụng vào code thật.</div>
+  </details>
+</header>
+
+<main class="wrap">
+  <!-- ================= TRÌNH MÔ PHỎNG ================= -->
+  <section class="card" id="sim" aria-label="Trình mô phỏng">
+    <h2><b>simulator</b> // chọn đầu vào rồi bấm từng hàm</h2>
+    <div class="lbl">1. Người dùng gõ gì? (chọn có sẵn)</div>
+    <div class="presets" id="presets"></div>
+    <div class="custom">
+      <input id="custom" type="text" placeholder="hoặc tự gõ một đầu vào khác…" aria-label="Tự gõ đầu vào" autocomplete="off">
+      <button id="useCustom" type="button">Dùng</button>
+    </div>
+    <div class="ide">
+      <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab">Program.cs</span></div>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="lbl">2. Bấm từng hàm để chạy</div>
+    <div class="runs">
+      <button class="run f-parse" data-f="parse" type="button">int.Parse(s)<small>đổi trực tiếp</small></button>
+      <button class="run f-try" data-f="try" type="button">int.TryParse(s, out n)<small>thử đổi, trả về bool</small></button>
+      <button class="run f-conv" data-f="conv" type="button">Convert.ToInt32(s)<small>lớp Convert</small></button>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="status">
+      <svg id="bot" viewBox="0 0 64 64" aria-hidden="true">
+        <line x1="32" y1="5" x2="32" y2="12" stroke="#22d3ee" stroke-width="3"/><circle cx="32" cy="5" r="3.5" fill="#f472b6"/>
+        <rect x="9" y="12" width="46" height="36" rx="11" fill="#1f2937" stroke="#22d3ee" stroke-width="3"/>
+        <circle id="eyeL" cx="24" cy="28" r="4" fill="#a3e635"/><circle id="eyeR" cx="40" cy="28" r="4" fill="#a3e635"/>
+        <path id="mouth" d="M24 39 L40 39" stroke="#a3e635" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <rect x="20" y="50" width="24" height="9" rx="3" fill="#1f2937" stroke="#22d3ee" stroke-width="2"/>
+      </svg>
+      <div class="say" id="say">Chọn một đầu vào ở trên, rồi bấm lần lượt cả 3 hàm.</div>
+    </div>
+  </section>
+
+  <!-- ================= CÁC PHẦN THỰC HÀNH ================= -->
+  <section class="card" id="tasks" aria-label="Các phần thực hành">
+    <div class="tabs" id="tabs" role="tablist"></div>
+
+    <div class="pane" id="p1">
+      <p><b>Phần 1 – Khám phá (khoảng 5 phút).</b> Thử ít nhất <b>5 đầu vào</b>. Với mỗi đầu vào, bấm <b>cả 3 nút</b>. Bảng dưới đây tự ghi lại kết quả.</p>
+      <div class="tblwrap"><table class="log" id="logt"></table></div>
+      <div class="counter" id="cnt1"></div>
+    </div>
+
+    <div class="pane" id="p2" hidden>
+      <p><b>Phần 2 – Dự đoán (khoảng 4 phút).</b> Chọn đáp án <b>trước khi chạy</b> (chỉ được chọn một lần), sau đó kiểm tra bằng mô phỏng.</p>
+      <div id="preds"></div>
+    </div>
+
+    <div class="pane" id="p3" hidden>
+      <p><b>Phần 3 – Thử thách (khoảng 4 phút).</b> Dùng trình mô phỏng để tìm đầu vào thỏa mãn từng yêu cầu. Thử thách sẽ tự đánh dấu khi bạn tìm ra.</p>
+      <div id="chals"></div>
+    </div>
+
+    <div class="pane" id="p4" hidden>
+      <p><b>Phần 4 – Rút ra quy tắc.</b> Chọn từ thích hợp cho mỗi chỗ trống, rồi bấm Kiểm tra.</p>
+      <div id="rules"></div>
+      <button class="btn" id="chkRules" type="button">Kiểm tra</button>
+      <div class="fb" id="rulesFb"></div>
+    </div>
+
+    <div class="pane" id="p5" hidden>
+      <p><b>Phần 5 – Áp dụng vào code thật (nộp bài).</b> Điền vào chỗ trống, kiểm tra, rồi chạy thử 3 lần ngay tại đây trước khi làm trên máy.</p>
+      <div class="ide"><div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab">Program.cs</span></div>
+        <div class="code fill" id="tpl"></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn" id="chkTpl" type="button">Kiểm tra chỗ trống</button>
+        <button class="btn alt" id="runTpl" type="button" disabled>▶ Chạy 3 lần: 42, abc, 12.5</button>
+      </div>
+      <div class="fb" id="tplFb"></div>
+      <div class="term-out" id="tplOut">(chưa chạy)</div>
+      <p style="margin-top:10px"><b>Làm trên máy:</b> tạo một console project mới, chép đoạn code đã hoàn chỉnh vào <code>Program.cs</code>, chạy 3 lần với <code>42</code>, <code>abc</code>, <code>12.5</code> và quan sát <code>ok</code>, <code>n</code>.</p>
+      <label class="check"><input type="checkbox" id="sub1"> Tôi đã có file <code>Program.cs</code> chạy được.</label>
+      <label class="check"><input type="checkbox" id="sub2"> Tôi đã chụp màn hình kết quả của cả 3 lần chạy.</label>
+      <p class="hintline"><b>Mở rộng (tùy chọn, nếu đã học if/else):</b> in ra "Hợp lệ" hoặc "Không phải số nguyên hợp lệ" tùy giá trị của <code>ok</code>.</p>
+    </div>
+
+    <div class="pane" id="p6" hidden>
+      <p><b>Lỗi thường gặp</b></p>
+      <div class="err-card"><b>Quên từ khóa <code>out</code></b> khi gọi TryParse. Phải viết <code>int.TryParse(s, out int n)</code>, thiếu <code>out</code> sẽ bị lỗi biên dịch.</div>
+      <div class="err-card"><b>Nghĩ TryParse trả về số.</b> Thực tế nó trả về <code>bool</code> (thành công hay không), còn số nằm ở tham số <code>out</code>.</div>
+      <div class="err-card"><b>Nghĩ <code>12.5</code> chuyển được thành int.</b> int không chứa phần thập phân, nên cả ba hàm đều không chuyển được chuỗi này.</div>
+    </div>
+
+    <div class="pane" id="p7" hidden>
+      <p><b>Tiêu chí hoàn thành</b></p>
+      <div id="crit"></div>
+      <div class="alldone" id="alldone">Bạn đã hoàn thành bài thực hành! Nhớ nộp file Program.cs và ảnh chụp 3 lần chạy.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   MÔ PHỎNG HÀNH VI C# (.NET)
+   int.Parse / int.TryParse cho phép khoảng trắng ở đầu và cuối, dấu + hoặc - ở đầu,
+   chỉ nhận chữ số 0–9, phạm vi -2 147 483 648 … 2 147 483 647.
+   Convert.ToInt32(string) trả về 0 nếu chuỗi là null, còn lại hoạt động như int.Parse.
+   ===================================================================== */
+const NUL = '\u0000NULL';                          // đại diện cho null
+const INT_RE = /^[\t\n\v\f\r ]*([+-]?)(\d+)[\t\n\v\f\r ]*$/;
+function core(s){
+  const m = INT_RE.exec(s);
+  if(!m) return {err:'FormatException', msg:"The input string '"+s+"' was not in a correct format."};
+  const v = BigInt(m[1] + m[2]);
+  if(v > 2147483647n || v < -2147483648n) return {err:'OverflowException', msg:'Value was either too large or too small for an Int32.'};
+  return {v:Number(v)};
+}
+const FN = {
+  parse:{name:'int.Parse', run:s=> s===NUL ? {err:'ArgumentNullException', msg:"Value cannot be null. (Parameter 's')"} : core(s)},
+  try:{name:'int.TryParse', run:s=>{ if(s===NUL) return {tp:true, ok:false, n:0}; const r=core(s); return r.err ? {tp:true, ok:false, n:0} : {tp:true, ok:true, n:r.v}; }},
+  conv:{name:'Convert.ToInt32', run:s=> s===NUL ? {v:0} : core(s)}
+};
+const short = r => r.tp ? (r.ok?'true':'false')+', '+r.n : (r.err ? r.err : String(r.v));
+const kind = r => r.tp ? (r.ok?'ok':'f') : (r.err?'ex':'ok');
+
+/* ---------------- dữ liệu bài ---------------- */
+const PRESETS = [
+  {s:'42', label:'42'}, {s:'abc', label:'abc'}, {s:'', label:'chuỗi rỗng'}, {s:'12.5', label:'12.5'},
+  {s:' 7 ', label:'" 7 " (có khoảng trắng)'}, {s:'3000000000', label:'3000000000'}, {s:NUL, label:'null'}
+];
+const PREDS = [
+  {q:'<code>int.Parse("abc")</code> cho kết quả:', s:'abc', f:'parse', opts:['0','Lỗi FormatException','false'], ok:1,
+   why:'"abc" không phải số. int.Parse không có cách nào báo "thất bại" ngoài việc ném lỗi, nên chương trình dừng với FormatException.'},
+  {q:'<code>int.TryParse("abc", out int n)</code> trả về gì và n bằng bao nhiêu?', s:'abc', f:'try', opts:['true, 0','false, 0','Lỗi'], ok:1,
+   why:'TryParse không bao giờ ném lỗi định dạng. Nó trả về false để báo thất bại và gán n = 0.'},
+  {q:'<code>int.Parse(" 7 ")</code> cho kết quả:', s:' 7 ', f:'parse', opts:['7','Lỗi','0'], ok:0,
+   why:'int.Parse tự bỏ qua khoảng trắng ở đầu và cuối chuỗi, nên " 7 " vẫn thành 7. (Khoảng trắng ở giữa như "1 2" thì vẫn lỗi.)'},
+  {q:'<code>string s = null;</code> rồi <code>Convert.ToInt32(s)</code> cho kết quả:', s:NUL, f:'conv', opts:['Lỗi','0','null'], ok:1,
+   why:'Convert.ToInt32 coi null là 0 và không báo lỗi. Trong khi đó int.Parse(null) ném ArgumentNullException.'}
+];
+const RULES = [
+  {pre:'<code>int.Parse</code> khi gặp chuỗi sai định dạng thì', post:'.', opts:['trả về 0','ném lỗi (FormatException)','trả về false'], ok:1},
+  {pre:'<code>int.TryParse</code> trả về kiểu', post:'', opts:['int','bool','string'], ok:1,
+   more:[{pre:', số được đưa ra qua tham số', opts:['ref','out','in'], ok:1},{pre:', và nếu thất bại thì số đó bằng', post:'.', opts:['-1','0','null'], ok:1}]},
+  {pre:'<code>Convert.ToInt32</code> với chuỗi null trả về', post:'.', opts:['null','0','ArgumentNullException'], ok:1},
+  {pre:'Với dữ liệu người dùng nhập vào, nên dùng', post:'.', opts:['int.Parse','int.TryParse','Convert.ToInt32'], ok:1}
+];
+
+/* ---------------- trạng thái (chỉ trong phiên này) ---------------- */
+let cur = '42';
+const log = new Map();          // input -> {parse, try, conv}
+const predAns = {};             // index -> lựa chọn
+const chal = {c1:null, c2:null, c3:null, c4:false};
+let rulesOk = false, tplOk = false;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function lit(s){
+  if(s===NUL) return '<span class="nul">null</span>';
+  return '<span class="str">"'+esc(s).replace(/ /g,'<span class="ws"> </span>')+'"</span>';
+}
+const labelOf = s => { const p = PRESETS.find(p=>p.s===s); return p ? p.label : (s===''?'chuỗi rỗng':'"'+s+'"'); };
+
+/* ---------------- giao diện mô phỏng ---------------- */
+function renderPresets(){
+  $('#presets').innerHTML = PRESETS.map((p,i)=>{
+    const e = log.get(p.s), all = e && e.parse && e.try && e.conv;
+    return '<button class="pre'+(cur===p.s?' on':'')+'" data-i="'+i+'" type="button">'+esc(p.label)+(all?'<span class="tick">✓</span>':'')+'</button>';
+  }).join('');
+  $('#presets').querySelectorAll('.pre').forEach(b=> b.onclick = ()=> setInput(PRESETS[+b.dataset.i].s));
+}
+function renderCode(){
+  $('#code').innerHTML =
+    '<span class="ty">Console</span>.<span class="fn">Write</span>(<span class="str">"Nhập tuổi: "</span>);\n'+
+    '<span class="kw">string</span> <span class="id">s</span> = <span class="ty">Console</span>.<span class="fn">ReadLine</span>();  <span class="cm">// s = </span>'+lit(cur);
+}
+function renderResults(){
+  const e = log.get(cur) || {};
+  $('#results').innerHTML = ['parse','try','conv'].map(k=>{
+    const r = e[k], cls = {parse:'f-parse',try:'f-try',conv:'f-conv'}[k];
+    let v = '<span class="v none">chưa chạy</span>';
+    if(r){
+      if(r.tp) v = '<span class="v '+(r.ok?'ok':'f')+'">ok = '+(r.ok?'True':'False')+', n = '+r.n+'</span>';
+      else if(r.err) v = '<span class="v ex">'+r.err+': '+esc(r.msg)+'</span>';
+      else v = '<span class="v ok">'+r.v+'</span>';
+    }
+    return '<div class="res '+cls+'"><span class="fn-n">'+FN[k].name+'</span>'+v+'</div>';
+  }).join('');
+}
+function setInput(s){ cur = s; renderPresets(); renderCode(); renderResults(); say('Đầu vào mới: '+labelOf(s)+'. Bấm các hàm để xem kết quả.'); mood('neutral'); }
+function say(t, cls=''){ const el=$('#say'); el.className='say '+cls; el.innerHTML=t; }
+const MOUTH = {neutral:'M24 39 L40 39', happy:'M22 36 Q32 47 42 36', sad:'M22 43 Q32 34 42 43'};
+function mood(m){ $('#mouth').setAttribute('d', MOUTH[m]); const c = m==='sad'?'#f87171':'#a3e635'; ['#eyeL','#eyeR'].forEach(e=>$(e).setAttribute('fill',c));
+  $('#bot').animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'none'}],{duration:380}); }
+
+function run(k){
+  const r = FN[k].run(cur);
+  const e = log.get(cur) || {}; e[k] = r; log.set(cur, e);
+  renderPresets(); renderResults(); renderLog(); checkChallenges(k, r); updateProgress();
+  const row = $('#results').children[['parse','try','conv'].indexOf(k)];
+  row.animate([{transform:'scale(.97)',opacity:.4},{transform:'none',opacity:1}],{duration:300});
+  if(r.err){ say('💥 <b>'+r.err+'</b>: chương trình bị dừng đột ngột! Người dùng nhập sai là ứng dụng "sập".', 'crash'); mood('sad');
+    row.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:350}); }
+  else if(r.tp && !r.ok){ say('Không có lỗi: TryParse trả về <b>false</b>, n = 0. Chương trình vẫn chạy tiếp và có thể báo người dùng nhập lại.', 'safe'); mood('happy'); }
+  else { say('Thành công: kết quả là số <b>'+(r.tp?r.n:r.v)+'</b>.', 'safe'); mood('happy'); }
+}
+document.querySelectorAll('.run').forEach(b=> b.onclick = ()=> run(b.dataset.f));
+$('#useCustom').onclick = ()=> setInput($('#custom').value);
+$('#custom').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); setInput($('#custom').value); } });
+
+/* ---------------- Phần 1: bảng ghi ---------------- */
+function triedCount(){ let n=0; log.forEach(e=>{ if(e.parse&&e.try&&e.conv) n++; }); return n; }
+function renderLog(){
+  const keys = PRESETS.map(p=>p.s);
+  log.forEach((_,k)=>{ if(!keys.includes(k)) keys.push(k); });
+  const cell = r => r ? '<td class="cell '+kind(r)+'">'+esc(short(r))+'</td>' : '<td class="cell e">—</td>';
+  $('#logt').innerHTML = '<tr><th>Đầu vào</th><th>int.Parse</th><th>int.TryParse (bool, n)</th><th>Convert.ToInt32</th></tr>'+
+    keys.map(k=>{ const e = log.get(k)||{}; return '<tr><td class="in">'+esc(labelOf(k))+'</td>'+cell(e.parse)+cell(e.try)+cell(e.conv)+'</tr>'; }).join('');
+  const n = triedCount();
+  $('#cnt1').className = 'counter'+(n>=5?' done':'');
+  $('#cnt1').textContent = n>=5 ? '✔ Đã thử đủ '+n+' đầu vào với cả 3 hàm.' : 'Đã thử đủ cả 3 hàm với '+n+'/5 đầu vào.';
+}
+
+/* ---------------- Phần 2: dự đoán ---------------- */
+function renderPreds(){
+  $('#preds').innerHTML = PREDS.map((p,i)=>'<div class="q" data-i="'+i+'"><div class="qt">'+(i+1)+'. '+p.q+'</div><div class="opts">'+
+    p.opts.map((o,j)=>'<button class="opt" data-j="'+j+'" type="button">'+String.fromCharCode(65+j)+'. '+esc(o)+'</button>').join('')+
+    '</div><div class="fb"></div><button class="try" type="button" hidden>▶ Kiểm tra bằng mô phỏng</button></div>').join('');
+  $('#preds').querySelectorAll('.q').forEach(q=>{
+    const i = +q.dataset.i, p = PREDS[i];
+    q.querySelectorAll('.opt').forEach(b=> b.onclick = ()=>{
+      const j = +b.dataset.j; predAns[i] = j;
+      q.querySelectorAll('.opt').forEach((x,k)=>{ x.disabled = true; if(k===p.ok) x.classList.add('right'); if(k===j && j!==p.ok) x.classList.add('wrong'); });
+      const fb = q.querySelector('.fb');
+      fb.className = 'fb '+(j===p.ok?'good':'badf');
+      fb.textContent = (j===p.ok?'✔ Dự đoán đúng! ':'✘ Chưa đúng. ')+p.why;
+      q.querySelector('.try').hidden = false; updateProgress();
+    });
+    q.querySelector('.try').onclick = ()=>{ setInput(p.s); run(p.f); document.getElementById('sim').scrollIntoView({behavior:'smooth',block:'nearest'}); };
+  });
+}
+
+/* ---------------- Phần 3: thử thách ---------------- */
+const CHALS = [
+  {id:'c1', t:'Một đầu vào khiến <code>Convert.ToInt32</code> trả về <b>0</b> mà không báo lỗi.'},
+  {id:'c2', t:'Một chuỗi <b>có khoảng trắng</b> nhưng vẫn chuyển được thành số.'},
+  {id:'c3', t:'Một số đúng về mặt toán học nhưng <b>int không chứa nổi</b>.'},
+  {id:'c4', t:'(Nâng cao) Nhập <code>12.5</code>: hàm nào chuyển được? Nếu không hàm nào, nên dùng hàm nào thay thế?'}
+];
+function checkChallenges(k, r){
+  if(k==='conv' && !r.err && r.v===0 && !chal.c1) chal.c1 = cur;
+  if((k==='parse'||k==='conv') && !r.err && cur!==NUL && /\s/.test(cur) && !chal.c2) chal.c2 = cur;
+  if(k==='try' && r.ok && cur!==NUL && /\s/.test(cur) && !chal.c2) chal.c2 = cur;
+  if(r.err==='OverflowException' && !chal.c3) chal.c3 = cur;
+  renderChals();
+}
+function renderChals(){
+  const status = id=>{
+    if(id==='c1' && chal.c1!=null) return chal.c1===NUL ? 'Tìm ra: null. Convert.ToInt32 coi null là 0.' : 'Tìm ra: '+esc(labelOf(chal.c1))+'. Đúng rồi! Còn một đầu vào đặc biệt khác cũng cho 0 mà không lỗi, bạn thử tìm thêm nhé.';
+    if(id==='c2' && chal.c2!=null) return 'Tìm ra: '+esc(labelOf(chal.c2).replace(/ /g,'·'))+'. Khoảng trắng ở đầu và cuối được bỏ qua.';
+    if(id==='c3' && chal.c3!=null) return 'Tìm ra: '+esc(labelOf(chal.c3))+' gây OverflowException: vượt giới hạn 2 147 483 647 của int.';
+    if(id==='c4' && chal.c4) return 'Chính xác! Không hàm nào trong 3 hàm chuyển được 12.5 sang int.';
+    return id==='c4' ? 'Chạy 12.5 với cả 3 hàm, rồi trả lời câu hỏi bên dưới.' : 'Chưa tìm ra. Hãy thử trong trình mô phỏng.';
+  };
+  const e = log.get('12.5') || {};
+  const tried125 = e.parse && e.try && e.conv;
+  $('#chals').innerHTML = CHALS.map((c,i)=>{
+    const done = c.id==='c4' ? chal.c4 : chal[c.id]!=null;
+    let extra = '';
+    if(c.id==='c4' && tried125 && !chal.c4){
+      extra = '<div class="opts" style="margin-top:6px">'+
+        ['Convert.ToInt32 làm tròn được','Không hàm nào; dùng double.TryParse hoặc decimal.TryParse','int.TryParse nếu bỏ dấu chấm'].map((o,j)=>'<button class="opt c4" data-j="'+j+'" type="button">'+String.fromCharCode(65+j)+'. '+o+'</button>').join('')+'</div><div class="fb" id="c4fb"></div>';
+    }
+    return '<div class="ch'+(done?' done':'')+'"><span class="mk">'+(done?'✓':i+1)+'</span><div><div class="ct">'+c.t+'</div><div class="cs">'+status(c.id)+'</div>'+extra+'</div></div>';
+  }).join('');
+  $('#chals').querySelectorAll('.opt.c4').forEach(b=> b.onclick = ()=>{
+    const j = +b.dataset.j, fb = $('#c4fb');
+    if(j===1){ chal.c4 = true; renderChals(); updateProgress(); }
+    else { b.classList.add('wrong'); b.disabled = true; fb.className='fb badf';
+      fb.textContent = j===0 ? '✘ Bạn vừa thử: Convert.ToInt32("12.5") cũng ném FormatException. Convert chỉ làm tròn khi đầu vào là số double, không phải chuỗi.' : '✘ Bỏ dấu chấm thì "125" thành 125, sai giá trị. Cần một kiểu chứa được phần thập phân.'; }
+  });
+}
+
+/* ---------------- Phần 4: quy tắc ---------------- */
+function sel(o, id){ return '<span class="blank"><select data-id="'+id+'"><option value="">______</option>'+o.opts.map((x,j)=>'<option value="'+j+'">'+esc(x)+'</option>').join('')+'</select></span>'; }
+function renderRules(){
+  let id = 0; const keys = [];
+  $('#rules').innerHTML = RULES.map((r,i)=>{
+    let h = '<div class="rule">'+(i+1)+'. '+r.pre+' '+sel(r, id)+(r.post||''); keys.push(r); id++;
+    (r.more||[]).forEach(m=>{ h += m.pre+' '+sel(m, id)+(m.post||''); keys.push(m); id++; });
+    return h + '</div>';
+  }).join('');
+  $('#chkRules').onclick = ()=>{
+    let good = 0, total = keys.length;
+    $('#rules').querySelectorAll('select').forEach(s=>{
+      const k = keys[+s.dataset.id], ok = s.value!=='' && +s.value===k.ok;
+      s.classList.toggle('good', ok); s.classList.toggle('badb', !ok); if(ok) good++;
+    });
+    rulesOk = good===total;
+    $('#rulesFb').className = 'fb '+(rulesOk?'good':'badf');
+    $('#rulesFb').textContent = rulesOk ? '✔ Chính xác cả '+total+' chỗ trống!' : 'Đúng '+good+'/'+total+'. Ô viền đỏ chưa đúng, hãy dùng trình mô phỏng để kiểm tra lại.';
+    updateProgress();
+  };
+}
+
+/* ---------------- Phần 5: áp dụng ---------------- */
+function renderTpl(){
+  $('#tpl').innerHTML =
+    '<span class="ty">Console</span>.<span class="fn">Write</span>(<span class="str">"Nhập một số nguyên: "</span>);\n'+
+    '<span class="kw">string</span> <span class="id">s</span> = <span class="ty">Console</span>.<span class="fn">ReadLine</span>();\n'+
+    '<span class="kw">bool</span> <span class="id">ok</span> = <span class="kw">int</span>.<span class="fn">TryParse</span>(<input id="b1" aria-label="chỗ trống 1" autocomplete="off">, <span class="kw">out int</span> <input id="b2" aria-label="chỗ trống 2" autocomplete="off">);\n'+
+    '<span class="ty">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"ok = {ok}, n = {n}"</span>);';
+  $('#chkTpl').onclick = ()=>{
+    const a = $('#b1').value.trim(), b = $('#b2').value.trim();
+    $('#b1').classList.toggle('good', a==='s'); $('#b1').classList.toggle('badb', a!=='s');
+    $('#b2').classList.toggle('good', b==='n'); $('#b2').classList.toggle('badb', b!=='n');
+    tplOk = a==='s' && b==='n';
+    const fb = $('#tplFb'); fb.className = 'fb '+(tplOk?'good':'badf');
+    fb.textContent = tplOk ? '✔ Đúng: int.TryParse(s, out int n). Bấm "Chạy 3 lần" để xem kết quả.' :
+      (a!=='s' ? '✘ Chỗ trống 1 là chuỗi cần chuyển, tức biến chứa dữ liệu người dùng nhập. ' : '') + (b!=='n' ? '✘ Chỗ trống 2 là tên biến nhận số. Dòng in ra đang dùng biến nào?' : '');
+    $('#runTpl').disabled = !tplOk; updateProgress();
+  };
+  $('#runTpl').onclick = ()=>{
+    const out = $('#tplOut'); out.innerHTML = '';
+    ['42','abc','12.5'].forEach((inp, i)=> setTimeout(()=>{
+      const r = FN.try.run(inp);
+      out.innerHTML += (i?'\n':'')+'<span class="cm">// Lần chạy '+(i+1)+'</span>\nNhập một số nguyên: <span class="u">'+esc(inp)+'</span>\n<span class="'+(r.ok?'g':'r')+'">ok = '+(r.ok?'True':'False')+', n = '+r.n+'</span>';
+    }, i*700));
+  };
+  ['sub1','sub2'].forEach(id=> $('#'+id).onchange = updateProgress);
+}
+
+/* ---------------- tiến độ & tiêu chí ---------------- */
+const TABS = [['p1','Phần 1'],['p2','Phần 2'],['p3','Phần 3'],['p4','Phần 4'],['p5','Phần 5'],['p6','Lỗi thường gặp'],['p7','Hoàn thành']];
+function counts(){
+  return {
+    inputs: triedCount(),
+    preds: Object.keys(predAns).length,
+    chals: ['c1','c2','c3'].filter(c=>chal[c]!=null).length + (chal.c4?1:0),
+    sub: $('#sub1').checked && $('#sub2').checked
+  };
+}
+function updateProgress(){
+  const c = counts();
+  const chips = [['Đầu vào '+c.inputs+' (cần 5)', c.inputs>=5], ['Dự đoán '+c.preds+'/4 (cần 3)', c.preds>=3], ['Thử thách '+c.chals+'/4 (cần 2)', c.chals>=2], ['Quy tắc', rulesOk], ['Nộp bài', tplOk && c.sub]];
+  $('#prog').innerHTML = chips.map(([t,d])=>'<span class="pchip'+(d?' done':'')+'">'+(d?'✓ ':'')+t+'</span>').join('');
+  const crit = [
+    ['Đã thử ít nhất 5 đầu vào (cả 3 hàm)', c.inputs>=5, c.inputs+'/5'],
+    ['Đã trả lời ít nhất 3 câu dự đoán', c.preds>=3, c.preds+'/3'],
+    ['Đã hoàn thành ít nhất 2 thử thách', c.chals>=2, c.chals+'/2'],
+    ['Đã điền đúng code và nộp đủ file cùng ảnh chụp', tplOk && c.sub, (tplOk?'code ✓':'code ✗')+' · '+(c.sub?'nộp ✓':'nộp ✗')]
+  ];
+  $('#crit').innerHTML = crit.map(([t,d,n])=>'<div class="crit'+(d?' done':'')+'"><span class="mk">'+(d?'✓':'')+'</span><span>'+t+'</span><span class="n">'+n+'</span></div>').join('');
+  $('#alldone').classList.toggle('on', crit.every(x=>x[1]));
+  const tc = {p1:c.inputs+'/5', p2:c.preds+'/4', p3:c.chals+'/4'};
+  document.querySelectorAll('#tabs button').forEach(b=>{ const k=b.dataset.p; if(tc[k]) b.querySelector('.c').textContent = tc[k]; });
+}
+function renderTabs(){
+  $('#tabs').innerHTML = TABS.map(([id,t],i)=>'<button type="button" role="tab" data-p="'+id+'" class="'+(i===0?'on':'')+'">'+t+'<span class="c"></span></button>').join('');
+  $('#tabs').querySelectorAll('button').forEach(b=> b.onclick = ()=>{
+    $('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+    TABS.forEach(([id])=> document.getElementById(id).hidden = id!==b.dataset.p);
+  });
+}
+
+/* ---------------- khởi động ---------------- */
+renderTabs(); renderPresets(); renderCode(); renderResults(); renderLog(); renderPreds(); renderChals(); renderRules(); renderTpl(); updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Máy tính toán tử C#</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#0b0f17; --panel:#121826; --line:#263042; --text:#e6edf3; --dim:#8b98a9;
+    --lime:#a3e635; --pink:#f472b6; --cyan:#22d3ee; --yellow:#facc15; --ok:#4ade80; --bad:#f87171; --orange:#fb923c;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.45;
+    background-image:radial-gradient(rgba(34,211,238,.06) 1px,transparent 1px);background-size:22px 22px}
+  button,input{font:inherit}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  code{font-family:var(--mono);background:rgba(148,163,184,.16);padding:0 5px;border-radius:5px;font-size:.92em}
+  .wrap{max-width:1200px;margin:0 auto;padding-inline:16px}
+  header{padding-block:12px 4px}
+  .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .term{font-family:var(--mono);font-size:clamp(17px,2.4vw,23px);font-weight:700;margin:0}
+  .term .p{color:var(--lime)}
+  .cursor{display:inline-block;width:.55em;height:1em;background:var(--lime);vertical-align:-2px;margin-left:4px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .xp{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;position:relative}
+  .xpbar{width:140px;height:12px;border-radius:999px;background:#1c2433;border:1px solid var(--line);overflow:hidden}
+  .xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan));transition:width .6s}
+  .lvl{background:#1c2433;border:1px solid var(--line);padding:2px 10px;border-radius:999px;color:var(--yellow)}
+  .toast{position:absolute;right:0;top:-6px;color:var(--yellow);font-weight:800;pointer-events:none;opacity:0}
+  .toast.go{animation:toast 1.2s ease-out}
+  @keyframes toast{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-18px)}}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .tabs button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13.5px}
+  .tabs button.on{background:var(--lime);color:#111;border-color:var(--lime);font-weight:700}
+  main.wrap{padding-block:8px 16px}
+  .view{display:none}.view.on{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:12px}
+  @media (max-width:860px){.view.on{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .card h2{margin:0 0 8px;font-size:12.5px;color:var(--dim);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+
+  /* bảng nhập */
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-family:var(--mono);color:var(--cyan);font-weight:700}
+  .field input{width:120px;background:#0b1220;border:2px solid var(--line);color:var(--text);border-radius:8px;padding:5px 8px;font-family:var(--mono);font-size:16px}
+  .field input.bad{border-color:var(--bad)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{background:#0b1220;color:var(--dim);border:0;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:14px}
+  .seg button.on{background:var(--cyan);color:#071018;font-weight:800}
+  .seg button.on.dbl{background:var(--pink)}
+  .ops{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+  .ops button{font-family:var(--mono);font-size:24px;font-weight:800;padding:8px 0;border-radius:10px;border:2px solid var(--line);background:#0b1220;color:var(--yellow);cursor:pointer;transition:transform .1s}
+  .ops button:hover{border-color:var(--yellow)}
+  .ops button:active{transform:scale(.94)}
+  .ops button.on{background:var(--yellow);color:#111;border-color:var(--yellow)}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);margin-top:8px;cursor:pointer}
+  .chk input{accent-color:var(--pink)}
+  .msg{font-size:12.5px;color:var(--bad);min-height:0;margin-top:4px}
+  .msg:empty{display:none}
+
+  /* thử thách */
+  .ch{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px dashed var(--line);font-size:13.5px}
+  .ch:first-of-type{border-top:0}
+  .ch .ic{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--pink);display:grid;place-items:center;font-size:13px;font-weight:900;color:#111}
+  .ch.done .ic{background:var(--ok);border-color:var(--ok)}
+  .ch.done .t{color:#a7f3d0}
+  .ch .t b{color:var(--pink)} .ch.done .t b{color:var(--ok)}
+  .ch .sub2{display:block;color:var(--dim);font-size:12px}
+  .pill{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--dim);margin-left:4px}
+  .pill.on{border-color:var(--ok);color:var(--ok)}
+
+  /* IDE */
+  .ide{background:#1e1e1e;border-radius:12px;overflow:hidden;border:1px solid #3c3c3c}
+  .bar{background:#2d2d2d;display:flex;align-items:center;gap:7px;padding:5px 12px;font-size:13px;color:#ccc}
+  .bar i{width:11px;height:11px;border-radius:50%}
+  .bar .tab{background:#1e1e1e;color:#fff;padding:2px 12px;border-radius:6px 6px 0 0;margin-left:8px;font-family:var(--mono);font-size:12.5px}
+  .bar .lang{margin-left:auto;color:#9cdcfe;font-family:var(--mono);font-size:12px}
+  .code{font-family:var(--mono);font-size:clamp(13px,1.35vw,15.5px);color:#d4d4d4;padding:6px 0 8px;overflow-x:auto}
+  .eline{display:flex}
+  .eline .ln{width:36px;flex:none;text-align:right;padding-right:12px;color:#858585;user-select:none}
+  .eline .cd{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;padding-right:10px}
+  .eline.act{background:#2a2d2e}.eline.act .ln{color:#c6c6c6}
+  .eline.flash{animation:flash .6s}
+  @keyframes flash{from{background:#3b3f1f}to{background:transparent}}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.num{color:#b5cea8}.str{color:#ce9178}.fn{color:#dcdcaa}.id{color:#9cdcfe}.cm{color:#6a9955}
+  .squig{text-decoration:underline wavy #f14c4c;text-underline-offset:4px}
+  .out{background:#141414;border:1px solid #3c3c3c;border-radius:12px;overflow:hidden}
+  .out .otabs{display:flex;align-items:center;gap:4px;background:#2d2d2d;padding:3px 8px;font-size:12.5px}
+  .out .otabs span{padding:1px 10px;border-radius:6px;color:#9d9d9d}
+  .out .otabs span.on{background:#3a3a3a;color:#fff}
+  .out .st{margin-left:auto;font-weight:700}
+  .st.okk{color:var(--ok)}.st.ko{color:var(--bad)}
+  .obody{padding:6px 12px;font-family:var(--mono);font-size:13.5px;min-height:40px;color:#bdbdbd;word-break:break-word}
+  .obody .o{color:var(--ok);font-size:16px;font-weight:700}.obody .x{color:#fca5a5}
+  .obody .muted{color:#777;font-family:var(--sans)}
+  .ecode{color:var(--bad);font-weight:700;font-family:var(--mono)}
+
+  /* giải thích */
+  .why{font-size:14px}
+  .why .big{font-family:var(--mono);font-size:clamp(17px,2vw,21px);font-weight:800;margin:2px 0 6px;word-break:break-word}
+  .why .big .r{color:var(--lime)} .why .big .s{color:var(--dim);font-weight:600;font-family:var(--sans);font-size:.8em}
+  .why .note{color:var(--dim);font-size:12.5px;margin-top:6px}
+  .why .warn{border-left:4px solid var(--orange);background:rgba(251,146,60,.1);padding:4px 8px;border-radius:6px;margin-top:6px;font-size:13px}
+  .candy{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:flex-end}
+  .kid{border:1px solid var(--line);border-radius:10px;padding:4px 6px;background:#0f1522;text-align:center;min-width:44px}
+  .kid .c{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:90px;min-height:16px}
+  .kid small{display:block;font-size:11px;color:var(--dim)}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--pink);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25);animation:pop .3s backwards}
+  .kid.left{border-color:var(--yellow);border-style:dashed}
+  .kid.left .dot{background:var(--yellow)}
+  @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+
+  /* ++ -- */
+  .forms{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .forms button{font-family:var(--mono);font-size:15px;font-weight:800;padding:8px 4px;border-radius:10px;border:2px solid var(--line);background:#0b1220;color:var(--cyan);cursor:pointer}
+  .forms button.on{border-color:var(--lime);color:var(--lime);background:rgba(163,230,53,.08)}
+  .forms button .tk{display:block;font-size:10.5px;color:var(--dim);font-family:var(--sans);font-weight:600}
+  .forms button.seen .tk::after{content:" ✓";color:var(--ok)}
+  .boxes{display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0 6px;flex-wrap:wrap}
+  .box{width:100px;text-align:center}
+  .box .lid{font-family:var(--mono);font-weight:800;color:var(--cyan);font-size:15px}
+  .box .bd{height:70px;border:3px solid var(--cyan);border-top-width:8px;border-radius:6px 6px 12px 12px;display:grid;place-items:center;font-family:var(--mono);font-size:30px;font-weight:900;background:#0f1522;transition:background .3s}
+  .box.y .lid{color:var(--pink)} .box.y .bd{border-color:var(--pink)}
+  .box .bd.ch{animation:bump .5s}
+  .box .bd .empty{color:#3b4659;font-size:18px}
+  @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.15);background:#2a3a14}100%{transform:scale(1)}}
+  .expr{text-align:center;min-width:110px}
+  .expr .lab{font-size:11.5px;color:var(--dim)}
+  .expr .val{font-family:var(--mono);font-size:26px;font-weight:900;color:var(--yellow);min-height:38px}
+  .expr .arrow{color:var(--dim);font-size:12.5px}
+  .stepcap{font-size:15px;font-weight:600;text-align:center;min-height:44px}
+  .stepcap b{color:var(--lime)}
+  .sbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .btn{font-size:14px;padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .btn.primary{background:var(--lime);color:#111;border-color:var(--lime);font-weight:800}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .tip{font-size:12.5px;color:var(--dim);margin-top:6px}
+  .cmp{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  .cmp td,.cmp th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+  .cmp th{color:var(--dim);font-weight:600}
+  .cmp td code{background:none;padding:0}
+  .cmp tr.hl td{background:rgba(163,230,53,.08)}
+
+  /* robot */
+  #bottom{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;display:flex;gap:12px;align-items:center}
+  #bot{width:52px;height:52px;flex:none}
+  #bot.bounce{animation:bounce .5s}
+  @keyframes bounce{40%{transform:translateY(-6px)}}
+  .bubble{flex:1;min-width:0;background:#0f1522;border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:clamp(14px,1.6vw,16px);font-weight:600}
+
+  /* khung thấp (HTML Preview của LMS ~520px) */
+  @media (max-height:760px){
+    header{padding-block:5px 2px}.term{font-size:16px}
+    .tabs{margin-top:4px;gap:5px}.tabs button{padding:3px 9px;font-size:12px}
+    main.wrap{padding-block:5px 8px}
+    .view.on{gap:8px}.col{gap:6px}
+    .card{padding:6px 10px}.card h2{margin-bottom:4px;font-size:11px}
+    .field input{width:100px;padding:3px 6px;font-size:14px}
+    .seg button{padding:3px 10px;font-size:13px}
+    .ops{margin-top:6px;gap:6px}.ops button{font-size:19px;padding:3px 0}
+    .chk{margin-top:4px;font-size:12px}
+    .ch{padding:3px 0;font-size:12.5px}.ch .sub2{font-size:11px}.ch .ic{width:18px;height:18px;font-size:11px}
+    .bar{padding:2px 10px}.code{font-size:12.5px;padding:3px 0}
+    .out .otabs{padding:1px 8px;font-size:11.5px}.obody{min-height:0;padding:3px 10px;font-size:12.5px}.obody .o{font-size:14px}
+    .why{font-size:12.5px}.why .big{font-size:16px;margin:0 0 3px}.why .note,.why .warn{font-size:11.5px;margin-top:3px}
+    .kid{padding:2px 4px}.dot{width:10px;height:10px}
+    .forms button{padding:4px 2px;font-size:13px}
+    .boxes{margin:4px 0 2px;gap:10px}.box{width:84px}.box .bd{height:50px;font-size:24px;border-top-width:6px}
+    .expr .val{font-size:21px;min-height:30px}
+    .stepcap{font-size:13px;min-height:36px}
+    .btn{padding:3px 11px;font-size:12.5px}.sbtns{margin-top:3px}
+    .tip{font-size:11.5px;margin-top:3px}.cmp{font-size:12px}.cmp td,.cmp th{padding:1px 5px}
+    #bottom{margin-top:6px;padding:4px 10px}#bot{width:38px;height:38px}.bubble{padding:4px 10px;font-size:13.5px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topline">
+    <h1 class="term"><span class="p">~/csharp $</span> ./may-tinh-toan-tu<span class="cursor"></span></h1>
+    <div class="xp" aria-live="polite">
+      <span>XP</span><span class="xpbar"><i id="xpfill"></i></span><span id="xptxt">0/360</span><span class="lvl" id="lvl">Newbie</span>
+      <span class="toast" id="toast"></span>
+    </div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="on" data-v="calc" role="tab">🧮 Máy tính + − * / %</button>
+    <button data-v="inc" role="tab">⏫ Tăng / giảm ++ −−</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ============ MÁY TÍNH ============ -->
+  <section class="view on" id="v-calc">
+    <div class="col">
+      <div class="card">
+        <h2>Nhập hai số và chọn kiểu</h2>
+        <div class="row">
+          <div class="field"><label for="ia">a =</label><input id="ia" value="7" inputmode="decimal" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="ib">b =</label><input id="ib" value="2" inputmode="decimal" autocomplete="off" spellcheck="false"></div>
+          <div class="seg" role="group" aria-label="Kiểu dữ liệu">
+            <button class="on" data-t="int">int</button><button data-t="double" class="dbl">double</button>
+          </div>
+        </div>
+        <div class="msg" id="msg"></div>
+        <div class="ops" role="group" aria-label="Toán tử">
+          <button data-op="+">+</button><button data-op="-">−</button><button data-op="*">*</button><button data-op="/">/</button><button data-op="%">%</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="lit"> Viết thẳng số vào code (hằng số), không dùng biến</label>
+      </div>
+      <div class="card" id="chs">
+        <h2>🎯 Thử thách</h2>
+        <div class="ch" id="ch1"><span class="ic"></span><span class="t"><b>#1</b> Tìm a, b (a &lt; b) để <code>a / b</code> cho kết quả <b>0</b>.<span class="sub2">Gợi ý: chế độ int. Đừng chọn a = 0 nhé.</span></span></div>
+        <div class="ch" id="ch2"><span class="ic"></span><span class="t"><b>#2</b> Cho <code>b = 0</code> rồi bấm <code>/</code> ở cả hai kiểu. <span class="pill" id="p-int">int</span><span class="pill" id="p-dbl">double</span><span class="sub2">Hai kiểu phản ứng khác nhau ra sao?</span></span></div>
+        <div class="ch" id="ch3"><span class="ic"></span><span class="t"><b>#3</b> Tìm a, b để <code>a % b</code> ra số <b>âm</b>.<span class="sub2">Gợi ý: dấu của kết quả đi theo số nào?</span></span></div>
+      </div>
+    </div>
+    <div class="col">
+      <section class="ide" aria-label="Code C#">
+        <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab">Program.cs</span><span class="lang">C#</span></div>
+        <div class="code" id="code"></div>
+      </section>
+      <section class="out" aria-label="Kết quả chạy">
+        <div class="otabs"><span id="t-out" class="on">Console</span><span id="t-err">Danh sách lỗi</span><span class="st" id="st"></span></div>
+        <div class="obody" id="obody"><span class="muted">Chọn một toán tử để chạy.</span></div>
+      </section>
+      <div class="card why" id="why"><h2>Vì sao?</h2><div class="muted" style="color:var(--dim)">Bấm một nút toán tử, máy sẽ giải thích kết quả.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ++ / -- ============ -->
+  <section class="view" id="v-inc">
+    <div class="col">
+      <div class="card">
+        <h2>Chọn cách viết (thử đủ cả 4 để nhận XP)</h2>
+        <div class="forms" id="forms">
+          <button data-f="x++">y = x++<span class="tk">hậu tố</span></button>
+          <button data-f="++x">y = ++x<span class="tk">tiền tố</span></button>
+          <button data-f="x--">y = x--<span class="tk">hậu tố</span></button>
+          <button data-f="--x">y = --x<span class="tk">tiền tố</span></button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><label for="ix">x ban đầu =</label><input id="ix" value="5" inputmode="numeric" autocomplete="off" style="width:80px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Bảng so sánh (x ban đầu = <span id="x0lab">5</span>)</h2>
+        <table class="cmp" id="cmp"></table>
+        <div class="tip">Viết riêng một dòng <code>x++;</code> hay <code>++x;</code> thì như nhau: đều tăng x thêm 1. Khác biệt chỉ lộ ra khi <b>dùng giá trị</b> của biểu thức (gán, in, tính tiếp).</div>
+      </div>
+    </div>
+    <div class="col">
+      <section class="ide" aria-label="Code C#">
+        <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab">Program.cs</span><span class="lang">C#</span></div>
+        <div class="code" id="code2"></div>
+      </section>
+      <div class="card">
+        <div class="boxes">
+          <div class="box"><div class="lid">x</div><div class="bd" id="bx"></div></div>
+          <div class="expr"><div class="lab">giá trị biểu thức</div><div class="val" id="ev"></div><div class="arrow">→ gán cho y</div></div>
+          <div class="box y"><div class="lid">y</div><div class="bd" id="by"></div></div>
+        </div>
+        <div class="stepcap" id="scap"></div>
+        <div class="sbtns">
+          <button class="btn" id="sprev">◀ Lùi</button>
+          <button class="btn primary" id="snext">Bước tiếp ▶</button>
+          <button class="btn" id="sall">⏩ Chạy hết</button>
+        </div>
+      </div>
+      <section class="out" aria-label="Kết quả chạy">
+        <div class="otabs"><span class="on">Console</span></div>
+        <div class="obody" id="obody2"><span class="muted">Chạy tới dòng 3 để thấy kết quả in ra.</span></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="bottom" aria-live="polite">
+    <svg id="bot" viewBox="0 0 64 64" aria-hidden="true">
+      <line x1="32" y1="5" x2="32" y2="12" stroke="#22d3ee" stroke-width="3"/>
+      <circle cx="32" cy="5" r="3.5" fill="#f472b6"/>
+      <rect x="9" y="12" width="46" height="36" rx="11" fill="#1f2937" stroke="#22d3ee" stroke-width="3"/>
+      <circle id="eyeL" cx="24" cy="28" r="4" fill="#a3e635"/>
+      <circle id="eyeR" cx="40" cy="28" r="4" fill="#a3e635"/>
+      <path id="mouth" d="M24 39 L40 39" stroke="#a3e635" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <rect x="20" y="50" width="24" height="9" rx="3" fill="#1f2937" stroke="#22d3ee" stroke-width="2"/>
+    </svg>
+    <div class="bubble" id="say">Xin chào! Nhập <code>a</code>, <code>b</code>, chọn <b>int</b> hay <b>double</b>, rồi bấm một toán tử. Code C# tương ứng hiện bên phải.</div>
+  </section>
+</main>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const INT_MIN = -2147483648, INT_MAX = 2147483647;
+
+/* ---------- định dạng double giống Console.WriteLine của C# (.NET 8) ---------- */
+function csDouble(x){
+  if (Number.isNaN(x)) return 'NaN';
+  if (x === Infinity) return '∞';
+  if (x === -Infinity) return '-∞';
+  if (x === 0) return Object.is(x, -0) ? '-0' : '0';
+  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(x.toExponential());
+  const sign = m[1], digs = m[2] + (m[3] || ''), exp = parseInt(m[4], 10);
+  if (exp >= 17 || exp < -4) return sign + m[2] + (m[3] ? '.' + m[3] : '') + 'E' + (exp < 0 ? '-' : '+') + String(Math.abs(exp)).padStart(2, '0');
+  if (exp < 0) return sign + '0.' + '0'.repeat(-exp - 1) + digs;
+  if (digs.length <= exp + 1) return sign + digs + '0'.repeat(exp + 1 - digs.length);
+  return sign + digs.slice(0, exp + 1) + '.' + digs.slice(exp + 1);
+}
+const lit = (v, t) => { if (t === 'int') return String(v); const s = csDouble(v); return /^-?\d+$/.test(s) ? s + '.0' : s; };
+
+/* ---------- tô màu code đơn giản ---------- */
+function hl(src){
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return src.replace(/(\/\/.*$)|("[^"]*")|\b(int|double|var)\b|\b(Console)\b|\b(WriteLine)\b|(\b\d+(?:\.\d+)?(?:E[+-]\d+)?\b)|\b([a-zA-Z_]\w*)\b|([^\w"\/]+|\/)/g,
+    (m, cm, st, ty, cl, fn, nu, id, other) => {
+      if (cm) return '<span class="cm">' + esc(cm) + '</span>';
+      if (st) return '<span class="str">' + esc(st) + '</span>';
+      if (ty) return '<span class="kw">' + ty + '</span>';
+      if (cl) return '<span class="ty">' + cl + '</span>';
+      if (fn) return '<span class="fn">' + fn + '</span>';
+      if (nu) return '<span class="num">' + nu + '</span>';
+      if (id) return '<span class="id">' + id + '</span>';
+      return esc(m);
+    });
+}
+function drawCode(el, lines, act, squig){
+  el.innerHTML = lines.map((l, i) => {
+    let h = hl(l);
+    if (squig && squig.line === i){ const k = l.indexOf(squig.mark); if (k >= 0) h = hl(l.slice(0, k)) + '<span class="squig">' + hl(squig.mark) + '</span>' + hl(l.slice(k + squig.mark.length)); }
+    return '<div class="eline' + (i === act ? ' act flash' : '') + '"><span class="ln">' + (i + 1) + '</span><span class="cd">' + h + '</span></div>';
+  }).join('');
+}
+
+/* ---------- robot + XP ---------- */
+const MOUTH = {neutral:'M24 39 L40 39', happy:'M22 37 Q32 47 42 37', sad:'M22 43 Q32 34 42 43', wow:'M28 40 Q32 34 36 40 Q32 46 28 40'};
+function mood(m){
+  $('#mouth').setAttribute('d', MOUTH[m] || MOUTH.neutral);
+  const col = m === 'sad' ? '#f87171' : m === 'wow' ? '#facc15' : '#a3e635';
+  ['#eyeL','#eyeR','#mouth'].forEach(s => $(s).setAttribute(s === '#mouth' ? 'stroke' : 'fill', col));
+  const b = $('#bot'); b.classList.remove('bounce'); void b.offsetWidth; b.classList.add('bounce');
+}
+function say(html, m){ $('#say').innerHTML = html; mood(m || 'neutral'); }
+const XP_MAX = 360; let xp = 0; const got = {};
+function gain(key, n){
+  if (got[key]) return false; got[key] = true; xp += n;
+  $('#xpfill').style.width = (xp / XP_MAX * 100) + '%'; $('#xptxt').textContent = xp + '/' + XP_MAX;
+  $('#lvl').textContent = xp >= XP_MAX ? 'Operator Master' : xp >= 200 ? 'Coder' : xp >= 100 ? 'Junior' : 'Newbie';
+  const t = $('#toast'); t.textContent = '+' + n + ' XP'; t.classList.remove('go'); void t.offsetWidth; t.classList.add('go');
+  return true;
+}
+
+/* ---------- tab ---------- */
+$$('.tabs button').forEach(b => b.onclick = () => {
+  $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + b.dataset.v));
+  if (b.dataset.v === 'inc') { incRender(); say('Chọn một cách viết rồi bấm <b>Bước tiếp ▶</b>. Để ý <b>thứ tự</b>: lấy giá trị trước hay tăng trước?'); }
+  else say('Quay lại máy tính. Còn thử thách nào chưa xong không?');
+});
+
+/* =====================================================================
+   1) MÁY TÍNH TOÁN TỬ
+   ===================================================================== */
+let T = 'int', OP = null;
+$$('.seg button').forEach(b => b.onclick = () => { T = b.dataset.t; $$('.seg button').forEach(x => x.classList.toggle('on', x === b)); if (OP) run(); else validate(); });
+$$('.ops button').forEach(b => b.onclick = () => { OP = b.dataset.op; $$('.ops button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+['#ia', '#ib'].forEach(s => $(s).addEventListener('input', () => { if (OP) run(); else validate(); }));
+$('#lit').onchange = () => { if (OP) run(); };
+
+function readNum(s, t){
+  s = s.trim().replace(',', '.');
+  if (t === 'int'){
+    if (!/^[-+]?\d+$/.test(s)) return {err: 'Kiểu int chỉ nhận số nguyên, ví dụ 7 hoặc -3.'};
+    const v = Number(s); if (v > INT_MAX || v < INT_MIN) return {err: 'Vượt phạm vi int (−2 147 483 648 … 2 147 483 647).'};
+    return {v};
+  }
+  if (!/^[-+]?\d+(\.\d+)?$/.test(s)) return {err: 'Hãy nhập một số, ví dụ 7.5 hoặc -2.'};
+  return {v: Number(s)};
+}
+function validate(){
+  const a = readNum($('#ia').value, T), b = readNum($('#ib').value, T);
+  $('#ia').classList.toggle('bad', !!a.err); $('#ib').classList.toggle('bad', !!b.err);
+  $('#msg').textContent = a.err ? 'a: ' + a.err : b.err ? 'b: ' + b.err : '';
+  return a.err || b.err ? null : {a: a.v, b: b.v};
+}
+const OPNAME = {'+':'cộng','-':'trừ','*':'nhân','/':'chia','%':'chia lấy dư'};
+
+/* Tính như C#: trả về {kind:'ok', v} | {kind:'runtime', ex, msg} | {kind:'compile', code, msg} */
+function compute(a, b, op, t, constant){
+  if (t === 'double'){
+    let r = op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : op === '/' ? a / b : a % b;
+    return {kind:'ok', v:r};
+  }
+  if ((op === '/' || op === '%') && b === 0)
+    return constant ? {kind:'compile', code:'CS0020', msg:'Division by constant zero'}
+                    : {kind:'runtime', ex:'System.DivideByZeroException', msg:'Attempted to divide by zero.'};
+  let exact = op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : op === '/' ? Math.trunc(a / b) : a % b;
+  if (Object.is(exact, -0)) exact = 0;
+  if (op === '%' && a === INT_MIN && b === -1 && !constant) return {kind:'runtime', ex:'System.OverflowException', msg:'Arithmetic operation resulted in an overflow.'};
+  if (exact > INT_MAX || exact < INT_MIN){
+    if (constant) return {kind:'compile', code:'CS0220', msg:'The operation overflows at compile time in checked mode'};
+    if (op === '/') return {kind:'runtime', ex:'System.OverflowException', msg:'Arithmetic operation resulted in an overflow.'};
+    const w = op === '*' ? Math.imul(a, b) : (exact | 0);
+    return {kind:'ok', v:w, wrapped:true, exact};
+  }
+  return {kind:'ok', v:exact};
+}
+
+function run(){
+  const inp = validate(); if (!inp || !OP) return;
+  const {a, b} = inp, constant = $('#lit').checked, op = OP;
+  const r = compute(a, b, op, T, constant);
+  const sop = op;
+  let lines, act, squig = null;
+  if (constant){
+    const A = lit(a, T), Bs = lit(b, T);
+    lines = ['Console.WriteLine(' + A + ' ' + sop + ' ' + Bs + ');'];
+    act = 0;
+    if (r.kind === 'compile') squig = {line:0, mark: A + ' ' + sop + ' ' + Bs};
+  } else {
+    lines = [T + ' a = ' + (T === 'int' ? a : csDouble(a)) + ';', T + ' b = ' + (T === 'int' ? b : csDouble(b)) + ';',
+             T + ' kq = a ' + sop + ' b;   // phép ' + OPNAME[op], 'Console.WriteLine(kq);'];
+    act = r.kind === 'runtime' ? 2 : 3;
+  }
+  drawCode($('#code'), lines, act, squig);
+
+  // Console / lỗi
+  const ob = $('#obody'), st = $('#st');
+  $('#t-out').classList.toggle('on', r.kind !== 'compile'); $('#t-err').classList.toggle('on', r.kind === 'compile');
+  if (r.kind === 'ok'){ ob.innerHTML = '<span class="o">' + (T === 'int' ? r.v : csDouble(r.v)) + '</span>'; st.textContent = '✔ Chạy xong'; st.className = 'st okk'; }
+  else if (r.kind === 'runtime'){ ob.innerHTML = '<span class="x">Unhandled exception. ' + r.ex + ': ' + r.msg + '<br>&nbsp;&nbsp; at Program.&lt;Main&gt;$(String[] args) in Program.cs:line 3</span>'; st.textContent = '💥 Lỗi khi chạy'; st.className = 'st ko'; }
+  else { ob.innerHTML = '<span class="ecode">' + r.code + '</span> ' + r.msg + ' <span class="muted">(dòng 1)</span>'; st.textContent = '⛔ Không biên dịch được'; st.className = 'st ko'; }
+
+  explain(a, b, op, r, constant);
+  checkChallenges(a, b, op, r, constant);
+}
+
+function candies(a, b){
+  const q = Math.trunc(a / b), rem = a % b;
+  let h = '<div class="candy">';
+  for (let k = 0; k < b; k++){
+    h += '<div class="kid"><div class="c">' + Array.from({length:q}, (_, i) => '<span class="dot" style="animation-delay:' + (i * b + k) * 40 + 'ms"></span>').join('') + '</div><small>bạn ' + (k + 1) + ': ' + q + '</small></div>';
+  }
+  if (rem) h += '<div class="kid left"><div class="c">' + Array.from({length:rem}, () => '<span class="dot"></span>').join('') + '</div><small>dư ' + rem + '</small></div>';
+  return h + '</div>';
+}
+
+function explain(a, b, op, r, constant){
+  const W = $('#why'), F = v => T === 'int' ? String(v) : csDouble(v);
+  const A = F(a), B = F(b);
+  const Bp = b < 0 ? '(' + B + ')' : B;
+  let h = '<h2>Vì sao?</h2>', m = 'neutral', s;
+  if (r.kind === 'compile'){
+    if (r.code === 'CS0020'){
+      h += '<div class="big"><span class="r">CS0020</span> <span class="s">chia cho hằng số 0</span></div>' +
+           '<div>Khi viết thẳng <code>' + A + ' ' + op + ' 0</code>, trình biên dịch tự tính biểu thức hằng số này <b>trước khi chạy</b> và phát hiện chia cho 0, nên chương trình <b>không biên dịch được</b>.</div>' +
+           '<div class="warn">Bỏ chọn ô “Viết thẳng số vào code” để dùng biến: khi đó lỗi chỉ xảy ra <b>lúc chạy</b> (DivideByZeroException).</div>';
+      s = 'Lỗi đỏ ngay trong IDE! Viết <code>' + A + ' ' + op + ' 0</code> là lỗi <b>biên dịch</b>, chưa chạy đã bị chặn.';
+    } else {
+      h += '<div class="big"><span class="r">CS0220</span> <span class="s">tràn số lúc biên dịch</span></div>' +
+           '<div>Kết quả thật là ' + compute(a, b, op === '/' ? '/' : op, 'double').v.toLocaleString('en-US') + ', vượt <code>int.MaxValue</code> = 2 147 483 647. Với hằng số, C# kiểm tra tràn ngay khi biên dịch.</div>' +
+           '<div class="warn">Dùng biến thì không bị chặn: phép tính sẽ âm thầm “quay vòng” (tràn số). Bỏ chọn ô hằng số để xem.</div>';
+      s = 'Trình biên dịch đã tính trước và thấy kết quả không vừa kiểu <b>int</b>.';
+    }
+    m = 'sad';
+  } else if (r.kind === 'runtime'){
+    if (r.ex.includes('DivideByZero')){
+      h += '<div class="big"><span class="r">DivideByZeroException</span></div><div>Với kiểu <b>int</b>, chia (hoặc chia lấy dư) cho 0 là vô nghĩa: không có số nguyên nào làm kết quả. Chương trình <b>dừng đột ngột</b> ở dòng 3.</div>' +
+           '<div class="note">Code biên dịch được vì trình biên dịch không biết trước <code>b</code> sẽ bằng 0. Thử chuyển sang <b>double</b> xem sao!</div>';
+      s = 'Bùm 💥! Số nguyên chia cho 0 làm chương trình <b>dừng ngay khi chạy</b>.';
+    } else {
+      h += '<div class="big"><span class="r">OverflowException</span></div><div>Kết quả đúng là 2 147 483 648, lớn hơn <code>int.MaxValue</code> một đơn vị. Riêng phép chia này, .NET báo lỗi tràn số khi chạy.</div>';
+      s = 'Ca hiếm: <code>int.MinValue / -1</code> không vừa kiểu int.';
+    }
+    m = 'sad';
+  } else if (T === 'int'){
+    const v = r.v;
+    if (r.wrapped){
+      h += '<div class="big">' + A + ' ' + op + ' ' + Bp + ' = <span class="r">' + v + '</span> <span class="s">(đúng ra là ' + r.exact + ')</span></div>' +
+           '<div><b>Tràn số!</b> Kết quả vượt phạm vi int nên bị “quay vòng” như đồng hồ công-tơ-mét. C# không báo lỗi trừ khi bạn dùng <code>checked</code>.</div>';
+      s = 'Cẩn thận: kết quả sai mà không có cảnh báo nào. Đó là <b>tràn số</b>.'; m = 'wow';
+    } else if (op === '/'){
+      const real = a / b;
+      h += '<div class="big">' + A + ' / ' + Bp + ' = <span class="r">' + v + '</span></div>' +
+           '<div>Toán học: ' + A + ' ÷ ' + B + ' = ' + (Number.isInteger(real) ? real : real.toFixed(4).replace(/0+$/, '')) + '. Hai số đều là <b>int</b> nên kết quả cũng là <b>int</b>: C# <b>cắt bỏ phần thập phân</b> (làm tròn về phía 0), không làm tròn lên.</div>' +
+           (real < 0 && !Number.isInteger(real) ? '<div class="note">Số âm cũng cắt về phía 0: ' + real.toFixed(2).replace(/0+$/, '') + ' → ' + v + ' (không phải ' + Math.floor(real) + ').</div>' : '') +
+           (a > 0 && b > 0 && a <= 40 && b <= 6 ? candies(a, b) : '');
+      s = Number.isInteger(real) ? 'Chia hết nên không mất gì.' : 'Phần lẻ đã <b>biến mất</b>. Muốn giữ phần thập phân? Chuyển sang <b>double</b>.';
+    } else if (op === '%'){
+      const q = Math.trunc(a / b);
+      h += '<div class="big">' + A + ' % ' + Bp + ' = <span class="r">' + v + '</span></div>' +
+           '<div>Phép % trả về <b>phần dư</b>: ' + A + ' = ' + Bp + ' × ' + (q < 0 ? '(' + q + ')' : q) + ' + ' + (v < 0 ? '(' + v + ')' : v) + '.</div>' +
+           '<div class="note">Dấu của kết quả luôn đi theo <b>số bị chia</b> (a). Vì vậy <code>-7 % 3</code> = -1 còn <code>7 % -3</code> = 1.</div>' +
+           (a > 0 && b > 0 && a <= 40 && b <= 6 ? candies(a, b) : '');
+      s = v < 0 ? 'Phần dư <b>âm</b> vì số bị chia âm!' : 'Hay dùng: <code>n % 2 == 0</code> để kiểm tra số chẵn.';
+    } else {
+      h += '<div class="big">' + A + ' ' + op + ' ' + Bp + ' = <span class="r">' + v + '</span></div><div>Phép ' + OPNAME[op] + ' hai số int cho kết quả int, giống hệt toán học (miễn là không vượt phạm vi int).</div>';
+      s = 'Phép ' + OPNAME[op] + ' không có gì bất ngờ. Thử <code>/</code> và <code>%</code> mới thú vị!';
+    }
+  } else {
+    const v = r.v, V = csDouble(v);
+    if (!Number.isFinite(v) || Number.isNaN(v)){
+      const name = Number.isNaN(v) ? 'NaN (Not a Number: không phải số)' : (v > 0 ? 'dương' : 'âm') + ' vô cực';
+      h += '<div class="big">' + A + ' ' + op + ' ' + Bp + ' = <span class="r">' + V + '</span></div>' +
+           '<div>Kiểu <b>double</b> không ném lỗi khi chia cho 0. Kết quả là giá trị đặc biệt: <b>' + name + '</b>. Chương trình vẫn chạy tiếp.</div>' +
+           '<div class="note">Tùy cài đặt vùng (culture) của máy, Console có thể in <code>' + (Number.isNaN(v) ? 'NaN' : (v < 0 ? '-' : '') + 'Infinity') + '</code> thay cho <code>' + V + '</code>.</div>';
+      s = 'Không có 💥! double cho ra <b>' + V + '</b>, nhưng kết quả này hiếm khi là thứ bạn muốn.'; m = 'wow';
+    } else {
+      h += '<div class="big">' + A + ' ' + op + ' ' + Bp + ' = <span class="r">' + V + '</span></div>' +
+           (op === '/' ? '<div>Với <b>double</b>, phép chia <b>giữ phần thập phân</b>.</div>' :
+            op === '%' ? '<div>% cũng dùng được với double: ' + A + ' = ' + Bp + ' × ' + Math.trunc(a / b) + ' + ' + V + '. Dấu theo số bị chia.</div>' :
+            '<div>Phép ' + OPNAME[op] + ' trên double.</div>') +
+           (/\d{12,}/.test(V) ? '<div class="note">Đuôi số lạ? double lưu số ở hệ nhị phân nên có sai số rất nhỏ (như 0.1 + 0.2).</div>' : '') +
+           '<div class="note">Máy cài định dạng Việt Nam có thể in dấu phẩy: <code>' + V.replace('.', ',') + '</code>.</div>';
+      s = op === '/' ? 'double giữ được phần lẻ. So sánh với chế độ <b>int</b> nhé!' : 'Kiểu double cho kết quả có phần thập phân.';
+    }
+  }
+  W.innerHTML = h; say(s, m);
+}
+
+/* ---------- thử thách ---------- */
+const z = {int:false, dbl:false};
+function done(id, msg){
+  if (!gain(id, 100)) return;
+  $('#' + id).classList.add('done'); $('#' + id + ' .ic').textContent = '✓';
+  setTimeout(() => say('🏆 <b>Thử thách ' + id.slice(2) + ' xong!</b> ' + msg + allDone(), 'happy'), 30);
+}
+function allDone(){ return got.ch1 && got.ch2 && got.ch3 ? ' <b>Bạn đã hoàn thành cả 3 thử thách!</b>' : ''; }
+function checkChallenges(a, b, op, r, constant){
+  if (op === '/' && T === 'int' && r.kind === 'ok' && r.v === 0 && a !== 0 && a < b)
+    done('ch1', 'Khi |a| &lt; |b|, kết quả thật nằm giữa −1 và 1, cắt phần thập phân còn <b>0</b>.');
+  if (op === '/' && b === 0){
+    if (T === 'int' && r.kind === 'runtime'){ z.int = true; $('#p-int').classList.add('on'); }
+    if (T === 'int' && r.kind === 'compile' && !got.ch2) setTimeout(() => say('Đó là lỗi <b>biên dịch</b> (do viết hằng số). Thử thách cần lỗi <b>lúc chạy</b>: bỏ chọn ô hằng số rồi bấm lại.', 'wow'), 30);
+    if (T === 'double'){ z.dbl = true; $('#p-dbl').classList.add('on'); }
+    if (z.int && z.dbl) done('ch2', 'int chia 0 → <b>DivideByZeroException</b> (dừng chương trình), double chia 0 → <b>∞</b> hoặc NaN (chạy tiếp).');
+    else if (!got.ch2 && (z.int || z.dbl) && r.kind !== 'compile') setTimeout(() => say($('#say').innerHTML + ' Giờ thử kiểu <b>' + (z.int ? 'double' : 'int') + '</b> với b = 0.'), 30);
+  }
+  if (op === '%' && r.kind === 'ok' && r.v < 0)
+    done('ch3', 'Dấu của phần dư đi theo <b>số bị chia</b>: a âm thì a % b âm (hoặc bằng 0).');
+}
+
+/* =====================================================================
+   2) ++ / --
+   ===================================================================== */
+let F = 'x++', S = 0, X0 = 5; const seen = new Set();
+$$('#forms button').forEach(b => b.onclick = () => { F = b.dataset.f; S = 0; incRender(); say(F.startsWith('x') ? '<b>Hậu tố</b> (' + F + '): dấu đứng <b>sau</b> x. Đoán xem y nhận giá trị nào?' : '<b>Tiền tố</b> (' + F + '): dấu đứng <b>trước</b> x. Đoán xem y nhận giá trị nào?'); });
+$('#ix').addEventListener('input', () => { const v = $('#ix').value.trim(); if (/^-?\d{1,6}$/.test(v)) { X0 = Number(v); $('#ix').classList.remove('bad'); S = 0; incRender(); } else $('#ix').classList.add('bad'); });
+$('#snext').onclick = () => { if (S < 4) { S++; incRender(true); } };
+$('#sprev').onclick = () => { if (S > 0) { S--; incRender(); } };
+$('#sall').onclick = () => { S = 4; incRender(true); };
+
+function incState(){
+  const post = F[0] === 'x', d = F.includes('+') ? 1 : -1;
+  const xNew = X0 + d, ev = post ? X0 : xNew;
+  // trạng thái sau mỗi bước
+  const st = [{x:X0, e:'', y:null, line:0}];
+  if (post){ st.push({x:X0, e:X0, y:null, line:1}); st.push({x:xNew, e:X0, y:null, line:1}); }
+  else { st.push({x:xNew, e:'', y:null, line:1}); st.push({x:xNew, e:xNew, y:null, line:1}); }
+  st.push({x:xNew, e:ev, y:ev, line:1}); st.push({x:xNew, e:ev, y:ev, line:2, out:true});
+  return {st, post, d, xNew, ev};
+}
+function incCap(post, d, xNew, ev){
+  const verb = d > 0 ? 'tăng' : 'giảm';
+  return [
+    'Dòng 1: tạo hộp <b>x</b> chứa ' + X0 + '. Hộp <b>y</b> chưa có giá trị.',
+    post ? '① <b>' + F + '</b> lấy giá trị <b>CŨ</b> của x (' + X0 + ') làm giá trị của biểu thức…' : '① <b>' + F + '</b> ' + verb + ' x <b>TRƯỚC</b>: ' + X0 + ' → ' + xNew + '…',
+    post ? '② …<b>rồi mới</b> ' + verb + ' x: ' + X0 + ' → ' + xNew + '. Giá trị biểu thức vẫn là ' + X0 + '.' : '② …giá trị của biểu thức là x <b>MỚI</b>: ' + xNew + '.',
+    '③ Gán giá trị biểu thức (' + ev + ') cho <b>y</b>.',
+    'Dòng 3: in ra <b>' + xNew + ' ' + ev + '</b>. ' + (post ? 'x đã ' + verb + ', còn y giữ giá trị <b>cũ</b>.' : 'x và y <b>bằng nhau</b>.')
+  ];
+}
+function incRender(anim){
+  $$('#forms button').forEach(b => b.classList.toggle('on', b.dataset.f === F));
+  const {st, post, d, xNew, ev} = incState(), cur = st[S], prev = S > 0 ? st[S - 1] : null;
+  drawCode($('#code2'), ['int x = ' + X0 + ';', 'int y = ' + F + ';', 'Console.WriteLine($"{x} {y}");'], cur.line);
+  const bx = $('#bx'), by = $('#by');
+  bx.textContent = cur.x;
+  by.innerHTML = cur.y === null ? '<span class="empty">?</span>' : cur.y;
+  $('#ev').textContent = cur.e;
+  if (anim && prev){ if (prev.x !== cur.x) bump(bx); if (prev.y !== cur.y) bump(by); }
+  $('#scap').innerHTML = incCap(post, d, xNew, ev)[S];
+  $('#obody2').innerHTML = cur.out ? '<span class="o">' + xNew + ' ' + ev + '</span>' : '<span class="muted">Chạy tới dòng 3 để thấy kết quả in ra.</span>';
+  $('#snext').disabled = $('#sall').disabled = S >= 4; $('#sprev').disabled = S === 0;
+  $('#x0lab').textContent = X0;
+  // bảng so sánh: chỉ hiện các dòng đã chạy xong
+  if (S === 4 && !seen.has(F)) { seen.add(F); $('#forms [data-f="' + F + '"]').classList.add('seen'); }
+  const rows = ['x++', '++x', 'x--', '--x'].map(f => {
+    const p = f[0] === 'x', dd = f.includes('+') ? 1 : -1, xn = X0 + dd, e = p ? X0 : xn, ok = seen.has(f);
+    return '<tr' + (f === F ? ' class="hl"' : '') + '><td><code>y = ' + f + '</code></td><td>' + (ok ? xn : '?') + '</td><td>' + (ok ? e : '?') + '</td><td>' + (ok ? (p ? 'giá trị cũ' : 'giá trị mới') : '') + '</td></tr>';
+  }).join('');
+  $('#cmp').innerHTML = '<tr><th>Cách viết</th><th>x sau</th><th>y</th><th>y nhận</th></tr>' + rows;
+  if (S === 4 && anim){
+    if (seen.size === 4 && gain('inc', 60)) say('🏆 Đủ cả 4 cách! Mẹo nhớ: dấu đứng <b>sau</b> → dùng giá trị <b>trước</b> rồi mới đổi; dấu đứng <b>trước</b> → đổi <b>trước</b> rồi mới dùng.' + allDone(), 'happy');
+    else say(post ? 'Hậu tố: <b>dùng trước, ' + (d > 0 ? 'tăng' : 'giảm') + ' sau</b>. Còn ' + (4 - seen.size) + ' cách chưa thử.' : 'Tiền tố: <b>' + (d > 0 ? 'tăng' : 'giảm') + ' trước, dùng sau</b>. Còn ' + (4 - seen.size) + ' cách chưa thử.', 'happy');
+  }
+}
+function bump(el){ el.classList.remove('ch'); void el.offsetWidth; el.classList.add('ch'); }
+
+drawCode($('#code'), ['int a = 7;', 'int b = 2;', 'int kq = a ? b;   // chọn toán tử', 'Console.WriteLine(kq);'], -1);
+document.addEventListener('keydown', e => {
+  if (!$('#v-inc').classList.contains('on') || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') $('#snext').click(); else if (e.key === 'ArrowLeft') $('#sprev').click();
+});
+})();
+</script>
+</body>
+</html>
