@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ép kiểu trong C#</title>
+<style>
+  /* Bố cục: thanh terminal • IDE bên trái • sân khấu minh họa bên phải • robot + lời thoại + điều khiển bên dưới */
+  :root{
+    color-scheme:dark;
+    --bg:#0b0f17; --panel:#121826; --line:#263042; --text:#e6edf3; --dim:#8b98a9;
+    --lime:#a3e635; --pink:#f472b6; --cyan:#22d3ee; --yellow:#facc15; --ok:#4ade80; --bad:#f87171;
+    --t-int:#22d3ee; --t-long:#c084fc; --t-double:#f472b6; --t-byte:#facc15; --t-string:#a3e635; --t-char:#2dd4bf; --t-decimal:#fb923c;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;
+    background-image:radial-gradient(rgba(34,211,238,.06) 1px,transparent 1px);background-size:22px 22px}
+  button{font:inherit}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding-inline:20px}
+  header{padding-block:14px 6px}
+  .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .term{font-family:var(--mono);font-size:clamp(17px,2.4vw,24px);font-weight:700;margin:0}
+  .term .p{color:var(--lime)}
+  .cursor{display:inline-block;width:.55em;height:1em;background:var(--lime);vertical-align:-2px;margin-left:4px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .xp{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;position:relative}
+  .xpbar{width:150px;height:12px;border-radius:999px;background:#1c2433;border:1px solid var(--line);overflow:hidden}
+  .xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan));transition:width .6s}
+  .lvl{background:#1c2433;border:1px solid var(--line);padding:2px 10px;border-radius:999px;color:var(--yellow)}
+  .toast{position:absolute;right:0;top:-4px;color:var(--yellow);font-weight:800;pointer-events:none;opacity:0}
+  .sub{margin:2px 0 0;color:var(--dim);font-size:14px}
+  .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  .parts button.on{background:var(--lime);color:#111;border-color:var(--lime);font-weight:700}
+  main.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;padding-block:8px 24px}
+  @media (max-width:900px){main.wrap{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+  /* IDE */
+  .ide{background:#1e1e1e;border-radius:12px;overflow:hidden;border:1px solid #3c3c3c}
+  .bar{background:#2d2d2d;display:flex;align-items:center;gap:7px;padding:6px 12px;font-size:13px;color:#ccc}
+  .bar i{width:11px;height:11px;border-radius:50%}
+  .bar .tab{background:#1e1e1e;color:#fff;padding:3px 12px;border-radius:6px 6px 0 0;margin-left:8px;font-family:var(--mono);font-size:12.5px}
+  .bar .lang{margin-left:auto;color:#9cdcfe;font-family:var(--mono);font-size:12px}
+  #code{font-family:var(--mono);font-size:clamp(13px,1.4vw,16px);color:#d4d4d4;padding:8px 0;min-height:150px;overflow-x:auto}
+  .eline{display:flex}
+  .eline .ln{width:40px;flex:none;text-align:right;padding-right:14px;color:#858585;user-select:none}
+  .eline .cd{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;padding-right:12px}
+  .eline.act{background:#2a2d2e} .eline.act .ln{color:#c6c6c6}
+  .kw{color:#569cd6}.ty{color:#4ec9b0}.num{color:#b5cea8}.str{color:#ce9178}.fn{color:#dcdcaa}.id{color:#9cdcfe}.cm{color:#6a9955}.ph{color:#f472b6;font-weight:700}
+  .squig{text-decoration:underline wavy #f14c4c;text-underline-offset:4px}
+  .caret{display:inline-block;width:2px;height:1.1em;background:#aeafad;vertical-align:text-bottom;animation:blink 1s steps(1) infinite}
+  .anno{margin:2px 12px 4px 40px;padding:4px 10px;border-radius:6px;font-size:13px;background:rgba(241,76,76,.15);border-left:4px solid #f14c4c;color:#ffc2c2;animation:fade .35s}
+  .anno b{color:#fff;font-family:var(--mono)}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+  .out{background:#141414;border:1px solid #3c3c3c;border-radius:12px;overflow:hidden}
+  .out .tabs{display:flex;align-items:center;gap:4px;background:#2d2d2d;padding:4px 8px;font-size:12.5px}
+  .out .tabs span{padding:2px 10px;border-radius:6px;color:#9d9d9d}
+  .out .tabs span.on{background:#3a3a3a;color:#fff}
+  .out .st{margin-left:auto;font-family:var(--sans);font-weight:700}
+  .st.okk{color:var(--ok)} .st.ko{color:var(--bad)}
+  #obody{padding:6px 12px;font-family:var(--mono);font-size:13.5px;min-height:56px;color:#bdbdbd}
+  #obody .o{color:var(--ok)} #obody .x{color:#fca5a5}
+  #obody .muted{color:#666;font-family:var(--sans)}
+  table.el{border-collapse:collapse;width:100%;font-size:12.5px;font-family:var(--sans)}
+  table.el th,table.el td{text-align:left;padding:3px 6px;border-bottom:1px solid #2f2f2f;vertical-align:top}
+  table.el th{color:#8a8a8a;font-weight:600}
+  .ecode{color:var(--bad);font-weight:700;font-family:var(--mono)}
+
+  /* sân khấu */
+  .stagebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px 14px;min-height:300px;display:flex;flex-direction:column;min-width:0}
+  .stagebox h2{margin:0 0 8px;font-size:12.5px;color:var(--dim);font-weight:600;letter-spacing:.04em}
+  .stagebox h2 b{color:var(--cyan);font-family:var(--mono)}
+  #stage{flex:1;min-width:0;position:relative}
+  .lead{font-size:14px;color:var(--dim);margin:0 0 8px} .lead b{color:var(--text)}
+  .chain{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chain .pc,.pc{font-family:var(--mono);font-weight:800;font-size:18px;border:2px solid var(--line);border-radius:10px;padding:4px 10px;background:#111827;position:relative;text-align:center}
+  .pc.str{border-color:var(--t-string);color:var(--t-string)} .pc.num{border-color:var(--t-int);color:var(--t-int)} .pc.dbl{border-color:var(--t-double);color:var(--t-double)}
+  .pc.var{border-color:var(--yellow);color:var(--yellow)} .pc.res{border-color:var(--ok);color:var(--ok)} .pc.q{border-style:dashed;border-color:var(--pink);color:var(--pink)}
+  .pc.boom{border-color:var(--bad);color:var(--bad);background:rgba(248,113,113,.12)}
+  .pc small{font-weight:400;color:var(--dim);font-size:12px}
+  .pc .note{display:block;font-family:var(--sans);font-size:11px;color:var(--dim);font-weight:500}
+  .chain .op,.op{font-family:var(--mono);font-size:20px;color:var(--dim);font-weight:800}
+  .chain.big .pc{font-size:26px;padding:6px 14px}
+  .recap{display:flex;flex-direction:column;gap:10px}
+  .rc{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:center;background:#111827;border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+  .rc b{font-family:var(--mono);color:var(--lime);font-size:15px} .rc span{font-size:14px}
+  .jtop{margin-bottom:4px} .mtag{font-size:13px;font-weight:800;padding:3px 12px;border-radius:999px;letter-spacing:.03em}
+  .mtag.ok{background:rgba(74,222,128,.15);color:var(--ok)} .mtag.warn{background:rgba(163,230,53,.15);color:var(--lime)} .mtag.bad{background:rgba(248,113,113,.15);color:var(--bad)} .mtag.q{background:rgba(244,114,182,.15);color:var(--pink)}
+  svg.jugs{width:100%;max-width:560px;height:auto;display:block}
+
+
+  /* robot + lời thoại */
+  #bottom{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .talk{display:flex;gap:12px;align-items:flex-start}
+  #bot{width:64px;height:64px;flex:none}
+  .bubble{position:relative;flex:1;min-width:0;background:#0f1522;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+  .bubble::before{content:"";position:absolute;left:-8px;top:18px;border:8px solid transparent;border-left:0;border-right-color:var(--line)}
+  #cap{font-size:clamp(16px,2vw,20px);font-weight:600}
+  #cap small{display:block;color:var(--lime);font-size:12px;font-weight:700;letter-spacing:.03em}
+  code{font-family:var(--mono);background:rgba(148,163,184,.16);padding:0 5px;border-radius:5px;font-size:.92em}
+
+  /* checkpoint */
+  .quiz{margin-top:10px;border:2px dashed var(--pink);border-radius:14px;padding:12px;background:rgba(244,114,182,.06)}
+  .qhead{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--pink);letter-spacing:.04em}
+  .qhead .hp{margin-left:auto;color:var(--yellow)}
+  .q{font-weight:700;font-size:clamp(15px,1.9vw,19px);margin:4px 0 8px}
+  .q code{font-size:.95em}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){.opts{grid-template-columns:1fr}}
+  .opt{text-align:left;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:#0f1522;color:var(--text);font-size:15px;cursor:pointer}
+  .opt code{background:none;padding:0}
+  .opt:hover:not(:disabled){border-color:var(--pink)}
+  .opt.right{border-color:var(--ok);background:rgba(74,222,128,.13)}
+  .opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:8px;font-size:14.5px;color:var(--dim)}
+  .fb.good{color:#86efac}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .controls button{font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
+  .controls button.primary{background:var(--lime);color:#111;border-color:var(--lime);font-weight:800}
+  .controls button:disabled{opacity:.4;cursor:not-allowed}
+  .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
+  .dot{flex:none;width:11px;height:11px;border-radius:50%;background:#263042;border:0;padding:0;cursor:pointer}
+  .dot.done{background:#4b5b73}.dot.cur{background:var(--lime);transform:scale(1.35)}.dot.q{border-radius:2px;transform:rotate(45deg)}
+  .dot.q.cur{transform:rotate(45deg) scale(1.35)}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:6px}
+
+  /* chế độ gọn cho khung thấp (khối HTML Preview của LMS) */
+  @media (max-height:760px){
+    header{padding-block:6px 2px} .term{font-size:17px} .sub{display:none}
+    .parts{margin-top:5px;gap:5px} .parts button{padding:3px 9px;font-size:12px}
+    main.wrap{gap:8px;padding-block:5px 10px} .col{gap:6px}
+    .bar{padding:3px 10px} #code{min-height:0;font-size:12.5px;padding:4px 0}
+    .anno{font-size:11.5px;padding:2px 8px;margin-bottom:2px}
+    .out .tabs{padding:2px 8px;font-size:11.5px} #obody{min-height:0;padding:3px 10px;font-size:12.5px}
+    table.el{font-size:11.5px} table.el th,table.el td{padding:1px 5px}
+    .stagebox{min-height:0;padding:6px 10px 8px} .stagebox h2{margin-bottom:4px;font-size:11.5px}
+    .lead{font-size:12.5px;margin-bottom:4px}
+    #bottom{padding:8px 10px} #bot{width:44px;height:44px} .bubble{padding:5px 10px}
+    #cap{font-size:14.5px} #cap small{font-size:11px}
+    #bottom.hasquiz .talk{display:none}
+    .quiz{padding:8px;margin-top:6px} .q{font-size:14.5px;margin:2px 0 5px}
+    .opt{padding:5px 10px;font-size:13.5px} .opts{gap:5px}
+    .fb{font-size:13px;margin-top:4px}
+    .controls{margin-top:6px} .controls button{padding:4px 11px;font-size:12.5px}
+    .hint{display:none}
+    .chain.big .pc{font-size:19px;padding:3px 10px} .chain .pc{font-size:15px} .rc{padding:4px 10px} .rc span{font-size:12.5px} .recap{gap:6px}
+    svg.jugs{max-height:230px}
+
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topline">
+    <h1 class="term"><span class="p">~/csharp $</span> run ep-kieu<span class="cursor"></span></h1>
+    <div class="xp" aria-live="polite">
+      <span>XP</span><span class="xpbar"><i id="xpfill"></i></span><span id="xptxt">0/0</span><span class="lvl" id="lvl">Newbie</span>
+      <span class="toast" id="toast"></span>
+    </div>
+  </div>
+  <p class="sub">Ép kiểu trong C#: ngầm định, tường minh và dữ liệu bị mất. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
+  <div class="parts" id="parts"></div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <section class="ide" aria-label="Trình soạn thảo code">
+      <div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span class="tab" id="fname">Program.cs</span><span class="lang">C#</span></div>
+      <div id="code"></div>
+    </section>
+    <section class="out" aria-label="Kết quả">
+      <div class="tabs"><span id="tab-out">Console</span><span id="tab-err">Danh sách lỗi</span><span class="st" id="status"></span></div>
+      <div id="obody"></div>
+    </section>
+  </div>
+  <section class="stagebox" aria-label="Minh họa">
+    <h2 id="stitle"></h2>
+    <div id="stage"></div>
+  </section>
+  <section id="bottom" aria-label="Lời giải thích và điều khiển">
+    <div class="talk">
+      <svg id="bot" viewBox="0 0 64 64" aria-hidden="true">
+        <line x1="32" y1="5" x2="32" y2="12" stroke="#22d3ee" stroke-width="3"/>
+        <circle cx="32" cy="5" r="3.5" fill="#f472b6"/>
+        <rect x="9" y="12" width="46" height="36" rx="11" fill="#1f2937" stroke="#22d3ee" stroke-width="3"/>
+        <circle id="eyeL" cx="24" cy="28" r="4" fill="#a3e635"/>
+        <circle id="eyeR" cx="40" cy="28" r="4" fill="#a3e635"/>
+        <path id="mouth" d="M24 39 L40 39" stroke="#a3e635" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path id="sweat" d="M53 13 q4 6 0 9 q-4 -3 0 -9z" fill="#38bdf8" opacity="0"/>
+        <rect x="20" y="50" width="24" height="9" rx="3" fill="#1f2937" stroke="#22d3ee" stroke-width="2"/>
+      </svg>
+      <div class="bubble"><div id="cap"></div></div>
+    </div>
+    <div id="quiz"></div>
+    <div class="controls">
+      <button id="prev">← Lùi</button>
+      <button id="next" class="primary">Tiếp →</button>
+      <button id="play">▶ Tự chạy</button>
+      <button id="restart">↺ Làm lại</button>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="hint">← → lùi/tiếp • Space tự chạy • ◆ là checkpoint</div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   DỮ LIỆU BÀI HỌC + MINH HỌA RIÊNG – sửa nội dung ở đây
+   ===================================================================== */
+const PARTS = ['1. Ngầm định & tường minh', '2. Dữ liệu bị mất', '3. Bẫy chia số nguyên'];
+const E266 = {code:'CS0266', msg:"Cannot implicitly convert type 'long' to 'int'. An explicit conversion exists (are you missing a cast?)", line:3};
+
+const STEPS = [
+  /* ---------- Phần 1 ---------- */
+  { part:0, view:'jugs', jugs:{src:{t:'int',v:'10',f:.35}, dst:{t:'long',v:'10',f:.2}, mode:'implicit'}, file:'EpKieu.cs',
+    lines:['int a = 10;','long b = a;            // ngầm định, an toàn'], typeIdx:[0,1], act:1, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Đổ nước từ <b>bình nhỏ</b> (int) sang <b>bình lớn</b> (long) thì chắc chắn không tràn, nên C# tự làm giúp bạn. Đó là ép kiểu <b>ngầm định</b>.' },
+  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'?',f:0}, mode:'pending'}, file:'EpKieu.cs',
+    lines:['int a = 10;','long b = a;','int c = b;'], typeIdx:[2], act:2, mood:'think', quiz:'q1',
+    cap:'Checkpoint! Ba dòng code: int sang long, rồi long sang int. Dòng nào bị lỗi?' },
+  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'',f:0}, mode:'blocked'}, file:'EpKieu.cs',
+    lines:['int a = 10;','long b = a;','int c = ⟦b⟧;'], act:2, mood:'sweat',
+    annots:[{line:2, html:'<b>CS0266</b>: Cannot implicitly convert type \'long\' to \'int\'. An explicit conversion exists (are you missing a cast?)'}],
+    status:'ko', errs:[E266],
+    cap:'Đổ từ bình lớn (long) sang bình nhỏ (int) <b>có thể tràn</b>, nên C# chặn lại và báo lỗi <b>CS0266</b>. Nó không tự làm nữa.' },
+  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'10',f:.35}, mode:'explicit', valve:'(int)'}, file:'EpKieu.cs',
+    lines:['int a = 10;','long b = a;','int c = (int)b;        // tường minh'], typeIdx:[2], act:2, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'],
+    cap:'Lắp <b>van xác nhận</b> <code>(int)</code>: đó là ép kiểu <b>tường minh</b>, nghĩa là "tôi biết có thể tràn, cứ đổ đi". Ở đây 10 vừa bình int nên không mất gì.' },
+
+  /* ---------- Phần 2 ---------- */
+  { part:1, view:'jugs', jugs:{src:{t:'double',v:'7.9',f:.45}, dst:{t:'int',v:'?',f:0}, mode:'pending', valve:'(int)'}, file:'CatBo.cs',
+    lines:['Console.WriteLine((int)7.9);'], typeIdx:[0], act:0, mood:'think', quiz:'q2',
+    cap:'Checkpoint! Đổ số 7.9 qua van <code>(int)</code>. Bình int nhận được gì?' },
+  { part:1, view:'jugs', jugs:{src:{t:'double',v:'7.9',f:.45}, dst:{t:'int',v:'7',f:.5}, mode:'explicit', valve:'(int)', spill:'.9 bị cắt'}, file:'CatBo.cs',
+    lines:['Console.WriteLine((int)7.9);'], act:0, mood:'happy', out:['7'],
+    cap:'In ra <b>7</b>. Bình int không chứa được phần thập phân, nên <b>.9 bị cắt bỏ</b> chứ không được làm tròn lên 8.' },
+  { part:1, view:'jugs', jugs:{src:{t:'double',v:'3.99',f:.4}, dst:{t:'int',v:'3',f:.3}, mode:'explicit', valve:'(int)', spill:'.99 bị cắt'}, file:'CatBo.cs',
+    lines:['double pi = 3.99;','int n = (int)pi;       // 3, cắt bỏ chứ không làm tròn','Console.WriteLine(n);'], typeIdx:[0,1,2], act:1, mood:'sweat', out:['3'],
+    cap:'Dù 3.99 rất gần 4, <code>(int)pi</code> vẫn chỉ giữ <b>3</b>. Phần thập phân luôn bị cắt bỏ.' },
+  { part:1, view:'jugs', jugs:{src:{t:'int',v:'300',f:.5}, dst:{t:'byte',v:'44',f:.25}, mode:'explicit', valve:'(byte)', spill:'256 tràn ra'}, file:'TranSo.cs',
+    lines:['int big = 300;','byte c = (byte)big;    // 44, tràn số','Console.WriteLine(c);'], typeIdx:[0,1,2], act:1, mood:'sweat', out:['44'],
+    cap:'<code>byte</code> chỉ chứa 0 đến 255. Ép 300 vào thì <b>tràn số</b>: 300 − 256 = <b>44</b>. Không có lỗi nào báo, dữ liệu mất âm thầm!' },
+
+  /* ---------- Phần 3 ---------- */
+  { part:2, view:'divide', div:{pending:true, items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2',k:'num',n:'int'}]}, file:'Chia.cs',
+    lines:['double kq = 5 / 2;','Console.WriteLine(kq);'], typeIdx:[0,1], act:0, mood:'think', quiz:'q3',
+    cap:'Checkpoint! Biến <code>kq</code> là double. Liệu nó có giữ được 2.5 không?' },
+  { part:2, view:'divide', div:{items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2',k:'num',n:'int'},{t:'→',k:'op'},{t:'2',k:'num',n:'chia nguyên, mất .5'},{t:'→',k:'op'},{t:'2',k:'dbl',n:'mới đổi sang double'}]}, file:'Chia.cs',
+    lines:['double kq = 5 / 2;','Console.WriteLine(kq);'], act:0, mood:'sweat', out:['2'],
+    cap:'In ra <b>2</b>! Hai số nguyên chia nhau thì <b>phép chia số nguyên được tính trước</b> (5 / 2 = 2), rồi kết quả 2 mới được đổi sang double. Phần .5 đã mất từ trước.' },
+  { part:2, view:'divide', div:{items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2.0',k:'dbl',n:'double'},{t:'→',k:'op'},{t:'2.5',k:'dbl',n:'chia số thực'}]}, file:'Chia.cs',
+    lines:['double kq = 5 / 2.0;','Console.WriteLine(kq);'], typeIdx:[0], act:0, mood:'happy', out:['2.5'],
+    cap:'Sửa: viết <code>5 / 2.0</code>. Chỉ cần một số là số thực, phép chia là chia số thực và cho <b>2.5</b>.' },
+  { part:2, view:'recap', file:'EpKieu.cs', lines:['long  b = a;          // nhỏ → lớn: ngầm định','int   n = (int)3.99;  // lớn → nhỏ: tường minh, còn 3','double kq = 5 / 2.0;  // muốn 2.5 phải có số thực'], act:-1, mood:'happy', summary:true,
+    cap:'<b>Tổng kết:</b> nhỏ → lớn là ngầm định • lớn → nhỏ phải ép tường minh và có thể mất dữ liệu (cắt thập phân, tràn số) • chia hai số nguyên thì ra số nguyên, dù gán vào double.' }
+];
+
+const QUIZ = {
+  q1:{ q:'<code>int a = 10; long b = a; int c = b;</code> Dòng nào lỗi?', opts:[
+    {t:'Dòng 1: <code>int a = 10;</code>', fb:'Gán số 10 vào int là bình thường.'},
+    {t:'Dòng 2: <code>long b = a;</code>', fb:'int sang long là bình nhỏ sang bình lớn, C# tự làm (ngầm định).'},
+    {t:'Dòng 3: <code>int c = b;</code>', ok:true, fb:'Đúng! long sang int là bình lớn sang bình nhỏ, phải ép tường minh (int)b.'},
+    {t:'Không dòng nào lỗi', fb:'C# không tự đổi long sang int vì có thể tràn, nên báo lỗi CS0266.'}]},
+  q2:{ q:'<code>Console.WriteLine((int)7.9);</code> in ra gì?', opts:[
+    {t:'8', fb:'(int) không làm tròn. Nó cắt bỏ phần thập phân.'},
+    {t:'7', ok:true, fb:'Đúng! Phần .9 bị cắt bỏ, chỉ còn 7.'},
+    {t:'7.9', fb:'Kết quả đã là int nên không có phần thập phân.'},
+    {t:'Lỗi biên dịch', fb:'Ép double sang int bằng (int) là hợp lệ.'}]},
+  q3:{ q:'<code>double kq = 5 / 2; Console.WriteLine(kq);</code> in ra gì?', opts:[
+    {t:'2.5', fb:'Đây là lỗi hiểu sai phổ biến: 5 / 2 là chia số nguyên, được tính trước thành 2.'},
+    {t:'2', ok:true, fb:'Đúng! 5 / 2 = 2 (chia số nguyên), rồi 2 mới được đổi sang double.'},
+    {t:'3', fb:'Chia số nguyên không làm tròn lên. Nó bỏ phần dư.'},
+    {t:'Lỗi biên dịch', fb:'Gán int vào double là ngầm định, hợp lệ. Chỉ là kết quả không như mong đợi.'}]}
+};
+
+/* ---------------- minh họa: bình nước ---------------- */
+const JH = {byte:70, int:125, long:185, double:185};
+const JC = {byte:'var(--t-byte)', int:'var(--t-int)', long:'var(--t-long)', double:'var(--t-double)'};
+const BITS = {byte:'8 bit', int:'32 bit', long:'64 bit', double:'64 bit'};
+function jugsSVG(J, p){
+  const B = 262, W = 120, sx = 50, dx = 390;
+  const hs = JH[J.src.t], hd = JH[J.dst.t];
+  const ls = hs * J.src.f * (J.mode==='implicit'||J.mode==='explicit' ? 1 - p*0.85 : 1);
+  const ld = hd * J.dst.f * (J.mode==='implicit'||J.mode==='explicit' ? p : 0);
+  const pour = (J.mode==='implicit'||J.mode==='explicit') ? Math.sin(Math.PI*Math.min(1,p*1.1)) : 0;
+  const jug = (x,h,t,lv,label,showV)=>{
+    const c = JC[t];
+    return '<rect x="'+x+'" y="'+(B-h)+'" width="'+W+'" height="'+h+'" rx="10" fill="#0f1522" stroke="'+c+'" stroke-width="4"/>'+
+      (lv>0 ? '<rect x="'+(x+4)+'" y="'+(B-lv)+'" width="'+(W-8)+'" height="'+Math.max(0,lv-4)+'" rx="6" fill="#38bdf8" opacity=".75"/>' : '')+
+      '<text x="'+(x+W/2)+'" y="'+(B-h-12)+'" text-anchor="middle" font-family="monospace" font-weight="800" font-size="20" fill="'+c+'">'+t+'</text>'+
+      '<text x="'+(x+W/2)+'" y="'+(B+22)+'" text-anchor="middle" font-size="13" fill="#8b98a9" font-family="sans-serif">'+BITS[t]+'</text>'+
+      (showV ? '<text x="'+(x+W/2)+'" y="'+(B-Math.max(lv,30)/2+8)+'" text-anchor="middle" font-family="monospace" font-weight="900" font-size="26" fill="#fff">'+label+'</text>' : '');
+  };
+  let h = '<svg viewBox="0 0 560 300" class="jugs">';
+  h += jug(sx, hs, J.src.t, ls, J.src.v, p<.6 || J.mode==='pending' || J.mode==='blocked');
+  h += jug(dx, hd, J.dst.t, ld, J.dst.v, (p>.55 && J.dst.v) || J.mode==='pending');
+  const x1 = sx+W, y1 = B-hs+10, x2 = dx+W/2, y2 = B-hd-30, mx = (x1+x2)/2, my = Math.min(y1,y2)-50;
+  h += '<path d="M'+x1+' '+y1+' Q'+mx+' '+my+' '+x2+' '+y2+'" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" opacity="'+(0.15+0.85*pour)+'" stroke-dasharray="'+(pour>0?'none':'6 8')+'"/>';
+  const vx = mx, vy = (my + (y1+y2)/2)/2 + 4;
+  if(J.mode==='blocked'){
+    h += '<circle cx="'+vx+'" cy="'+vy+'" r="26" fill="#2a0f12" stroke="#f87171" stroke-width="4"/><text x="'+vx+'" y="'+(vy+9)+'" text-anchor="middle" font-size="28" font-weight="900" fill="#f87171">✘</text>'+
+         '<text x="'+vx+'" y="'+(vy+52)+'" text-anchor="middle" font-size="15" fill="#fca5a5" font-family="sans-serif" font-weight="700">cần van (int)</text>';
+  } else if(J.valve){
+    h += '<rect x="'+(vx-40)+'" y="'+(vy-20)+'" width="80" height="40" rx="10" fill="#1a2e0a" stroke="#a3e635" stroke-width="3"/><text x="'+vx+'" y="'+(vy+8)+'" text-anchor="middle" font-family="monospace" font-weight="900" font-size="20" fill="#a3e635">'+J.valve+'</text>'+
+         '<text x="'+vx+'" y="'+(vy+42)+'" text-anchor="middle" font-size="13" fill="#a3e635" font-family="sans-serif">van xác nhận</text>';
+  } else if(J.mode==='implicit'){
+    h += '<text x="'+vx+'" y="'+(vy+5)+'" text-anchor="middle" font-size="15" fill="#4ade80" font-family="sans-serif" font-weight="700">tự động ✓</text>';
+  }
+  if(J.spill && p>.6){
+    const q = Math.min(1,(p-.6)/.4), sxp = dx+W+6, top = B-hd;
+    for(let k=0;k<5;k++) h += '<circle cx="'+(sxp+8+k*6)+'" cy="'+(top+10+q*(60+k*14))+'" r="'+(6-k*.6)+'" fill="#f87171" opacity="'+(1-q*.4)+'"/>';
+    h += '<text x="'+(dx+W/2)+'" y="'+(top-40)+'" text-anchor="middle" font-size="16" font-weight="800" fill="#f87171" font-family="sans-serif" opacity="'+q+'">mất: '+J.spill+'</text>';
+  }
+  return h + '</svg>';
+}
+function renderStage(s, animate){
+  const st = $('#stage');
+  if(s.view==='jugs'){
+    const m = s.jugs.mode;
+    $('#stitle').innerHTML = '<b>casting</b> // đổ nước giữa các bình';
+    const tag = {implicit:'<span class="mtag ok">NGẦM ĐỊNH · nhỏ → lớn</span>', explicit:'<span class="mtag warn">TƯỜNG MINH · lớn → nhỏ</span>', blocked:'<span class="mtag bad">BỊ CHẶN · thiếu ép kiểu</span>', pending:'<span class="mtag q">? dự đoán</span>'}[m];
+    st.innerHTML = '<div class="jtop">'+tag+'</div><div id="jug">'+jugsSVG(s.jugs, animate && (m==='implicit'||m==='explicit') ? 0 : 1)+'</div>';
+    return;
+  }
+  if(s.view==='divide'){
+    $('#stitle').innerHTML = '<b>divide</b> // phép chia được tính TRƯỚC khi gán';
+    st.innerHTML = '<p class="lead">Màu <b style="color:var(--t-int)">xanh dương</b> là int, màu <b style="color:var(--t-double)">hồng</b> là double.</p><div class="chain big">'+
+      s.div.items.map(it=> it.k==='op' ? '<span class="op">'+it.t+'</span>' : '<span class="pc '+it.k+'">'+esc(it.t)+(it.n?'<small class="note">'+it.n+'</small>':'')+'</span>').join('')+
+      (s.div.pending ? '<span class="op">→</span><span class="pc q">kq = ?</span>' : '')+'</div>';
+    return;
+  }
+  if(s.view==='recap'){
+    $('#stitle').innerHTML = '<b>recap</b> // 3 điều cần nhớ';
+    st.innerHTML = '<div class="recap">'+[
+      ['nhỏ → lớn', 'Ngầm định, an toàn: <code>long b = a;</code>'],
+      ['lớn → nhỏ', 'Tường minh <code>(int)</code>, có thể mất dữ liệu: cắt thập phân (3.99 → 3), tràn số (300 → 44).'],
+      ['5 / 2 = 2', 'Chia hai số nguyên ra số nguyên. Muốn 2.5 thì viết <code>5 / 2.0</code>.']
+    ].map(r=>'<div class="rc"><b>'+r[0]+'</b><span>'+r[1]+'</span></div>').join('')+'</div>';
+  }
+}
+function playStage(s){
+  const st = $('#stage'), my = stageId;
+  if(s.view==='jugs' && (s.jugs.mode==='implicit'||s.jugs.mode==='explicit')){
+    const t0 = performance.now(), D = 1800;
+    const f = now=>{ if(my!==stageId) return; const p = Math.min(1,(now-t0)/D); const el=document.getElementById('jug'); if(el) el.innerHTML = jugsSVG(s.jugs, p); if(p<1) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  }
+  if(s.view==='jugs' && s.jugs.mode==='blocked'){
+    const c = st.querySelector('circle'); if(c) st.querySelector('svg').animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:400});
+  }
+  if(s.view==='divide') st.querySelectorAll('.chain').forEach(ch=> [...ch.children].forEach((el,i)=> el.animate([{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'none'}],{duration:350,delay:i*260,easing:ease,fill:'backwards'})));
+  if(s.view==='recap') st.querySelectorAll('.rc').forEach((r,i)=>r.animate([{opacity:0,transform:'translateX(20px)'},{opacity:1,transform:'none'}],{duration:400,delay:i*160,easing:ease,fill:'backwards'}));
+}
+
+
+/* =====================================================================
+   PHẦN XỬ LÝ CHUNG – thường không cần sửa
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const solved = {}, misses = {};
+let cur = 0, timer = null, typerId = 0, stageId = 0, xp = 0;
+const XPMAX = Object.keys(QUIZ).length * 100;
+const ease = 'cubic-bezier(.2,.9,.3,1.25)';
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+const TOK = /(\/\/.*$)|(\$?"[^"]*"?)|('[^']*'?)|\b(int|long|double|float|decimal|byte|short|string|char|bool|var|new|true|false|checked)\b|\b(Console|Convert|Math|String)\b|\b([A-Z]\w*)(?=\s*\()|(?<=\.)(Length|MaxValue)\b|(\b\d+(?:\.\d+)?[fFmM]?\b)|\b([a-z_]\w*)\b|(\?\?\?)/g;
+const TCLS = ['cm','str','str','kw','ty','fn','fn','num','id','ph'];
+function hlSeg(s){
+  let out='', last=0;
+  s.replace(TOK, (m, ...g)=>{
+    const off = g[g.length-2];
+    out += esc(s.slice(last, off));
+    const gi = g.slice(0,10).findIndex(x=>x!==undefined);
+    out += '<span class="'+TCLS[gi]+'">'+esc(m)+'</span>';
+    last = off + m.length; return m;
+  });
+  return out + esc(s.slice(last));
+}
+function hl(line){
+  return line.split(/(⟦.*?⟧)/).map(p=> p.startsWith('⟦') ? '<span class="squig">'+hlSeg(p.slice(1,-1))+'</span>' : hlSeg(p)).join('');
+}
+function fileOf(i){ for(let k=i;k>=0;k--) if(STEPS[k].file) return STEPS[k].file; return 'Program.cs'; }
+
+function renderEditor(s, animate){
+  $('#fname').textContent = fileOf(cur);
+  const host = $('#code'); host.innerHTML = '';
+  const my = ++typerId;
+  const rows = s.lines.map((text,i)=>{
+    const r = document.createElement('div'); r.className='eline'+(i===s.act?' act':'');
+    r.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="cd"></span>'; host.appendChild(r);
+    return {r, cd:r.querySelector('.cd'), text, plain:text.replace(/[⟦⟧]/g,''), i};
+  });
+  const typed = animate && s.typeIdx ? s.typeIdx.slice() : [];
+  rows.forEach(o=>{ if(!typed.includes(o.i)) o.cd.innerHTML = hl(o.text); });
+  const finish = ()=>{
+    if(my!==typerId) return;
+    rows.forEach(o=> o.cd.innerHTML = hl(o.text));
+    (s.annots||[]).forEach(a=>{ const d=document.createElement('div'); d.className='anno'; d.innerHTML=a.html; rows[a.line].r.after(d); });
+    renderOut(s, true);
+    if(animate && typeof playStage==='function') playStage(s);
+  };
+  if(!typed.length){ finish(); return; }
+  let qi=0, ci=0;
+  const tick = ()=>{
+    if(my!==typerId) return;
+    if(qi>=typed.length){ finish(); return; }
+    const o = rows[typed[qi]]; ci++;
+    o.cd.innerHTML = hl(o.plain.slice(0,ci)) + '<span class="caret"></span>';
+    if(ci>=o.plain.length){ o.cd.innerHTML = hl(o.plain); qi++; ci=0; setTimeout(tick,180); } else setTimeout(tick, 24);
+  };
+  setTimeout(tick, 200);
+}
+function renderOut(s, done){
+  const err = s.status==='ko' && done;
+  $('#tab-out').classList.toggle('on', !err); $('#tab-err').classList.toggle('on', err);
+  const st = $('#status'); st.className='st';
+  if(done && s.status==='ok'){ st.textContent='✔ build ok'; st.classList.add('okk'); }
+  else if(err){ st.textContent='✘ build failed – '+s.errs.length+' lỗi'; st.classList.add('ko'); }
+  else if(done && s.status==='ex'){ st.textContent='✘ lỗi khi chạy'; st.classList.add('ko'); }
+  else st.textContent='';
+  if(err){
+    $('#obody').innerHTML = '<table class="el"><tr><th>Mã</th><th>Mô tả</th><th>Dòng</th></tr>'+
+      s.errs.map(e=>'<tr><td class="ecode">'+e.code+'</td><td>'+esc(e.msg)+'</td><td>'+e.line+'</td></tr>').join('')+'</table>';
+  } else {
+    const o = (done && s.out) || [];
+    $('#obody').innerHTML = o.length ? o.map(x=> typeof x==='string' ? '<div class="o">'+esc(x)+'</div>' : '<div class="x">'+esc(x.t)+'</div>').join('') : '<div class="muted">'+(s.quiz?'Chưa chạy – hãy dự đoán trước.':'…')+'</div>';
+  }
+}
+
+const MOUTH = {neutral:'M24 39 L40 39', happy:'M22 36 Q32 47 42 36', sad:'M22 43 Q32 34 42 43', think:'M27 40 Q32 38 37 40', sweat:'M22 41 q5 -4 10 0 t10 0'};
+function mood(m, bounce=true){
+  $('#mouth').setAttribute('d', MOUTH[m]||MOUTH.neutral);
+  $('#sweat').setAttribute('opacity', m==='sweat'?1:0);
+  const ey = m==='think'?25:28, col = m==='sad'?'#f472b6':'#a3e635';
+  ['#eyeL','#eyeR'].forEach(e=>{ $(e).setAttribute('cy',ey); $(e).setAttribute('fill',col); });
+  if(bounce) $('#bot').animate([{transform:'translateY(0)'},{transform:'translateY(-7px)'},{transform:'translateY(0)'}],{duration:420,easing:'ease-out'});
+}
+function lvlName(){ const r = xp/XPMAX; return r>=1?'Senior ★':r>=.6?'Mid-level':r>=.3?'Junior':'Newbie'; }
+function renderXP(){ $('#xpfill').style.width=(xp/XPMAX*100)+'%'; $('#xptxt').textContent=xp+'/'+XPMAX; $('#lvl').textContent=lvlName(); }
+function gain(key){
+  const g=[100,60,30][Math.min(misses[key]||0,2)]; xp+=g; renderXP();
+  const t=$('#toast'); t.textContent='+'+g+' XP';
+  t.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(-14px)',offset:.3},{opacity:0,transform:'translateY(-30px)'}],{duration:1400});
+}
+function renderQuiz(s){
+  const host=$('#quiz'); host.innerHTML='';
+  if(!s.quiz) return;
+  const key=s.quiz, Q=QUIZ[key];
+  const box=document.createElement('div'); box.className='quiz';
+  box.innerHTML='<div class="qhead">◆ CHECKPOINT <span class="hp">+100 XP nếu đúng ngay lần đầu</span></div><div class="q">'+Q.q+'</div>';
+  const fb=document.createElement('div'); fb.className='fb';
+  const grid=document.createElement('div'); grid.className='opts'; box.appendChild(grid);
+  const btns=Q.opts.map((o,i)=>{ const b=document.createElement('button'); b.className='opt'; b.innerHTML=String.fromCharCode(65+i)+'. '+o.t; grid.appendChild(b); return b; });
+  const lock=()=>btns.forEach(b=>b.disabled=true);
+  btns.forEach((b,i)=> b.onclick=()=>{
+    const o=Q.opts[i];
+    if(o.ok){ b.classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+o.fb; lock(); win(key); }
+    else { b.classList.add('wrong'); b.disabled=true; fb.className='fb'; fb.innerHTML='✘ '+o.fb+' Thử lại nhé.'; miss(key); }
+  });
+  if(solved[key]){ const i=Q.opts.findIndex(o=>o.ok); btns[i].classList.add('right'); fb.className='fb good'; fb.innerHTML='✔ '+Q.opts[i].fb; lock(); }
+  box.appendChild(fb); host.appendChild(box);
+}
+function win(key){ if(!solved[key]){ solved[key]=true; gain(key); } mood('happy'); updateNav(); }
+function miss(key){ misses[key]=(misses[key]||0)+1; mood('sad'); }
+
+function render(animate){
+  const s=STEPS[cur];
+  stageId++;
+  renderStage(s, animate); renderOut(s, !animate || !s.typeIdx); renderEditor(s, animate); renderQuiz(s);
+  $('#bottom').classList.toggle('hasquiz', !!s.quiz);
+  mood(s.quiz && solved[s.quiz] ? 'happy' : (s.mood||'neutral'), animate);
+  const extra = s.summary ? '<br><small style="color:var(--yellow);margin-top:4px">XP của bạn: '+xp+'/'+XPMAX+' – cấp '+lvlName()+'</small>' : '';
+  $('#cap').innerHTML='<small>'+PARTS[s.part]+' · bước '+(cur+1)+'/'+STEPS.length+'</small>'+s.cap+extra;
+  document.querySelectorAll('#parts button').forEach((b,i)=>b.classList.toggle('on',i===s.part));
+  document.querySelectorAll('.dot').forEach((d,i)=>{ d.classList.toggle('cur',i===cur); d.classList.toggle('done',i<cur); });
+  updateNav();
+}
+function blocked(){ const s=STEPS[cur]; return !!(s.quiz && !solved[s.quiz]); }
+function updateNav(){
+  $('#prev').disabled=cur===0;
+  $('#next').disabled=cur===STEPS.length-1 || blocked();
+  $('#next').textContent=blocked()?'◆ Trả lời đã':'Tiếp →';
+  if(blocked()) stopPlay();
+}
+function go(i, animate=true){ cur=Math.max(0,Math.min(STEPS.length-1,i)); render(animate); }
+function next(){ if(!blocked() && cur<STEPS.length-1) go(cur+1,true); else stopPlay(); }
+function prev(){ if(cur>0) go(cur-1,false); }
+function stopPlay(){ if(timer){clearInterval(timer);timer=null;} $('#play').textContent='▶ Tự chạy'; }
+function startPlay(){ if(cur===STEPS.length-1) go(0,false); $('#play').textContent='⏸ Dừng'; timer=setInterval(()=>{ if(blocked()||cur===STEPS.length-1){stopPlay();return;} next(); },5500); }
+(function init(){
+  const first=PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
+  PARTS.forEach((p,i)=>{ const b=document.createElement('button'); b.textContent=p; b.onclick=()=>{stopPlay();go(first[i],false);}; $('#parts').appendChild(b); });
+  STEPS.forEach((s,i)=>{ const d=document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (checkpoint)':''); d.setAttribute('aria-label',d.title); d.onclick=()=>{stopPlay();go(i,false);}; $('#dots').appendChild(d); });
+  $('#next').onclick=next; $('#prev').onclick=prev;
+  $('#play').onclick=()=> timer?stopPlay():startPlay();
+  $('#restart').onclick=()=>{ stopPlay(); for(const k in solved) delete solved[k]; for(const k in misses) delete misses[k]; xp=0; renderXP(); go(0,true); };
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight') next(); else if(e.key==='ArrowLeft') prev();
+    else if(e.key===' ' && e.target.tagName!=='BUTTON'){ e.preventDefault(); timer?stopPlay():startPlay(); }
+  });
+  renderXP(); go(0,true);
+})();
+</script>
+</body>
+</html>
