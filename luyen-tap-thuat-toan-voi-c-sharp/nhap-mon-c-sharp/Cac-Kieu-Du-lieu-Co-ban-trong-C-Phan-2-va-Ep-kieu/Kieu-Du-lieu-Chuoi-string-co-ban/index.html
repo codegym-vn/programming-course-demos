@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ép kiểu trong C#</title>
+<title>Chuỗi cơ bản trong C#</title>
 <style>
   /* Bố cục: thanh terminal • IDE bên trái • sân khấu minh họa bên phải • robot + lời thoại + điều khiển bên dưới */
   :root{
@@ -88,9 +88,27 @@
   .recap{display:flex;flex-direction:column;gap:10px}
   .rc{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:center;background:#111827;border:2px solid var(--line);border-radius:12px;padding:8px 12px}
   .rc b{font-family:var(--mono);color:var(--lime);font-size:15px} .rc span{font-size:14px}
-  .jtop{margin-bottom:4px} .mtag{font-size:13px;font-weight:800;padding:3px 12px;border-radius:999px;letter-spacing:.03em}
-  .mtag.ok{background:rgba(74,222,128,.15);color:var(--ok)} .mtag.warn{background:rgba(163,230,53,.15);color:var(--lime)} .mtag.bad{background:rgba(248,113,113,.15);color:var(--bad)} .mtag.q{background:rgba(244,114,182,.15);color:var(--pink)}
-  svg.jugs{width:100%;max-width:560px;height:auto;display:block}
+  .strrow{display:flex;align-items:center;gap:14px;margin:20px 0 10px;flex-wrap:wrap}
+  .vtag{background:#fde68a;color:#3a2a00;font-family:var(--mono);font-weight:800;padding:2px 12px;border-radius:6px;font-size:18px}
+  .vtag.gone{visibility:hidden}
+  .cells{display:flex;gap:6px;flex-wrap:wrap}
+  .cell{position:relative;width:58px;text-align:center;border:3px solid var(--t-string);border-radius:10px;background:#0f1522;padding:6px 0 2px;transition:transform .3s}
+  .cell .ch{display:block;font-family:var(--mono);font-size:30px;font-weight:800;color:#fff}
+  .cell .ix{display:block;font-family:var(--mono);font-size:13px;color:var(--yellow)}
+  .cell.hi{background:rgba(250,204,21,.18);border-color:var(--yellow);transform:translateY(-6px)}
+  .cell.ghost{border-style:dashed;border-color:var(--bad)} .cell.ghost .ch{color:var(--bad)}
+  .cell .badge{position:absolute;left:50%;transform:translateX(-50%);bottom:-24px;white-space:nowrap;font-size:11px;background:var(--bad);color:#fff;border-radius:999px;padding:0 8px;font-weight:700}
+  .cell.lock{border-color:var(--bad)} .cell.dim{opacity:.55} .cell.newer{border-color:var(--cyan)}
+  .lenbar{display:flex;gap:18px;margin-top:30px;font-size:15px;color:var(--dim);flex-wrap:wrap} .lenbar b{color:var(--yellow);font-family:var(--mono)}
+  .jchip{display:inline-block;margin:26px 0 0 70px;font-family:var(--mono);font-size:26px;font-weight:800;border:3px dashed var(--pink);color:var(--pink);border-radius:10px;padding:2px 14px}
+  .jchip.bad{border-color:var(--bad);color:var(--bad)}
+  .imrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .imrow .lbl{font-size:13px;color:var(--dim)}
+  .arrow{margin-left:60px;color:var(--cyan);font-size:14px}
+  .newrow{opacity:.6} .newrow.kept{opacity:1}
+  .crow{background:#0f1522;border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+  .ctitle{font-size:13px;color:var(--dim);margin-bottom:6px}
+  .slot{background:rgba(250,204,21,.2);color:var(--yellow);border-radius:4px;padding:0 3px}
 
 
   /* robot + lời thoại */
@@ -149,7 +167,7 @@
     .controls{margin-top:6px} .controls button{padding:4px 11px;font-size:12.5px}
     .hint{display:none}
     .chain.big .pc{font-size:19px;padding:3px 10px} .chain .pc{font-size:15px} .rc{padding:4px 10px} .rc span{font-size:12.5px} .recap{gap:6px}
-    svg.jugs{max-height:230px}
+    .cell{width:46px} .cell .ch{font-size:23px} .strrow{margin:8px 0 6px} .lenbar{margin-top:22px;font-size:13px} .crow{padding:5px 10px;margin-bottom:6px} .jchip{margin-top:16px;font-size:20px} .imrow{margin:4px 0}
 
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -158,13 +176,13 @@
 <body>
 <header class="wrap">
   <div class="topline">
-    <h1 class="term"><span class="p">~/csharp $</span> run ep-kieu<span class="cursor"></span></h1>
+    <h1 class="term"><span class="p">~/csharp $</span> run chuoi-co-ban<span class="cursor"></span></h1>
     <div class="xp" aria-live="polite">
       <span>XP</span><span class="xpbar"><i id="xpfill"></i></span><span id="xptxt">0/0</span><span class="lvl" id="lvl">Newbie</span>
       <span class="toast" id="toast"></span>
     </div>
   </div>
-  <p class="sub">Ép kiểu trong C#: ngầm định, tường minh và dữ liệu bị mất. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
+  <p class="sub">Chuỗi (string) trong C#: chỉ số, tính bất biến, nối chuỗi. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
   <div class="parts" id="parts"></div>
 </header>
 
@@ -213,148 +231,139 @@
 /* =====================================================================
    DỮ LIỆU BÀI HỌC + MINH HỌA RIÊNG – sửa nội dung ở đây
    ===================================================================== */
-const PARTS = ['1. Ngầm định & tường minh', '2. Dữ liệu bị mất', '3. Bẫy chia số nguyên'];
-const E266 = {code:'CS0266', msg:"Cannot implicitly convert type 'long' to 'int'. An explicit conversion exists (are you missing a cast?)", line:3};
+const PARTS = ['1. Ô ký tự & chỉ số', '2. Chuỗi bất biến', '3. Nối chuỗi'];
+const EX_RANGE = {t:'Unhandled exception. System.IndexOutOfRangeException: Index was outside the bounds of the array.'};
 
 const STEPS = [
   /* ---------- Phần 1 ---------- */
-  { part:0, view:'jugs', jugs:{src:{t:'int',v:'10',f:.35}, dst:{t:'long',v:'10',f:.2}, mode:'implicit'}, file:'EpKieu.cs',
-    lines:['int a = 10;','long b = a;            // ngầm định, an toàn'], typeIdx:[0,1], act:1, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'],
-    cap:'Đổ nước từ <b>bình nhỏ</b> (int) sang <b>bình lớn</b> (long) thì chắc chắn không tràn, nên C# tự làm giúp bạn. Đó là ép kiểu <b>ngầm định</b>.' },
-  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'?',f:0}, mode:'pending'}, file:'EpKieu.cs',
-    lines:['int a = 10;','long b = a;','int c = b;'], typeIdx:[2], act:2, mood:'think', quiz:'q1',
-    cap:'Checkpoint! Ba dòng code: int sang long, rồi long sang int. Dòng nào bị lỗi?' },
-  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'',f:0}, mode:'blocked'}, file:'EpKieu.cs',
-    lines:['int a = 10;','long b = a;','int c = ⟦b⟧;'], act:2, mood:'sweat',
-    annots:[{line:2, html:'<b>CS0266</b>: Cannot implicitly convert type \'long\' to \'int\'. An explicit conversion exists (are you missing a cast?)'}],
-    status:'ko', errs:[E266],
-    cap:'Đổ từ bình lớn (long) sang bình nhỏ (int) <b>có thể tràn</b>, nên C# chặn lại và báo lỗi <b>CS0266</b>. Nó không tự làm nữa.' },
-  { part:0, view:'jugs', jugs:{src:{t:'long',v:'10',f:.2}, dst:{t:'int',v:'10',f:.35}, mode:'explicit', valve:'(int)'}, file:'EpKieu.cs',
-    lines:['int a = 10;','long b = a;','int c = (int)b;        // tường minh'], typeIdx:[2], act:2, mood:'happy', status:'ok', out:['Build thành công: 0 lỗi.'],
-    cap:'Lắp <b>van xác nhận</b> <code>(int)</code>: đó là ép kiểu <b>tường minh</b>, nghĩa là "tôi biết có thể tràn, cứ đổ đi". Ở đây 10 vừa bình int nên không mất gì.' },
+  { part:0, view:'cells', cells:{str:'Hello'}, file:'Chuoi.cs', lines:['string s = "Hello";'], typeIdx:[0], act:0, mood:'neutral',
+    cap:'Chuỗi <code>"Hello"</code> giống một dãy ô, mỗi ô chứa một ký tự. Các ô được đánh <b>chỉ số từ 0</b>, không phải từ 1.' },
+  { part:0, view:'cells', cells:{str:'Hello', hi:0, len:true}, file:'Chuoi.cs',
+    lines:['string s = "Hello";','Console.WriteLine(s.Length);  // 5','Console.WriteLine(s[0]);      // H'], typeIdx:[1,2], act:2, mood:'happy', out:['5','H'],
+    cap:'<code>s.Length</code> là <b>5</b> (có 5 ô). <code>s[0]</code> lấy ô đầu tiên là <b>H</b>.' },
+  { part:0, view:'cells', cells:{str:'Hello', err:5, len:true}, file:'Chuoi.cs',
+    lines:['string s = "Hello";','Console.WriteLine(s.Length);  // 5','Console.WriteLine(s[0]);      // H','Console.WriteLine(s[5]);'], typeIdx:[3], act:3, mood:'sweat',
+    out:['5','H', EX_RANGE], status:'ex',
+    cap:'<code>s[5]</code> báo lỗi <b>IndexOutOfRangeException</b> khi chạy: không có ô số 5! Length là 5 nhưng <b>chỉ số cuối là 4</b> (= Length − 1).' },
 
   /* ---------- Phần 2 ---------- */
-  { part:1, view:'jugs', jugs:{src:{t:'double',v:'7.9',f:.45}, dst:{t:'int',v:'?',f:0}, mode:'pending', valve:'(int)'}, file:'CatBo.cs',
-    lines:['Console.WriteLine((int)7.9);'], typeIdx:[0], act:0, mood:'think', quiz:'q2',
-    cap:'Checkpoint! Đổ số 7.9 qua van <code>(int)</code>. Bình int nhận được gì?' },
-  { part:1, view:'jugs', jugs:{src:{t:'double',v:'7.9',f:.45}, dst:{t:'int',v:'7',f:.5}, mode:'explicit', valve:'(int)', spill:'.9 bị cắt'}, file:'CatBo.cs',
-    lines:['Console.WriteLine((int)7.9);'], act:0, mood:'happy', out:['7'],
-    cap:'In ra <b>7</b>. Bình int không chứa được phần thập phân, nên <b>.9 bị cắt bỏ</b> chứ không được làm tròn lên 8.' },
-  { part:1, view:'jugs', jugs:{src:{t:'double',v:'3.99',f:.4}, dst:{t:'int',v:'3',f:.3}, mode:'explicit', valve:'(int)', spill:'.99 bị cắt'}, file:'CatBo.cs',
-    lines:['double pi = 3.99;','int n = (int)pi;       // 3, cắt bỏ chứ không làm tròn','Console.WriteLine(n);'], typeIdx:[0,1,2], act:1, mood:'sweat', out:['3'],
-    cap:'Dù 3.99 rất gần 4, <code>(int)pi</code> vẫn chỉ giữ <b>3</b>. Phần thập phân luôn bị cắt bỏ.' },
-  { part:1, view:'jugs', jugs:{src:{t:'int',v:'300',f:.5}, dst:{t:'byte',v:'44',f:.25}, mode:'explicit', valve:'(byte)', spill:'256 tràn ra'}, file:'TranSo.cs',
-    lines:['int big = 300;','byte c = (byte)big;    // 44, tràn số','Console.WriteLine(c);'], typeIdx:[0,1,2], act:1, mood:'sweat', out:['44'],
-    cap:'<code>byte</code> chỉ chứa 0 đến 255. Ép 300 vào thì <b>tràn số</b>: 300 − 256 = <b>44</b>. Không có lỗi nào báo, dữ liệu mất âm thầm!' },
+  { part:1, view:'immut', im:'pre', file:'BatBien.cs', lines:['string s = "Hello";','s[0] = \'J\';'], typeIdx:[0,1], act:1, mood:'think', quiz:'q3',
+    cap:'Checkpoint! Muốn đổi "Hello" thành "Jello" bằng cách gán vào ô 0. Dòng code này có vấn đề gì?' },
+  { part:1, view:'immut', im:'locked', file:'BatBien.cs', lines:['string s = "Hello";','⟦s[0]⟧ = \'J\';'], act:1, mood:'sweat',
+    annots:[{line:1, html:'<b>CS0200</b>: Property or indexer \'string.this[int]\' cannot be assigned to -- it is read only'}],
+    status:'ko', errs:[{code:'CS0200', msg:"Property or indexer 'string.this[int]' cannot be assigned to -- it is read only", line:2}],
+    cap:'Lỗi <b>CS0200</b>: các ô của chuỗi là <b>chỉ đọc</b>. Chuỗi trong C# là <b>bất biến</b>: tạo ra rồi thì không sửa được.' },
+  { part:1, view:'immut', im:'upper', file:'BatBien.cs', lines:['string s = "hello";','s.ToUpper();','Console.WriteLine(s);   // hello'], typeIdx:[0,1,2], act:1, mood:'think', out:['hello'],
+    cap:'<code>s.ToUpper()</code> không sửa <code>s</code>. Nó <b>tạo ra một chuỗi mới</b> "HELLO", nhưng ta không cất chuỗi mới vào đâu cả, nên <code>s</code> vẫn là <b>hello</b>.' },
+  { part:1, view:'immut', im:'assign', file:'BatBien.cs', lines:['string s = "hello";','s = s.ToUpper();','Console.WriteLine(s);   // HELLO'], typeIdx:[1], act:1, mood:'happy', out:['HELLO'],
+    cap:'Muốn giữ kết quả thì <b>gán lại</b>: <code>s = s.ToUpper();</code>. Biến s giờ trỏ sang chuỗi mới, chuỗi cũ "hello" vẫn nguyên vẹn.' },
 
   /* ---------- Phần 3 ---------- */
-  { part:2, view:'divide', div:{pending:true, items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2',k:'num',n:'int'}]}, file:'Chia.cs',
-    lines:['double kq = 5 / 2;','Console.WriteLine(kq);'], typeIdx:[0,1], act:0, mood:'think', quiz:'q3',
-    cap:'Checkpoint! Biến <code>kq</code> là double. Liệu nó có giữ được 2.5 không?' },
-  { part:2, view:'divide', div:{items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2',k:'num',n:'int'},{t:'→',k:'op'},{t:'2',k:'num',n:'chia nguyên, mất .5'},{t:'→',k:'op'},{t:'2',k:'dbl',n:'mới đổi sang double'}]}, file:'Chia.cs',
-    lines:['double kq = 5 / 2;','Console.WriteLine(kq);'], act:0, mood:'sweat', out:['2'],
-    cap:'In ra <b>2</b>! Hai số nguyên chia nhau thì <b>phép chia số nguyên được tính trước</b> (5 / 2 = 2), rồi kết quả 2 mới được đổi sang double. Phần .5 đã mất từ trước.' },
-  { part:2, view:'divide', div:{items:[{t:'5',k:'num',n:'int'},{t:'/',k:'op'},{t:'2.0',k:'dbl',n:'double'},{t:'→',k:'op'},{t:'2.5',k:'dbl',n:'chia số thực'}]}, file:'Chia.cs',
-    lines:['double kq = 5 / 2.0;','Console.WriteLine(kq);'], typeIdx:[0], act:0, mood:'happy', out:['2.5'],
-    cap:'Sửa: viết <code>5 / 2.0</code>. Chỉ cần một số là số thực, phép chia là chia số thực và cho <b>2.5</b>.' },
-  { part:2, view:'recap', file:'EpKieu.cs', lines:['long  b = a;          // nhỏ → lớn: ngầm định','int   n = (int)3.99;  // lớn → nhỏ: tường minh, còn 3','double kq = 5 / 2.0;  // muốn 2.5 phải có số thực'], act:-1, mood:'happy', summary:true,
-    cap:'<b>Tổng kết:</b> nhỏ → lớn là ngầm định • lớn → nhỏ phải ép tường minh và có thể mất dữ liệu (cắt thập phân, tràn số) • chia hai số nguyên thì ra số nguyên, dù gán vào double.' }
+  { part:2, view:'concat', file:'NoiChuoi.cs', lines:['string ten = "An";','Console.WriteLine("Xin chào " + ten);','Console.WriteLine($"Xin chào {ten}");'], typeIdx:[0,1,2], act:-1, mood:'happy', out:['Xin chào An','Xin chào An'],
+    cap:'Hai cách ghép chuỗi: dùng dấu <code>+</code>, hoặc <b>chuỗi nội suy</b> <code>$"…{ten}…"</code> đặt biến thẳng vào trong ngoặc nhọn. Cách thứ hai dễ đọc hơn.' },
+  { part:2, view:'plus', plus:{pending:true, items:[{t:'"5"',k:'str'},{t:'+',k:'op'},{t:'3',k:'num'}]}, file:'Cong.cs', lines:['Console.WriteLine("5" + 3);'], typeIdx:[0], act:0, mood:'think', quiz:'q1',
+    cap:'Checkpoint! Một bên là chuỗi, một bên là số. Kết quả in ra là gì?' },
+  { part:2, view:'plus', plus:{items:[{t:'"5"',k:'str',n:'chuỗi'},{t:'+',k:'op'},{t:'3',k:'num',n:'số'},{t:'→',k:'op'},{t:'"53"',k:'str',n:'nối chuỗi'}]}, file:'Cong.cs', lines:['Console.WriteLine("5" + 3);'], act:0, mood:'happy', out:['53'],
+    cap:'Chỉ cần một bên là <b>chuỗi</b>, dấu <code>+</code> trở thành <b>nối chuỗi</b>: số 3 được đổi thành "3" rồi ghép vào, ra <b>53</b>.' },
+  { part:2, view:'plus', plus:{pending:true, items:[{t:'5',k:'num'},{t:'+',k:'op'},{t:'3',k:'num'},{t:'+',k:'op'},{t:'"2"',k:'str'}]}, file:'Cong.cs', lines:['Console.WriteLine(5 + 3 + "2");'], typeIdx:[0], act:0, mood:'think', quiz:'q2',
+    cap:'Checkpoint! Lần này có cả số và chuỗi. C# tính theo thứ tự nào?' },
+  { part:2, view:'plus', plus:{items:[{t:'5 + 3',k:'num',n:'số + số'},{t:'→',k:'op'},{t:'8',k:'num',n:'cộng số'},{t:'+',k:'op'},{t:'"2"',k:'str'},{t:'→',k:'op'},{t:'"82"',k:'str',n:'nối chuỗi'}]}, file:'Cong.cs', lines:['Console.WriteLine(5 + 3 + "2");'], act:0, mood:'happy', out:['82'], summary:false,
+    cap:'C# tính <b>từ trái sang phải</b>: 5 + 3 là hai số nên ra <b>8</b> trước, rồi 8 + "2" mới nối chuỗi thành <b>82</b>.' },
+  { part:2, view:'recap', file:'NoiChuoi.cs', lines:['string s = "Hello";        // chỉ số 0 → 4','s = s.ToUpper();           // gán lại để giữ kết quả','Console.WriteLine($"Xin chào {s}");'], act:-1, mood:'happy', summary:true,
+    cap:'<b>Tổng kết:</b> chỉ số bắt đầu từ 0, chỉ số cuối là Length − 1 • chuỗi bất biến, hàm như ToUpper tạo chuỗi mới • chuỗi + số là nối chuỗi, tính từ trái sang phải.' }
 ];
 
 const QUIZ = {
-  q1:{ q:'<code>int a = 10; long b = a; int c = b;</code> Dòng nào lỗi?', opts:[
-    {t:'Dòng 1: <code>int a = 10;</code>', fb:'Gán số 10 vào int là bình thường.'},
-    {t:'Dòng 2: <code>long b = a;</code>', fb:'int sang long là bình nhỏ sang bình lớn, C# tự làm (ngầm định).'},
-    {t:'Dòng 3: <code>int c = b;</code>', ok:true, fb:'Đúng! long sang int là bình lớn sang bình nhỏ, phải ép tường minh (int)b.'},
-    {t:'Không dòng nào lỗi', fb:'C# không tự đổi long sang int vì có thể tràn, nên báo lỗi CS0266.'}]},
-  q2:{ q:'<code>Console.WriteLine((int)7.9);</code> in ra gì?', opts:[
-    {t:'8', fb:'(int) không làm tròn. Nó cắt bỏ phần thập phân.'},
-    {t:'7', ok:true, fb:'Đúng! Phần .9 bị cắt bỏ, chỉ còn 7.'},
-    {t:'7.9', fb:'Kết quả đã là int nên không có phần thập phân.'},
-    {t:'Lỗi biên dịch', fb:'Ép double sang int bằng (int) là hợp lệ.'}]},
-  q3:{ q:'<code>double kq = 5 / 2; Console.WriteLine(kq);</code> in ra gì?', opts:[
-    {t:'2.5', fb:'Đây là lỗi hiểu sai phổ biến: 5 / 2 là chia số nguyên, được tính trước thành 2.'},
-    {t:'2', ok:true, fb:'Đúng! 5 / 2 = 2 (chia số nguyên), rồi 2 mới được đổi sang double.'},
-    {t:'3', fb:'Chia số nguyên không làm tròn lên. Nó bỏ phần dư.'},
-    {t:'Lỗi biên dịch', fb:'Gán int vào double là ngầm định, hợp lệ. Chỉ là kết quả không như mong đợi.'}]}
+  q1:{ q:'<code>Console.WriteLine("5" + 3);</code> in ra gì?', opts:[
+    {t:'8', fb:'"5" có dấu nháy là chuỗi, không phải số, nên không cộng toán học được.'},
+    {t:'53', ok:true, fb:'Đúng! Có một bên là chuỗi nên + là nối chuỗi: "5" + "3" = "53".'},
+    {t:'"5"3', fb:'Console không in dấu nháy. Kết quả là chuỗi 53.'},
+    {t:'Lỗi biên dịch', fb:'C# cho phép cộng chuỗi với số: số sẽ được đổi thành chuỗi.'}]},
+  q2:{ q:'<code>Console.WriteLine(5 + 3 + "2");</code> in ra gì?', opts:[
+    {t:'532', fb:'C# tính từ trái sang phải: 5 + 3 là hai số nên ra 8 trước, rồi mới nối với "2".'},
+    {t:'82', ok:true, fb:'Đúng! 5 + 3 = 8 (cộng số), sau đó 8 + "2" = "82" (nối chuỗi).'},
+    {t:'10', fb:'"2" là chuỗi nên phép + cuối cùng là nối chuỗi, không phải cộng số.'},
+    {t:'Lỗi biên dịch', fb:'Biểu thức hợp lệ. Chỉ cần nhớ thứ tự tính từ trái sang phải.'}]},
+  q3:{ q:'<code>string s = "Hello"; s[0] = \'J\';</code> có vấn đề gì?', opts:[
+    {t:'Chuỗi chỉ đọc, không gán được từng ký tự', ok:true, fb:'Đúng! Chuỗi là bất biến, các ô chỉ để đọc. C# báo lỗi CS0200.'},
+    {t:'\'J\' phải viết là "J"', fb:'Mỗi ô là một char nên \'J\' là đúng kiểu. Vấn đề là ô đó không cho ghi.'},
+    {t:'Chỉ số bắt đầu từ 1, phải viết s[1]', fb:'Chỉ số bắt đầu từ 0, s[0] chính là ô H.'},
+    {t:'Không lỗi, s thành "Jello"', fb:'Không được: chuỗi trong C# không sửa trực tiếp được.'}]}
 };
 
-/* ---------------- minh họa: bình nước ---------------- */
-const JH = {byte:70, int:125, long:185, double:185};
-const JC = {byte:'var(--t-byte)', int:'var(--t-int)', long:'var(--t-long)', double:'var(--t-double)'};
-const BITS = {byte:'8 bit', int:'32 bit', long:'64 bit', double:'64 bit'};
-function jugsSVG(J, p){
-  const B = 262, W = 120, sx = 50, dx = 390;
-  const hs = JH[J.src.t], hd = JH[J.dst.t];
-  const ls = hs * J.src.f * (J.mode==='implicit'||J.mode==='explicit' ? 1 - p*0.85 : 1);
-  const ld = hd * J.dst.f * (J.mode==='implicit'||J.mode==='explicit' ? p : 0);
-  const pour = (J.mode==='implicit'||J.mode==='explicit') ? Math.sin(Math.PI*Math.min(1,p*1.1)) : 0;
-  const jug = (x,h,t,lv,label,showV)=>{
-    const c = JC[t];
-    return '<rect x="'+x+'" y="'+(B-h)+'" width="'+W+'" height="'+h+'" rx="10" fill="#0f1522" stroke="'+c+'" stroke-width="4"/>'+
-      (lv>0 ? '<rect x="'+(x+4)+'" y="'+(B-lv)+'" width="'+(W-8)+'" height="'+Math.max(0,lv-4)+'" rx="6" fill="#38bdf8" opacity=".75"/>' : '')+
-      '<text x="'+(x+W/2)+'" y="'+(B-h-12)+'" text-anchor="middle" font-family="monospace" font-weight="800" font-size="20" fill="'+c+'">'+t+'</text>'+
-      '<text x="'+(x+W/2)+'" y="'+(B+22)+'" text-anchor="middle" font-size="13" fill="#8b98a9" font-family="sans-serif">'+BITS[t]+'</text>'+
-      (showV ? '<text x="'+(x+W/2)+'" y="'+(B-Math.max(lv,30)/2+8)+'" text-anchor="middle" font-family="monospace" font-weight="900" font-size="26" fill="#fff">'+label+'</text>' : '');
-  };
-  let h = '<svg viewBox="0 0 560 300" class="jugs">';
-  h += jug(sx, hs, J.src.t, ls, J.src.v, p<.6 || J.mode==='pending' || J.mode==='blocked');
-  h += jug(dx, hd, J.dst.t, ld, J.dst.v, (p>.55 && J.dst.v) || J.mode==='pending');
-  const x1 = sx+W, y1 = B-hs+10, x2 = dx+W/2, y2 = B-hd-30, mx = (x1+x2)/2, my = Math.min(y1,y2)-50;
-  h += '<path d="M'+x1+' '+y1+' Q'+mx+' '+my+' '+x2+' '+y2+'" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" opacity="'+(0.15+0.85*pour)+'" stroke-dasharray="'+(pour>0?'none':'6 8')+'"/>';
-  const vx = mx, vy = (my + (y1+y2)/2)/2 + 4;
-  if(J.mode==='blocked'){
-    h += '<circle cx="'+vx+'" cy="'+vy+'" r="26" fill="#2a0f12" stroke="#f87171" stroke-width="4"/><text x="'+vx+'" y="'+(vy+9)+'" text-anchor="middle" font-size="28" font-weight="900" fill="#f87171">✘</text>'+
-         '<text x="'+vx+'" y="'+(vy+52)+'" text-anchor="middle" font-size="15" fill="#fca5a5" font-family="sans-serif" font-weight="700">cần van (int)</text>';
-  } else if(J.valve){
-    h += '<rect x="'+(vx-40)+'" y="'+(vy-20)+'" width="80" height="40" rx="10" fill="#1a2e0a" stroke="#a3e635" stroke-width="3"/><text x="'+vx+'" y="'+(vy+8)+'" text-anchor="middle" font-family="monospace" font-weight="900" font-size="20" fill="#a3e635">'+J.valve+'</text>'+
-         '<text x="'+vx+'" y="'+(vy+42)+'" text-anchor="middle" font-size="13" fill="#a3e635" font-family="sans-serif">van xác nhận</text>';
-  } else if(J.mode==='implicit'){
-    h += '<text x="'+vx+'" y="'+(vy+5)+'" text-anchor="middle" font-size="15" fill="#4ade80" font-family="sans-serif" font-weight="700">tự động ✓</text>';
-  }
-  if(J.spill && p>.6){
-    const q = Math.min(1,(p-.6)/.4), sxp = dx+W+6, top = B-hd;
-    for(let k=0;k<5;k++) h += '<circle cx="'+(sxp+8+k*6)+'" cy="'+(top+10+q*(60+k*14))+'" r="'+(6-k*.6)+'" fill="#f87171" opacity="'+(1-q*.4)+'"/>';
-    h += '<text x="'+(dx+W/2)+'" y="'+(top-40)+'" text-anchor="middle" font-size="16" font-weight="800" fill="#f87171" font-family="sans-serif" opacity="'+q+'">mất: '+J.spill+'</text>';
-  }
-  return h + '</svg>';
+/* ---------------- minh họa ---------------- */
+function cellsHTML(str, o={}){
+  let h = '<div class="cells">';
+  str.split('').forEach((ch,i)=>{
+    const cls = 'cell'+(o.hi===i?' hi':'')+(o.lock&&i===0?' lock':'')+(o.dim?' dim':'')+(o.newer?' newer':'');
+    h += '<div class="'+cls+'" data-i="'+i+'"><span class="ch">'+esc(ch)+'</span><span class="ix">'+i+'</span>'+(o.lock&&i===0?'<span class="badge">chỉ đọc</span>':'')+'</div>';
+  });
+  if(o.err!=null) h += '<div class="cell ghost" data-i="'+o.err+'"><span class="ch">?</span><span class="ix">'+o.err+'</span><span class="badge">không tồn tại</span></div>';
+  return h + '</div>';
 }
 function renderStage(s, animate){
   const st = $('#stage');
-  if(s.view==='jugs'){
-    const m = s.jugs.mode;
-    $('#stitle').innerHTML = '<b>casting</b> // đổ nước giữa các bình';
-    const tag = {implicit:'<span class="mtag ok">NGẦM ĐỊNH · nhỏ → lớn</span>', explicit:'<span class="mtag warn">TƯỜNG MINH · lớn → nhỏ</span>', blocked:'<span class="mtag bad">BỊ CHẶN · thiếu ép kiểu</span>', pending:'<span class="mtag q">? dự đoán</span>'}[m];
-    st.innerHTML = '<div class="jtop">'+tag+'</div><div id="jug">'+jugsSVG(s.jugs, animate && (m==='implicit'||m==='explicit') ? 0 : 1)+'</div>';
+  if(s.view==='cells'){
+    const c = s.cells;
+    $('#stitle').innerHTML = '<b>string</b> // mỗi ký tự là một ô có chỉ số';
+    st.innerHTML = '<div class="strrow"><span class="vtag">s</span>'+cellsHTML(c.str, c)+'</div>'+
+      (c.len ? '<div class="lenbar"><span>Length = <b>'+c.str.length+'</b></span><span>chỉ số: <b>0 → '+(c.str.length-1)+'</b></span></div>' : '<div class="lenbar"><span>Chỉ số bắt đầu từ <b>0</b></span></div>');
     return;
   }
-  if(s.view==='divide'){
-    $('#stitle').innerHTML = '<b>divide</b> // phép chia được tính TRƯỚC khi gán';
-    st.innerHTML = '<p class="lead">Màu <b style="color:var(--t-int)">xanh dương</b> là int, màu <b style="color:var(--t-double)">hồng</b> là double.</p><div class="chain big">'+
-      s.div.items.map(it=> it.k==='op' ? '<span class="op">'+it.t+'</span>' : '<span class="pc '+it.k+'">'+esc(it.t)+(it.n?'<small class="note">'+it.n+'</small>':'')+'</span>').join('')+
-      (s.div.pending ? '<span class="op">→</span><span class="pc q">kq = ?</span>' : '')+'</div>';
+  if(s.view==='immut'){
+    $('#stitle').innerHTML = '<b>immutable</b> // chuỗi không sửa được, chỉ tạo mới';
+    if(s.im==='pre' || s.im==='locked'){
+      st.innerHTML = '<div class="strrow"><span class="vtag">s</span>'+cellsHTML('Hello', {lock:s.im==='locked'})+'</div>'+
+        '<div class="jchip'+(s.im==='locked'?' bad':'')+'">\'J\''+(s.im==='locked'?' ✘':' ?')+'</div>';
+    } else {
+      const assign = s.im==='assign';
+      st.innerHTML = '<div class="imrow"><span class="vtag'+(assign?' gone':'')+'">s</span>'+cellsHTML('hello',{dim:assign})+'<span class="lbl">'+(assign?'chuỗi cũ: vẫn nguyên vẹn':'chuỗi gốc')+'</span></div>'+
+        '<div class="arrow">↓ <code>ToUpper()</code> tạo chuỗi mới</div>'+
+        '<div class="imrow newrow'+(assign?' kept':'')+'"><span class="vtag'+(assign?'':' gone')+'">s</span>'+cellsHTML('HELLO',{newer:true})+'<span class="lbl">'+(assign?'s trỏ sang chuỗi mới':'chuỗi mới: không biến nào giữ')+'</span></div>';
+    }
+    return;
+  }
+  if(s.view==='concat'){
+    $('#stitle').innerHTML = '<b>concat</b> // ghép chuỗi';
+    st.innerHTML = '<div class="crow"><div class="ctitle">Cách 1: dấu <code>+</code></div><div class="chain">'+
+      '<span class="pc str">"Xin chào "</span><span class="op">+</span><span class="pc var">ten <small>= "An"</small></span><span class="op">→</span><span class="pc res">"Xin chào An"</span></div></div>'+
+      '<div class="crow"><div class="ctitle">Cách 2: chuỗi nội suy <code>$"…"</code></div><div class="chain">'+
+      '<span class="pc str">$"Xin chào <span class="slot">{ten}</span>"</span><span class="op">→</span><span class="pc res">"Xin chào An"</span></div></div>';
+    return;
+  }
+  if(s.view==='plus'){
+    $('#stitle').innerHTML = '<b>+</b> // cộng số hay nối chuỗi?';
+    st.innerHTML = '<p class="lead">Màu <b style="color:var(--t-int)">xanh dương</b> là số, màu <b style="color:var(--t-string)">xanh lá</b> là chuỗi.</p><div class="chain big">'+
+      s.plus.items.map(it=> it.k==='op' ? '<span class="op">'+it.t+'</span>' : '<span class="pc '+it.k+'">'+esc(it.t)+(it.n?'<small class="note">'+it.n+'</small>':'')+'</span>').join('')+
+      (s.plus.pending ? '<span class="op">→</span><span class="pc q">?</span>' : '')+'</div>';
     return;
   }
   if(s.view==='recap'){
     $('#stitle').innerHTML = '<b>recap</b> // 3 điều cần nhớ';
     st.innerHTML = '<div class="recap">'+[
-      ['nhỏ → lớn', 'Ngầm định, an toàn: <code>long b = a;</code>'],
-      ['lớn → nhỏ', 'Tường minh <code>(int)</code>, có thể mất dữ liệu: cắt thập phân (3.99 → 3), tràn số (300 → 44).'],
-      ['5 / 2 = 2', 'Chia hai số nguyên ra số nguyên. Muốn 2.5 thì viết <code>5 / 2.0</code>.']
+      ['0 → Length − 1', 'Chỉ số bắt đầu từ 0. "Hello" có Length 5, chỉ số cuối là 4.'],
+      ['bất biến', 'Không gán được <code>s[0]</code>. ToUpper() tạo chuỗi mới, nhớ gán lại.'],
+      ['"5" + 3 = "53"', 'Có chuỗi thì + là nối. Tính từ trái sang phải: 5 + 3 + "2" = "82".']
     ].map(r=>'<div class="rc"><b>'+r[0]+'</b><span>'+r[1]+'</span></div>').join('')+'</div>';
   }
 }
 function playStage(s){
-  const st = $('#stage'), my = stageId;
-  if(s.view==='jugs' && (s.jugs.mode==='implicit'||s.jugs.mode==='explicit')){
-    const t0 = performance.now(), D = 1800;
-    const f = now=>{ if(my!==stageId) return; const p = Math.min(1,(now-t0)/D); const el=document.getElementById('jug'); if(el) el.innerHTML = jugsSVG(s.jugs, p); if(p<1) requestAnimationFrame(f); };
-    requestAnimationFrame(f);
+  const st = $('#stage');
+  if(s.view==='cells'){
+    st.querySelectorAll('.cell').forEach((c,i)=> c.animate([{opacity:0,transform:'translateY(-14px)'},{opacity:1,transform:'none'}],{duration:350,delay:i*80,easing:ease,fill:'backwards'}));
+    const g = st.querySelector('.ghost'); if(g) g.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(-5px)'},{transform:'none'}],{duration:450,delay:500});
   }
-  if(s.view==='jugs' && s.jugs.mode==='blocked'){
-    const c = st.querySelector('circle'); if(c) st.querySelector('svg').animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:400});
+  if(s.view==='immut'){
+    const j = st.querySelector('.jchip.bad');
+    if(j) j.animate([{transform:'translate(0,0)'},{transform:'translate(-40px,-6px)'},{transform:'translate(30px,-30px) rotate(25deg)',opacity:.4}],{duration:900,easing:'ease-out',fill:'forwards'});
+    const n = st.querySelector('.newrow');
+    if(n && s.im==='upper') n.animate([{opacity:0,transform:'translateY(-20px)'},{opacity:1,transform:'none'}],{duration:500,easing:ease});
+    const t = st.querySelector('.newrow .vtag');
+    if(t && s.im==='assign') t.animate([{transform:'translateY(-90px)'},{transform:'none'}],{duration:700,easing:ease});
   }
-  if(s.view==='divide') st.querySelectorAll('.chain').forEach(ch=> [...ch.children].forEach((el,i)=> el.animate([{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'none'}],{duration:350,delay:i*260,easing:ease,fill:'backwards'})));
+  if(s.view==='concat' || s.view==='plus'){
+    st.querySelectorAll('.chain').forEach((ch,ci)=> [...ch.children].forEach((el,i)=> el.animate([{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'none'}],{duration:350,delay:ci*900+i*220,easing:ease,fill:'backwards'})));
+  }
   if(s.view==='recap') st.querySelectorAll('.rc').forEach((r,i)=>r.animate([{opacity:0,transform:'translateX(20px)'},{opacity:1,transform:'none'}],{duration:400,delay:i*160,easing:ease,fill:'backwards'}));
 }
 
