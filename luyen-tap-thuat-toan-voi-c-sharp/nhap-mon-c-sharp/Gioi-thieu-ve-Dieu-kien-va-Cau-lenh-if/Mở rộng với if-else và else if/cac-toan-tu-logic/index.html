@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng toán tử logic</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --cm:#6b7280;
+    --wire:#c9ced8; --live:#f59e0b; --lamp-on:#fde047; --lamp-off:#ffffff; --node-text:#3b4352;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --cm:#8b93a3;
+      --wire:#3a4250; --live:#fbbf24; --lamp-on:#fde047; --lamp-off:#1d222c; --node-text:#c8cfdb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+  .switches{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .sw{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);color:var(--text);
+    border-radius:10px;padding:8px 14px;cursor:pointer;font:inherit}
+  .sw .name{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .sw .track{width:42px;height:24px;border-radius:999px;background:var(--wire);position:relative;transition:background .2s}
+  .sw .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
+  .sw[aria-pressed="true"] .track{background:var(--true)}
+  .sw[aria-pressed="true"] .track::after{left:21px}
+  .sw .val{font:600 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-width:44px}
+  .sw[aria-pressed="true"] .val{color:var(--true)}
+  .sw[aria-pressed="false"] .val{color:var(--false)}
+  .ops{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+  @media (max-width:900px){.ops{grid-template-columns:1fr}}
+  .op-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+  .op-head h2{margin:0;font:700 18px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .op-head .vn{font-size:13px;color:var(--muted);font-weight:600}
+  .rule{margin:0 0 6px;font-size:14px}
+  .ex{margin:8px 0 0;font-size:13px;color:var(--muted)}
+  .ex code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+  .res{display:inline-block;padding:1px 10px;border-radius:6px;font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .res.t{background:var(--true-soft);color:var(--true)}.res.f{background:var(--false-soft);color:var(--false)}
+  svg{width:100%;height:auto;display:block;max-width:300px;margin:4px auto 8px}
+  .wire{fill:none;stroke:var(--wire);stroke-width:3;stroke-linecap:round;transition:stroke .2s}
+  .wire.live{stroke:var(--live)}
+  .contact{fill:var(--card);stroke:var(--node-text);stroke-width:1.5}
+  .lever{stroke:var(--node-text);stroke-width:3;stroke-linecap:round;transition:all .2s}
+  .lever.closed{stroke:var(--live)}
+  .slabel{font:700 13px ui-monospace,Menlo,Consolas,monospace;fill:var(--node-text)}
+  .lamp{stroke:var(--node-text);stroke-width:1.8;fill:var(--lamp-off);transition:fill .2s}
+  .lamp.on{fill:var(--lamp-on)}
+  .glow{fill:var(--lamp-on);opacity:0;transition:opacity .2s}
+  .glow.on{opacity:.35}
+  .lampx{stroke:var(--node-text);stroke-width:1.4}
+  .gate{fill:var(--card);stroke:var(--node-text);stroke-width:1.5}
+  .gtext{font:700 16px ui-monospace,Menlo,Consolas,monospace;fill:var(--node-text)}
+  .clickable{cursor:pointer}
+  table{border-collapse:collapse;width:100%;font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  th,td{padding:4px 8px;text-align:center;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  tr.cur td{background:var(--cur);font-weight:700}
+  td.t{color:var(--true)}td.f{color:var(--false)}
+  .bottom{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
+  @media (max-width:820px){.bottom{grid-template-columns:1fr}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+  .code{background:var(--code-bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:pre;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .kw{color:var(--kw);font-weight:600}.cm{color:var(--cm)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .note{font-size:13px;color:var(--muted);margin:8px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Toán tử logic &amp;&amp;, ||, ! hoạt động như thế nào?</h1>
+  <p class="lead">Bật hoặc tắt hai công tắc <b>A</b> và <b>B</b> (true là bật, false là tắt). Đèn sáng nghĩa là kết quả <b>true</b>.</p>
+
+  <div class="switches">
+    <button class="sw" id="swA" aria-pressed="true"><span class="name">A</span><span class="track"></span><span class="val">true</span></button>
+    <button class="sw" id="swB" aria-pressed="false"><span class="name">B</span><span class="track"></span><span class="val">false</span></button>
+  </div>
+
+  <div class="ops">
+    <!-- AND -->
+    <div class="card">
+      <div class="op-head"><h2>A &amp;&amp; B</h2><span class="vn">VÀ</span></div>
+      <p class="rule">Chỉ true khi <b>cả hai</b> đều true. Giống hai công tắc mắc nối tiếp.</p>
+      <svg viewBox="0 0 240 100" aria-label="Mạch nối tiếp">
+        <path class="wire live" d="M10 55 H50"/>
+        <path class="wire" id="and1" d="M90 55 H120"/>
+        <path class="wire" id="and2" d="M160 55 H186"/>
+        <g class="clickable" data-sw="A">
+          <circle class="contact" cx="50" cy="55" r="3.5"/><circle class="contact" cx="90" cy="55" r="3.5"/>
+          <line class="lever" id="andLA" x1="50" y1="55" x2="90" y2="55"/>
+          <text class="slabel" x="70" y="30" text-anchor="middle">A</text>
+        </g>
+        <g class="clickable" data-sw="B">
+          <circle class="contact" cx="120" cy="55" r="3.5"/><circle class="contact" cx="160" cy="55" r="3.5"/>
+          <line class="lever" id="andLB" x1="120" y1="55" x2="160" y2="55"/>
+          <text class="slabel" x="140" y="30" text-anchor="middle">B</text>
+        </g>
+        <circle class="glow" id="andG" cx="200" cy="55" r="24"/>
+        <circle class="lamp" id="andL" cx="200" cy="55" r="14"/>
+        <path class="lampx" d="M190 45 L210 65 M210 45 L190 65"/>
+      </svg>
+      <div>Kết quả: <span class="res" id="andR"></span></div>
+      <table aria-label="Bảng chân trị A && B">
+        <thead><tr><th>A</th><th>B</th><th>A &amp;&amp; B</th></tr></thead>
+        <tbody id="andT"></tbody>
+      </table>
+      <p class="ex">Ví dụ: được vào rạp khi <code>coVe &amp;&amp; duTuoi</code>.</p>
+    </div>
+
+    <!-- OR -->
+    <div class="card">
+      <div class="op-head"><h2>A || B</h2><span class="vn">HOẶC</span></div>
+      <p class="rule">True khi <b>ít nhất một</b> vế true. Giống hai công tắc mắc song song.</p>
+      <svg viewBox="0 0 240 100" aria-label="Mạch song song">
+        <path class="wire live" d="M10 50 H40 M40 28 V72 M40 28 H70 M40 72 H70"/>
+        <path class="wire" id="or1" d="M110 28 H140"/>
+        <path class="wire" id="or2" d="M110 72 H140"/>
+        <path class="wire" id="or3" d="M140 28 V72 M140 50 H186"/>
+        <g class="clickable" data-sw="A">
+          <circle class="contact" cx="70" cy="28" r="3.5"/><circle class="contact" cx="110" cy="28" r="3.5"/>
+          <line class="lever" id="orLA" x1="70" y1="28" x2="110" y2="28"/>
+          <text class="slabel" x="90" y="12" text-anchor="middle">A</text>
+        </g>
+        <g class="clickable" data-sw="B">
+          <circle class="contact" cx="70" cy="72" r="3.5"/><circle class="contact" cx="110" cy="72" r="3.5"/>
+          <line class="lever" id="orLB" x1="70" y1="72" x2="110" y2="72"/>
+          <text class="slabel" x="90" y="96" text-anchor="middle">B</text>
+        </g>
+        <circle class="glow" id="orG" cx="200" cy="50" r="24"/>
+        <circle class="lamp" id="orL" cx="200" cy="50" r="14"/>
+        <path class="lampx" d="M190 40 L210 60 M210 40 L190 60"/>
+      </svg>
+      <div>Kết quả: <span class="res" id="orR"></span></div>
+      <table aria-label="Bảng chân trị A || B">
+        <thead><tr><th>A</th><th>B</th><th>A || B</th></tr></thead>
+        <tbody id="orT"></tbody>
+      </table>
+      <p class="ex">Ví dụ: được nghỉ khi <code>thuBay || chuNhat</code>.</p>
+    </div>
+
+    <!-- NOT -->
+    <div class="card">
+      <div class="op-head"><h2>!A</h2><span class="vn">PHỦ ĐỊNH</span></div>
+      <p class="rule">Đảo ngược giá trị: true thành false, false thành true. Chỉ dùng với <b>một</b> vế.</p>
+      <svg viewBox="0 0 240 100" aria-label="Khối đảo">
+        <path class="wire live" d="M10 55 H50"/>
+        <path class="wire" id="not1" d="M90 55 H122"/>
+        <path class="wire" id="not2" d="M154 55 H186"/>
+        <g class="clickable" data-sw="A">
+          <circle class="contact" cx="50" cy="55" r="3.5"/><circle class="contact" cx="90" cy="55" r="3.5"/>
+          <line class="lever" id="notLA" x1="50" y1="55" x2="90" y2="55"/>
+          <text class="slabel" x="70" y="30" text-anchor="middle">A</text>
+        </g>
+        <rect class="gate" x="122" y="40" width="32" height="30" rx="6"/>
+        <text class="gtext" x="138" y="61" text-anchor="middle">!</text>
+        <circle class="glow" id="notG" cx="200" cy="55" r="24"/>
+        <circle class="lamp" id="notL" cx="200" cy="55" r="14"/>
+        <path class="lampx" d="M190 45 L210 65 M210 45 L190 65"/>
+      </svg>
+      <div>Kết quả: <span class="res" id="notR"></span></div>
+      <table aria-label="Bảng chân trị !A">
+        <thead><tr><th>A</th><th>!A</th></tr></thead>
+        <tbody id="notT"></tbody>
+      </table>
+      <p class="ex">Ví dụ: <code>!daDangNhap</code> nghĩa là "chưa đăng nhập".</p>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C#</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Console</p>
+      <div class="console" id="console"></div>
+      <p class="note">Khi in ra màn hình, C# viết <b>True</b>/<b>False</b> (viết hoa chữ đầu), còn trong code ta viết <b>true</b>/<b>false</b>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var A = true, B = false;
+  var $ = function(id){ return document.getElementById(id); };
+  function word(v){ return v ? 'true' : 'false'; }
+  function cap(v){ return v ? 'True' : 'False'; }
+
+  function setRes(id, v){ var e = $(id); e.textContent = word(v); e.className = 'res ' + (v ? 't' : 'f'); }
+  function live(id, on){ $(id).setAttribute('class', 'wire' + (on ? ' live' : '')); }
+  function lamp(prefix, on){
+    $(prefix + 'L').setAttribute('class', 'lamp' + (on ? ' on' : ''));
+    $(prefix + 'G').setAttribute('class', 'glow' + (on ? ' on' : ''));
+  }
+  function lever(id, closed){
+    var e = $(id), x1 = +e.getAttribute('x1'), y1 = +e.getAttribute('y1');
+    e.setAttribute('x2', closed ? x1 + 40 : x1 + 32);
+    e.setAttribute('y2', closed ? y1 : y1 - 20);
+    e.setAttribute('class', 'lever' + (closed ? ' closed' : ''));
+  }
+  function table(id, rows, cur){
+    $(id).innerHTML = rows.map(function(r){
+      var isCur = r.key === cur;
+      return '<tr' + (isCur ? ' class="cur"' : '') + '>' + r.cells.map(function(v){
+        return '<td class="' + (v ? 't' : 'f') + '">' + word(v) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+  }
+
+  function render(){
+    // cong tac
+    [['swA', A], ['swB', B]].forEach(function(p){
+      var b = $(p[0]); b.setAttribute('aria-pressed', p[1] ? 'true' : 'false');
+      b.querySelector('.val').textContent = word(p[1]);
+    });
+    var and = A && B, or = A || B, not = !A;
+
+    // &&
+    lever('andLA', A); lever('andLB', B);
+    live('and1', A); live('and2', and); lamp('and', and); setRes('andR', and);
+    // ||
+    lever('orLA', A); lever('orLB', B);
+    live('or1', A); live('or2', B); live('or3', or); lamp('or', or); setRes('orR', or);
+    // !
+    lever('notLA', A);
+    live('not1', A); live('not2', not); lamp('not', not); setRes('notR', not);
+
+    var pairs = [[true, true], [true, false], [false, true], [false, false]];
+    var key = word(A) + word(B);
+    table('andT', pairs.map(function(p){ return { key: word(p[0]) + word(p[1]), cells: [p[0], p[1], p[0] && p[1]] }; }), key);
+    table('orT', pairs.map(function(p){ return { key: word(p[0]) + word(p[1]), cells: [p[0], p[1], p[0] || p[1]] }; }), key);
+    table('notT', [true, false].map(function(a){ return { key: word(a), cells: [a, !a] }; }), word(A));
+
+    var kw = function(s){ return '<span class="kw">' + s + '</span>'; };
+    var cm = function(s){ return '<span class="cm">' + s + '</span>'; };
+    $('code').innerHTML =
+      kw('bool') + ' A = ' + kw(word(A)) + ';\n' +
+      kw('bool') + ' B = ' + kw(word(B)) + ';\n' +
+      'Console.WriteLine(A &amp;&amp; B);   ' + cm('// ' + cap(and)) + '\n' +
+      'Console.WriteLine(A || B);   ' + cm('// ' + cap(or)) + '\n' +
+      'Console.WriteLine(!A);       ' + cm('// ' + cap(not));
+    $('console').innerHTML = [cap(and), cap(or), cap(not)].join('<br>');
+  }
+
+  function toggle(name){ if (name === 'A') A = !A; else B = !B; render(); }
+  $('swA').addEventListener('click', function(){ toggle('A'); });
+  $('swB').addEventListener('click', function(){ toggle('B'); });
+  document.querySelectorAll('[data-sw]').forEach(function(g){
+    g.addEventListener('click', function(){ toggle(g.getAttribute('data-sw')); });
+  });
+  render();
+})();
+</script>
+</body>
+</html>
