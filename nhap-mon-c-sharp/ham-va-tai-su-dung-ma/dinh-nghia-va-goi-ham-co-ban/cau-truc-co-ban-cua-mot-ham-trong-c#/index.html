@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng cấu trúc hàm</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  :root{--c4:#15803d;--c4s:#e3f4e8;--c5:#b42318;--c5s:#fbe9e7}
+  @media (prefers-color-scheme: dark){:root{--c4:#4ade80;--c4s:#13301f;--c5:#f87171;--c5s:#3a1717}}
+  .sg{cursor:pointer;border-bottom:2px solid transparent;border-radius:3px;transition:background .15s}
+  .sg.c-type{border-color:var(--p1)}.sg.c-name{border-color:var(--p2)}.sg.c-params{border-color:var(--p3)}
+  .sg.c-return{border-color:var(--c5)}.sg.c-static{border-color:var(--muted)}
+  .sg.c-type.on{background:var(--p1s)}.sg.c-name.on{background:var(--p2s)}.sg.c-params.on{background:var(--p3s)}
+  .sg.c-return.on{background:var(--c5s)}.sg.c-body.on{background:var(--c4s)}.sg.c-static.on{background:var(--line)}
+  .code.sel .sg:not(.on){opacity:.55}
+  .parts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+  .pbtn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px}
+  .pbtn i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .pbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .cm{color:var(--muted)}
+  .exp{min-height:96px}
+  .exp b{display:block;margin-bottom:4px}
+  .res{padding:8px 12px;border-radius:8px;background:var(--code-bg);font:14px ui-monospace,Menlo,Consolas,monospace;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Giải phẫu của một hàm trong C#</h1>
+  <p class="lead">Bấm vào một phần trong mã (hoặc chọn nút bên dưới) để xem phần đó làm gì. Phần tương ứng ở dòng gọi hàm cũng sáng lên.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-ex="B" aria-selected="true">Hàm có 2 tham số</button>
+      <button class="tab" role="tab" data-ex="A" aria-selected="false">Hàm không tham số</button>
+      <button class="tab" role="tab" data-ex="C" aria-selected="false">Hàm nhận chuỗi</button>
+    </div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="parts" id="parts" role="group" aria-label="Các phần của hàm"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Mã nguồn C#</p>
+        <div class="code" id="code"></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="status exp" id="exp" aria-live="polite"></div>
+      <div class="card">
+        <p class="panel-title">Kết quả khi gọi hàm</p>
+        <div class="res" id="res"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var V = {a:5, b:7, ten:'An'}, key = 'B', sel = null;
+  var PARTS = [
+    {k:'static', label:'static', dot:'var(--muted)'},
+    {k:'type', label:'Kiểu trả về', dot:'var(--p1)'},
+    {k:'name', label:'Tên hàm', dot:'var(--p2)'},
+    {k:'params', label:'Tham số', dot:'var(--p3)'},
+    {k:'body', label:'Thân hàm { }', dot:'var(--c4)'},
+    {k:'return', label:'return', dot:'var(--c5)'}
+  ];
+  var INPUTS = {A:[], B:[{id:'a',label:'a'},{id:'b',label:'b'}], C:[{id:'ten',label:'ten', text:true}]};
+
+  function def(){
+    if (key === 'A') return {
+      def:[[['static ','static'],['void','type'],[' '],['ChaoMung','name'],['()','params']],[['{']],[['    Console.WriteLine("Xin chào!");','body']],[['}']]],
+      call:[[['ChaoMung','name'],['()','params'],[';']]],
+      result:'Console in ra: Xin chào!',
+      exp:{
+        static:'static cho phép gọi hàm trực tiếp từ Main (cũng là static) mà không cần tạo đối tượng. Ở giai đoạn này, cứ viết static trước mỗi hàm.',
+        type:'void nghĩa là hàm không trả về giá trị nào. Vì vậy lời gọi ChaoMung(); đứng một mình, không gán vào biến.',
+        name:'ChaoMung là tên hàm. Khi gọi hàm phải viết đúng tên này (phân biệt hoa thường). Tên hàm thường viết theo kiểu PascalCase.',
+        params:'Hàm này không có tham số nên cặp ngoặc () để trống. Khi gọi hàm cũng viết ().',
+        body:'Thân hàm là các lệnh nằm trong cặp { }. Chúng chỉ chạy khi hàm được gọi: ở đây là in ra “Xin chào!”.',
+        'return':'Hàm void không cần return vì không có giá trị nào để gửi về.'
+      }};
+    if (key === 'C') {
+      var t = V.ten;
+      return {
+      def:[[['static ','static'],['string','type'],[' '],['TaoLoiChao','name'],['('],['string ten','params'],[')']],[['{']],[['    ','body'],['return','return'],[' "Xin chào, " + ten + "!";','body']],[['}']]],
+      call:[[['string '],['loi','return'],[' = '],['TaoLoiChao','name'],['('],['"' + t + '"','params'],[');']],[['Console.WriteLine(loi);']]],
+      result:'loi = "Xin chào, ' + t + '!"',
+      exp:{
+        static:'static cho phép gọi hàm trực tiếp từ Main (cũng là static). Ở giai đoạn này, cứ viết static trước mỗi hàm.',
+        type:'string là kiểu của giá trị mà hàm trả về. Nơi gọi nhận kết quả bằng biến cùng kiểu: string loi.',
+        name:'TaoLoiChao là tên hàm. Khi gọi hàm phải viết đúng tên này, phân biệt hoa thường.',
+        params:'string ten là tham số: gồm kiểu (string) và tên (ten). Khi gọi, đối số "' + t + '" được đưa vào, nên ten nhận giá trị "' + t + '".',
+        body:'Thân hàm là các lệnh nằm trong cặp { }. Ở đây chỉ có một lệnh return, ghép chuỗi “Xin chào, ” + ten + “!”.',
+        'return':'return gửi giá trị "Xin chào, ' + t + '!" về nơi gọi và kết thúc hàm. Giá trị này được gán cho biến loi.'
+      }};
+    }
+    var a = V.a, b = V.b, s = a + b;
+    return {
+      def:[[['static ','static'],['int','type'],[' '],['TinhTong','name'],['('],['int a, int b','params'],[')']],[['{']],[['    int ketQua = a + b;','body']],[['    ','body'],['return','return'],[' ketQua;','body']],[['}']]],
+      call:[[['int '],['tong','return'],[' = '],['TinhTong','name'],['('],[a + ', ' + b,'params'],[');']],[['Console.WriteLine(tong);']]],
+      result:'tong = ' + s,
+      exp:{
+        static:'static cho phép gọi hàm trực tiếp từ Main (cũng là static). Ở giai đoạn này, cứ viết static trước mỗi hàm.',
+        type:'int là kiểu của giá trị mà hàm trả về. Nơi gọi nhận kết quả bằng biến cùng kiểu: int tong.',
+        name:'TinhTong là tên hàm. Khi gọi hàm phải viết đúng tên này, phân biệt hoa thường. Tên hàm thường viết theo kiểu PascalCase.',
+        params:'int a, int b là danh sách tham số, mỗi tham số gồm kiểu và tên. Khi gọi hàm, các đối số được đưa vào theo thứ tự: a nhận ' + a + ', b nhận ' + b + '.',
+        body:'Thân hàm là các lệnh nằm trong cặp { }. Chúng chỉ chạy khi hàm được gọi: ketQua = ' + a + ' + ' + b + ' = ' + s + '.',
+        'return':'return gửi giá trị ketQua (' + s + ') về nơi gọi và kết thúc hàm. Giá trị này được gán cho biến tong.'
+      }};
+  }
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|static|void|return|string)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + m[3] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function lineHtml(segs){
+    return segs.map(function(sg){
+      var p = sg[1];
+      if (!p) return hl(sg[0]);
+      return '<span class="sg c-' + p + (sel === p ? ' on' : '') + '" data-p="' + p + '">' + hl(sg[0]) + '</span>';
+    }).join('');
+  }
+  function render(){
+    var d = def(), n = 0;
+    var rows = d.def.map(function(l){ n++; return '<div class="ln"><span class="no">' + n + '</span><span>' + lineHtml(l) + '</span></div>'; });
+    rows.push('<div class="ln"><span class="no"></span><span></span></div>');
+    rows.push('<div class="ln"><span class="no"></span><span class="cm">// Nơi gọi hàm (trong Main):</span></div>');
+    d.call.forEach(function(l){ n++; rows.push('<div class="ln"><span class="no">' + n + '</span><span>' + lineHtml(l) + '</span></div>'); });
+    $('code').className = 'code' + (sel ? ' sel' : '');
+    $('code').innerHTML = rows.join('');
+    $('parts').innerHTML = PARTS.map(function(p){
+      return '<button type="button" class="pbtn" data-p="' + p.k + '" aria-pressed="' + (sel === p.k) + '"><i style="background:' + p.dot + '"></i>' + p.label + '</button>';
+    }).join('');
+    var title = sel ? PARTS.filter(function(p){ return p.k === sel; })[0].label : 'Chọn một phần của hàm';
+    $('exp').innerHTML = '<b>' + esc(title) + '</b>' + esc(sel ? d.exp[sel] : 'Bấm vào một phần của dòng khai báo hoặc chọn nút ở trên để xem phần đó làm gì. Hãy thử "Tham số": đối số ở dòng gọi hàm sẽ sáng lên cùng.');
+    $('res').textContent = d.result;
+  }
+  function buildFields(){
+    $('fields').innerHTML = INPUTS[key].map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" autocomplete="off" style="width:' + (i.text ? 120 : 70) + 'px" value="' + esc(V[i.id]) + '"></div>';
+    }).join('');
+    INPUTS[key].forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+  }
+  function onInput(){
+    var ok = true;
+    INPUTS[key].forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good;
+      if (i.text) { good = s.length >= 1 && s.length <= 12 && !/["\\]/.test(s); if (good) V.ten = s; }
+      else { good = /^-?\d{1,3}$/.test(s); if (good) V[i.id] = Number(s); }
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    $('err').textContent = ok ? '' : (key === 'C' ? 'Hãy nhập tên từ 1 đến 12 ký tự, không dùng dấu nháy kép.' : 'Hãy nhập số nguyên từ -999 đến 999.');
+    if (ok) render();
+  }
+  $('code').addEventListener('click', function(e){
+    var s = e.target.closest('.sg'); if (!s) return;
+    sel = sel === s.dataset.p ? null : s.dataset.p; render();
+  });
+  $('parts').addEventListener('click', function(e){
+    var b = e.target.closest('.pbtn'); if (!b) return;
+    sel = sel === b.dataset.p ? null : b.dataset.p; render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      key = b.dataset.ex; sel = null;
+      document.querySelectorAll('.tab').forEach(function(t){ t.setAttribute('aria-selected', t === b ? 'true' : 'false'); });
+      buildFields(); $('err').textContent = ''; render();
+    });
+  });
+  buildFields(); render();
+})();
+</script>
+</body>
+</html>

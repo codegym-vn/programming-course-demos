@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng ứng dụng giá trị trả về</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .frame{border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);margin-bottom:10px}
+  .frame.on{border-color:var(--cur-bar);box-shadow:0 0 0 3px var(--cur)}
+  .frame.dim{opacity:.65}
+  .frame h3{margin:0 0 8px;font:700 14px ui-monospace,Menlo,Consolas,monospace;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .badge{font:600 11px system-ui,sans-serif;padding:1px 8px;border-radius:999px;background:var(--cur);color:var(--text)}
+  .badge.g{background:var(--code-bg);color:var(--muted)}
+  .fnote{color:var(--muted);font-size:13.5px;margin:0}
+  .cm{color:var(--muted)}
+  .ln.skipd{opacity:.3}
+  .ln.skipd .no::after{content:""}
+  .er{font:14px ui-monospace,Menlo,Consolas,monospace;padding:3px 8px;border-radius:6px}
+  .er.last{background:var(--cur);font-weight:700}
+  .retb{margin-top:10px;padding:8px 12px;border-radius:8px;background:var(--code-bg);font-size:14px}
+  .console.pre{white-space:pre;min-height:60px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dùng giá trị trả về của hàm</h1>
+  <p class="lead">Bấm <b>Bước tiếp</b> để xem lời gọi hàm được thay bằng giá trị trả về như thế nào: trong <code>if</code>, làm đối số của hàm khác, hoặc khi hàm gọi hàm.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="chan" aria-selected="true">Dùng trong if</button><button class="tab" role="tab" data-ex="longnhau" aria-selected="false">Hàm lồng nhau</button><button class="tab" role="tab" data-ex="tb" aria-selected="false">Hàm gọi hàm</button></div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    <span id="chips"></span>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Mã nguồn C#</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console pre" id="console"></div></div>
+    </div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Các hàm đang chạy</p><div id="stack"></div></div>
+      <div class="card"><p class="panel-title">Lời gọi hàm được thay bằng giá trị</p><div id="expr"></div><div class="retb" id="ret"></div></div>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|static|void|bool|string|if|else|for|return|true|false)\b|(-?\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + esc(m[3]) + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  var EX = {chan:{
+ inputs:[{id:'n',label:'so',def:7,min:-999,max:999}], chips:[[7],[10],[-4]],
+ intro:'Lời gọi hàm có thể nằm ngay trong điều kiện của if. Bấm "Bước tiếp" để xem giá trị trả về quyết định nhánh nào chạy.',
+ lines:function(P){return ['static bool LaSoChan(int n)','{','    return n % 2 == 0;','}','','static void Main()','{','    int so = '+P.n+';','    if (LaSoChan(so))','    {','        Console.WriteLine("Số chẵn");','    }','    else','    {','        Console.WriteLine("Số lẻ");','    }','}'];},
+ run:function(c,P){
+  var n=P.n, r=(n%2)+0, b=(r===0), bs=String(b);
+  var main=[{fn:'Main',vars:[['so',n]]}];
+  c.snap({ln:7,title:'Main khai báo so',body:'Main tạo so = '+n+'.',stack:main});
+  c.snap({ln:8,title:'Cần giá trị để rẽ nhánh',body:'Điều kiện của if cần một giá trị bool. Main phải gọi LaSoChan(so) trước, rồi mới quyết định rẽ nhánh.',stack:main,expr:['if (LaSoChan(so))']});
+  var e0=['if (LaSoChan(so))','if (LaSoChan('+n+'))'];
+  var fr=[{fn:'LaSoChan',vars:[['n',n]]},{fn:'Main',vars:[['so',n]]}];
+  c.snap({ln:0,title:'Vào hàm',body:'Giá trị '+n+' được sao vào tham số n.',stack:fr,expr:e0});
+  c.snap({ln:2,title:'Tính và trả về',body:'n % 2 == 0: '+n+' % 2 = '+r+', và '+r+' == 0 là '+bs+'. return gửi '+bs+' về nơi gọi.',stack:fr,expr:e0,ret:bs});
+  c.snap({ln:8,title:'Thay bằng giá trị trả về',body:'Lời gọi LaSoChan('+n+') được thay bằng '+bs+', nên điều kiện là if ('+bs+'). Chương trình chạy nhánh '+(b?'if':'else')+'.',stack:main,expr:e0.concat(['if ('+bs+')']),ret:bs});
+  c.out(b?'Số chẵn':'Số lẻ');
+  c.snap({ln:b?10:14,title:'Chạy nhánh '+(b?'if':'else'),body:'In ra “'+(b?'Số chẵn':'Số lẻ')+'”.',stack:main});
+  c.snap({ln:null,title:'Hoàn tất',body:'Giá trị bool mà hàm trả về được dùng trực tiếp làm điều kiện của if.',note:'Hàm trả về bool nên đặt tên dạng câu hỏi (LaSoChan, CoHopLe) để câu lệnh if đọc như tiếng nói.',stack:[]});
+ }
+},
+longnhau:{
+ inputs:[{id:'a',label:'a',def:5,min:-999,max:999},{id:'b',label:'b',def:7,min:-999,max:999}], chips:[[5,7],[10,-4]],
+ intro:'Đối số của hàm GapDoi lại là một lời gọi hàm Tong. Bấm "Bước tiếp" để xem hàm nào chạy trước.',
+ lines:function(P){return ['static int Tong(int a, int b)','{','    return a + b;','}','','static int GapDoi(int x)','{','    return x * 2;','}','','static void Main()','{','    int kq = GapDoi(Tong('+P.a+', '+P.b+'));','    Console.WriteLine(kq);','}'];},
+ run:function(c,P){
+  var a=P.a,b=P.b,s=a+b,d=s*2, e0='GapDoi(Tong('+a+', '+b+'))';
+  var main=[{fn:'Main',vars:[]}];
+  c.snap({ln:12,title:'Gặp lời gọi lồng nhau',body:'Main cần giá trị của '+e0+'. Đối số của GapDoi là một lời gọi hàm, nên Tong phải chạy trước để có đối số.',stack:main,expr:[e0]});
+  c.snap({ln:0,title:'Vào hàm Tong',body:'Main gọi Tong('+a+', '+b+'). Giá trị được sao vào a và b.',stack:[{fn:'Tong',vars:[['a',a],['b',b]]},{fn:'Main',vars:[]}],expr:[e0]});
+  c.snap({ln:2,title:'Tong trả về',body:'return a + b = '+a+' + '+b+' = '+s+'. Tong kết thúc và gửi '+s+' về Main.',stack:[{fn:'Tong',vars:[['a',a],['b',b]]},{fn:'Main',vars:[]}],expr:[e0],ret:String(s)});
+  var e1=[e0,'GapDoi('+s+')'];
+  c.snap({ln:12,title:'Thay bằng giá trị trả về',body:'Lời gọi Tong('+a+', '+b+') được thay bằng '+s+'. Bây giờ Main mới gọi GapDoi('+s+').',stack:main,expr:e1,ret:String(s)});
+  c.snap({ln:5,title:'Vào hàm GapDoi',body:'Giá trị '+s+' được sao vào tham số x.',stack:[{fn:'GapDoi',vars:[['x',s]]},{fn:'Main',vars:[]}],expr:e1});
+  c.snap({ln:7,title:'GapDoi trả về',body:'return x * 2 = '+s+' × 2 = '+d+'. GapDoi kết thúc và gửi '+d+' về Main.',stack:[{fn:'GapDoi',vars:[['x',s]]},{fn:'Main',vars:[]}],expr:e1,ret:String(d)});
+  c.snap({ln:12,title:'Quay về Main',body:'Lời gọi GapDoi('+s+') được thay bằng '+d+'. kq = '+d+'.',stack:[{fn:'Main',vars:[['kq',d]]}],expr:e1.concat([String(d)]),ret:String(d)});
+  c.out(String(d));
+  c.snap({ln:13,title:'Main in kết quả',body:'In ra '+d+'.',stack:[{fn:'Main',vars:[['kq',d]]}]});
+  c.snap({ln:null,title:'Hoàn tất',body:'Hàm bên trong (Tong) luôn chạy xong trước, giá trị trả về của nó trở thành đối số của hàm bên ngoài (GapDoi).',stack:[]});
+ }
+},
+tb:{
+ inputs:[{id:'a',label:'a',def:7,min:-999,max:999},{id:'b',label:'b',def:10,min:-999,max:999}], chips:[[7,10],[4,8]],
+ intro:'Một hàm có thể gọi hàm khác. Quan sát khung "Các hàm đang chạy": số khung xếp chồng tăng lên rồi giảm xuống.',
+ lines:function(P){return ['static int Tong(int a, int b)','{','    return a + b;','}','','static int TinhTrungBinh(int a, int b)','{','    int tong = Tong(a, b);','    return tong / 2;','}','','static void Main()','{','    int tb = TinhTrungBinh('+P.a+', '+P.b+');','    Console.WriteLine(tb);','}'];},
+ run:function(c,P){
+  var a=P.a,b=P.b,s=a+b,h=Math.trunc(s/2)+0, e0='TinhTrungBinh('+a+', '+b+')';
+  var M=[{fn:'Main',vars:[]}];
+  var T=function(extra){ var v=[['a',a],['b',b]]; if(extra) v.push(extra); return {fn:'TinhTrungBinh',vars:v}; };
+  c.snap({ln:13,title:'Main gọi hàm',body:'Main gọi '+e0+' và cần giá trị trả về để gán cho tb.',stack:M,expr:[e0]});
+  c.snap({ln:5,title:'Vào TinhTrungBinh',body:'Giá trị '+a+' và '+b+' được sao vào a, b của hàm TinhTrungBinh. Ngăn xếp có 2 khung.',stack:[T(),M[0]],expr:[e0]});
+  c.snap({ln:7,title:'Hàm gọi hàm khác',body:'TinhTrungBinh cần giá trị của Tong(a, b), nên nó tạm dừng và gọi hàm Tong.',stack:[T(),M[0]],expr:['Tong(a, b)','Tong('+a+', '+b+')']});
+  c.snap({ln:0,title:'Vào hàm Tong',body:'Tong được gọi từ bên trong TinhTrungBinh. Ngăn xếp lúc này có 3 khung: Tong ở trên cùng đang chạy.',stack:[{fn:'Tong',vars:[['a',a],['b',b]]},T(),M[0]],expr:['Tong(a, b)','Tong('+a+', '+b+')']});
+  c.snap({ln:2,title:'Tong trả về',body:'return a + b = '+s+'. Tong kết thúc, khung của nó bị gỡ khỏi ngăn xếp.',stack:[{fn:'Tong',vars:[['a',a],['b',b]]},T(),M[0]],expr:['Tong(a, b)','Tong('+a+', '+b+')'],ret:String(s)});
+  c.snap({ln:7,title:'Quay về TinhTrungBinh',body:'Lời gọi Tong(a, b) được thay bằng '+s+', gán cho biến tong của hàm TinhTrungBinh.',stack:[T(['tong',s]),M[0]],expr:['Tong(a, b)','Tong('+a+', '+b+')',String(s)],ret:String(s)});
+  c.snap({ln:8,title:'TinhTrungBinh trả về',body:'return tong / 2 = '+s+' / 2 = '+h+' (chia số nguyên bỏ phần thập phân). Gửi '+h+' về Main.',stack:[T(['tong',s]),M[0]],ret:String(h)});
+  c.snap({ln:13,title:'Quay về Main',body:'Lời gọi '+e0+' được thay bằng '+h+'. tb = '+h+'. Ngăn xếp chỉ còn Main.',stack:[{fn:'Main',vars:[['tb',h]]}],expr:[e0,String(h)],ret:String(h)});
+  c.out(String(h));
+  c.snap({ln:14,title:'Main in kết quả',body:'In ra '+h+'.',stack:[{fn:'Main',vars:[['tb',h]]}]});
+  c.snap({ln:null,title:'Hoàn tất',body:'Mỗi lời gọi hàm thêm một khung vào ngăn xếp; khi hàm trả về, khung đó bị gỡ và giá trị trả về được dùng ở nơi gọi.',stack:[]});
+ }
+}
+};
+  var ex, key, P = {}, step = 0, snaps = [], timer = null, valid = true;
+
+  function build(){ var c = mk(); ex.run(c, P); snaps = c.snaps; }
+  function box(n, v){ return '<div class="var"><small>' + esc(n) + '</small><strong>' + esc(v) + '</strong></div>'; }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    var skip = sn && sn.skip ? sn.skip : [];
+    $('code').innerHTML = ex.lines(P).map(function(l, i){
+      var dim = skip.indexOf(i) >= 0;
+      return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + (dim ? ' skipd' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var t = sn ? sn.title : 'Sẵn sàng', b = sn ? sn.body : ex.intro, note = sn ? sn.note : '';
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    // stack
+    var st = sn && sn.stack ? sn.stack : [];
+    $('stack').innerHTML = st.length ? st.map(function(f, i){
+      return '<div class="frame' + (i === 0 ? ' on' : ' dim') + '"><h3>' + esc(f.fn) + ' <span class="badge' + (i === 0 ? '' : ' g') + '">' + (i === 0 ? 'đang chạy' : 'đang chờ') + '</span></h3>' +
+        (f.vars.length ? '<div class="vars">' + f.vars.map(function(v){ return box(v[0], v[1]); }).join('') + '</div>' : '<p class="fnote">Chưa có biến nào.</p>') + '</div>';
+    }).join('') : '<p class="fnote">Chưa có hàm nào đang chạy.</p>';
+    // return badge + expression
+    $('ret').innerHTML = sn && sn.ret !== undefined && sn.ret !== null ? 'Giá trị trả về: <b>' + esc(sn.ret) + '</b>' : 'Giá trị trả về: <span class="cm">chưa có</span>';
+    var ex2 = sn && sn.expr ? sn.expr : [];
+    $('expr').innerHTML = ex2.length ? ex2.map(function(e, i){
+      return '<div class="er' + (i === ex2.length - 1 ? ' last' : '') + '">' + (i === 0 ? '' : '→ ') + '<code>' + esc(e) + '</code></div>';
+    }).join('') : '<span class="cm">Chưa có lời gọi hàm nào.</span>';
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= snaps.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var ok = true;
+    ex.inputs.forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good = /^-?\d{1,3}$/.test(s) && Number(s) >= i.min && Number(s) <= i.max;
+      if (good) P[i.id] = Number(s);
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    valid = ok;
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên: ' + ex.inputs.map(function(i){ return i.label + ' từ ' + i.min + ' đến ' + i.max; }).join('; ') + '.';
+    reset();
+  }
+  function loadExample(k){
+    key = k; ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('fields').innerHTML = ex.inputs.map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" inputmode="numeric" autocomplete="off" style="width:70px" value="' + i.def + '"></div>';
+    }).join('');
+    ex.inputs.forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+    $('chips').innerHTML = (ex.chips || []).map(function(c){ return '<button class="chip" type="button" data-v="' + c.join(',') + '">' + c.join(', ') + '</button>'; }).join(' ');
+    onInput();
+  }
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if (!b) return;
+    var vals = b.dataset.v.split(',');
+    ex.inputs.forEach(function(i, idx){ $('in_' + i.id).value = vals[idx]; });
+    onInput();
+  });
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 800);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('chan');
+})();
+</script>
+</body>
+</html>

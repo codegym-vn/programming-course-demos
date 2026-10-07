@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng tổng hợp về hàm</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .frame{border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);margin-bottom:10px}
+  .frame.on{border-color:var(--cur-bar);box-shadow:0 0 0 3px var(--cur)}
+  .frame.dim{opacity:.65}
+  .frame h3{margin:0 0 8px;font:700 14px ui-monospace,Menlo,Consolas,monospace;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .badge{font:600 11px system-ui,sans-serif;padding:1px 8px;border-radius:999px;background:var(--cur);color:var(--text)}
+  .badge.g{background:var(--code-bg);color:var(--muted)}
+  .fnote{color:var(--muted);font-size:13.5px;margin:0}
+  .cm{color:var(--muted)}
+  .ln.skipd{opacity:.3}
+  .ln.skipd .no::after{content:""}
+  .er{font:14px ui-monospace,Menlo,Consolas,monospace;padding:3px 8px;border-radius:6px}
+  .er.last{background:var(--cur);font-weight:700}
+  .retb{margin-top:10px;padding:8px 12px;border-radius:8px;background:var(--code-bg);font-size:14px}
+  .console.pre{white-space:pre;min-height:60px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ôn tập: các khái niệm về hàm</h1>
+  <p class="lead">Một chương trình nhỏ dùng đủ tham số, return, biến cục bộ, ref và out. Bấm <b>Bước tiếp</b> và nhìn khung bộ nhớ thay đổi.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="tong" aria-selected="true">Chương trình mẫu</button></div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    <span id="chips"></span>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Mã nguồn C#</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console pre" id="console"></div></div>
+    </div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Bộ nhớ: các khung đang tồn tại</p><div id="stack"></div></div>
+      <div class="card"><p class="panel-title">Khái niệm đang xem</p><div class="retb" id="ret" style="margin-top:0"></div><div id="expr" hidden></div></div>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|static|void|bool|string|if|else|for|return|true|false)\b|(-?\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + esc(m[3]) + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  var EX = {
+tong:{
+ inputs:[{id:'a',label:'a',def:7,min:-99,max:99},{id:'b',label:'b',def:3,min:-99,max:99}], chips:[[7,3],[10,-4]],
+ intro:'Một chương trình nhỏ dùng đủ các khái niệm về hàm. Bấm "Bước tiếp"; nhãn màu ở khung bên phải cho biết khái niệm đang xem.',
+ lines:function(P){return ['static int Tong(int x, int y)','{','    int kq = x + y;','    return kq;','}','','static void TangLen(ref int so)','{','    so = so + 1;','}','','static void TinhHieu(int x, int y, out int hieu)','{','    hieu = x - y;','}','','static void Main()','{','    int a = '+P.a+';','    int b = '+P.b+';','    int t = Tong(a, b);','    Console.WriteLine(t);','    TangLen(ref a);','    Console.WriteLine(a);','    TinhHieu(a, b, out int h);','    Console.WriteLine(h);','}'];},
+ run:function(c,P){
+  var a=P.a,b=P.b,s=a+b,a1=a+1,h=a1-b;
+  var M=function(v){return {fn:'Main',vars:v};};
+  var AB=[['a',a],['b',b]];
+  c.snap({ln:18,tag:'Biến cục bộ',title:'Main tạo a',body:'a = '+a+'. a thuộc về Main.',stack:[M([['a',a]])]});
+  c.snap({ln:19,tag:'Biến cục bộ',title:'Main tạo b',body:'b = '+b+'.',stack:[M(AB)]});
+  c.snap({ln:20,tag:'Tham số',title:'Main gọi Tong(a, b)',body:'Main sắp gọi Tong và đưa vào hai đối số a, b.',stack:[M(AB)]});
+  var T=[{fn:'Tong',vars:[['x',a],['y',b]]},M(AB)];
+  c.snap({ln:0,tag:'Tham số',title:'Vào hàm Tong',body:'Giá trị của a, b được SAO vào tham số x, y. Đây là hai biến mới, tách biệt với a, b.',stack:T});
+  var T2=[{fn:'Tong',vars:[['x',a],['y',b],['kq',s]]},M(AB)];
+  c.snap({ln:2,tag:'Biến cục bộ',title:'Tạo biến kq',body:'kq = '+a+' + '+b+' = '+s+'. kq chỉ tồn tại trong Tong.',stack:T2});
+  c.snap({ln:3,tag:'return',title:'return kq',body:'Tong gửi giá trị '+s+' về Main rồi kết thúc.',stack:T2});
+  c.snap({ln:20,tag:'Phạm vi',title:'Về lại Main',body:'Khung của Tong bị gỡ: x, y, kq biến mất. Giá trị '+s+' được gán cho t.',stack:[M(AB.concat([['t',s]]))]});
+  var MT=function(av,extra){return M([['a',av],['b',b],['t',s]].concat(extra||[]));};
+  c.out(String(s));
+  c.snap({ln:21,tag:'return',title:'In t',body:'In ra '+s+'.',stack:[MT(a)]});
+  c.snap({ln:22,tag:'ref',title:'Main gọi TangLen(ref a)',body:'Từ khóa ref nghĩa là đưa chính biến a cho hàm, không phải bản sao.',stack:[MT(a)]});
+  c.snap({ln:6,tag:'ref',title:'Vào hàm TangLen',body:'so không phải biến mới: nó là tên khác của a. Hai tên, cùng một ô nhớ.',stack:[{fn:'TangLen',vars:[['so → a',a]]},MT(a)]});
+  c.snap({ln:8,tag:'ref',title:'so = so + 1',body:'Sửa so cũng là sửa a: '+a+' thành '+a1+'. Thấy a ở Main đổi theo.',stack:[{fn:'TangLen',vars:[['so → a',a1]]},MT(a1)]});
+  c.snap({ln:22,tag:'Phạm vi',title:'Về lại Main',body:'TangLen kết thúc, khung bị gỡ. Nhưng a vẫn là '+a1+' vì hàm đã sửa trực tiếp a.',stack:[MT(a1)]});
+  c.out(String(a1));
+  c.snap({ln:23,tag:'ref',title:'In a',body:'In ra '+a1+'.',stack:[MT(a1)]});
+  c.snap({ln:24,tag:'out',title:'Main gọi TinhHieu(a, b, out int h)',body:'Main tạo biến h (chưa có giá trị) và nhờ hàm gán giá trị cho h.',stack:[MT(a1,[['h','?']])]});
+  c.snap({ln:11,tag:'out',title:'Vào hàm TinhHieu',body:'x, y là bản sao của a, b. hieu là tên khác của h (như ref), nhưng nhiệm vụ của nó là được gán giá trị.',stack:[{fn:'TinhHieu',vars:[['x',a1],['y',b],['hieu → h','?']]},MT(a1,[['h','?']])]});
+  c.snap({ln:13,tag:'out',title:'hieu = x - y',body:'hieu = '+a1+' - '+b+' = '+h+'. Gán cho hieu cũng là gán cho h.',stack:[{fn:'TinhHieu',vars:[['x',a1],['y',b],['hieu → h',h]]},MT(a1,[['h',h]])]});
+  c.snap({ln:24,tag:'Phạm vi',title:'Về lại Main',body:'x, y biến mất nhưng h vẫn giữ giá trị '+h+'. out giúp một hàm trả về thêm kết quả.',stack:[MT(a1,[['h',h]])]});
+  c.out(String(h));
+  c.snap({ln:25,tag:'out',title:'In h',body:'In ra '+h+'.',stack:[MT(a1,[['h',h]])]});
+  c.snap({ln:null,title:'Hoàn tất',body:'Tóm lại: tham số thường chỉ nhận bản sao; return trả một giá trị về; ref và out cho hàm sửa trực tiếp biến của nơi gọi; biến cục bộ mất khi hàm kết thúc.',stack:[]});
+ }
+}
+};
+  var ex, key, P = {}, step = 0, snaps = [], timer = null, valid = true;
+
+  function build(){ var c = mk(); ex.run(c, P); snaps = c.snaps; }
+  function box(n, v){ return '<div class="var"><small>' + esc(n) + '</small><strong>' + esc(v) + '</strong></div>'; }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    var skip = sn && sn.skip ? sn.skip : [];
+    $('code').innerHTML = ex.lines(P).map(function(l, i){
+      var dim = skip.indexOf(i) >= 0;
+      return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + (dim ? ' skipd' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var t = sn ? sn.title : 'Sẵn sàng', b = sn ? sn.body : ex.intro, note = sn ? sn.note : '';
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    // stack
+    var st = sn && sn.stack ? sn.stack : [];
+    $('stack').innerHTML = st.length ? st.map(function(f, i){
+      return '<div class="frame' + (i === 0 ? ' on' : ' dim') + '"><h3>' + esc(f.fn) + ' <span class="badge' + (i === 0 ? '' : ' g') + '">' + (i === 0 ? 'đang chạy' : 'đang chờ') + '</span></h3>' +
+        (f.vars.length ? '<div class="vars">' + f.vars.map(function(v){ return box(v[0], v[1]); }).join('') + '</div>' : '<p class="fnote">Chưa có biến nào.</p>') + '</div>';
+    }).join('') : '<p class="fnote">Chưa có hàm nào đang chạy.</p>';
+    var R={'Tham số':'Đối số được SAO vào tham số. Sửa tham số không làm đổi biến gốc.','Biến cục bộ':'Biến khai báo trong hàm chỉ sống trong hàm đó.','return':'return gửi giá trị về nơi gọi và kết thúc hàm ngay.','Phạm vi':'Hàm kết thúc thì khung của nó bị gỡ, mọi biến cục bộ biến mất.','ref':'ref: tham số là bí danh của biến gốc, sửa tham số là sửa biến gốc.','out':'out: hàm gán giá trị cho biến của nơi gọi, dùng để trả thêm kết quả.'};
+    $('ret').innerHTML = sn && sn.tag ? '<span class="badge">' + esc(sn.tag) + '</span> ' + esc(R[sn.tag]) : '<span class="cm">Bấm "Bước tiếp" để bắt đầu.</span>';
+    $('expr').innerHTML = '';
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= snaps.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var ok = true;
+    ex.inputs.forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good = /^-?\d{1,3}$/.test(s) && Number(s) >= i.min && Number(s) <= i.max;
+      if (good) P[i.id] = Number(s);
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    valid = ok;
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên: ' + ex.inputs.map(function(i){ return i.label + ' từ ' + i.min + ' đến ' + i.max; }).join('; ') + '.';
+    reset();
+  }
+  function loadExample(k){
+    key = k; ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('fields').innerHTML = ex.inputs.map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" inputmode="numeric" autocomplete="off" style="width:70px" value="' + i.def + '"></div>';
+    }).join('');
+    ex.inputs.forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+    $('chips').innerHTML = (ex.chips || []).map(function(c){ return '<button class="chip" type="button" data-v="' + c.join(',') + '">' + c.join(', ') + '</button>'; }).join(' ');
+    onInput();
+  }
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if (!b) return;
+    var vals = b.dataset.v.split(',');
+    ex.inputs.forEach(function(i, idx){ $('in_' + i.id).value = vals[idx]; });
+    onInput();
+  });
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 800);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('tong');
+})();
+</script>
+</body>
+</html>

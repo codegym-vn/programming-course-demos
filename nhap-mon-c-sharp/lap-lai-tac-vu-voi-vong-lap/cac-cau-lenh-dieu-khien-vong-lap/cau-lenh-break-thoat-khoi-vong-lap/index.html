@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng break</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Câu lệnh break thoát khỏi vòng lặp như thế nào?</h1>
+  <p class="lead">Đổi giá trị rồi bấm <b>Bước tiếp</b>. Khi gặp <code>break</code>, vòng lặp kết thúc ngay, kể cả khi điều kiện của nó vẫn còn đúng.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="brk7" aria-selected="true">Tìm số chia hết cho 7</button><button class="tab" role="tab" data-ex="brkSum" aria-selected="false">Dừng khi tổng vượt giới hạn</button></div>
+    <div class="field">
+      <label for="val" id="valLabel">n =</label>
+      <input id="val" type="text" inputmode="numeric" autocomplete="off" value="5">
+      <span id="chips"></span>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="iter">Sang lượt sau</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Mã nguồn C#</p>
+        <div class="legend" id="legend"><span class="l1">① Khởi tạo: chạy 1 lần</span><span class="l2">② Điều kiện: kiểm tra mỗi lượt</span><span class="l3">③ Cập nhật: sau mỗi lượt</span></div>
+        <div class="code" id="code"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Bảng theo dõi từng lượt</p>
+        <div class="tblwrap"><table class="tbl" id="tbl"></table></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Console</p>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <p class="panel-title">Sơ đồ luồng</p>
+        <svg viewBox="0 0 320 306" aria-label="Sơ đồ luồng vòng lặp">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--node-line)"/></marker>
+            <marker id="arOn" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+          </defs>
+          <path class="ed" id="e1" d="M160 42 V62"/>
+          <path class="ed" id="eT" d="M160 130 V160"/>
+          <path class="ed" id="eB" d="M160 196 V216"/>
+          <path class="ed" id="eBackU" d="M85 235 H28 V97 H72"/>
+          <path class="ed" id="eBackW" d="M75 179 H28 V97 H72"/>
+          <path class="ed" id="eF" d="M248 97 H304 V266"/>
+          <path class="ed" id="eBrk" d="M245 179 H278 V266"/>
+          <text class="elabel t" x="168" y="150">true</text>
+          <text class="elabel f" x="252" y="90">false</text>
+          <text class="elabel f" id="tBrk" x="274" y="206" text-anchor="end">break</text>
+          <text class="elabel" x="33" y="150" style="fill:var(--muted)">lặp lại</text>
+          <g class="nd" id="nPre"><rect x="75" y="8" width="170" height="34" rx="8"/><text x="160" y="29" text-anchor="middle">Khai báo / khởi tạo</text></g>
+          <g class="nd" id="nCond"><polygon points="160,64 248,97 160,130 72,97"/><text class="mono" id="tCond" x="160" y="101" text-anchor="middle">i &lt;= 5</text></g>
+          <g class="nd" id="nBody"><rect x="75" y="162" width="170" height="34" rx="8"/><text x="160" y="183" text-anchor="middle">Chạy thân vòng lặp { }</text></g>
+          <g class="nd" id="nUpd"><rect x="85" y="218" width="150" height="34" rx="8"/><text class="mono" id="tUpd" x="160" y="239" text-anchor="middle">i++</text></g>
+          <g class="nd" id="nExit"><rect x="212" y="266" width="106" height="34" rx="8"/><text x="265" y="287" text-anchor="middle">Thoát vòng lặp</text></g>
+        </svg>
+      </div>
+      <div class="card">
+        <p class="panel-title">Giá trị các biến</p>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var MAXIT = 12;
+  var FOR = '@FOR';
+  var EX = {brk7:{label:'n',max:30,chips:[20,10,5],cv:'i',vars:['n','i'],hasBreak:true,
+ lines:['int n = @N;',FOR,'{','    if (i % 7 == 0)','    {','        Console.WriteLine($"Tìm thấy: {i}");','        break;','    }','}','Console.WriteLine("Xong.");'],
+ forIdx:1,condLn:1,afterLn:9,
+ forH:{init:'int i = 1',cond:'i <= n',upd:'i++',start:1,next:function(v){v.i++;}},
+ condShow:function(n){return 'i <= '+n;},
+ pre:[{ln:0,title:'Khai báo biến n',body:function(v,n){return 'Gán giá trị '+n+' cho biến n.';},apply:function(v,n){v.n=n;}}],
+ cond:function(v){return {ok:v.i<=v.n,text:v.i+' <= '+v.n};},
+ run:function(v,n,emit){
+   var m=v.i%7===0;
+   emit('body',3,'Kiểm tra if',v.i+' % 7 == 0 → '+(v.i%7)+' == 0 là '+m+'.'+(m?'':' Chương trình bỏ qua khối if.'),m?'':'không gặp');
+   if(!m) return null;
+   emit('body',5,'In kết quả','In ra “Tìm thấy: '+v.i+'”.','Tìm thấy '+v.i,'Tìm thấy: '+v.i);
+   emit('brk',6,'Gặp break','break kết thúc vòng lặp ngay lập tức: phần ③ (i++) và các lượt còn lại đều không chạy.','break → thoát');
+   return 'break';
+ },
+ after:function(v,outs){outs.push('Xong.');return 'In ra “Xong.”';}
+},
+brkSum:{label:'gioiHan',max:99,chips:[20,10,60],cv:'i',vars:['tong','gioiHan','i'],hasBreak:true,
+ lines:['int tong = 0;','int gioiHan = @N;',FOR,'{','    tong += i;','    if (tong > gioiHan)','    {','        break;','    }','}','Console.WriteLine($"tong = {tong}");'],
+ forIdx:2,condLn:2,afterLn:10,
+ forH:{init:'int i = 1',cond:'i <= 10',upd:'i++',start:1,next:function(v){v.i++;}},
+ condShow:function(){return 'i <= 10';},
+ pre:[
+  {ln:0,title:'Khai báo biến tong',body:function(){return 'Tạo biến tong = 0 để cộng dồn.';},apply:function(v){v.tong=0;}},
+  {ln:1,title:'Khai báo biến gioiHan',body:function(v,n){return 'Gán giá trị '+n+' cho gioiHan. Vòng lặp sẽ dừng khi tổng vượt giá trị này.';},apply:function(v,n){v.gioiHan=n;}}
+ ],
+ cond:function(v){return {ok:v.i<=10,text:v.i+' <= 10'};},
+ run:function(v,n,emit){
+   var old=v.tong; v.tong+=v.i;
+   emit('body',4,'Cộng dồn','tong += i nghĩa là tong = '+old+' + '+v.i+' = '+v.tong+'.','tong = '+v.tong);
+   var big=v.tong>v.gioiHan;
+   emit('body',5,'Kiểm tra if',v.tong+' > '+v.gioiHan+' là '+big+'.'+(big?'':' Chương trình bỏ qua khối if.'));
+   if(!big) return null;
+   emit('brk',7,'Gặp break','tong đã vượt gioiHan nên break dừng vòng lặp, dù i chưa chạy tới 10.','tong = '+v.tong+' → break');
+   return 'break';
+ },
+ after:function(v,outs){outs.push('tong = '+v.tong);return 'In ra giá trị tong tại thời điểm vòng lặp dừng.';}
+}
+};
+
+  var ex, key, n = 0, step = 0, snaps = [], timer = null, valid = true;
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|for|while|if|break|continue)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + m[3] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function build(){
+    var v = {}, outs = [], rows = [], scopeEnd = false;
+    snaps = [];
+    function copyV(){
+      var c = {}; Object.keys(v).forEach(function(k){ c[k] = v[k]; });
+      if (scopeEnd && ex.forH) c.i = null;
+      return c;
+    }
+    function snap(kind, ln, part, title, body, note){
+      snaps.push({kind:kind, ln:ln, part:part, vals:copyV(), outs:outs.slice(),
+        rows:rows.map(function(r){ return {iter:r.iter, v:r.v, ct:r.ct, res:r.res, cell:r.cell}; }),
+        title:title, body:body, note:note || ''});
+    }
+    ex.pre.forEach(function(p){ p.apply(v, n); snap('pre', p.ln, null, p.title, p.body(v, n)); });
+    if (ex.forH) {
+      v.i = ex.forH.start;
+      snap('init', ex.forIdx, 'init', 'Khởi tạo (chỉ chạy 1 lần)', 'Phần ① tạo biến i = ' + v.i + '. Phần này chỉ chạy một lần khi bắt đầu vòng lặp.');
+    }
+    var iter = 0, guarded = false, broke = false, skipped = 0;
+    while (true) {
+      iter++;
+      var c = ex.cond(v, n);
+      rows.push({iter:iter, v:v[ex.cv], ct:c.text, res:c.ok, cell:''});
+      var row = rows[rows.length - 1];
+      if (!c.ok) {
+        snap('condF', ex.condLn, 'cond', 'Kiểm tra điều kiện lần ' + iter + ' · false',
+          c.text + ' là false, vòng lặp kết thúc bình thường.');
+        break;
+      }
+      snap('cond', ex.condLn, 'cond', 'Lượt ' + iter + ' · Kiểm tra điều kiện', c.text + ' là true, nên thân vòng lặp được chạy.');
+      var ctl = ex.run(v, n, function(kind, ln, title, txt, cell, outLine){
+        if (outLine !== undefined) outs.push(outLine);
+        if (cell) row.cell = cell;
+        snap(kind, ln, null, 'Lượt ' + iter + ' · ' + title, txt);
+      });
+      if (ctl === 'break') { broke = true; break; }
+      if (ctl === 'continue') skipped++;
+      if (ex.forH) {
+        var old = v.i; ex.forH.next(v);
+        snap('update', ex.forIdx, 'upd', 'Lượt ' + iter + ' · Cập nhật',
+          'Phần ③: ' + ex.forH.upd + ' (' + old + ' → ' + v.i + ').' + (ctl === 'continue' ? ' Dù lượt này gặp continue, phần ③ của for vẫn luôn chạy.' : '') + ' Sau đó quay lại kiểm tra điều kiện.');
+      }
+      if (ex.stuck && ex.stuck(v, iter)) {
+        snap('guard', ex.condLn, null, 'Mô phỏng tự dừng sau ' + iter + ' lượt', ex.stuckMsg(v, n), 'Cách sửa: xem thẻ "Cách sửa".');
+        guarded = true; break;
+      }
+    }
+    if (!guarded) {
+      scopeEnd = true;
+      var afterTxt = ex.after(v, outs);
+      snap('after', ex.afterLn, null, 'Chạy dòng sau vòng lặp', (broke ? 'break đưa chương trình thẳng tới dòng này. ' : '') + afterTxt);
+      var body, note = '';
+      if (broke) {
+        body = 'Vòng lặp dừng sớm ở lượt ' + iter + ' nhờ break, dù điều kiện vòng lặp vẫn còn đúng. Các lượt sau đó không bao giờ chạy.';
+      } else {
+        body = 'Vòng lặp chạy hết ' + (rows.length - 1) + ' lượt rồi dừng vì điều kiện sai.';
+        if (ex.hasBreak) note = 'Không có lượt nào gặp break nên vòng lặp chạy hết như bình thường. Đổi giá trị để thấy break hoạt động.';
+        if (ex.hasContinue) body += ' Có ' + skipped + ' lượt bị continue bỏ qua phần còn lại.';
+      }
+      snap('done', null, null, 'Hoàn tất', body, note);
+    }
+  }
+
+  function renderCode(sn){
+    var cur = sn ? sn.ln : null;
+    $('code').innerHTML = ex.lines.map(function(l, i){
+      var html;
+      if (l === FOR) {
+        var act = sn && i === cur ? sn.part : null, f = ex.forH;
+        html = '<span class="kw">for</span> (' +
+          '<span class="p p1' + (act === 'init' ? ' act' : '') + '">' + hl(f.init) + '</span>; ' +
+          '<span class="p p2' + (act === 'cond' ? ' act' : '') + '">' + esc(f.cond) + '</span>; ' +
+          '<span class="p p3' + (act === 'upd' ? ' act' : '') + '">' + esc(f.upd) + '</span>)';
+      } else html = hl(l.replace('@N', String(n)));
+      return '<div class="ln' + (i === cur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + html + '</span></div>';
+    }).join('');
+    $('legend').style.display = ex.forH ? '' : 'none';
+  }
+  function setNode(id, st){ $(id).setAttribute('class', 'nd' + (st ? ' ' + st : '')); }
+  function setEdge(id, done){
+    var el = $(id); el.setAttribute('class', 'ed' + (done ? ' done' : ''));
+    el.setAttribute('marker-end', done ? 'url(#arOn)' : 'url(#ar)');
+  }
+  function show(id, on){ $(id).style.display = on ? '' : 'none'; }
+  function renderFlow(){
+    var hasU = !!ex.forH;
+    show('nUpd', hasU); show('eB', hasU); show('eBackU', hasU); show('eBackW', !hasU);
+    show('eBrk', !!ex.hasBreak); show('tBrk', !!ex.hasBreak);
+    $('tCond').textContent = ex.condShow(n);
+    if (hasU) $('tUpd').textContent = ex.forH.upd;
+    var seen = {}, conds = 0, kind = step > 0 ? snaps[step - 1].kind : null;
+    for (var k = 0; k < step; k++) { seen[snaps[k].kind] = true; if (snaps[k].kind === 'cond' || snaps[k].kind === 'condF') conds++; }
+    ['nPre','nCond','nBody','nUpd','nExit'].forEach(function(id){ setNode(id, ''); });
+    if (seen.pre || seen.init) setNode('nPre', 'done');
+    if (seen.cond || seen.condF) setNode('nCond', 'done');
+    if (seen.body || seen.brk || seen.cnt) setNode('nBody', 'done');
+    if (seen.update) setNode('nUpd', 'done');
+    if (seen.after) setNode('nExit', 'done');
+    var map = {pre:'nPre', init:'nPre', cond:'nCond', condF:'nCond', guard:'nCond', body:'nBody', brk:'nBody', cnt:'nBody', update:'nUpd', after:'nExit', done:'nExit'};
+    if (map[kind]) setNode(map[kind], 'on');
+    setEdge('e1', seen.cond || seen.condF);
+    setEdge('eT', seen.body || seen.brk || seen.cnt);
+    setEdge('eB', seen.update);
+    setEdge('eBackU', seen.update);
+    setEdge('eBackW', conds >= 2 || seen.guard);
+    setEdge('eF', seen.condF);
+    setEdge('eBrk', seen.brk);
+  }
+  function renderTable(sn){
+    var h = '<tr><th>Lượt</th><th>' + ex.cv + '</th><th>Điều kiện</th><th>Kết quả lượt</th></tr>';
+    var rows = sn ? sn.rows : [];
+    if (!rows.length) h += '<tr class="ph"><td colspan="4">Chưa có lượt nào.</td></tr>';
+    rows.forEach(function(r, idx){
+      var isCur = idx === rows.length - 1 && ['cond','condF','body','brk','cnt','update'].indexOf(sn.kind) >= 0;
+      var res = '<span class="tag ' + (r.res ? 't' : 'f') + '">' + (r.res ? 'true' : 'false') + '</span>';
+      var cell = r.cell || (r.res ? '' : '<span style="color:var(--muted)">(không chạy)</span>');
+      h += '<tr' + (isCur ? ' class="cur"' : '') + '><td>' + r.iter + '</td><td>' + r.v + '</td><td>' + esc(r.ct) + ' ' + res + '</td><td>' + esc(cell) + '</td></tr>';
+    });
+    $('tbl').innerHTML = h;
+    var w = document.querySelector('.tblwrap'); w.scrollTop = w.scrollHeight;
+  }
+  function renderVars(sn){
+    $('vars').innerHTML = ex.vars.map(function(name){
+      var val = sn ? sn.vals[name] : undefined, has = val !== null && val !== undefined;
+      var shown = has ? val : (sn && name === 'i' && sn.kind === 'after' || sn && name === 'i' && sn.kind === 'done' ? 'hết phạm vi' : 'chưa có');
+      return '<div class="var' + (has ? '' : ' na') + '"><small>' + name + '</small><strong>' + shown + '</strong></div>';
+    }).join('');
+  }
+  function renderConsole(sn){
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('<br>') : '<span class="ph">Chưa có kết quả.</span>';
+  }
+  function renderStatus(sn){
+    var t, b, note = '';
+    if (!sn) { t = 'Sẵn sàng'; b = 'Bấm "Bước tiếp" để chạy từng bước. Bấm "Sang lượt sau" để chạy nhanh hết một lượt lặp.'; }
+    else { t = sn.title; b = sn.body; note = sn.note; }
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+  }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    renderCode(sn); renderFlow(); renderTable(sn); renderVars(sn); renderConsole(sn); renderStatus(sn);
+    var running = timer !== null, LAST = snaps.length;
+    $('next').disabled = !valid || step >= LAST || running;
+    $('iter').disabled = !valid || step >= LAST || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var s = $('val').value.trim();
+    var ok = /^\d{1,2}$/.test(s) && Number(s) <= ex.max;
+    valid = ok;
+    $('val').classList.toggle('bad', !ok);
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên từ 0 đến ' + ex.max + '.';
+    if (ok) n = Number(s);
+    reset();
+  }
+  function setValue(v){ $('val').value = String(v); onInput(); }
+  function loadExample(k){
+    key = k; ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('valLabel').textContent = ex.label + ' =';
+    $('chips').innerHTML = ex.chips.map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+    setValue(ex.chips[0]);
+  }
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('iter').addEventListener('click', function(){
+    if (!valid || step >= snaps.length) return;
+    step++;
+    while (step < snaps.length && ['cond','condF','after','done','guard'].indexOf(snaps[step - 1].kind) < 0) step++;
+    render();
+  });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){
+      step++;
+      if (step >= snaps.length) { step = snaps.length; stop(); }
+      render();
+    }, 600);
+    render();
+  });
+  $('val').addEventListener('input', onInput);
+  $('val').addEventListener('keydown', function(e){ if (e.key === 'Enter' && valid && step < snaps.length) { step++; render(); } });
+  $('chips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) setValue(b.dataset.v); });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('brk7');
+})();
+
+</script>
+</body>
+</html>

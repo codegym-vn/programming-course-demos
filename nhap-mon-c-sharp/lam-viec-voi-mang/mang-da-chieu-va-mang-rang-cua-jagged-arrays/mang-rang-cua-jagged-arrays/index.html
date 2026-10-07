@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng mảng răng cưa</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .arow{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+  .aname{font:700 15px ui-monospace,Menlo,Consolas,monospace;padding-top:10px;min-width:44px}
+  .cells{display:flex;gap:0;flex-wrap:wrap}
+  .cw{display:flex;flex-direction:column;align-items:center}
+  .cell2{min-width:52px;height:44px;padding:0 8px;border:2px solid var(--node-line);margin-left:-2px;display:flex;align-items:center;justify-content:center;font:700 16px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .cw:first-child .cell2{margin-left:0;border-radius:8px 0 0 8px}.cw:last-child .cell2{border-radius:0 8px 8px 0}.cw:only-child .cell2{border-radius:8px}
+  .cell2.empty{border-style:dashed;background:transparent}
+  .cell2.hi{background:var(--cur);border-color:var(--cur-bar);position:relative;z-index:1}
+  .ix{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:4px}
+
+  .g2{display:inline-block}.g2row{display:flex;align-items:center}
+  .rl{width:22px;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);text-align:right;padding-right:8px}
+  .ch{width:52px;margin-left:-2px;text-align:center;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding-bottom:4px}
+  .g2row .ch:nth-child(2){margin-left:0}
+  .g2row .cell2{border-radius:0;width:52px;min-width:52px}
+  .g2row .rl+.cell2{margin-left:0}
+  .g2row+.g2row .cell2{margin-top:-2px}
+  .g2row:first-child+.g2row .cell2{margin-top:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mảng răng cưa (Jagged Array)</h1>
+  <p class="lead">Mảng chứa các mảng con có độ dài khác nhau. Bấm <b>Bước tiếp</b> để chạy từng dòng.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="cau" aria-selected="true">Cấu trúc răng cưa</button><button class="tab" role="tab" data-ex="sosanh" aria-selected="false">So sánh với hai chiều</button></div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    <span id="chips"></span>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Mã nguồn C#</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console" id="console" style="white-space:pre"></div></div>
+    </div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Bộ nhớ</p><div id="mem"></div></div>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|bool|string|new|for|foreach|in|true|false|null)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, setOut:function(a){ outs = a.slice(); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  var EX = {cau:{
+ inputs:[], intro:'Mảng răng cưa là một mảng chứa các mảng con, mỗi mảng con có thể dài khác nhau. Bấm "Bước tiếp".',
+ lines:function(P){return ['int[][] j = new int[3][];','j[0] = new int[] { 1, 2 };','j[1] = new int[] { 3, 4, 5, 6 };','j[2] = new int[] { 7, 8, 9 };','Console.WriteLine(j[1][2]);','Console.WriteLine(j[0].Length);'];},
+ run:function(c){
+  var R=[null,null,null],D=[[1,2],[3,4,5,6],[7,8,9]];
+  var A=function(hr,hc){return R.map(function(r,i){return {name:'j['+i+']',cells:r?r.map(function(x,k){return {v:x,hi:i===hr&&k===hc};}):[{v:'null'}]};});};
+  c.snap({ln:0,title:'Tạo mảng ngoài',body:'Mảng j có 3 ô, nhưng mỗi ô chưa trỏ đến mảng con nào nên đang là null.',arrs:A(-1,-1)});
+  for(var i=0;i<3;i++){ R[i]=D[i]; c.snap({ln:i+1,title:'Tạo mảng con j['+i+']',body:'j['+i+'] là một mảng riêng có '+D[i].length+' phần tử.',note:i===2?'Ba hàng có độ dài 2, 4 và 3, nên gọi là "răng cưa".':'',arrs:A(i,-1)}); }
+  c.out('5'); c.snap({ln:4,title:'Đọc j[1][2]',body:'j[1] chọn mảng con ở hàng 1. Rồi [2] chọn ô có chỉ số 2 trong mảng con đó, giá trị 5.',note:'Dùng hai cặp ngoặc: j[hàng][cột].',arrs:A(1,2)});
+  c.out('2'); c.snap({ln:5,title:'Độ dài hàng 0',body:'j[0].Length là số phần tử của mảng con hàng 0, bằng 2.',arrs:A(0,-1)});
+ }
+},
+sosanh:{
+ inputs:[], intro:'Đặt mảng hai chiều và mảng răng cưa cạnh nhau để so sánh hình dạng và cách truy cập. Bấm "Bước tiếp".',
+ lines:function(P){return ['int[,] m = new int[3, 4];','int[][] j = new int[3][];','j[0] = new int[2];','j[1] = new int[4];','j[2] = new int[3];','m[1, 2] = 7;','j[1][2] = 7;'];},
+ run:function(c){
+  var M=[[0,0,0,0],[0,0,0,0],[0,0,0,0]],R=[null,null,null],L=[2,4,3];
+  var S=function(hm,hj){
+   var g={name:'m',rows:M.map(function(r,i){return r.map(function(x,k){return {v:x,hi:hm&&hm[0]===i&&hm[1]===k};});})};
+   var js=R.map(function(r,i){return {name:'j['+i+']',cells:r?r.map(function(x,k){return {v:x,hi:hj&&hj[0]===i&&hj[1]===k};}):[{v:'null'}]};});
+   return [g].concat(js);
+  };
+  c.snap({ln:0,title:'Tạo mảng hai chiều',body:'Một bảng đều 3 × 4: mọi hàng có đúng 4 cột.',arrs:S()});
+  c.snap({ln:1,title:'Tạo mảng răng cưa (ngoài)',body:'Mảng ngoài có 3 ô, mỗi ô chưa có mảng con (null).',arrs:S()});
+  for(var i=0;i<3;i++){ R[i]=new Array(L[i]).fill(0); c.snap({ln:i+2,title:'Tạo j['+i+']',body:'Mảng con hàng '+i+' có '+L[i]+' phần tử. Mỗi hàng được tạo riêng nên có thể dài khác nhau.',arrs:S()}); }
+  M[1][2]=7; c.snap({ln:5,title:'Gán m[1, 2] = 7',body:'Mảng hai chiều: một cặp ngoặc, hai chỉ số cách nhau bởi dấu phẩy.',arrs:S([1,2])});
+  R[1][2]=7; c.snap({ln:6,title:'Gán j[1][2] = 7',body:'Mảng răng cưa: hai cặp ngoặc, chọn hàng trước rồi chọn ô trong hàng.',note:'Hai chiều: m[h, c]. Răng cưa: j[h][c].',arrs:S(null,[1,2])});
+ }
+}
+};
+  var ex, P = {}, step = 0, snaps = [], timer = null, valid = true;
+  function build(){ var c = mk(); ex.run(c, P); snaps = c.snaps; }
+  function gridHtml(a){
+    var nc = a.rows[0].length, h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="g2"><div class="g2row"><div class="rl"></div>';
+    for (var j = 0; j < nc; j++) h += '<div class="ch">' + j + '</div>';
+    h += '</div>';
+    a.rows.forEach(function(r, i){
+      h += '<div class="g2row"><div class="rl">' + i + '</div>';
+      r.forEach(function(c){ h += '<div class="cell2' + (c.hi ? ' hi' : '') + '">' + esc(c.v) + '</div>'; });
+      h += '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function arrHtml(a){
+    if (a.rows) return gridHtml(a);
+    var h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="cells">';
+    a.cells.forEach(function(c, i){
+      var cls = 'cell2' + (c.v === undefined || c.v === null ? ' empty' : '') + (c.hi ? ' hi' : '');
+      h += '<div class="cw"><div class="' + cls + '">' + (c.v === undefined || c.v === null ? '' : esc(c.v)) + '</div>' + (a.noIdx ? '' : '<div class="ix">' + i + '</div>') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    $('code').innerHTML = ex.lines(P).map(function(l, i){
+      return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var t = sn ? sn.title : 'Sẵn sàng', b = sn ? sn.body : ex.intro, note = sn ? sn.note : '';
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    var arrs = sn && sn.arrs ? sn.arrs : [], vs = sn && sn.vars ? sn.vars : [];
+    $('mem').innerHTML = (arrs.length ? arrs.map(arrHtml).join('') : '') +
+      (vs.length ? '<div class="vars">' + vs.map(function(v){ return '<div class="var"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('') + '</div>' : '') +
+      (!arrs.length && !vs.length ? '<p class="cm" style="margin:0">Chưa có gì trong bộ nhớ.</p>' : '');
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= snaps.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var ok = true;
+    ex.inputs.forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good = /^\d{1,2}$/.test(s) && Number(s) >= i.min && Number(s) <= i.max;
+      if (good) P[i.id] = Number(s);
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    valid = ok;
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên: ' + ex.inputs.map(function(i){ return i.label + ' từ ' + i.min + ' đến ' + i.max; }).join('; ') + '.';
+    reset();
+  }
+  function loadExample(k){
+    ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('fields').innerHTML = ex.inputs.map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" inputmode="numeric" autocomplete="off" style="width:70px" value="' + i.def + '"></div>';
+    }).join('');
+    ex.inputs.forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+    $('chips').innerHTML = (ex.chips || []).map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+    onInput();
+  }
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if (!b) return;
+    $('in_' + ex.inputs[0].id).value = b.dataset.v; onInput();
+  });
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 800);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('cau');
+})();
+</script>
+</body>
+</html>

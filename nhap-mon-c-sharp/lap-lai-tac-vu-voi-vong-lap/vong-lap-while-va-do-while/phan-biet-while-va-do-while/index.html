@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>So sánh while và do-while</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>So sánh while và do-while</h1>
+  <p class="lead">Hai vòng lặp có cùng điều kiện <code>dem &lt; 3</code> và cùng giá trị bắt đầu. Bấm <b>Bước tiếp</b> để cả hai cùng chạy một bước, rồi so sánh kết quả.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="val">dem bắt đầu =</label>
+      <input id="val" type="text" inputmode="numeric" autocomplete="off" value="0">
+      <span id="chips"></span>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="pair">
+    <div class="card">
+      <p class="panel-title">while</p>
+      <p class="sub">Kiểm tra điều kiện <b>trước</b>, rồi mới chạy thân.</p>
+      <div class="code" id="codeW"></div>
+      <div class="mini" id="msgW"></div>
+      <div class="console" id="conW"></div>
+      <div class="cnt"><div>Kiểm tra điều kiện:<strong id="chkW">0</strong></div><div>Chạy thân:<strong id="runW">0</strong></div><div>dem =<strong id="vW">-</strong></div></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">do-while</p>
+      <p class="sub">Chạy thân <b>trước</b>, rồi mới kiểm tra điều kiện.</p>
+      <div class="code" id="codeD"></div>
+      <div class="mini" id="msgD"></div>
+      <div class="console" id="conD"></div>
+      <div class="cnt"><div>Kiểm tra điều kiện:<strong id="chkD">0</strong></div><div>Chạy thân:<strong id="runD">0</strong></div><div>dem =<strong id="vD">-</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var LIM = 3;
+  var LW = ['int dem = @X;','while (dem < 3)','{','    Console.WriteLine($"dem = {dem}");','    dem++;','}'];
+  var LD = ['int dem = @X;','do','{','    Console.WriteLine($"dem = {dem}");','    dem++;','} while (dem < 3);'];
+  var x = 0, step = 0, sw = [], sd = [], timer = null, valid = true;
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|while|do)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + m[3] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  // kind: 'while' hoac 'do'
+  function sim(kind){
+    var d = x, outs = [], chk = 0, run = 0, list = [];
+    function push(ln, msg){ list.push({ln:ln, d:d, outs:outs.slice(), chk:chk, run:run, msg:msg}); }
+    push(0, 'Khai báo dem = ' + x + '.');
+    function body(){
+      run++; outs.push('dem = ' + d);
+      push(3, 'Chạy thân vòng lặp: in “dem = ' + d + '”.');
+      d++;
+      push(4, 'dem++ tăng dem lên ' + d + '.');
+    }
+    function check(){
+      chk++; var ok = d < LIM;
+      push(kind === 'while' ? 1 : 5, 'Kiểm tra ' + d + ' < ' + LIM + ': ' + (ok ? 'true' : 'false') + '. ' + (ok ? 'Lặp tiếp.' : 'Vòng lặp dừng.'));
+      return ok;
+    }
+    if (kind === 'while') { while (check()) body(); }
+    else { do { body(); } while (check()); }
+    return {list:list, chk:chk, run:run};
+  }
+
+  function build(){ sw = sim('while'); sd = sim('do'); }
+
+  function renderCol(lines, res, codeId, msgId, conId, chkId, runId, vId, doneText){
+    var k = Math.min(step, res.list.length), sn = k > 0 ? res.list[k - 1] : null;
+    var finished = step >= res.list.length;
+    $(codeId).innerHTML = lines.map(function(l, i){
+      return '<div class="ln' + (sn && i === sn.ln && !finished ? ' cur' : '') + (sn && i === sn.ln && finished ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l.replace('@X', String(x))) + '</span></div>';
+    }).join('');
+    $(msgId).innerHTML = sn
+      ? '<b>' + (finished ? 'Đã xong' : 'Bước ' + k) + '</b>' + esc(sn.msg)
+      : '<b>Chưa chạy</b>Bấm "Bước tiếp" để bắt đầu.';
+    $(conId).innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('<br>') : '<span class="ph">Chưa có kết quả.</span>';
+    $(chkId).textContent = sn ? sn.chk : 0;
+    $(runId).textContent = sn ? sn.run : 0;
+    $(vId).textContent = sn ? sn.d : '-';
+  }
+
+  function render(){
+    renderCol(LW, sw, 'codeW', 'msgW', 'conW', 'chkW', 'runW', 'vW');
+    renderCol(LD, sd, 'codeD', 'msgD', 'conD', 'chkD', 'runD', 'vD');
+    var total = Math.max(sw.list.length, sd.list.length);
+    var title, body, note = '';
+    if (step === 0) { title = 'Sẵn sàng'; body = 'Hai vòng lặp bắt đầu với dem = ' + x + '. Bấm "Bước tiếp" để cả hai cùng chạy một bước.'; }
+    else if (step < total) { title = 'Đang chạy'; body = 'Quan sát hai cột: mỗi bước, mỗi vòng lặp đang ở một dòng khác nhau. Một cột có thể xong sớm hơn cột còn lại.'; }
+    else {
+      title = 'Hoàn tất';
+      body = 'while: kiểm tra điều kiện ' + sw.chk + ' lần, chạy thân ' + sw.run + ' lần. do-while: kiểm tra điều kiện ' + sd.chk + ' lần, chạy thân ' + sd.run + ' lần.';
+      note = sw.run !== sd.run
+        ? 'Hai bên khác nhau vì điều kiện sai ngay từ đầu: while kiểm tra trước nên không chạy thân lần nào, còn do-while chạy thân trước nên luôn chạy ít nhất 1 lần.'
+        : 'Lần này hai vòng lặp cho kết quả giống nhau. Thử đặt dem bắt đầu = 5 để thấy sự khác biệt.';
+    }
+    $('status').innerHTML = '<b>' + esc(title) + '</b>' + esc(body) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= total || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function total(){ return Math.max(sw.list.length, sd.list.length); }
+  function onInput(){
+    var s = $('val').value.trim();
+    var ok = /^\d$/.test(s);
+    valid = ok;
+    $('val').classList.toggle('bad', !ok);
+    $('err').textContent = ok ? '' : 'Hãy nhập một số nguyên từ 0 đến 9.';
+    if (ok) x = Number(s);
+    reset();
+  }
+  function setValue(v){ $('val').value = String(v); onInput(); }
+
+  $('chips').innerHTML = [0, 1, 5].map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+  $('chips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) setValue(b.dataset.v); });
+  $('next').addEventListener('click', function(){ if (valid && step < total()) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= total()) step = 0;
+    step++; render();
+    timer = setInterval(function(){
+      step++;
+      if (step >= total()) { step = total(); stop(); }
+      render();
+    }, 800);
+    render();
+  });
+  $('val').addEventListener('input', onInput);
+  $('val').addEventListener('keydown', function(e){ if (e.key === 'Enter' && valid && step < total()) { step++; render(); } });
+  setValue(5);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng vòng lặp do-while</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vòng lặp do-while: nhập đến khi hợp lệ</h1>
+  <p class="lead">Chương trình hỏi tuổi (từ 1 đến 120). Bạn đóng vai người dùng: khi chương trình chờ nhập, hãy gõ một số rồi bấm <b>Nhập</b>. Nhập sai thì chương trình hỏi lại, nhập đúng thì thoát.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="val">Giá trị nhập:</label>
+      <input id="val" type="text" inputmode="numeric" autocomplete="off" value="150">
+      <span id="chips"></span>
+      <button class="btn" id="enter">Nhập</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Mã nguồn C#</p>
+        <div class="code" id="code"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Bảng theo dõi từng lần nhập</p>
+        <div class="tblwrap"><table class="tbl" id="tbl"></table></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Console</p>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <p class="panel-title">Sơ đồ luồng</p>
+        <svg viewBox="0 0 320 270" aria-label="Sơ đồ luồng do-while">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--node-line)"/></marker>
+            <marker id="arOn" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+          </defs>
+          <path class="ed" id="e1" d="M160 40 V62"/>
+          <path class="ed" id="e2" d="M160 108 V130"/>
+          <path class="ed" id="eBack" d="M72 165 H26 V85 H75"/>
+          <path class="ed" id="eF" d="M160 200 V226"/>
+          <text class="elabel t" x="32" y="122">true:</text><text class="elabel t" x="32" y="135">nhập lại</text>
+          <text class="elabel f" x="168" y="218">false</text>
+          <g class="nd" id="nPre"><rect x="75" y="6" width="170" height="34" rx="8"/><text class="mono" x="160" y="27" text-anchor="middle">int tuoi;</text></g>
+          <g class="nd" id="nBody"><rect x="75" y="64" width="170" height="44" rx="8"/><text x="160" y="83" text-anchor="middle">Chạy thân vòng lặp</text><text x="160" y="99" text-anchor="middle" font-size="11">nhắc nhập và đọc tuoi</text></g>
+          <g class="nd" id="nCond"><polygon points="160,132 262,166 160,200 58,166"/><text class="mono" x="160" y="163" text-anchor="middle" font-size="10.5">tuoi &lt; 1 ||</text><text class="mono" x="160" y="177" text-anchor="middle" font-size="10.5">tuoi &gt; 120</text></g>
+          <g class="nd" id="nExit"><rect x="75" y="228" width="170" height="34" rx="8"/><text x="160" y="249" text-anchor="middle">Thoát vòng lặp</text></g>
+        </svg>
+      </div>
+      <div class="card">
+        <p class="panel-title">Giá trị các biến</p>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var LINES = ['int tuoi;','do','{','    Console.Write("Nhập tuổi (1-120): ");','    tuoi = int.Parse(Console.ReadLine());','} while (tuoi < 1 || tuoi > 120);','Console.WriteLine($"Tuổi của bạn: {tuoi}");'];
+  // phase: 0 san sang, 1 khai bao, 2 nhac, 3 cho nhap, 4 gan, 5 kiem tra, 6 sau vong lap, 7 xong
+  var snaps = [], phase = 0, tuoi = null, outs = [], rows = [], iter = 0, pending = null;
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|\b(int|do|while)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + m[3] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function parse(){
+    var s = $('val').value.trim();
+    var ok = /^-?\d{1,10}$/.test(s) && Number(s) >= -2147483648 && Number(s) <= 2147483647;
+    return ok ? Number(s) : null;
+  }
+
+  var cur = {kind:null, ln:null, title:'Sẵn sàng', body:'Bấm "Bước tiếp" để chương trình bắt đầu chạy.', note:''};
+  var seen = {pre:false, body:false, cond:false, exit:false, back:false};
+
+  function set(kind, ln, title, body, note){ cur = {kind:kind, ln:ln, title:title, body:body, note:note || ''}; }
+
+  function advance(){
+    if (phase === 0) {
+      phase = 1; seen.pre = true;
+      set('pre', 0, 'Khai báo biến tuoi', 'Tạo biến tuoi nhưng chưa gán giá trị. Chương trình sẽ đọc giá trị từ bàn phím.');
+    } else if (phase === 1) {
+      phase = 2; seen.body = true; iter++;
+      set('body', 3, 'Lần ' + iter + ' · Hiện lời nhắc', 'Với do-while, chương trình vào thân vòng lặp ngay mà chưa kiểm tra điều kiện nào. Lời nhắc được in ra.');
+      outs.push('Nhập tuổi (1-120): ');
+    } else if (phase === 2) {
+      phase = 3;
+      set('body', 4, 'Lần ' + iter + ' · Chờ bạn nhập', 'Chương trình dừng ở Console.ReadLine() để chờ người dùng. Hãy gõ một số vào ô "Giá trị nhập" rồi bấm "Nhập".');
+    } else if (phase === 4) {
+      phase = 5; seen.cond = true;
+      var bad = tuoi < 1 || tuoi > 120;
+      rows[rows.length - 1].res = bad;
+      var detail = tuoi + ' < 1 là ' + (tuoi < 1) + ', ' + tuoi + ' > 120 là ' + (tuoi > 120) + '. Kết quả: ' + bad + '.';
+      set('cond', 5, 'Lần ' + iter + ' · Kiểm tra điều kiện (ở cuối)',
+        detail + ' ' + (bad ? 'Giá trị không hợp lệ nên điều kiện là true, vòng lặp chạy lại.' : 'Giá trị hợp lệ nên điều kiện là false, vòng lặp dừng.'));
+    } else if (phase === 5) {
+      var bad2 = tuoi < 1 || tuoi > 120;
+      if (bad2) {
+        phase = 2; seen.back = true; iter++;
+        set('body', 3, 'Lần ' + iter + ' · Quay lại đầu thân vòng lặp', 'Chương trình quay về và in lại lời nhắc, yêu cầu nhập lại.');
+        outs.push('Nhập tuổi (1-120): ');
+      } else {
+        phase = 6; seen.exit = true;
+        outs.push('Tuổi của bạn: ' + tuoi);
+        set('exit', 6, 'Chạy dòng sau vòng lặp', 'In ra “Tuổi của bạn: ' + tuoi + '”.');
+      }
+    } else if (phase === 6) {
+      phase = 7;
+      set('done', null, 'Hoàn tất',
+        'Thân vòng lặp chạy ' + iter + ' lần, điều kiện được kiểm tra ' + iter + ' lần (kiểm tra sau mỗi lần chạy thân).',
+        iter === 1 ? 'Dù nhập đúng ngay lần đầu, chương trình vẫn đã chạy thân một lần trước khi kiểm tra. Hãy bấm "Làm lại" và thử nhập sai trước để thấy vòng lặp hỏi lại.' : 'Mỗi lần nhập sai, chương trình quay lại hỏi tiếp cho đến khi nhập đúng.');
+    }
+    render();
+  }
+
+  function submit(){
+    if (phase !== 3) return;
+    var v = parse();
+    if (v === null) { $('err').textContent = 'Hãy nhập một số nguyên, ví dụ 25 hoặc 150.'; $('val').classList.add('bad'); return; }
+    $('err').textContent = ''; $('val').classList.remove('bad');
+    tuoi = v; outs[outs.length - 1] = outs[outs.length - 1] + v;
+    rows.push({iter:iter, v:v, res:null});
+    phase = 4;
+    set('body', 4, 'Lần ' + iter + ' · Gán giá trị', 'Bạn nhập ' + v + ', int.Parse chuyển chuỗi thành số và gán cho biến tuoi.');
+    render();
+  }
+
+  function renderCode(){
+    $('code').innerHTML = LINES.map(function(l, i){
+      return '<div class="ln' + (i === cur.ln ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+  function setNode(id, st){ $(id).setAttribute('class', 'nd' + (st ? ' ' + st : '')); }
+  function setEdge(id, done){
+    var el = $(id); el.setAttribute('class', 'ed' + (done ? ' done' : ''));
+    el.setAttribute('marker-end', done ? 'url(#arOn)' : 'url(#ar)');
+  }
+  function renderFlow(){
+    ['nPre','nBody','nCond','nExit'].forEach(function(id){ setNode(id, ''); });
+    if (seen.pre) setNode('nPre', 'done'); if (seen.body) setNode('nBody', 'done');
+    if (seen.cond) setNode('nCond', 'done'); if (seen.exit) setNode('nExit', 'done');
+    var map = {pre:'nPre', body:'nBody', cond:'nCond', exit:'nExit', done:'nExit'};
+    if (map[cur.kind]) setNode(map[cur.kind], 'on');
+    setEdge('e1', seen.body); setEdge('e2', seen.cond); setEdge('eBack', seen.back); setEdge('eF', seen.exit);
+  }
+  function renderTable(){
+    var h = '<tr><th>Lần</th><th>Giá trị nhập</th><th>tuoi &lt; 1 || tuoi &gt; 120</th><th>Kết quả</th></tr>';
+    if (!rows.length) h += '<tr class="ph"><td colspan="4">Chưa có lần nhập nào.</td></tr>';
+    rows.forEach(function(r, idx){
+      var isCur = idx === rows.length - 1 && phase >= 4 && phase <= 5;
+      var res = r.res === null ? '<span style="color:var(--muted)">chưa kiểm tra</span>' : '<span class="tag ' + (r.res ? 't' : 'f') + '">' + (r.res ? 'true' : 'false') + '</span>';
+      var kq = r.res === null ? '' : (r.res ? 'Nhập lại' : 'Thoát vòng lặp');
+      h += '<tr' + (isCur ? ' class="cur"' : '') + '><td>' + r.iter + '</td><td>' + r.v + '</td><td>' + res + '</td><td>' + kq + '</td></tr>';
+    });
+    $('tbl').innerHTML = h;
+  }
+  function renderVars(){
+    $('vars').innerHTML = '<div class="var' + (tuoi === null ? ' na' : '') + '"><small>tuoi</small><strong>' + (tuoi === null ? (phase >= 1 ? 'chưa gán' : 'chưa có') : tuoi) + '</strong></div>';
+  }
+  function render(){
+    renderCode(); renderFlow(); renderTable(); renderVars();
+    $('console').innerHTML = outs.length ? outs.map(function(o){ return esc(o); }).join('<br>') : '<span class="ph">Chưa có kết quả.</span>';
+    $('status').innerHTML = '<b>' + esc(cur.title) + '</b>' + esc(cur.body) + (cur.note ? '<span class="note">' + esc(cur.note) + '</span>' : '');
+    $('next').disabled = phase === 3 || phase === 7;
+    $('enter').disabled = phase !== 3;
+  }
+  function reset(){
+    phase = 0; tuoi = null; outs = []; rows = []; iter = 0;
+    seen = {pre:false, body:false, cond:false, exit:false, back:false};
+    cur = {kind:null, ln:null, title:'Sẵn sàng', body:'Bấm "Bước tiếp" để chương trình bắt đầu chạy. Khi chương trình chờ nhập, hãy gõ một số rồi bấm "Nhập".', note:''};
+    $('err').textContent = ''; $('val').classList.remove('bad');
+    render();
+  }
+
+  $('chips').innerHTML = [25, 150, 0, 18].map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+  $('chips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) $('val').value = b.dataset.v; });
+  $('next').addEventListener('click', function(){ if (phase !== 3 && phase !== 7) advance(); });
+  $('enter').addEventListener('click', submit);
+  $('reset').addEventListener('click', reset);
+  $('val').addEventListener('keydown', function(e){ if (e.key === 'Enter') { if (phase === 3) submit(); else if (phase !== 7) advance(); } });
+  reset();
+})();
+</script>
+</body>
+</html>
