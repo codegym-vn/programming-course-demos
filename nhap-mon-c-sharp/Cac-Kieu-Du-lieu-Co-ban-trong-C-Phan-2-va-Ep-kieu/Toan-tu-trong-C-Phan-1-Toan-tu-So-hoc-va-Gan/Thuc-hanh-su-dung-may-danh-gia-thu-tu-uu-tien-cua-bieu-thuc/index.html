@@ -147,6 +147,12 @@
     #bottom{margin-top:6px;padding:4px 10px}#bot{width:38px;height:38px}.bubble{padding:4px 10px;font-size:13.5px}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -162,6 +168,8 @@
     <button class="on" data-v="ev" role="tab">🔬 Máy đánh giá</button>
     <button data-v="ch" role="tab">🏆 Thử thách <span id="chcount">0/4</span></button>
   </div>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
 </header>
 
 <main class="wrap">
@@ -639,6 +647,16 @@ document.addEventListener('keydown', e => {
 load();
 say('Xin chào! Nhập một biểu thức hoặc chọn mẫu, rồi xem C# tính <b>từng bước</b>. Ô vàng là phép được tính tiếp theo.');
 })();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
 </script>
 </body>
 </html>

@@ -18,7 +18,7 @@
   header p{margin:4px 0 0;color:var(--dim)}
   .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px}
-  .parts button.on{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .parts button.on{background:#f59e0b;color:#1c1300;border-color:var(--amber);font-weight:700}
   main{max-width:1200px;margin:0 auto;padding:8px 20px 28px;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:16px}
   @media (max-width:900px){main{grid-template-columns:1fr}}
   .card{background:var(--panel);border-radius:16px;padding:14px 16px;min-width:0}
@@ -96,7 +96,7 @@
   .fb.good{color:#86efac}
   .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .controls button{font:inherit;font-size:15px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
-  .controls button.primary{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .controls button.primary{background:#f59e0b;color:#1c1300;border-color:var(--amber);font-weight:700}
   .controls button:disabled{opacity:.4;cursor:not-allowed}
   .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
   .dot{flex:none;width:11px;height:11px;min-width:11px;border-radius:50%;background:#334155;border:0;padding:0;cursor:pointer}
@@ -128,6 +128,12 @@
   }
   @media (max-height:760px) and (max-width:900px){ .quiz{grid-template-columns:1fr} }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -135,6 +141,8 @@
   <h1>Bài 2 – Khai báo và Khởi tạo <span style="color:var(--amber)">gõ code từng dòng</span></h1>
   <p>Xem từng dòng lệnh được gõ vào Visual Studio / VS Code. Bấm <b>Tiếp →</b> (hoặc phím mũi tên) để đi tiếp. Khi gặp ⏸ điểm dừng, hãy trả lời trước.</p>
   <div class="parts" id="parts"></div>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
 </header>
 
 <main>
@@ -396,6 +404,15 @@ function startPlay(){
 }
 
 (function init(){
+  try{ if(window.self!==window.top) $('#full').hidden=false; }catch(e){ $('#full').hidden=false; }
+  $('#full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=$('#fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+
   const firstOfPart = PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
   PARTS.forEach((p,i)=>{
     const b = document.createElement('button'); b.textContent=p;

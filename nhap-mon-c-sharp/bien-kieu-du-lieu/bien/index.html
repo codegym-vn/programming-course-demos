@@ -17,7 +17,7 @@
   header p{margin:4px 0 0;color:var(--dim)}
   .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .parts button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px}
-  .parts button.on{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .parts button.on{background:#f59e0b;color:#1c1300;border-color:var(--amber);font-weight:700}
   main{max-width:1200px;margin:0 auto;padding:8px 20px 28px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}
   @media (max-width:900px){main{grid-template-columns:1fr}}
   .card{background:var(--panel);border-radius:16px;padding:14px 16px}
@@ -51,11 +51,11 @@
   .errmsg{position:absolute;left:-30px;right:-30px;top:calc(100% + 6px);color:#fecaca;background:rgba(127,29,29,.8);border-radius:8px;font-size:12.5px;padding:4px 8px}
   .bubble{position:absolute;left:50%;transform:translateX(-50%);top:-62px;background:#fff;color:#0f172a;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace;padding:6px 14px;border-radius:12px;white-space:nowrap;z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.4)}
   .bubble::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#fff}
-  .badge{display:none;position:absolute;width:24px;height:24px;border-radius:50%;background:var(--amber);color:#1c1300;font-weight:800;font-size:14px;line-height:24px;text-align:center;z-index:6;font-family:system-ui,sans-serif}
+  .badge{display:none;position:absolute;width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#1c1300;font-weight:800;font-size:14px;line-height:24px;text-align:center;z-index:6;font-family:system-ui,sans-serif}
   #shelf.anatomy .badge{display:block}
   .b1{top:-12px;left:-6px}.b2{right:-4px;bottom:-30px}.b3{right:-12px;top:-12px}
   #legend{display:none;margin:0 0 10px;padding:10px 12px;background:rgba(245,158,11,.1);border:1px solid var(--amber);border-radius:10px;font-size:15px;position:absolute;left:14px;right:14px;top:10px}
-  #legend b{display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--amber);color:#1c1300;text-align:center;font-size:12px;line-height:20px;margin-right:4px}
+  #legend b{display:inline-block;width:20px;height:20px;border-radius:50%;background:#f59e0b;color:#1c1300;text-align:center;font-size:12px;line-height:20px;margin-right:4px}
   #shelf.anatomy #legend{display:block}
   #legend span{display:inline-block;margin-right:14px}
   /* caption & controls */
@@ -74,12 +74,12 @@
   .fb.good{color:#86efac}
   .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .controls button{font:inherit;font-size:15px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--text);cursor:pointer}
-  .controls button.primary{background:var(--amber);color:#1c1300;border-color:var(--amber);font-weight:700}
+  .controls button.primary{background:#f59e0b;color:#1c1300;border-color:var(--amber);font-weight:700}
   .controls button:disabled{opacity:.4;cursor:not-allowed}
   .dots{display:flex;gap:5px;flex:1;min-width:140px;justify-content:flex-end;flex-wrap:wrap}
   .dot{flex:none;width:11px;height:11px;min-width:11px;border-radius:50%;background:#334155;border:0;padding:0;cursor:pointer}
   .dot.done{background:#64748b}.dot.cur{background:var(--amber);transform:scale(1.35)}.dot.q{border-radius:3px}
-  #full{position:absolute;right:20px;top:18px;background:var(--amber);color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
   #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
   #full:hover{filter:brightness(1.1)}
   header{position:relative}
@@ -116,7 +116,7 @@
   <h1>Bài 1 – Biến là gì? <span style="color:var(--amber)">Biến là một chiếc hộp</span></h1>
   <p>Bấm <b>Tiếp →</b> (hoặc phím mũi tên) để chạy từng dòng lệnh. Khi gặp ⏸ điểm dừng, hãy trả lời trước khi đi tiếp.</p>
   <div class="parts" id="parts"></div>
-  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <button id="full" type="button">⛶ Phóng to</button>
   <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
 </header>
 

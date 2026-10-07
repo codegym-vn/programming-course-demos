@@ -136,11 +136,20 @@
   .ln .no{cursor:pointer;border-radius:999px;display:inline-block;min-width:24px;text-align:right;padding-right:4px}
   .ln .no:hover{background:var(--accent-soft)}
   .ln .no.bpon{background:#e5484d;color:#fff;text-align:center;padding:0}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Lỗi thường gặp và kỹ thuật debug</h1>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
   <p class="lead">Một trình debug đơn giản: chạy từng dòng, đặt breakpoint và xem giá trị biến để tìm lỗi.</p>
   <div class="controls">
     <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="step" aria-selected="true">Chạy từng dòng (Step)</button><button class="tab" role="tab" data-ex="loai" aria-selected="false">Ba loại lỗi</button></div>
@@ -284,6 +293,16 @@ loai:{
   document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
   loadExample('step');
 })();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
 </script>
 </body>
 </html>

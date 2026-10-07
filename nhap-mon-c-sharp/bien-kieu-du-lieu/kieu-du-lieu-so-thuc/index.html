@@ -211,6 +211,12 @@
     .hint{display:none}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -224,6 +230,8 @@
   </div>
   <p class="sub">Kiểu dữ liệu số thực trong C#: float, double, decimal. Bấm <b>Tiếp →</b> hoặc phím mũi tên. Gặp ◆ checkpoint thì trả lời để lấy XP và mở khóa bước tiếp theo.</p>
   <div class="parts" id="parts"></div>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
 </header>
 
 <main class="wrap">
@@ -622,6 +630,15 @@ function stopPlay(){ if(timer){clearInterval(timer);timer=null;} $('#play').text
 function startPlay(){ if(cur===STEPS.length-1) go(0,false); $('#play').textContent='⏸ Dừng'; timer=setInterval(()=>{ if(blocked()||cur===STEPS.length-1){stopPlay();return;} next(); },5500); }
 
 (function init(){
+  try{ if(window.self!==window.top) $('#full').hidden=false; }catch(e){ $('#full').hidden=false; }
+  $('#full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=$('#fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+
   const first=PARTS.map((_,p)=>STEPS.findIndex(s=>s.part===p));
   PARTS.forEach((p,i)=>{ const b=document.createElement('button'); b.textContent=p; b.onclick=()=>{stopPlay();go(first[i],false);}; $('#parts').appendChild(b); });
   STEPS.forEach((s,i)=>{ const d=document.createElement('button'); d.className='dot'+(s.quiz?' q':''); d.title='Bước '+(i+1)+(s.quiz?' (checkpoint)':''); d.setAttribute('aria-label',d.title); d.onclick=()=>{stopPlay();go(i,false);}; $('#dots').appendChild(d); });
