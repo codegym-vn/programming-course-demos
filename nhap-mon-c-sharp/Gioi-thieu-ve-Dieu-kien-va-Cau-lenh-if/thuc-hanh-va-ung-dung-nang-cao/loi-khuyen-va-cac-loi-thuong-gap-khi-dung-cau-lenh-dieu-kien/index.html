@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lỗi thường gặp với if</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#a16207; --warn-soft:#fef6d8;
+    --code-bg:#f3f5f8; --ran:#fff1b8; --ran-bar:#e0a800; --bad:#fde2df;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --sw-off:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#facc15; --warn-soft:#332b0d;
+      --code-bg:#11151c; --ran:#3d3412; --ran-bar:#e0b400; --bad:#3a1a1a;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --sw-off:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:12px}
+  .controls .lbl{font:600 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls input{width:90px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--sw-off);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip[aria-pressed="true"]{border-style:solid;border-color:var(--accent);color:var(--accent);font-weight:700}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .sw{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--text);
+    border-radius:10px;padding:6px 12px;cursor:pointer;font:inherit}
+  .sw .track{width:38px;height:22px;border-radius:999px;background:var(--sw-off);position:relative;transition:background .2s}
+  .sw .track::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+  .sw[aria-pressed="true"] .track{background:var(--true)}
+  .sw[aria-pressed="true"] .track::after{left:19px}
+  .sw .val{font:600 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-6px 0 6px}
+  .explain{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px}
+  .explain b.h{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .explain p{margin:4px 0}
+  .explain code{font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .explain .small{font-size:13px;color:var(--muted)}
+  .compare{border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:14.5px}
+  .compare.diff{background:var(--false-soft);color:var(--false)}
+  .compare.same{background:var(--code-bg);color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .side-head{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+  .badge{font-size:12.5px;font-weight:700;padding:2px 10px;border-radius:999px}
+  .badge.wrong{background:var(--false-soft);color:var(--false)}
+  .badge.right{background:var(--true-soft);color:var(--true)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:30px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln .mark{width:18px;flex:none;font-size:12px;font-weight:700;color:var(--true)}
+  .ln.ran{background:var(--ran);border-left-color:var(--ran-bar)}
+  .ln.skip{opacity:.3}
+  .ln.bug{box-shadow:inset 0 -2px 0 var(--false)}
+  .ln.bug .mark{color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .warn{margin-top:8px;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:6px 10px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-word}
+  .con-title{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:48px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Lỗi thường gặp khi dùng câu lệnh điều kiện</h1>
+  <p class="lead">Mỗi tab là một lỗi. Code sai và code đúng chạy cùng một giá trị đầu vào. Đổi giá trị để thấy lúc nào lỗi lộ ra.</p>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="controls" id="controls"></div>
+  <div class="err" id="err"></div>
+
+  <div class="explain" id="explain"></div>
+  <div class="compare" id="compare"></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="side-head"><span class="badge wrong">Code sai</span></div>
+      <div class="code" id="codeW"></div>
+      <div id="warnW"></div>
+      <div class="con-title">Console</div>
+      <div class="console" id="conW"></div>
+    </div>
+    <div class="card">
+      <div class="side-head"><span class="badge right">Code đúng</span></div>
+      <div class="code" id="codeR"></div>
+      <div class="con-title">Console</div>
+      <div class="console" id="conR"></div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--ran);border-left:3px solid var(--ran-bar)"></i>dòng được chạy</span>
+    <span><i style="background:var(--code-bg);opacity:.5"></i>dòng bị bỏ qua</span>
+    <span><i style="background:var(--code-bg);box-shadow:inset 0 -2px 0 var(--false)"></i>chỗ gây lỗi</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  function range(a, b){ var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+
+  var TABS = [
+    {
+      id: 'semicolon', tab: 'Dấu ; sau if',
+      input: { type: 'int', name: 'diem', def: 3, chips: [3, 7] },
+      wrong: {
+        lines: ['int diem = @V;', 'if (diem >= 5);', '{', '    Console.WriteLine("Đạt");', '}', 'Console.WriteLine("Kết thúc.");'],
+        bug: [1],
+        warn: 'dòng 2: warning CS0642: Possible mistaken empty statement',
+        run: function(){ return { ran: [0, 1, 3, 5], skip: [], out: ['Đạt', 'Kết thúc.'] }; }
+      },
+      right: {
+        lines: ['int diem = @V;', 'if (diem >= 5)', '{', '    Console.WriteLine("Đạt");', '}', 'Console.WriteLine("Kết thúc.");'],
+        run: function(v){
+          var c = v >= 5;
+          return { ran: c ? [0, 1, 3, 5] : [0, 1, 5], skip: c ? [] : [2, 3, 4], out: c ? ['Đạt', 'Kết thúc.'] : ['Kết thúc.'] };
+        }
+      },
+      explain: '<p>Dấu <code>;</code> ngay sau <code>if (...)</code> kết thúc câu lệnh if bằng một câu lệnh rỗng. Khối <code>{ }</code> phía dưới không còn thuộc if nữa, nên <b>lúc nào cũng chạy</b>, dù điều kiện sai.</p><p><b>Cách sửa:</b> bỏ dấu <code>;</code> sau dấu ngoặc tròn của if.</p><p class="small">Trình biên dịch chỉ đưa ra cảnh báo (warning), chương trình vẫn chạy được, nên lỗi này rất dễ bị bỏ qua.</p>',
+      reveal: 3
+    },
+    {
+      id: 'braces', tab: 'Thiếu { }',
+      input: { type: 'int', name: 'diem', def: 3, chips: [3, 7] },
+      wrong: {
+        lines: ['int diem = @V;', 'if (diem >= 5)', '    Console.WriteLine("Đạt");', '    Console.WriteLine("Chúc mừng bạn!");', 'Console.WriteLine("Kết thúc.");'],
+        bug: [3],
+        run: function(v){
+          var c = v >= 5;
+          return { ran: c ? [0, 1, 2, 3, 4] : [0, 1, 3, 4], skip: c ? [] : [2], out: c ? ['Đạt', 'Chúc mừng bạn!', 'Kết thúc.'] : ['Chúc mừng bạn!', 'Kết thúc.'] };
+        }
+      },
+      right: {
+        lines: ['int diem = @V;', 'if (diem >= 5)', '{', '    Console.WriteLine("Đạt");', '    Console.WriteLine("Chúc mừng bạn!");', '}', 'Console.WriteLine("Kết thúc.");'],
+        run: function(v){
+          var c = v >= 5;
+          return { ran: c ? [0, 1, 3, 4, 6] : [0, 1, 6], skip: c ? [] : [2, 3, 4, 5], out: c ? ['Đạt', 'Chúc mừng bạn!', 'Kết thúc.'] : ['Kết thúc.'] };
+        }
+      },
+      explain: '<p>Khi không có <code>{ }</code>, if chỉ quản lý <b>đúng một câu lệnh</b> ngay sau nó. Dòng "Chúc mừng bạn!" dù được thụt lề vẫn nằm ngoài if, nên luôn chạy. C# không dựa vào thụt lề để biết dòng nào thuộc if.</p><p><b>Cách sửa:</b> luôn dùng <code>{ }</code> cho khối lệnh của if, kể cả khi chỉ có một dòng.</p>',
+      reveal: 3
+    },
+    {
+      id: 'twoif', tab: 'Hai if rời thay vì else if',
+      input: { type: 'int', name: 'diem', def: 8, chips: [9, 8, 6, 3] },
+      wrong: {
+        lines: ['int diem = @V;', 'if (diem >= 8)', '{', '    Console.WriteLine("Giỏi");', '}', 'if (diem >= 5)', '{', '    Console.WriteLine("Đạt");', '}'],
+        bug: [5],
+        run: function(v){
+          var c1 = v >= 8, c2 = v >= 5, ran = [0, 1], skip = [], out = [];
+          if (c1) { ran.push(3); out.push('Giỏi'); } else skip = skip.concat([2, 3, 4]);
+          ran.push(5);
+          if (c2) { ran.push(7); out.push('Đạt'); } else skip = skip.concat([6, 7, 8]);
+          return { ran: ran, skip: skip, out: out };
+        }
+      },
+      right: {
+        lines: ['int diem = @V;', 'if (diem >= 8)', '{', '    Console.WriteLine("Giỏi");', '}', 'else if (diem >= 5)', '{', '    Console.WriteLine("Đạt");', '}'],
+        run: function(v){
+          var c1 = v >= 8, c2 = v >= 5, ran = [0, 1], skip = [], out = [];
+          if (c1) { ran.push(3); out.push('Giỏi'); skip = range(5, 8); }
+          else {
+            skip = skip.concat([2, 3, 4]); ran.push(5);
+            if (c2) { ran.push(7); out.push('Đạt'); } else skip = skip.concat([6, 7, 8]);
+          }
+          return { ran: ran, skip: skip, out: out };
+        }
+      },
+      explain: '<p>Hai câu lệnh if rời nhau được kiểm tra <b>độc lập</b>. Điểm từ 8 trở lên thỏa cả hai điều kiện, nên in ra cả "Giỏi" lẫn "Đạt".</p><p><b>Cách sửa:</b> khi các trường hợp loại trừ nhau (chỉ được chọn một), dùng <code>else if</code>. Gặp điều kiện đúng đầu tiên thì các nhánh sau bị bỏ qua.</p>',
+      reveal: 8
+    },
+    {
+      id: 'double', tab: 'So sánh số thực bằng ==',
+      input: { type: 'preset', name: 'Phép tính', def: 0, presets: [
+        { a: '0.1', b: '0.2', c: '0.3' },
+        { a: '0.5', b: '0.25', c: '0.75' },
+        { a: '0.1', b: '0.7', c: '0.8' }
+      ] },
+      wrong: {
+        lines: ['double tong = @A + @B;', 'Console.WriteLine(tong);', 'if (tong == @C)', '{', '    Console.WriteLine("Bằng @C");', '}', 'else', '{', '    Console.WriteLine("Khác @C");', '}'],
+        bug: [2],
+        run: function(p){ return runDouble(p, function(t, c){ return t === c; }); }
+      },
+      right: {
+        lines: ['double tong = @A + @B;', 'Console.WriteLine(tong);', 'if (Math.Abs(tong - @C) < 0.000001)', '{', '    Console.WriteLine("Bằng @C");', '}', 'else', '{', '    Console.WriteLine("Khác @C");', '}'],
+        run: function(p){ return runDouble(p, function(t, c){ return Math.abs(t - c) < 0.000001; }); }
+      },
+      explain: '<p>Số thực (<code>double</code>) được lưu dưới dạng nhị phân nên nhiều số không lưu được chính xác. Ví dụ <code>0.1 + 0.2</code> thực ra là <code>0.30000000000000004</code>, nên so sánh bằng <code>==</code> với <code>0.3</code> cho ra false.</p><p><b>Cách sửa:</b> so sánh khoảng cách giữa hai số với một sai số rất nhỏ: <code>Math.Abs(tong - 0.3) &lt; 0.000001</code>. Với tiền tệ, nên dùng kiểu <code>decimal</code>.</p><p class="small">Trên máy cài định dạng số tiếng Việt, Console có thể in số thực với dấu phẩy, ví dụ 0,30000000000000004.</p>',
+      reveal: 0
+    },
+    {
+      id: 'assign', tab: 'Dùng = thay vì ==',
+      input: { type: 'bool', name: 'daThanhToan', def: false },
+      wrong: {
+        lines: ['bool daThanhToan = @V;', 'if (daThanhToan = true)', '{', '    Console.WriteLine("Giao hàng");', '}', 'else', '{', '    Console.WriteLine("Chờ thanh toán");', '}', 'Console.WriteLine(daThanhToan);'],
+        bug: [1],
+        warn: "dòng 2: warning CS0665: Assignment in conditional expression is always constant; did you mean to use == instead of = ?",
+        run: function(){ return { ran: [0, 1, 3, 9], skip: [5, 6, 7, 8], out: ['Giao hàng', 'True'] }; }
+      },
+      right: {
+        lines: ['bool daThanhToan = @V;', 'if (daThanhToan)', '{', '    Console.WriteLine("Giao hàng");', '}', 'else', '{', '    Console.WriteLine("Chờ thanh toán");', '}', 'Console.WriteLine(daThanhToan);'],
+        run: function(v){
+          return v ? { ran: [0, 1, 3, 9], skip: [5, 6, 7, 8], out: ['Giao hàng', 'True'] }
+                   : { ran: [0, 1, 5, 7, 9], skip: [2, 3, 4], out: ['Chờ thanh toán', 'False'] };
+        }
+      },
+      explain: '<p><code>=</code> là phép <b>gán</b>, <code>==</code> mới là phép so sánh. <code>daThanhToan = true</code> gán true vào biến rồi dùng giá trị đó làm điều kiện, nên điều kiện luôn đúng, và biến cũng bị đổi thành true (dòng cuối in ra True).</p><p><b>Cách sửa:</b> viết <code>if (daThanhToan)</code> hoặc <code>if (daThanhToan == true)</code>.</p><p class="small">Với kiểu int, viết <code>if (x = 5)</code> sẽ bị báo lỗi biên dịch ngay. Với bool thì vẫn biên dịch được, chỉ có cảnh báo, nên lỗi này khó phát hiện hơn.</p>',
+      reveal: false
+    }
+  ];
+
+  function runDouble(p, eq){
+    var t = Number(p.a) + Number(p.b), c = Number(p.c), ok = eq(t, c);
+    return ok ? { ran: [0, 1, 2, 4], skip: [6, 7, 8, 9], out: [String(t), 'Bằng ' + p.c] }
+              : { ran: [0, 1, 2, 6, 8], skip: [3, 4, 5], out: [String(t), 'Khác ' + p.c] };
+  }
+
+  var T = TABS[0], val = null, valid = true;
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*")|\b(int|bool|double|if|else|true|false)\b|(-?\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + esc(m[3]) + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function fill(line){
+    if (T.input.type === 'preset') {
+      var p = T.input.presets[val];
+      return line.replace(/@A/g, p.a).replace(/@B/g, p.b).replace(/@C/g, p.c);
+    }
+    return line.replace('@V', T.input.type === 'bool' ? (val ? 'true' : 'false') : String(val));
+  }
+  function arg(){ return T.input.type === 'preset' ? T.input.presets[val] : val; }
+
+  function codeHTML(side, res, bug){
+    return side.lines.map(function(l, i){
+      var ran = res.ran.indexOf(i) >= 0, skip = res.skip.indexOf(i) >= 0, isBug = bug && bug.indexOf(i) >= 0;
+      var cls = 'ln' + (ran ? ' ran' : skip ? ' skip' : '') + (isBug ? ' bug' : '');
+      var mark = isBug ? '✗' : (ran ? '✓' : '');
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span class="mark">' + mark + '</span><span>' + hl(fill(l)) + '</span></div>';
+    }).join('');
+  }
+
+  function valueText(x){
+    if (T.input.type === 'preset') { var p = T.input.presets[x]; return p.a + ' + ' + p.b + ' so với ' + p.c; }
+    if (T.input.type === 'bool') return T.input.name + ' = ' + (x ? 'true' : 'false');
+    return T.input.name + ' = ' + x;
+  }
+
+  function render(){
+    if (!valid) {
+      ['codeW', 'codeR', 'conW', 'conR', 'warnW'].forEach(function(id){ $(id).innerHTML = ''; });
+      $('compare').className = 'compare same'; $('compare').textContent = '';
+      return;
+    }
+    var rw = T.wrong.run(arg()), rr = T.right.run(arg());
+    $('codeW').innerHTML = codeHTML(T.wrong, rw, T.wrong.bug);
+    $('codeR').innerHTML = codeHTML(T.right, rr, null);
+    $('warnW').innerHTML = T.wrong.warn ? '<div class="warn">' + esc(T.wrong.warn) + '</div>' : '';
+    $('conW').innerHTML = rw.out.length ? rw.out.map(esc).join('<br>') : '<span style="color:#7b8494">(không in gì)</span>';
+    $('conR').innerHTML = rr.out.length ? rr.out.map(esc).join('<br>') : '<span style="color:#7b8494">(không in gì)</span>';
+    var same = rw.out.join('\n') === rr.out.join('\n');
+    var c = $('compare');
+    if (same) {
+      c.className = 'compare same';
+      c.textContent = 'Với ' + valueText(val) + ', hai đoạn code cho cùng kết quả nên lỗi chưa lộ ra. Thử ' + valueText(T.reveal) + ' để thấy khác biệt.';
+    } else {
+      c.className = 'compare diff';
+      c.textContent = 'Với ' + valueText(val) + ', hai đoạn code cho kết quả khác nhau: đây là lúc lỗi lộ ra.';
+    }
+    $('explain').innerHTML = '<b class="h">' + esc(T.tab) + '</b>' + T.explain;
+  }
+
+  function buildControls(){
+    var inp = T.input, html = '';
+    if (inp.type === 'int') {
+      html = '<span class="lbl">' + inp.name + ' =</span><input id="val" type="text" inputmode="numeric" autocomplete="off" value="' + val + '">' +
+        inp.chips.map(function(c){ return '<button class="chip" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+    } else if (inp.type === 'bool') {
+      html = '<button class="sw" id="boolSw" aria-pressed="' + (val ? 'true' : 'false') + '"><span class="lbl">' + inp.name + '</span><span class="track"></span><span class="val">' + (val ? 'true' : 'false') + '</span></button>';
+    } else {
+      html = '<span class="lbl">' + inp.name + ':</span>' + inp.presets.map(function(p, i){
+        return '<button class="chip" data-p="' + i + '" aria-pressed="' + (i === val ? 'true' : 'false') + '">' + p.a + ' + ' + p.b + ' == ' + p.c + ' ?</button>';
+      }).join(' ');
+    }
+    $('controls').innerHTML = html;
+  }
+
+  $('controls').addEventListener('input', function(e){
+    if (e.target.id !== 'val') return;
+    var s = e.target.value.trim();
+    var ok = /^-?\d{1,10}$/.test(s) && Number(s) >= -2147483648 && Number(s) <= 2147483647;
+    valid = ok;
+    e.target.classList.toggle('bad', !ok);
+    $('err').textContent = ok ? '' : 'Hãy nhập một số nguyên (kiểu int).';
+    if (ok) val = Number(s);
+    render();
+  });
+  $('controls').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'boolSw') { val = !val; buildControls(); render(); return; }
+    if (b.dataset.p !== undefined) { val = Number(b.dataset.p); buildControls(); render(); return; }
+    if (b.dataset.v !== undefined) {
+      $('val').value = b.dataset.v; val = Number(b.dataset.v); valid = true;
+      $('val').classList.remove('bad'); $('err').textContent = ''; render();
+    }
+  });
+
+  function load(i){
+    T = TABS[i]; val = T.input.def; valid = true; $('err').textContent = '';
+    document.querySelectorAll('.tab').forEach(function(b, k){ b.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+    buildControls(); render();
+  }
+  $('tabs').innerHTML = TABS.map(function(t, i){ return '<button class="tab" role="tab" data-i="' + i + '" aria-selected="false">' + esc(t.tab) + '</button>'; }).join('');
+  $('tabs').addEventListener('click', function(e){ var b = e.target.closest('.tab'); if (b) load(Number(b.dataset.i)); });
+  load(0);
+})();
+</script>
+</body>
+</html>

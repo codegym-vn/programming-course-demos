@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng switch-case</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font:600 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input{width:100px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:48px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent;transition:opacity .25s,background .25s}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln .mark{width:18px;flex:none;font-size:12px;font-weight:700;color:var(--true)}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.skip{opacity:.3}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  svg{width:100%;height:auto;display:block;max-width:380px;margin:0 auto}
+  .nd rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:11px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd text.b{font-weight:700}
+  .nd.on rect{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect{stroke:var(--accent);stroke-width:2}
+  .nd.skip{opacity:.3}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .ed.skip{opacity:.3;stroke-dasharray:4 4}
+  .match{display:flex;flex-direction:column;gap:6px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .mrow{background:var(--code-bg);border-radius:8px;padding:6px 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .mrow.wait{color:var(--muted)}
+  .mrow .tag{font-family:system-ui,sans-serif;font-size:12.5px;color:var(--muted)}
+  .res{display:inline-block;padding:0 8px;border-radius:6px;font-weight:700}
+  .res.t{background:var(--true-soft);color:var(--true)}.res.f{background:var(--false-soft);color:var(--false)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:64px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Câu lệnh switch-case chạy như thế nào?</h1>
+  <p class="lead">Nhập một giá trị rồi bấm <b>Bước tiếp</b>. switch so khớp giá trị với các nhãn case, nhảy vào case khớp và chạy đến khi gặp break.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-ex="menu" aria-selected="true">Menu (số nguyên)</button>
+      <button class="tab" role="tab" data-ex="den" aria-selected="false">Đèn giao thông (chuỗi)</button>
+    </div>
+    <div class="field">
+      <label for="val" id="valLabel">luaChon =</label>
+      <input id="val" type="text" autocomplete="off" value="2">
+      <span id="chips"></span>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Mã nguồn C#</p>
+        <div class="code" id="code"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Console</p>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Sơ đồ luồng</p>
+        <svg viewBox="0 0 340 246" aria-label="Sơ đồ luồng switch-case">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--node-line)"/>
+            </marker>
+            <marker id="arOn" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+            </marker>
+          </defs>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <div class="card">
+        <p class="panel-title">So khớp với các nhãn case</p>
+        <div class="match" id="match"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var EX = {
+    menu: {
+      type: 'int', varName: 'luaChon', def: 2, chips: ['1', '2', '3', '5', '0'],
+      cases: [
+        { label: '1', out: 'Xem số dư', box: 'Xem số dư' },
+        { label: '2', out: 'Nạp tiền', box: 'Nạp tiền' },
+        { label: '3', out: 'Rút tiền', box: 'Rút tiền' }
+      ],
+      defOut: 'Lựa chọn không hợp lệ', defBox: 'Không hợp lệ'
+    },
+    den: {
+      type: 'string', varName: 'mau', def: 'do', chips: ['xanh', 'vang', 'do', 'Do', 'tim'],
+      cases: [
+        { label: 'xanh', out: 'Đi tiếp', box: 'Đi tiếp' },
+        { label: 'vang', out: 'Chậm lại', box: 'Chậm lại' },
+        { label: 'do', out: 'Dừng lại', box: 'Dừng lại' }
+      ],
+      defOut: 'Màu không hợp lệ', defBox: 'Không hợp lệ'
+    }
+  };
+  var BOX_X = [6, 90, 174, 258], BOX_W = 76;
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  var exKey = 'menu', ex = EX.menu, v = 2, step = 0, timer = null, valid = true;
+  var lines = [], L = {}, steps = [];
+  var $ = function(id){ return document.getElementById(id); };
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*")|\b(int|string|switch|case|default|break)\b|(-?\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="kw">' + m[2] + '</span>';
+      else out += '<span class="num">' + esc(m[3]) + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function lit(x){ return ex.type === 'string' ? '"' + x + '"' : String(x); }
+  function show(x){ return ex.type === 'string' ? '"' + x + '"' : String(x); }
+
+  // ---------- ma nguon ----------
+  function buildLines(){
+    lines = [(ex.type === 'string' ? 'string ' : 'int ') + ex.varName + ' = @V;', 'switch (' + ex.varName + ')', '{'];
+    L = { secs: [] };
+    ex.cases.forEach(function(c){
+      var s = { labelLine: lines.length, printLine: lines.length + 1, breakLine: lines.length + 2 };
+      lines.push('    case ' + lit(c.label) + ':', '        Console.WriteLine("' + c.out + '");', '        break;');
+      L.secs.push(s);
+    });
+    L.def = { labelLine: lines.length, printLine: lines.length + 1, breakLine: lines.length + 2 };
+    lines.push('    default:', '        Console.WriteLine("' + ex.defOut + '");', '        break;');
+    lines.push('}');
+    L.endLine = lines.length;
+    lines.push('Console.WriteLine("Chương trình kết thúc.");');
+  }
+
+  function matchIndex(){
+    for (var i = 0; i < ex.cases.length; i++) {
+      var lab = ex.cases[i].label;
+      if (ex.type === 'string' ? v === lab : v === Number(lab)) return i;
+    }
+    return -1;
+  }
+  function sec(i){ return i === -1 ? L.def : L.secs[i]; }
+
+  // assign, switch, jump, print, break, end, done
+  var KINDS = ['assign', 'switch', 'jump', 'print', 'break', 'end', 'done'];
+
+  function state(){
+    var m = matchIndex(), s = sec(m), k = KINDS[step - 1] || null;
+    var st = { m: m, kind: k, cur: null, ran: [], out: [], decided: step >= 3 };
+    if (step >= 1) st.ran.push(0);
+    if (step >= 2) st.ran.push(1);
+    if (step >= 3) st.ran.push(s.labelLine);
+    if (step >= 4) { st.ran.push(s.printLine); st.out.push(m === -1 ? ex.defOut : ex.cases[m].out); }
+    if (step >= 5) st.ran.push(s.breakLine);
+    if (step >= 6) { st.ran.push(L.endLine); st.out.push('Chương trình kết thúc.'); }
+    st.cur = { assign: 0, 'switch': 1, jump: s.labelLine, print: s.printLine, 'break': s.breakLine, end: L.endLine }[k];
+    if (st.cur === undefined) st.cur = null;
+    return st;
+  }
+
+  // ---------- ve ----------
+  function renderCode(st){
+    var skip = {};
+    if (st.decided) {
+      L.secs.concat([L.def]).forEach(function(s, i){
+        var idx = i === L.secs.length ? -1 : i;
+        if (idx !== st.m) [s.labelLine, s.printLine, s.breakLine].forEach(function(x){ skip[x] = 1; });
+      });
+    }
+    $('code').innerHTML = lines.map(function(l, i){
+      var cls = 'ln' + (i === st.cur ? ' cur' : '') + (skip[i] ? ' skip' : '');
+      var mark = st.ran.indexOf(i) >= 0 && i !== st.cur ? '✓' : '';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span class="mark">' + mark + '</span><span>' + hl(l.replace('@V', lit(v))) + '</span></div>';
+    }).join('');
+  }
+
+  function el(tag, attrs, parent){
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, cls){
+    var t = el('text', { x: x, y: y, 'text-anchor': 'middle' }, parent);
+    if (cls) t.setAttribute('class', cls);
+    t.textContent = s;
+    return t;
+  }
+  function buildFlow(){
+    var E = $('edges'), N = $('nodes');
+    E.innerHTML = ''; N.innerHTML = '';
+    var g = el('g', { id: 'nA', class: 'nd' }, N);
+    el('rect', { x: 100, y: 6, width: 140, height: 30, rx: 8 }, g);
+    txt(g, 170, 26, '', 'mono').id = 'tA';
+    el('path', { id: 'eA', class: 'ed', d: 'M170 36 V50', 'marker-end': 'url(#ar)' }, E);
+    var sw = el('g', { id: 'nSw', class: 'nd' }, N);
+    el('rect', { x: 95, y: 52, width: 150, height: 32, rx: 8 }, sw);
+    txt(sw, 170, 73, 'switch (' + ex.varName + ')', 'mono b');
+    var labels = ex.cases.map(function(c){ return { top: 'case ' + lit(c.label), bot: c.box }; })
+      .concat([{ top: 'default', bot: ex.defBox }]);
+    labels.forEach(function(lb, i){
+      var x = BOX_X[i], cx = x + BOX_W / 2;
+      el('path', { id: 'e' + i, class: 'ed', d: 'M170 84 V100 H' + cx + ' V118', 'marker-end': 'url(#ar)' }, E);
+      var b = el('g', { id: 'n' + i, class: 'nd' }, N);
+      el('rect', { x: x, y: 120, width: BOX_W, height: 50, rx: 8 }, b);
+      txt(b, cx, 140, lb.top, 'b');
+      txt(b, cx, 158, lb.bot);
+      el('path', { id: 'm' + i, class: 'ed', d: 'M' + cx + ' 170 V188 H170' }, E);
+    });
+    el('path', { id: 'mE', class: 'ed', d: 'M170 188 V204', 'marker-end': 'url(#ar)' }, E);
+    var en = el('g', { id: 'nEnd', class: 'nd' }, N);
+    el('rect', { x: 70, y: 206, width: 200, height: 34, rx: 8 }, en);
+    txt(en, 170, 227, 'Dòng sau switch (luôn chạy)');
+  }
+  function cls(id, c){
+    var e = $(id); if (!e) return;
+    var base = e.tagName === 'g' ? 'nd' : 'ed';
+    e.setAttribute('class', base + (c ? ' ' + c : ''));
+    if (base === 'ed' && e.hasAttribute('marker-end')) e.setAttribute('marker-end', c === 'done' ? 'url(#arOn)' : 'url(#ar)');
+  }
+  function renderFlow(st){
+    $('tA').textContent = ex.varName + ' = ' + show(v);
+    var k = st.kind, idx = st.m === -1 ? 3 : st.m;
+    cls('nA', k === 'assign' ? 'on' : step > 1 ? 'done' : '');
+    cls('eA', step >= 2 ? 'done' : '');
+    cls('nSw', k === 'switch' ? 'on' : step > 2 ? 'done' : '');
+    var front = null;
+    for (var i = 0; i < 4; i++) {
+      var chosen = i === idx;
+      cls('e' + i, st.decided ? (chosen ? 'done' : 'skip') : '');
+      cls('n' + i, !st.decided ? '' : chosen ? ((k === 'jump' || k === 'print' || k === 'break') ? 'on' : 'done') : 'skip');
+      cls('m' + i, step >= 6 ? (chosen ? 'done' : 'skip') : (st.decided && !chosen ? 'skip' : ''));
+      if (chosen && st.decided) front = i;
+    }
+    cls('mE', step >= 6 ? 'done' : '');
+    cls('nEnd', k === 'end' ? 'on' : k === 'done' ? 'done' : '');
+    if (front !== null) { $('edges').appendChild($('e' + front)); $('edges').appendChild($('m' + front)); }
+    $('edges').appendChild($('mE'));
+  }
+
+  function renderMatch(st){
+    var html = ex.cases.map(function(c, i){
+      var lab = 'case ' + lit(c.label);
+      if (step < 2) return '<div class="mrow wait"><span>' + esc(lab) + '</span><span class="tag">chưa so khớp</span></div>';
+      var ok = i === st.m;
+      return '<div class="mrow"><span>' + esc(show(v) + ' == ' + lit(c.label)) + '</span><span class="res ' + (ok ? 't' : 'f') + '">' + (ok ? 'khớp' : 'không khớp') + '</span></div>';
+    });
+    var dTag = step < 2 ? '<span class="tag">chỉ chạy khi không case nào khớp</span>'
+      : (st.m === -1 ? '<span class="res t">được chọn</span>' : '<span class="tag">không cần, đã có case khớp</span>');
+    html.push('<div class="mrow' + (step < 2 ? ' wait' : '') + '"><span>default</span>' + dTag + '</div>');
+    $('match').innerHTML = html.join('');
+  }
+
+  function renderConsole(st){
+    $('console').innerHTML = st.out.length ? st.out.map(esc).join('<br>') : '<span class="ph">Chưa có kết quả.</span>';
+  }
+
+  function caseNote(){
+    if (ex.type !== 'string' || matchIndex() !== -1) return '';
+    var low = String(v).toLowerCase();
+    var hit = ex.cases.some(function(c){ return c.label === low; });
+    return hit ? 'Lưu ý: so khớp chuỗi phân biệt chữ hoa và chữ thường, nên "' + v + '" không khớp với case "' + low + '".' : '';
+  }
+
+  function renderStatus(st){
+    var k = st.kind, m = st.m, title, body, note = '';
+    var name = m === -1 ? 'default' : 'case ' + lit(ex.cases[m].label);
+    var out = m === -1 ? ex.defOut : (m >= 0 ? ex.cases[m].out : '');
+    if (!k) { title = 'Sẵn sàng'; body = 'Bấm "Bước tiếp" để chương trình bắt đầu chạy.'; }
+    else if (k === 'done') {
+      title = 'Hoàn tất';
+      body = 'switch so khớp giá trị với các nhãn case, nhảy thẳng vào case khớp và chạy đến break. Không khớp case nào thì chạy default. Đổi giá trị để xem nhánh khác.';
+      note = caseNote();
+    } else {
+      title = 'Bước ' + step + '/6 · ';
+      if (k === 'assign') { title += 'Gán giá trị'; body = 'Gán ' + show(v) + ' cho biến ' + ex.varName + '.'; }
+      else if (k === 'switch') { title += 'Bắt đầu switch'; body = 'Lấy giá trị của ' + ex.varName + ' (' + show(v) + ') để so khớp với các nhãn case.'; }
+      else if (k === 'jump') {
+        title += 'Nhảy vào ' + name;
+        body = m === -1 ? 'Giá trị ' + show(v) + ' không khớp case nào, chương trình nhảy vào default.'
+          : 'Giá trị ' + show(v) + ' khớp với ' + name + ', chương trình nhảy thẳng vào đây. Các case khác bị bỏ qua.';
+        note = caseNote();
+      }
+      else if (k === 'print') { title += 'Chạy lệnh trong ' + name; body = 'In ra “' + out + '”.'; }
+      else if (k === 'break') { title += 'Gặp break'; body = 'break kết thúc switch ngay lập tức, chương trình nhảy ra sau dấu } của switch.'; }
+      else { title += 'Ra khỏi switch'; body = 'Chạy tiếp dòng sau switch, in ra “Chương trình kết thúc.” Dòng này luôn chạy.'; }
+    }
+    $('status').innerHTML = '<b>' + esc(title) + '</b>' + esc(body) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+  }
+
+  function render(){
+    var st = state();
+    renderCode(st); renderFlow(st); renderMatch(st); renderConsole(st); renderStatus(st);
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= KINDS.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; render(); }
+
+  function onInput(){
+    var s = $('val').value;
+    var ok;
+    if (ex.type === 'int') {
+      s = s.trim();
+      ok = /^-?\d{1,10}$/.test(s) && Number(s) >= -2147483648 && Number(s) <= 2147483647;
+      $('err').textContent = ok ? '' : 'Hãy nhập một số nguyên (kiểu int), ví dụ 2.';
+      if (ok) v = Number(s);
+    } else {
+      ok = /^[^"\\]{0,20}$/.test(s);
+      $('err').textContent = ok ? '' : 'Chuỗi không được chứa dấu " hoặc \\ và dài tối đa 20 ký tự.';
+      if (ok) v = s;
+    }
+    valid = ok;
+    $('val').classList.toggle('bad', !ok);
+    reset();
+  }
+  function setValue(x){ $('val').value = String(x); onInput(); }
+
+  function loadExample(key){
+    exKey = key; ex = EX[key];
+    document.querySelectorAll('.tab').forEach(function(b){
+      b.setAttribute('aria-selected', b.dataset.ex === key ? 'true' : 'false');
+    });
+    $('valLabel').textContent = ex.varName + ' =';
+    $('val').setAttribute('inputmode', ex.type === 'int' ? 'numeric' : 'text');
+    $('chips').innerHTML = ex.chips.map(function(c){
+      return '<button class="chip" type="button" data-v="' + esc(c) + '">' + esc(ex.type === 'string' ? '"' + c + '"' : c) + '</button>';
+    }).join(' ');
+    buildLines(); buildFlow();
+    setValue(ex.def);
+  }
+
+  $('next').addEventListener('click', function(){ if (valid && step < KINDS.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= KINDS.length) step = 0;
+    step++;
+    timer = setInterval(function(){
+      step++;
+      if (step >= KINDS.length) { step = KINDS.length; stop(); }
+      render();
+    }, 900);
+    render();
+  });
+  $('val').addEventListener('input', onInput);
+  $('val').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && valid && step < KINDS.length) { step++; render(); }
+  });
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip');
+    if (b) setValue(b.dataset.v);
+  });
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){ loadExample(b.dataset.ex); });
+  });
+
+  loadExample('menu');
+})();
+</script>
+</body>
+</html>
