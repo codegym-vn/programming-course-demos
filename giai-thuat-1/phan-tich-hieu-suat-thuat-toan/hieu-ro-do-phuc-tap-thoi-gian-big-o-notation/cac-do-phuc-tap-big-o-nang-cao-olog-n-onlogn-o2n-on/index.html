@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng tốc độ tăng trưởng Big O</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .gr{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .gl{width:92px;font:600 14px ui-monospace,Menlo,Consolas,monospace;flex:none}
+  .gb{flex:1;height:18px;background:var(--code-bg);border-radius:9px;overflow:hidden;min-width:60px}
+  .gf{height:100%;border-radius:9px}
+  .gf.g{background:var(--true)}.gf.a{background:var(--cur-bar)}.gf.r{background:var(--false)}
+  .gv{width:110px;text-align:right;font:14px ui-monospace,Menlo,Consolas,monospace;flex:none}
+  .tr{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;margin:8px 0;background:var(--code-bg);border-left:6px solid var(--true)}
+  .tr.a{border-left-color:var(--cur-bar)}.tr.r{border-left-color:var(--false)}
+  .tv{font-weight:600}
+  .chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+  .arr{color:var(--muted);font-size:13px}
+  .var.hl{background:var(--cur)}
+  .retb{margin-top:10px;padding:8px 12px;border-radius:8px;background:var(--code-bg);font-size:15px}
+  @media (max-width:520px){.gv{width:84px;font-size:12px}.gl{width:78px;font-size:13px}}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tốc độ tăng trưởng của các độ phức tạp</h1>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
+  <p class="lead">Đổi n và xem mỗi độ phức tạp cần bao nhiêu bước. Hai tab đầu chỉ cần nhập n; tab thứ ba bấm <b>Bước tiếp</b>.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-ex="bang" aria-selected="true">Số bước theo n</button>
+      <button class="tab" role="tab" data-ex="thoigian" aria-selected="false">Thời gian chạy</button>
+      <button class="tab" role="tab" data-ex="chia" aria-selected="false">Chia đôi (log n)</button>
+    </div>
+    <div class="field"><label for="nin">n =</label><input id="nin" type="text" inputmode="numeric" autocomplete="off" style="width:70px" value="10"><span id="chips"></span></div>
+    <div class="btns" id="btns" hidden>
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card" id="panel"></div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var tab = 'bang', n = 10, valid = true, step = 0, chain = [];
+  var CFG = {
+    bang:{def:10, min:1, max:20, chips:[5,10,20], intro:'Mỗi thanh là số bước một độ phức tạp cần với n phần tử. Thanh vẽ theo thang log để vừa khung, nên chênh lệch thực tế còn lớn hơn nhiều.'},
+    thoigian:{def:30, min:1, max:60, chips:[10,30,60], intro:'Giả sử mỗi bước mất 1 micro giây (một phần triệu giây). Hãy xem thời gian chạy khi n tăng.'},
+    chia:{def:40, min:1, max:99, chips:[8,40,99], intro:'Mỗi lần chia đôi n, bài toán nhỏ đi một nửa. Bấm "Bước tiếp" để chia từng lần.'}
+  };
+  function fact(k){ var r=1; for(var i=2;i<=k;i++) r*=i; return r; }
+  var ROWS = [
+    ['O(1)', function(n){return 1;}, 'g'],
+    ['O(log n)', function(n){return Math.log2(n);}, 'g'],
+    ['O(n)', function(n){return n;}, 'g'],
+    ['O(n log n)', function(n){return n*Math.log2(n);}, 'a'],
+    ['O(n²)', function(n){return n*n;}, 'a'],
+    ['O(2ⁿ)', function(n){return Math.pow(2,n);}, 'r'],
+    ['O(n!)', function(n){return fact(n);}, 'r']
+  ];
+  function fmt(v){
+    if (v >= 1e9) { var e = Math.floor(Math.log10(v)); return (v / Math.pow(10, e)).toFixed(1) + ' × 10^' + e; }
+    if (Number.isInteger(v)) return v.toLocaleString('vi-VN');
+    return v.toFixed(1).replace('.', ',');
+  }
+  function fmtTime(us){
+    var s = us / 1e6;
+    if (us < 1) return '< 1 micro giây';
+    if (us < 1000) return fmt(us) + ' micro giây';
+    if (us < 1e6) return fmt(us / 1000) + ' mili giây';
+    if (s < 60) return fmt(s) + ' giây';
+    if (s < 3600) return fmt(s / 60) + ' phút';
+    if (s < 86400) return fmt(s / 3600) + ' giờ';
+    var days = s / 86400;
+    if (days < 365) return fmt(days) + ' ngày';
+    var y = days / 365.25;
+    if (y < 1e6) return fmt(Math.round(y)) + ' năm';
+    if (y < 1e9) return fmt(y / 1e6) + ' triệu năm';
+    if (y < 1.38e10) return fmt(y / 1e9) + ' tỷ năm';
+    return 'lâu hơn tuổi của vũ trụ (khoảng 13,8 tỷ năm)';
+  }
+  function bars(){
+    var vals = ROWS.map(function(r){ return r[1](n); });
+    var mx = Math.max.apply(null, vals), den = Math.log10(mx + 1) || 1;
+    var h = '';
+    ROWS.forEach(function(r, i){
+      var w = Math.max(2, Math.log10(vals[i] + 1) / den * 100);
+      h += '<div class="gr"><div class="gl">' + r[0] + '</div><div class="gb"><div class="gf ' + r[2] + '" style="width:' + w.toFixed(1) + '%"></div></div><div class="gv">' + fmt(vals[i]) + '</div></div>';
+    });
+    $('panel').innerHTML = '<p class="panel-title">Số bước khi n = ' + n + '</p>' + h + '<p class="cm" style="margin:10px 0 0">Xanh: tăng chậm. Vàng: tăng khá nhanh. Đỏ: tăng cực nhanh.</p>';
+    $('status').innerHTML = '<b>Số bước theo n</b>' + esc(CFG.bang.intro) + '<span class="note">Thử n = 20: O(n²) là 400 bước, nhưng O(2ⁿ) đã hơn một triệu bước.</span>';
+  }
+  function times(){
+    var list = [ROWS[2], ROWS[3], ROWS[4], ROWS[5], ROWS[6]], h = '';
+    list.forEach(function(r){
+      var us = r[1](n);
+      h += '<div class="tr ' + r[2] + '"><div class="gl">' + r[0] + '</div><div class="tv">' + fmtTime(us) + '</div></div>';
+    });
+    $('panel').innerHTML = '<p class="panel-title">Thời gian chạy khi n = ' + n + '</p>' + h;
+    $('status').innerHTML = '<b>Thời gian chạy</b>' + esc(CFG.thoigian.intro) + '<span class="note">Thử n = 60: thuật toán O(n²) vẫn chỉ mất vài mili giây, còn O(2ⁿ) cần hàng chục nghìn năm.</span>';
+  }
+  function buildChain(){ chain = []; var v = n; chain.push(v); while (v > 1) { v = Math.floor(v / 2); chain.push(v); } }
+  function chia(){
+    var shown = Math.min(step + 1, chain.length), h = '<p class="panel-title">Chia đôi n = ' + n + '</p><div class="chain">';
+    for (var i = 0; i < shown; i++) h += (i ? '<span class="arr">÷ 2 →</span>' : '') + '<div class="var' + (i === shown - 1 ? ' hl' : '') + '"><small>' + (i === 0 ? 'ban đầu' : 'lần ' + i) + '</small><strong>' + chain[i] + '</strong></div>';
+    h += '</div>';
+    var dem = shown - 1, fin = shown >= chain.length;
+    h += '<div class="retb">Số lần chia đôi: <b>' + dem + '</b>' + (fin ? ' (đã tới 1, dừng)' : '') + '</div>';
+    $('panel').innerHTML = h;
+    var t, b, note = '';
+    if (step === 0) { t = 'Sẵn sàng'; b = CFG.chia.intro; }
+    else if (!fin) { t = 'Chia đôi lần ' + dem; b = 'n = ' + chain[dem - 1] + ' chia đôi, làm tròn xuống, còn ' + chain[dem] + '.'; }
+    else { t = 'Hoàn tất'; b = 'Chỉ cần ' + dem + ' lần chia đôi để từ ' + n + ' về 1.'; note = 'n = 1.000 chỉ cần 9 lần, n = 1.000.000 chỉ cần 19 lần. n tăng gấp đôi thì chỉ thêm 1 lần chia: gọi là O(log n).'; }
+    $('status').innerHTML = '<b>' + t + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    $('next').disabled = fin; $('all').disabled = fin;
+  }
+  var timer = null;
+  function render(){
+    $('btns').hidden = tab !== 'chia';
+    if (!valid) { $('panel').innerHTML = ''; return; }
+    if (tab === 'bang') bars(); else if (tab === 'thoigian') times(); else { buildChain(); if (step > chain.length - 1) step = chain.length - 1; chia(); }
+  }
+  function onInput(){
+    var c = CFG[tab], s = $('nin').value.trim(), ok = /^\d{1,2}$/.test(s) && Number(s) >= c.min && Number(s) <= c.max;
+    $('nin').classList.toggle('bad', !ok); valid = ok;
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên n từ ' + c.min + ' đến ' + c.max + '.';
+    if (ok) n = Number(s);
+    if (timer) { clearInterval(timer); timer = null; }
+    step = 0; render();
+  }
+  function loadTab(k){
+    tab = k; var c = CFG[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('chips').innerHTML = c.chips.map(function(v){ return '<button class="chip" type="button" data-v="' + v + '">' + v + '</button>'; }).join(' ');
+    $('nin').value = c.def; onInput();
+  }
+  $('chips').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if (b) { $('nin').value = b.dataset.v; onInput(); } });
+  $('nin').addEventListener('input', onInput);
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadTab(b.dataset.ex); }); });
+  $('next').addEventListener('click', function(){ if (valid && step < chain.length - 1) { step++; render(); } });
+  $('reset').addEventListener('click', function(){ if (timer) { clearInterval(timer); timer = null; } step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (!valid || timer) return;
+    timer = setInterval(function(){ if (step < chain.length - 1) { step++; render(); } else { clearInterval(timer); timer = null; } }, 500);
+  });
+  loadTab('bang');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>

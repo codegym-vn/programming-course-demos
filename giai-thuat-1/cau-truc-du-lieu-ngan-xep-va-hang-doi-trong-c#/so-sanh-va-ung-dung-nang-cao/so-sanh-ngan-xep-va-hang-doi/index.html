@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng so sánh ngăn xếp và hàng đợi</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .arow{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+  .aname{font:700 15px ui-monospace,Menlo,Consolas,monospace;padding-top:10px;min-width:44px}
+  .cells{display:flex;gap:0;flex-wrap:wrap}
+  .cw{display:flex;flex-direction:column;align-items:center}
+  .cell2{min-width:52px;height:44px;padding:0 8px;border:2px solid var(--node-line);margin-left:-2px;display:flex;align-items:center;justify-content:center;font:700 16px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .cw:first-child .cell2{margin-left:0;border-radius:8px 0 0 8px}.cw:last-child .cell2{border-radius:0 8px 8px 0}.cw:only-child .cell2{border-radius:8px}
+  .cell2.empty{border-style:dashed;background:transparent}
+  .cell2.hi{background:var(--cur);border-color:var(--cur-bar);position:relative;z-index:1}
+  .ix{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:4px}
+
+  .cell2{min-width:34px;height:38px;padding:0 4px;font-size:14px}
+  .g2row .cell2{width:34px;min-width:34px}.ch{width:34px}
+  .ix{font-size:11px}
+  .cell2.donec{background:var(--true-soft);border-color:var(--true)}
+  .cell2.donec.hi{background:var(--cur);border-color:var(--cur-bar)}
+
+  .cell2.dimc{opacity:.3}
+  .var strong{font-size:18px}
+  .cell2{min-width:36px}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>So sánh ngăn xếp và hàng đợi</h1>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
+  <p class="lead">Cùng dữ liệu, hai cách lấy ra khác nhau. Bấm <b>Bước tiếp</b> để cả hai cùng chạy một bước.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="so" aria-selected="true">Dãy số</button><button class="tab" role="tab" data-ex="chu" aria-selected="false">Dãy chữ cái</button></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="pair"><div class="card"><p class="panel-title" id="t0"></p><p class="sub" id="s0"></p><div class="code" id="code0"></div><div class="mini" id="msg0"></div><div id="mem0" style="margin:10px 0"></div><div class="console" id="con0" style="white-space:pre"></div></div><div class="card"><p class="panel-title" id="t1"></p><p class="sub" id="s1"></p><div class="code" id="code1"></div><div class="mini" id="msg1"></div><div id="mem1" style="margin:10px 0"></div><div class="console" id="con1" style="white-space:pre"></div></div></div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|bool|double|string|const|new|for|foreach|in|if|else|switch|case|break|default|while|do|return|var|true|false|null)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, setOut:function(a){ outs = a.slice(); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  function CH(a,hiIdx){return a.map(function(v,i){return {v:v,hi:hiIdx.indexOf(i)>=0};});}
+var LREV=['var stack = new Stack<char>();','foreach (char c in s)','    stack.Push(c);','string kq = "";','while (stack.Count > 0)','    kq += stack.Pop();'];
+function REV(){
+ return {inputs:[{id:'s',label:'chuỗi',def:'Hello',text:'^[A-Za-z0-9#]{1,8}$',msg:'Hãy nhập chuỗi 1 đến 8 ký tự (chữ cái, chữ số hoặc #)',w:120}],chips:['Hello','Stack','C#'],
+  intro:'Đẩy từng ký tự vào ngăn xếp rồi lấy ra: chuỗi bị đảo ngược. Nhập chuỗi rồi bấm "Bước tiếp".',
+  lines:function(){return LREV;},
+  run:function(c,P){
+   var s=P.s.split(''),st=[],kq=[],i;
+   var A=function(hs,ht,hk){return [{name:'chuỗi s',cells:CH(s,hs)},{name:'ngăn xếp (đỉnh ở bên phải)',cells:st.length?CH(st,ht):[{v:null}],noIdx:!st.length},{name:'kq',cells:kq.length?CH(kq,hk):[{v:null}],noIdx:!kq.length}];};
+   c.snap({ln:0,title:'Tạo ngăn xếp',body:'Ngăn xếp rỗng. Chuỗi s có '+s.length+' ký tự.',arrs:A([],[],[]),vars:[['Count',0]]});
+   for(i=0;i<s.length;i++){ st.push(s[i]); c.snap({ln:2,title:'Push \''+s[i]+'\'',body:'Đẩy \''+s[i]+'\' lên đỉnh ngăn xếp. Ký tự đến sau nằm trên ký tự đến trước.',arrs:A([i],[st.length-1],[]),vars:[['ký tự',s[i]],['Count',st.length]]}); }
+   c.snap({ln:3,title:'Đã đẩy hết',body:'Mọi ký tự đã nằm trong ngăn xếp. Ký tự cuối cùng của chuỗi đang ở đỉnh.',arrs:A([],[st.length-1],[]),vars:[['Count',st.length]]});
+   while(st.length){ var x=st.pop(); kq.push(x); c.snap({ln:5,title:'Pop → \''+x+'\'',body:'Lấy \''+x+'\' ở đỉnh ra và nối vào kq. Ký tự vào sau được lấy ra trước.',arrs:A([],st.length?[st.length-1]:[],[kq.length-1]),vars:[['vừa lấy ra',x],['Count',st.length]]}); }
+   c.out(kq.join(''));
+   c.snap({ln:5,title:'Xong',body:'Ngăn xếp rỗng. kq = "'+kq.join('')+'".',note:'"'+P.s+'" đảo ngược thành "'+kq.join('')+'" vì ngăn xếp trả phần tử theo thứ tự ngược với lúc đẩy vào.',arrs:A([],[],[]),vars:[['kq',kq.join('')]]});
+  }};
+}
+var LBIN=['var stack = new Stack<int>();','while (n > 0)','{','    stack.Push(n % 2);','    n = n / 2;','}','string nhiPhan = "";','while (stack.Count > 0)','    nhiPhan += stack.Pop();'];
+function BIN2(){
+ return {inputs:[{id:'n',label:'n',def:13,min:1,max:99}],chips:[6,13,37],
+  intro:'Chia n cho 2 liên tục, phần dư đẩy vào ngăn xếp, rồi lấy ra để được số nhị phân. Đổi n rồi bấm "Bước tiếp".',
+  lines:function(){return LBIN;},
+  run:function(c,P){
+   var n=P.n,st=[],kq=[],n0=n;
+   var A=function(ht,hk){return [{name:'ngăn xếp (đỉnh ở bên phải)',cells:st.length?CH(st,ht):[{v:null}],noIdx:!st.length},{name:'nhiPhan',cells:kq.length?CH(kq,hk):[{v:null}],noIdx:!kq.length}];};
+   c.snap({ln:0,title:'Tạo ngăn xếp',body:'Cần đổi n = '+n+' sang nhị phân.',arrs:A([],[]),vars:[['n',n]]});
+   while(n>0){ var r=n%2,q=Math.floor(n/2); st.push(r);
+    c.snap({ln:3,title:n+' % 2 = '+r,body:n+' chia 2 được thương '+q+', dư '+r+'. Đẩy '+r+' vào ngăn xếp, rồi n = '+q+'.',arrs:A([st.length-1],[]),vars:[['n',n],['dư',r],['n mới',q]]}); n=q; }
+   c.snap({ln:5,title:'n = 0, dừng chia',body:'Đã chia hết. Dư đầu tiên nằm dưới đáy, dư cuối cùng nằm ở đỉnh.',arrs:A([st.length-1],[]),vars:[['Count',st.length]]});
+   while(st.length){ var x=st.pop(); kq.push(x); c.snap({ln:8,title:'Pop → '+x,body:'Lấy '+x+' ở đỉnh ra, nối vào nhiPhan. Dư tính sau được đọc trước.',arrs:A(st.length?[st.length-1]:[],[kq.length-1]),vars:[['vừa lấy ra',x],['nhiPhan',kq.join('')]]}); }
+   c.out(kq.join(''));
+   c.snap({ln:8,title:'Xong',body:n0+' = '+kq.join('')+' (hệ nhị phân).',note:'Các số dư tính ra theo thứ tự từ bit thấp lên bit cao, nhưng khi viết phải đọc từ bit cao xuống. Ngăn xếp tự đảo thứ tự đúng như cần.',arrs:A([],[]),vars:[['nhiPhan',kq.join('')]]});
+  }};
+}
+function SQ(kind,ops,lines,lnIn,lnOut,info){
+ var stack=kind==='stack';
+ return {inputs:[],chips:[],intro:info.intro,lines:function(){return lines;},
+  run:function(c){
+   var q=[],i;
+   var V=function(extra){return [['Count',q.length],[stack?'đỉnh':'đầu',q.length?q[stack?q.length-1:0]:'trống']].concat(extra||[]);};
+   var A=function(h){return [{name:info.name,cells:q.length?CH(q,h):[{v:null}],noIdx:!q.length}];};
+   var X=function(){return info.extra?info.extra(q):[];};
+   c.snap({ln:0,title:'Bắt đầu',body:info.start,arrs:A([]),vars:V(X())});
+   for(i=0;i<ops.length;i++){ var o=ops[i];
+    if(o.op==='in'){ q.push(o.v); c.snap({ln:lnIn,title:o.title,body:o.body,arrs:A([q.length-1]),vars:V(X())}); }
+    else { var t=stack?q.length-1:0, x=q[t]; q.splice(t,1); if(info.out) c.out(info.out(x)); c.snap({ln:lnOut,title:o.title,body:o.body.replace('@',x),arrs:A([]),vars:[['vừa lấy ra',x]].concat(V(X()))}); }
+   }
+   c.snap({ln:lnOut,title:'Xong',body:info.end,note:info.note,arrs:A([]),vars:V(X())});
+  }};
+}
+function UNDO(){
+ var L=['void ThucHien(string thaoTac)','{','    lichSu.Push(thaoTac);','}','void Undo()','{','    if (lichSu.Count > 0)','        lichSu.Pop();','}'];
+ var ops=[{op:'in',v:'Xin',title:'Gõ "Xin"',body:'Mỗi thao tác được Push vào lịch sử. Văn bản: "Xin".'},{op:'in',v:' chào',title:'Gõ " chào"',body:'Push thao tác " chào" lên trên.'},{op:'in',v:' bạn',title:'Gõ " bạn"',body:'Push thao tác " bạn". Đây là thao tác gần nhất, đang ở đỉnh.'},
+  {op:'out',title:'Undo',body:'Pop lấy thao tác ở đỉnh ("@") ra và hoàn tác nó: thao tác gần nhất bị bỏ trước.'},{op:'out',title:'Undo',body:'Pop tiếp: hoàn tác "@".'},{op:'in',v:' em',title:'Gõ " em"',body:'Thao tác mới được Push lên đỉnh.'},{op:'out',title:'Undo',body:'Pop lấy " em" ra: hoàn tác thao tác vừa gõ.'}];
+ return SQ('stack',ops,L,2,7,{name:'lịch sử thao tác (đỉnh ở bên phải)',intro:'Mỗi lần gõ chữ là một thao tác được đẩy vào ngăn xếp; Undo lấy thao tác trên cùng ra. Bấm "Bước tiếp".',start:'Lịch sử đang rỗng. Văn bản trống.',extra:function(q){return [['văn bản','"'+q.join('')+'"']];},end:'Văn bản còn lại: phần các thao tác chưa bị hoàn tác.',note:'Undo luôn hoàn tác thao tác gần nhất trước tiên. Đó chính là tính chất vào sau ra trước (LIFO) của ngăn xếp.'});
+}
+function BACK(){
+ var L=['void DiDen(string trang)','{','    lichSu.Push(trang);','}','void Back()','{','    lichSu.Pop();    // bỏ trang hiện tại','}'];
+ var ops=[{op:'in',v:'Trang chủ',title:'Mở Trang chủ',body:'Trang đang xem được Push vào lịch sử.'},{op:'in',v:'Tin tức',title:'Mở Tin tức',body:'Push "Tin tức". Trang đang xem luôn nằm ở đỉnh.'},{op:'in',v:'Bài viết',title:'Mở Bài viết',body:'Push "Bài viết". Lịch sử nhớ cả đường đi: Trang chủ → Tin tức → Bài viết.'},
+  {op:'out',title:'Bấm Back',body:'Pop bỏ trang đang xem ("@"). Trang ngay bên dưới trở thành đỉnh, tức là trang đang xem.'},{op:'out',title:'Bấm Back',body:'Pop bỏ "@". Quay về trang trước đó nữa.'},{op:'in',v:'Liên hệ',title:'Mở Liên hệ',body:'Từ Trang chủ mở một trang mới: Push "Liên hệ".'}];
+ return SQ('stack',ops,L,2,6,{name:'lịch sử trang (đỉnh ở bên phải)',intro:'Trình duyệt giữ các trang đã mở trong một ngăn xếp; nút Back lấy trang trên cùng ra. Bấm "Bước tiếp".',start:'Chưa mở trang nào.',extra:function(q){return [['đang xem',q.length?q[q.length-1]:'(không có)']];},end:'Đang xem trang nằm ở đỉnh ngăn xếp.',note:'Back quay lại trang mở gần nhất trước đó: nhờ ngăn xếp nhớ đúng thứ tự ngược lại của đường đi.'});
+}
+function PRINTQ(){
+ var L=['void NopLenh(string tenFile)','{','    hangDoi.Enqueue(tenFile);','}','void InTiepTheo()','{','    string file = hangDoi.Dequeue();','    Console.WriteLine("Đã in: " + file);','}'];
+ var ops=[{op:'in',v:'bao-cao.pdf',title:'Nộp bao-cao.pdf',body:'Lệnh in mới được Enqueue vào cuối hàng đợi.'},{op:'in',v:'hoa-don.docx',title:'Nộp hoa-don.docx',body:'Enqueue vào cuối hàng, sau bao-cao.pdf.'},{op:'in',v:'anh.png',title:'Nộp anh.png',body:'Enqueue vào cuối hàng.'},
+  {op:'out',title:'Máy in nhận lệnh',body:'Dequeue lấy file đứng đầu hàng ("@") ra để in: file nộp trước được in trước.'},{op:'in',v:'thu.txt',title:'Nộp thu.txt',body:'Lệnh nộp muộn hơn vẫn phải xếp ở cuối hàng.'},{op:'out',title:'Máy in nhận lệnh',body:'In "@", file đứng đầu hàng.'},{op:'out',title:'Máy in nhận lệnh',body:'In "@".'},{op:'out',title:'Máy in nhận lệnh',body:'In "@", file cuối cùng.'}];
+ return SQ('queue',ops,L,2,6,{name:'hàng đợi in (đầu hàng ở bên trái)',intro:'Các lệnh in xếp thành hàng đợi: nộp trước được in trước. Bấm "Bước tiếp".',start:'Hàng đợi in đang rỗng.',out:function(x){return 'Đã in: '+x;},end:'Tất cả lệnh đã được in, đúng thứ tự nộp.',note:'Thứ tự in giống hệt thứ tự nộp: bao-cao.pdf, hoa-don.docx, anh.png, thu.txt. Đó là tính chất vào trước ra trước (FIFO) của hàng đợi.'});
+}
+function CUSTQ(){
+ var L=['void KhachDen(string ten)','{','    hangDoi.Enqueue(ten);','}','void PhucVuTiepTheo()','{','    string khach = hangDoi.Dequeue();','    Console.WriteLine("Phục vụ: " + khach);','}'];
+ var ops=[{op:'in',v:'Khách 1',title:'Khách 1 đến',body:'Khách mới xếp vào cuối hàng đợi.'},{op:'in',v:'Khách 2',title:'Khách 2 đến',body:'Xếp sau Khách 1.'},{op:'in',v:'Khách 3',title:'Khách 3 đến',body:'Xếp sau Khách 2.'},
+  {op:'out',title:'Quầy gọi khách',body:'Dequeue gọi khách đứng đầu hàng: "@". Khách đến trước được phục vụ trước.'},{op:'in',v:'Khách 4',title:'Khách 4 đến',body:'Khách mới luôn xếp ở cuối hàng.'},{op:'out',title:'Quầy gọi khách',body:'Phục vụ "@".'},{op:'out',title:'Quầy gọi khách',body:'Phục vụ "@".'},{op:'out',title:'Quầy gọi khách',body:'Phục vụ "@".'}];
+ return SQ('queue',ops,L,2,6,{name:'hàng đợi khách (đầu hàng ở bên trái)',intro:'Khách xếp hàng chờ quầy phục vụ: đến trước được phục vụ trước. Bấm "Bước tiếp".',start:'Chưa có khách nào xếp hàng.',out:function(x){return 'Phục vụ: '+x;},end:'Tất cả khách đã được phục vụ theo đúng thứ tự đến.',note:'Khách 4 đến muộn nên xếp ở cuối hàng và được phục vụ sau Khách 2 và Khách 3. Hàng đợi đảm bảo công bằng: vào trước ra trước.'});
+}
+function SQCOLS(items){
+ var n=items.length;
+ var stackCol={title:'Ngăn xếp (Stack)',sub:'Vào sau ra trước (LIFO).',lines:['var ds = new Stack<string>();'].concat(items.map(function(v){return 'ds.Push("'+v+'");';}),['while (ds.Count > 0)','    Console.WriteLine(ds.Pop());']),
+  run:function(c){var st=[],i;
+   c.snap({ln:0,title:'Tạo ngăn xếp',body:'Ngăn xếp rỗng.',arrs:[{name:'Stack (đỉnh ở bên phải)',cells:[{v:null}],noIdx:true}],vars:[['Count',0]]});
+   for(i=0;i<n;i++){st.push(items[i]);c.snap({ln:1+i,title:'Push '+items[i],body:'Đặt '+items[i]+' lên đỉnh.',arrs:[{name:'Stack (đỉnh ở bên phải)',cells:CH(st,[st.length-1])}],vars:[['Count',st.length]]});}
+   while(st.length){var x=st.pop();c.out(x);c.snap({ln:n+2,title:'Pop → '+x,body:'Lấy '+x+' ở đỉnh ra: phần tử vào sau nhất.',arrs:[{name:'Stack (đỉnh ở bên phải)',cells:st.length?CH(st,[st.length-1]):[{v:null}],noIdx:!st.length}],vars:[['vừa lấy ra',x],['Count',st.length]]});}
+  }};
+ var queueCol={title:'Hàng đợi (Queue)',sub:'Vào trước ra trước (FIFO).',lines:['var ds = new Queue<string>();'].concat(items.map(function(v){return 'ds.Enqueue("'+v+'");';}),['while (ds.Count > 0)','    Console.WriteLine(ds.Dequeue());']),
+  run:function(c){var q=[],i;
+   c.snap({ln:0,title:'Tạo hàng đợi',body:'Hàng đợi rỗng.',arrs:[{name:'Queue (đầu hàng ở bên trái)',cells:[{v:null}],noIdx:true}],vars:[['Count',0]]});
+   for(i=0;i<n;i++){q.push(items[i]);c.snap({ln:1+i,title:'Enqueue '+items[i],body:'Xếp '+items[i]+' vào cuối hàng.',arrs:[{name:'Queue (đầu hàng ở bên trái)',cells:CH(q,[q.length-1])}],vars:[['Count',q.length]]});}
+   while(q.length){var x=q.shift();c.out(x);c.snap({ln:n+2,title:'Dequeue → '+x,body:'Lấy '+x+' ở đầu hàng ra: phần tử vào sớm nhất.',arrs:[{name:'Queue (đầu hàng ở bên trái)',cells:q.length?CH(q,[0]):[{v:null}],noIdx:!q.length}],vars:[['vừa lấy ra',x],['Count',q.length]]});}
+  }};
+ return {intro:'Cùng đưa '+items.join(', ')+' vào hai cấu trúc rồi lấy ra hết. Bấm "Bước tiếp" để cả hai cùng chạy một bước.',running:'Cùng dữ liệu, cùng thứ tự đưa vào, nhưng thứ tự lấy ra khác nhau.',
+  done:'Ngăn xếp lấy ra: '+items.slice().reverse().join(', ')+' (đảo ngược). Hàng đợi lấy ra: '+items.join(', ')+' (giữ nguyên thứ tự).',cols:[stackCol,queueCol]};
+}
+
+  var EX = {so:SQCOLS(['1','2','3','4']),chu:SQCOLS(['A','B','C','D','E'])};
+  var ex, P = {}, step = 0, snaps = [], timer = null, valid = true;
+  var snapsC = [[],[]];
+  function build(){ snapsC = ex.cols.map(function(col){ var c = mk(); col.run(c); return c.snaps; }); }
+  function arrHtml(a){
+    var h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="cells">';
+    a.cells.forEach(function(c, i){
+      var cls = 'cell2' + (c.v === undefined || c.v === null ? ' empty' : '') + (c.hi ? ' hi' : '') + (c.done ? ' donec' : '');
+      h += '<div class="cw"><div class="' + cls + '">' + (c.v === undefined || c.v === null ? '' : esc(c.v)) + '</div><div class="ix">' + i + '</div></div>';
+    });
+    return h + '</div></div>';
+  }
+  function total(){ return Math.max.apply(null, snapsC.map(function(s){ return s.length; })); }
+  function render(){
+    ex.cols.forEach(function(col, k){
+      var L = snapsC[k], j = Math.min(step, L.length), sn = j > 0 ? L[j - 1] : null;
+      $('t' + k).textContent = col.title; $('s' + k).textContent = col.sub;
+      $('code' + k).innerHTML = col.lines.map(function(l, i){ return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>'; }).join('');
+      $('msg' + k).innerHTML = sn ? '<b>' + esc(sn.title) + '</b>' + esc(sn.body) : '<b>Chưa chạy</b>Bấm "Bước tiếp" để bắt đầu.';
+      var arrs = sn && sn.arrs ? sn.arrs : [], vs = sn && sn.vars ? sn.vars : [];
+      $('mem' + k).innerHTML = arrs.map(arrHtml).join('') + (vs.length ? '<div class="vars">' + vs.map(function(v){ return '<div class="var"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('') + '</div>' : '');
+      $('con' + k).innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    });
+    var T = total(), fin = step >= T, nt = fin ? (ex.cols[1].lines.join('').indexOf('a[i] =') >= 0 ? '' : '') : '';
+    $('status').innerHTML = step === 0 ? '<b>Sẵn sàng</b>' + esc(ex.intro) : (fin ? '<b>Hoàn tất</b>' + esc(ex.done || 'Xem kết quả các cột.') : '<b>Đang chạy</b>' + esc(ex.running || 'Quan sát các cột.'));
+    if (fin && snapsC[1].length && snapsC[1][snapsC[1].length-1].note) $('status').innerHTML += '<span class="note">' + esc(snapsC[1][snapsC[1].length-1].note) + '</span>';
+    var running = timer !== null;
+    $('next').disabled = step >= T || running; $('all').disabled = running; $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; build(); render(); }
+  function loadExample(k){
+    ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    reset();
+  }
+  $('next').addEventListener('click', function(){ if (step < total()) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (step >= total()) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= total()) { step = total(); stop(); } render(); }, 400);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('so');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>

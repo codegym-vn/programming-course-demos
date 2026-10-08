@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng độ phức tạp Insertion Sort</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .arow{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+  .aname{font:700 15px ui-monospace,Menlo,Consolas,monospace;padding-top:10px;min-width:44px}
+  .cells{display:flex;gap:0;flex-wrap:wrap}
+  .cw{display:flex;flex-direction:column;align-items:center}
+  .cell2{min-width:52px;height:44px;padding:0 8px;border:2px solid var(--node-line);margin-left:-2px;display:flex;align-items:center;justify-content:center;font:700 16px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .cw:first-child .cell2{margin-left:0;border-radius:8px 0 0 8px}.cw:last-child .cell2{border-radius:0 8px 8px 0}.cw:only-child .cell2{border-radius:8px}
+  .cell2.empty{border-style:dashed;background:transparent}
+  .cell2.hi{background:var(--cur);border-color:var(--cur-bar);position:relative;z-index:1}
+  .ix{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:4px}
+
+  .g2{display:inline-block}.g2row{display:flex;align-items:center}
+  .rl{width:22px;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);text-align:right;padding-right:8px}
+  .ch{width:52px;margin-left:-2px;text-align:center;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding-bottom:4px}
+  .g2row .ch:nth-child(2){margin-left:0}
+  .g2row .cell2{border-radius:0;width:52px;min-width:52px}
+  .g2row .rl+.cell2{margin-left:0}
+  .g2row+.g2row .cell2{margin-top:-2px}
+  .g2row:first-child+.g2row .cell2{margin-top:0}
+
+  .cell2{min-width:34px;height:38px;padding:0 4px;font-size:14px}
+  .g2row .cell2{width:34px;min-width:34px}.ch{width:34px}
+  .ix{font-size:11px}
+  .cell2.donec{background:var(--true-soft);border-color:var(--true)}
+  .cell2.donec.hi{background:var(--cur);border-color:var(--cur-bar)}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Độ phức tạp của Insertion Sort</h1>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
+  <p class="lead">Đổi n và loại mảng để đếm số lần so sánh. Bấm <b>Bước tiếp</b> để chạy từng lượt.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="daxep" aria-selected="true">Đã sắp xếp</button><button class="tab" role="tab" data-ex="ngau" aria-selected="false">Ngẫu nhiên</button><button class="tab" role="tab" data-ex="dao" aria-selected="false">Đảo ngược</button></div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    <span id="chips"></span>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Mã nguồn C#</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console" id="console" style="white-space:pre"></div></div>
+    </div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Bộ nhớ</p><div id="mem"></div></div>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|bool|double|string|const|new|for|foreach|in|if|else|switch|case|break|default|while|do|return|var|true|false|null)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, setOut:function(a){ outs = a.slice(); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  var SLN={
+bubble:['for (int i = 0; i < n - 1; i++)','{','    bool daDoi = false;','    for (int j = 0; j < n - 1 - i; j++)','    {','        if (a[j] > a[j + 1])','        {','            int tam = a[j]; a[j] = a[j + 1]; a[j + 1] = tam;','            daDoi = true;','        }','    }','    if (!daDoi) break;','}'],
+selection:['for (int i = 0; i < n - 1; i++)','{','    int min = i;','    for (int j = i + 1; j < n; j++)','        if (a[j] < a[min]) min = j;','    if (min != i)','    {','        int tam = a[i]; a[i] = a[min]; a[min] = tam;','    }','}'],
+insertion:['for (int i = 1; i < n; i++)','{','    int key = a[i];','    int j = i - 1;','    while (j >= 0 && a[j] > key)','    {','        a[j + 1] = a[j];','        j--;','    }','    a[j + 1] = key;','}']
+};
+function SORT(alg,A0,c,o){
+ o=o||{}; var g=o.grain||'detail', K=o.key||function(v){return v;};
+ var cm=g!=='pass', det=g==='detail';
+ var a=A0.slice(), n=a.length, cmp=0, swp=0, done=[], i, j;
+ var sw=alg==='insertion'?'dịch chỗ':'đổi chỗ';
+ var all=function(){done=[];for(var k=0;k<n;k++)done.push(k);};
+ var cells=function(hi,hole){return [{name:'a',cells:a.map(function(v,k){return {v:k===hole?null:v,hi:hi.indexOf(k)>=0,done:done.indexOf(k)>=0&&k!==hole};})}];};
+ var S=function(ln,t,b,hi,x,hole,note){c.snap({ln:ln,title:t,body:b,note:note,arrs:cells(hi||[],hole===undefined?-1:hole),vars:[['so sánh',cmp],[sw,swp]].concat(x||[])});};
+ var last=SLN[alg].length-1;
+ S(0,'Bắt đầu','Mảng a có '+n+' phần tử.',[]);
+ if(alg==='bubble'){
+  for(i=0;i<n-1;i++){
+   var c0=cmp,s0=swp,daDoi=false;
+   for(j=0;j<n-1-i;j++){
+    cmp++; var big=K(a[j])>K(a[j+1]);
+    if(cm) S(5,'So sánh a['+j+'] và a['+(j+1)+']',a[j]+' > '+a[j+1]+' là '+(big?'đúng. Sai thứ tự nên đổi chỗ.':'sai. Đúng thứ tự nên giữ nguyên.'),[j,j+1],[['lượt',i+1],['j',j]]);
+    if(big){ var t=a[j];a[j]=a[j+1];a[j+1]=t; swp++; daDoi=true;
+     if(cm) S(7,'Đổi chỗ a['+j+'] và a['+(j+1)+']','Sau khi đổi: a['+j+'] = '+a[j]+', a['+(j+1)+'] = '+a[j+1]+'.',[j,j+1],[['lượt',i+1],['j',j]]); }
+   }
+   done.push(n-1-i);
+   if(det) S(11,'Hết lượt '+(i+1),'Phần tử '+a[n-1-i]+' đã về đúng chỗ ở cuối. '+(daDoi?'Có đổi chỗ nên tiếp tục lượt sau.':'Lượt này không đổi chỗ lần nào: mảng đã sắp xếp, dừng sớm.'),[],[['lượt',i+1]]);
+   if(g==='pass') S(11,'Lượt '+(i+1),'Lượt '+(i+1)+': '+(cmp-c0)+' lần so sánh, '+(swp-s0)+' lần đổi chỗ.'+(daDoi?'':' Không đổi chỗ lần nào nên dừng sớm.'),[],[['lượt',i+1]]);
+   if(!daDoi) break;
+  }
+ } else if(alg==='selection'){
+  for(i=0;i<n-1;i++){
+   var c1=cmp,s1=swp,min=i;
+   if(det) S(2,'Lượt '+(i+1)+': giả sử min = '+i,'Giả sử phần tử nhỏ nhất là a['+i+'] = '+a[i]+'. Quét phần chưa sắp xếp để tìm phần tử nhỏ hơn.',[i],[['i',i],['min',min]]);
+   for(j=i+1;j<n;j++){
+    cmp++; var sm=K(a[j])<K(a[min]);
+    if(cm) S(4,'So sánh a['+j+'] với a['+min+']',a[j]+' < '+a[min]+' là '+(sm?'đúng. Cập nhật min = '+j+'.':'sai. Giữ nguyên min.'),[j,min],[['i',i],['j',j],['min',sm?j:min]]);
+    if(sm) min=j;
+   }
+   if(min!==i){ var t2=a[i];a[i]=a[min];a[min]=t2; swp++; done.push(i);
+    if(cm) S(7,'Đổi chỗ a['+i+'] và a['+min+']','Đưa '+a[i]+' về vị trí '+i+'. Phần a[0..'+i+'] đã đúng chỗ.',[i,min],[['i',i],['min',min]]); }
+   else { done.push(i); if(det) S(5,'min = i, không đổi chỗ','Phần tử nhỏ nhất đã nằm đúng vị trí '+i+' nên không cần đổi chỗ.',[i],[['i',i],['min',min]]); }
+   if(g==='pass') S(9,'Lượt '+(i+1),'Lượt '+(i+1)+': '+(cmp-c1)+' lần so sánh, '+(swp-s1)+' lần đổi chỗ.',[],[['i',i]]);
+  }
+ } else {
+  done=[0];
+  for(i=1;i<n;i++){
+   var c2=cmp,s2=swp,key=a[i],hole=i; j=i-1;
+   done=[];for(var q=0;q<=i;q++)done.push(q);
+   if(det) S(2,'Lấy key = a['+i+']','Lấy '+key+' ra khỏi ô '+i+' (ô trống). Phần bên trái đã sắp xếp; tìm chỗ chèn cho '+key+'.',[],[['i',i],['key',key]],hole);
+   while(j>=0){
+    cmp++; var gt=K(a[j])>K(key);
+    if(cm) S(4,'So sánh a['+j+'] với key',a[j]+' > '+key+' là '+(gt?'đúng. Dịch '+a[j]+' sang phải.':'sai. Đã tìm được chỗ chèn.'),[j],[['i',i],['j',j],['key',key]],hole);
+    if(!gt) break;
+    a[j+1]=a[j]; swp++; hole=j; j--;
+    if(cm) S(6,'Dịch '+a[hole+1]+' sang phải','Giá trị '+a[hole+1]+' chuyển từ ô '+hole+' sang ô '+(hole+1)+'. Ô '+hole+' giờ trống.',[hole+1],[['i',i],['j',j],['key',key]],hole);
+   }
+   a[hole]=key;
+   if(cm) S(9,'Chèn key vào a['+hole+']','Đặt '+key+' vào ô '+hole+'. Phần a[0..'+i+'] đã sắp xếp.',[hole],[['i',i],['key',key]]);
+   if(g==='pass') S(9,'Chèn a['+i+']','Chèn '+key+': '+(cmp-c2)+' lần so sánh, '+(swp-s2)+' lần dịch chỗ.',[hole],[['i',i]]);
+  }
+ }
+ all();
+ S(last,'Hoàn tất','Mảng đã sắp xếp. Tổng cộng '+cmp+' lần so sánh và '+swp+' lần '+sw+'.',[],o.vars?o.vars(cmp,swp,n):[],-1,o.final?o.final(cmp,swp,n):'');
+ return {cmp:cmp,swp:swp,arr:a};
+}
+function COUNTS(alg,A,key){ return SORT(alg,A,{snap:function(){}},{grain:'pass',key:key}); }
+function SHUF(n){ var a=[],s=n*7919+13,k; for(k=1;k<=n;k++)a.push(k); for(k=n-1;k>0;k--){ s=(s*1103515245+12345)%2147483648; var r=s%(k+1),t=a[k];a[k]=a[r];a[r]=t; }
+ var srt=true; for(k=1;k<n;k++) if(a[k]<a[k-1]) srt=false; if(srt){var t2=a[0];a[0]=a[1];a[1]=t2;} return a; }
+function CX(alg,kind){
+ var NAME={bubble:'Bubble Sort',selection:'Selection Sort',insertion:'Insertion Sort'}[alg];
+ var KIND={daxep:'mảng đã sắp xếp',ngau:'mảng ngẫu nhiên',dao:'mảng đảo ngược'}[kind];
+ var SP=' Về bộ nhớ: chỉ dùng thêm vài biến (i, j, tam...), nên không gian là O(1).';
+ var F=function(cmp,swp,n){
+  var full=n*(n-1)/2;
+  if(alg==='bubble'){
+   if(kind==='daxep') return 'Chỉ 1 lượt: '+cmp+' = n − 1 lần so sánh, không đổi chỗ nhờ dừng sớm. Trường hợp tốt nhất: O(n).'+SP;
+   if(kind==='dao') return cmp+' = n(n−1)/2 lần so sánh và '+swp+' lần đổi chỗ. Trường hợp xấu nhất: O(n²). Thử tăng n gấp đôi: số so sánh tăng khoảng 4 lần.'+SP;
+   return cmp+' lần so sánh, '+swp+' lần đổi chỗ: nằm giữa trường hợp tốt nhất (n − 1) và xấu nhất (n(n−1)/2). Trung bình vẫn là O(n²).'+SP;
+  }
+  if(alg==='selection') return 'Dù là '+KIND+', luôn so sánh n(n−1)/2 = '+full+' lần. Số lần đổi chỗ chỉ là '+swp+' (tối đa n − 1). Cả ba trường hợp đều O(n²).'+SP;
+  if(kind==='daxep') return 'Mỗi phần tử chỉ so sánh 1 lần: '+cmp+' = n − 1, không dịch chỗ. Trường hợp tốt nhất: O(n).'+SP;
+  if(kind==='dao') return cmp+' = n(n−1)/2 lần so sánh và '+swp+' lần dịch chỗ. Trường hợp xấu nhất: O(n²). Thử tăng n gấp đôi: số so sánh tăng khoảng 4 lần.'+SP;
+  return cmp+' lần so sánh, '+swp+' lần dịch chỗ: nằm giữa n − 1 và n(n−1)/2. Trung bình vẫn là O(n²).'+SP;
+ };
+ return {
+  inputs:[{id:'n',label:'n',def:8,min:3,max:12}], chips:[4,8,12],
+  intro:'Chạy '+NAME+' trên '+KIND+'. Mỗi bước là một lượt, đếm số lần so sánh và '+(alg==='insertion'?'dịch chỗ':'đổi chỗ')+'. Đổi n rồi bấm "Bước tiếp".',
+  lines:function(){return SLN[alg];},
+  run:function(c,P){
+   var n=P.n,A=[],k;
+   if(kind==='daxep'){for(k=1;k<=n;k++)A.push(k);} else if(kind==='dao'){for(k=n;k>=1;k--)A.push(k);} else A=SHUF(n);
+   SORT(alg,A,c,{grain:'pass',final:F,vars:function(cmp,swp,n){return [['n',n],['n(n−1)/2',n*(n-1)/2]];}});
+  }
+ };
+}
+function PR(alg,A){
+ var NAME={bubble:'Bubble Sort',selection:'Selection Sort',insertion:'Insertion Sort'}[alg];
+ return {inputs:[],chips:[],intro:'Mảng gồm '+A.length+' số. Bấm "Bước tiếp" để xem '+NAME+' chạy từng bước. Ô vàng là phần tử đang xét, ô xanh là phần đã đúng chỗ.',
+  lines:function(){return SLN[alg];},
+  run:function(c){SORT(alg,A,c,{grain:'detail',final:function(){return alg==='bubble'?'Mỗi lượt đưa một số lớn nhất còn lại về cuối mảng, giống bọt khí nổi lên mặt nước.':alg==='selection'?'Mỗi lượt chọn số nhỏ nhất còn lại và đưa về đầu phần chưa sắp xếp.':'Mỗi lần lấy một phần tử và chèn vào đúng chỗ trong phần đã sắp xếp, giống xếp bài trên tay.';}});}};
+}
+function CMP3(A,key){
+ return [['bubble','Bubble Sort','Đổi chỗ các cặp kề nhau.'],['selection','Selection Sort','Chọn số nhỏ nhất rồi đổi chỗ.'],['insertion','Insertion Sort','Chèn từng phần tử vào đúng chỗ.']].map(function(r){
+  return {title:r[1],sub:r[2],lines:SLN[r[0]],run:function(c){SORT(r[0],A,c,{grain:'cmp',key:key});}};
+ });
+}
+function STABLE(A){
+ var key=function(v){return parseInt(v,10);}; var out=[];
+ ['bubble','selection','insertion'].forEach(function(al){
+  var r=COUNTS(al,A,key).arr, grp=null;
+  A.forEach(function(v){ var kk=key(v); if(grp===null && A.filter(function(w){return key(w)===kk;}).length>1) grp=kk; });
+  var orig=A.filter(function(v){return key(v)===grp;}), fin=r.filter(function(v){return key(v)===grp;});
+  var same=orig.join()===fin.join();
+  out.push({alg:{bubble:'Bubble',selection:'Selection',insertion:'Insertion'}[al],same:same,fin:fin});
+ });
+ return out;
+}
+function STEX(A,intro){
+ var R=STABLE(A), orig=A.filter(function(v){return parseInt(v,10)===parseInt(R[0].fin[0],10);});
+ var txt='Thứ tự ban đầu của hai số giống nhau: '+orig.join(' rồi ')+'. '+R.map(function(r){return r.alg+': '+(r.same?'giữ nguyên thứ tự ('+r.fin.join(', ')+') nên ổn định':'đảo thành '+r.fin.join(', ')+' nên KHÔNG ổn định');}).join('. ')+'.';
+ return {intro:intro,running:'Quan sát hai phần tử giống số nhau (khác chữ cái): thuật toán nào làm chúng đổi thứ tự?',done:txt,cols:CMP3(A,function(v){return parseInt(v,10);})};
+}
+
+  var EX = {daxep:CX('insertion','daxep'),ngau:CX('insertion','ngau'),dao:CX('insertion','dao')};
+  var ex, P = {}, step = 0, snaps = [], timer = null, valid = true;
+  function build(){ var c = mk(); ex.run(c, P); snaps = c.snaps; }
+  function gridHtml(a){
+    var nc = a.rows[0].length, h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="g2"><div class="g2row"><div class="rl"></div>';
+    for (var j = 0; j < nc; j++) h += '<div class="ch">' + j + '</div>';
+    h += '</div>';
+    a.rows.forEach(function(r, i){
+      h += '<div class="g2row"><div class="rl">' + i + '</div>';
+      r.forEach(function(c){ h += '<div class="cell2' + (c.hi ? ' hi' : '') + (c.done ? ' donec' : '') + '">' + esc(c.v) + '</div>'; });
+      h += '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function arrHtml(a){
+    if (a.rows) return gridHtml(a);
+    var h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="cells">';
+    a.cells.forEach(function(c, i){
+      var cls = 'cell2' + (c.v === undefined || c.v === null ? ' empty' : '') + (c.hi ? ' hi' : '') + (c.done ? ' donec' : '');
+      h += '<div class="cw"><div class="' + cls + '">' + (c.v === undefined || c.v === null ? '' : esc(c.v)) + '</div>' + (a.noIdx ? '' : '<div class="ix">' + i + '</div>') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    $('code').innerHTML = ex.lines(P).map(function(l, i){
+      return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var t = sn ? sn.title : 'Sẵn sàng', b = sn ? sn.body : ex.intro, note = sn ? sn.note : '';
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    var arrs = sn && sn.arrs ? sn.arrs : [], vs = sn && sn.vars ? sn.vars : [];
+    $('mem').innerHTML = (arrs.length ? arrs.map(arrHtml).join('') : '') +
+      (vs.length ? '<div class="vars">' + vs.map(function(v){ return '<div class="var"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('') + '</div>' : '') +
+      (!arrs.length && !vs.length ? '<p class="cm" style="margin:0">Chưa có gì trong bộ nhớ.</p>' : '');
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= snaps.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var ok = true;
+    ex.inputs.forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good = /^\d{1,2}$/.test(s) && Number(s) >= i.min && Number(s) <= i.max;
+      if (good) P[i.id] = Number(s);
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    valid = ok;
+    $('err').textContent = ok ? '' : 'Hãy nhập số nguyên: ' + ex.inputs.map(function(i){ return i.label + ' từ ' + i.min + ' đến ' + i.max; }).join('; ') + '.';
+    reset();
+  }
+  function loadExample(k){
+    ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('fields').innerHTML = ex.inputs.map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" inputmode="numeric" autocomplete="off" style="width:70px" value="' + i.def + '"></div>';
+    }).join('');
+    ex.inputs.forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+    $('chips').innerHTML = (ex.chips || []).map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+    onInput();
+  }
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if (!b) return;
+    $('in_' + ex.inputs[0].id).value = b.dataset.v; onInput();
+  });
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 400);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('daxep');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
