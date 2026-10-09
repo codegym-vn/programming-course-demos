@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng các kiểu dữ liệu số trong C#</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 32px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input{width:80px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:4px 10px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:flex;align-items:center;gap:6px}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:18px;margin:-4px 0 8px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:64px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 8px;font-size:12.5px}
+  .legend span{padding:1px 8px;border-radius:999px;border:1px solid}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .l3{color:var(--p3);border-color:var(--p3);background:var(--p3s)}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+  .p{border-bottom:2px solid;border-radius:3px;padding:0 2px;transition:background .2s}
+  .p1{border-color:var(--p1)}.p2{border-color:var(--p2)}.p3{border-color:var(--p3)}
+  .p1.act{background:var(--p1s)}.p2.act{background:var(--p2s)}.p3.act{background:var(--p3s)}
+  .p.act{font-weight:700}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  svg{width:100%;height:auto;display:block;max-width:360px;margin:0 auto}
+  .nd rect,.nd polygon{fill:var(--node);stroke:var(--node-line);stroke-width:1.5;transition:all .25s}
+  .nd text{fill:var(--node-text);font:12px system-ui,sans-serif}
+  .nd text.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .nd.on rect,.nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.done rect,.nd.done polygon{stroke:var(--accent);stroke-width:2}
+  .ed{fill:none;stroke:var(--node-line);stroke-width:1.8;transition:all .25s}
+  .ed.done{stroke:var(--accent);stroke-width:2.6}
+  .elabel{font:600 11px system-ui,sans-serif}
+  .elabel.t{fill:var(--true)}.elabel.f{fill:var(--false)}
+  .vars{display:flex;gap:10px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:6px 14px;min-width:84px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 20px ui-monospace,Menlo,Consolas,monospace}
+  .var.na strong{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif;font-weight:500;line-height:30px;display:block}
+  .tbl{width:100%;border-collapse:collapse;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl .ph td{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:72px;
+    font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+
+  .cm{color:var(--muted);font-style:italic}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pair>*{min-width:0}
+  @media (max-width:820px){.pair{grid-template-columns:1fr}}
+  .mini{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:10px 0;min-height:60px;font-size:14px}
+  .mini b{display:block;font-size:12px;color:var(--accent)}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cnt div{background:var(--code-bg);border-radius:8px;padding:4px 12px;font-size:13px}
+  .cnt strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;margin-left:4px}
+  .sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+  .done-flag{color:var(--true);font-weight:600}
+
+  .arow{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+  .aname{font:700 15px ui-monospace,Menlo,Consolas,monospace;padding-top:10px;min-width:44px}
+  .cells{display:flex;gap:0;flex-wrap:wrap}
+  .cw{display:flex;flex-direction:column;align-items:center}
+  .cell2{min-width:52px;height:44px;padding:0 8px;border:2px solid var(--node-line);margin-left:-2px;display:flex;align-items:center;justify-content:center;font:700 16px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .cw:first-child .cell2{margin-left:0;border-radius:8px 0 0 8px}.cw:last-child .cell2{border-radius:0 8px 8px 0}.cw:only-child .cell2{border-radius:8px}
+  .cell2.empty{border-style:dashed;background:transparent}
+  .cell2.hi{background:var(--cur);border-color:var(--cur-bar);position:relative;z-index:1}
+  .ix{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:4px}
+
+  .g2{display:inline-block}.g2row{display:flex;align-items:center}
+  .rl{width:22px;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);text-align:right;padding-right:8px}
+  .ch{width:52px;margin-left:-2px;text-align:center;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding-bottom:4px}
+  .g2row .ch:nth-child(2){margin-left:0}
+  .g2row .cell2{border-radius:0;width:52px;min-width:52px}
+  .g2row .rl+.cell2{margin-left:0}
+  .g2row+.g2row .cell2{margin-top:-2px}
+  .g2row:first-child+.g2row .cell2{margin-top:0}
+
+  .cell2{min-width:34px;height:38px;padding:0 4px;font-size:14px}
+  .g2row .cell2{width:34px;min-width:34px}.ch{width:34px}
+  .ix{font-size:11px}
+  .cell2.donec{background:var(--true-soft);border-color:var(--true)}
+  .cell2.donec.hi{background:var(--cur);border-color:var(--cur-bar)}
+
+  .cell2.dimc{opacity:.3}
+  .var strong{font-size:18px}
+  .cell2{min-width:36px}
+
+  #full{position:absolute;right:20px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:20px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  header{position:relative}
+  @media (max-width:640px){#full{position:static;display:inline-block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Các kiểu dữ liệu số trong C#</h1>
+  <button id="full" type="button">⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
+  <p class="lead">Chọn một tình huống rồi bấm <b>Bước tiếp</b>.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-ex="kieu" aria-selected="true">int, long, double</button><button class="tab" role="tab" data-ex="tran" aria-selected="false">Tràn số int</button><button class="tab" role="tab" data-ex="chia" aria-selected="false">Chia nguyên và chia thực</button><button class="tab" role="tab" data-ex="sai" aria-selected="false">Sai số của double</button></div>
+    <div id="fields" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    <span id="chips"></span>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Mã nguồn C#</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console" id="console" style="white-space:pre"></div></div>
+    </div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Bộ nhớ</p><div id="mem"></div></div>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /(\$?"(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|long|char|bool|double|string|const|new|for|foreach|in|if|else|switch|case|break|default|while|do|return|var|true|false|null)\b|(\b\d+\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function mk(){
+    var snaps = [], outs = [], n = 0;
+    return {out:function(t){ outs.push(t); }, setOut:function(a){ outs = a.slice(); }, snaps:snaps,
+      snap:function(o){ o.outs = outs.slice(); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
+  }
+  function CC(a,hi,dn,dm){hi=hi||[];dn=dn||[];dm=dm||[];return a.map(function(v,i){return {v:v,hi:hi.indexOf(i)>=0,done:dn.indexOf(i)>=0,dim:dm.indexOf(i)>=0};});}
+function AR(name,a,hi,dn,dm){return {name:name,cells:a.length?CC(a,hi,dn,dm):[{v:null}],noIdx:!a.length};}
+function JN(a){return a.join(' × ');}
+/* 1. Khái niệm số học cơ bản */
+function KN(){
+ return {inputs:[{id:'a',label:'a',def:17,min:1,max:40},{id:'b',label:'b',def:5,min:1,max:40}],chips:[12,17,36],
+  intro:'Nhập a và b: xem a / b, a % b, a có chia hết cho b không và danh sách ước của a. Bấm "Bước tiếp".',
+  lines:function(P){return ['int a = '+P.a+', b = '+P.b+';','int thuong = a / b;','int du = a % b;','bool chiaHet = (a % b == 0);','for (int i = 1; i <= a; i++)','    if (a % i == 0)','        uoc.Add(i);','Console.WriteLine(string.Join(" ", uoc));'];},
+  run:function(c,P){
+   var a=P.a,b=P.b,q=Math.floor(a/b),r=a%b,u=[],i;
+   c.snap({ln:0,title:'Khai báo a và b',body:'a = '+a+', b = '+b+'.',vars:[['a',a],['b',b]]});
+   c.snap({ln:1,title:'Chia lấy thương',body:a+' / '+b+' = '+q+'. Với hai số nguyên, "/" chỉ lấy phần thương và bỏ phần lẻ.',vars:[['a',a],['b',b],['thuong',q]]});
+   c.snap({ln:2,title:'Chia lấy dư',body:a+' % '+b+' = '+r+'. Kiểm tra: '+b+' × '+q+' + '+r+' = '+a+'.',vars:[['thuong',q],['du',r]]});
+   c.snap({ln:3,title:'Có chia hết không?',body:r===0?'Dư bằng 0 nên '+a+' chia hết cho '+b+' ('+b+' là ước của '+a+').':'Dư là '+r+', khác 0 nên '+a+' không chia hết cho '+b+'.',vars:[['du',r],['chiaHet',r===0?'true':'false']]});
+   for(i=1;i<=a;i++){
+    if(a%i===0){u.push(i);c.snap({ln:6,title:'i = '+i+': '+a+' % '+i+' = 0',body:'Dư 0 nên '+i+' là ước của '+a+'. Thêm vào danh sách.',arrs:[AR('uoc',u,[u.length-1])],vars:[['i',i],['a % i',0]]});}
+    else c.snap({ln:5,title:'i = '+i+': '+a+' % '+i+' = '+(a%i),body:'Dư khác 0 nên '+i+' không là ước của '+a+'.',arrs:[AR('uoc',u)],vars:[['i',i],['a % i',a%i]]});
+   }
+   c.out(u.join(' '));
+   c.snap({ln:7,title:'Xong',body:a+' có '+u.length+' ước: '+u.join(', ')+'.',note:'Ước của a là số chia hết a. Luôn có 1 và chính a. Bội của a là kết quả của a nhân với một số nguyên.',arrs:[AR('uoc',u)],vars:[['thuong',q],['du',r],['chiaHet',r===0?'true':'false']]});
+  }};
+}
+/* 2. Kiểu dữ liệu số */
+function KT(kind){
+ var D={
+ kieu:{intro:'So sánh ba kiểu số hay dùng: int, long, double. Bấm "Bước tiếp".',lines:['int a = 2147483647;','long b = 9223372036854775807;','double c = 3.14;'],
+  run:function(c){
+   c.snap({ln:0,title:'Kiểu int',body:'int lưu số nguyên 32 bit, từ -2147483648 đến 2147483647.',vars:[['a','2147483647']]});
+   c.snap({ln:1,title:'Kiểu long',body:'long lưu số nguyên 64 bit, rộng hơn int rất nhiều.',vars:[['a','2147483647'],['b','9223372036854775807']]});
+   c.snap({ln:2,title:'Kiểu double',body:'double lưu số thực (có phần thập phân), nhưng chỉ gần đúng.',note:'Chọn int cho số nguyên thông thường, long khi số rất lớn, double khi cần phần thập phân.',vars:[['a','2147483647'],['b','9223372036854775807'],['c','3.14']]});
+  }},
+ tran:{intro:'Cộng 1 vào giá trị lớn nhất của int và xem điều gì xảy ra. Bấm "Bước tiếp".',lines:['int x = int.MaxValue;','x = x + 1;','Console.WriteLine(x);','long y = 2147483647;','y = y + 1;','Console.WriteLine(y);'],
+  run:function(c){
+   c.snap({ln:0,title:'x là số int lớn nhất',body:'int.MaxValue = 2147483647.',vars:[['x','2147483647']]});
+   c.snap({ln:1,title:'x + 1 vượt giới hạn',body:'Kết quả vượt quá khả năng lưu của int nên giá trị quay vòng sang số âm nhỏ nhất.',vars:[['x','-2147483648']]});
+   c.out('-2147483648');
+   c.snap({ln:2,title:'In x',body:'x không phải 2147483648 mà là -2147483648. C# không báo lỗi, đây là tràn số.',vars:[['x','-2147483648']]});
+   c.snap({ln:3,title:'y là long',body:'Cùng giá trị 2147483647 nhưng lưu trong long (64 bit).',vars:[['x','-2147483648'],['y','2147483647']]});
+   c.snap({ln:4,title:'y + 1',body:'long còn dư chỗ, nên kết quả đúng.',vars:[['x','-2147483648'],['y','2147483648']]});
+   c.out('2147483648');
+   c.snap({ln:5,title:'In y',body:'y = 2147483648. Cần số lớn hơn khoảng 2 tỷ thì dùng long.',note:'Mặc định C# không báo lỗi khi int tràn số. Muốn bắt lỗi, đặt phép tính trong khối checked.',vars:[['x','-2147483648'],['y','2147483648']]});
+  }},
+ chia:{intro:'Cùng phép 7 chia 2 nhưng kiểu dữ liệu khác nhau cho kết quả khác nhau. Bấm "Bước tiếp".',lines:['int a = 7, b = 2;','int q1 = a / b;','double q2 = (double)a / b;','double q3 = a / b;','Console.WriteLine(q1 + " " + q2 + " " + q3);'],
+  run:function(c){
+   c.snap({ln:0,title:'Hai số nguyên',body:'a = 7, b = 2, cả hai là int.',vars:[['a',7],['b',2]]});
+   c.snap({ln:1,title:'Chia nguyên',body:'int chia int cho kết quả int: 7 / 2 = 3, phần lẻ bị bỏ.',vars:[['q1',3]]});
+   c.snap({ln:2,title:'Ép kiểu rồi chia',body:'(double)a biến a thành số thực trước khi chia, nên 7.0 / 2 = 3.5.',vars:[['q1',3],['q2','3.5']]});
+   c.snap({ln:3,title:'Chia nguyên rồi mới gán',body:'a / b vẫn là phép chia hai int nên ra 3, sau đó mới chuyển thành 3 kiểu double. Kết quả không có 0.5.',vars:[['q1',3],['q2','3.5'],['q3','3']]});
+   c.out('3 3.5 3');
+   c.snap({ln:4,title:'In kết quả',body:'q1 = 3, q2 = 3.5, q3 = 3.',note:'Muốn kết quả thập phân, phải có ít nhất một toán hạng là số thực (ép kiểu một trong hai số).',vars:[['q1',3],['q2','3.5'],['q3','3']]});
+  }},
+ sai:{intro:'Số thực double lưu gần đúng, nên phép cộng đơn giản cũng có thể lệch. Bấm "Bước tiếp".',lines:['double x = 0.1 + 0.2;','Console.WriteLine(x == 0.3);','Console.WriteLine(x);','Console.WriteLine(Math.Abs(x - 0.3) < 1e-9);'],
+  run:function(c){
+   c.snap({ln:0,title:'Tính 0.1 + 0.2',body:'Trên giấy bằng 0.3, nhưng máy lưu 0.1 và 0.2 dưới dạng nhị phân gần đúng.',vars:[['x','0.30000000000000004']]});
+   c.out('False');
+   c.snap({ln:1,title:'So sánh x == 0.3',body:'x hơi lớn hơn 0.3 nên phép so sánh cho false.',vars:[['x','0.30000000000000004']]});
+   c.out('0.30000000000000004');
+   c.snap({ln:2,title:'In x',body:'In ra thấy rõ phần dư rất nhỏ ở cuối.',vars:[['x','0.30000000000000004']]});
+   c.out('True');
+   c.snap({ln:3,title:'So sánh có sai số',body:'Hiệu giữa x và 0.3 nhỏ hơn 0.000000001 nên coi là bằng nhau: true.',note:'Không dùng == để so sánh hai số double. Hãy kiểm tra hiệu của chúng nhỏ hơn một sai số cho phép.',vars:[['x','0.30000000000000004'],['|x - 0.3|','5.5E-17']]});
+  }}
+ };
+ var d=D[kind];
+ return {inputs:[],chips:[],intro:d.intro,lines:function(){return d.lines;},run:d.run};
+}
+/* 3. Số nguyên tố: định nghĩa */
+function NTD(){
+ return {inputs:[{id:'n',label:'n',def:13,min:1,max:40}],chips:[1,7,12,13],
+  intro:'Đếm số ước của n. Đúng 2 ước (1 và chính n) thì n là số nguyên tố. Nhập n rồi bấm "Bước tiếp".',
+  lines:function(P){return ['int n = '+P.n+';','int dem = 0;','for (int i = 1; i <= n; i++)','    if (n % i == 0)','        dem++;','bool nguyenTo = (dem == 2);','Console.WriteLine(nguyenTo);'];},
+  run:function(c,P){
+   var n=P.n,u=[],i;
+   c.snap({ln:1,title:'Chuẩn bị đếm',body:'Biến dem sẽ đếm số ước của n = '+n+'.',vars:[['n',n],['dem',0]]});
+   for(i=1;i<=n;i++){
+    if(n%i===0){u.push(i);c.snap({ln:4,title:'i = '+i+': '+n+' % '+i+' = 0',body:i+' là ước của '+n+'. dem tăng lên '+u.length+'.',arrs:[AR('các ước',u,[u.length-1])],vars:[['i',i],['dem',u.length]]});}
+    else c.snap({ln:3,title:'i = '+i+': '+n+' % '+i+' = '+(n%i),body:i+' không là ước của '+n+'.',arrs:[AR('các ước',u)],vars:[['i',i],['dem',u.length]]});
+   }
+   var ok=u.length===2;
+   c.snap({ln:5,title:'dem == 2 ?',body:'n = '+n+' có '+u.length+' ước. '+(ok?'Đúng 2 ước nên là số nguyên tố.':(n===1?'Số 1 chỉ có 1 ước nên không phải số nguyên tố.':'Có nhiều hơn 2 ước nên là hợp số.')),arrs:[AR('các ước',u)],vars:[['dem',u.length],['nguyenTo',ok?'true':'false']]});
+   c.out(ok?'True':'False');
+   c.snap({ln:6,title:'Xong',body:ok?n+' là số nguyên tố.':n+' không phải số nguyên tố.',note:'Số nguyên tố là số tự nhiên lớn hơn 1 và chỉ có đúng hai ước: 1 và chính nó. Số 1 không phải số nguyên tố.',arrs:[AR('các ước',u)],vars:[['dem',u.length],['nguyenTo',ok?'true':'false']]});
+  }};
+}
+/* 4. Kiểm tra nguyên tố cơ bản */
+function NTB(){
+ return {inputs:[{id:'n',label:'n',def:13,min:1,max:99}],chips:[1,9,13,49,97],
+  intro:'Thử chia n cho 2, 3, ..., n − 1. Gặp một ước thì dừng ngay. Nhập n rồi bấm "Bước tiếp".',
+  lines:function(){return ['bool LaNguyenTo(int n)','{','    if (n < 2) return false;','    for (int i = 2; i < n; i++)','        if (n % i == 0)','            return false;','    return true;','}'];},
+  run:function(c,P){
+   var n=P.n,i,cnt=0;
+   if(n<2){c.snap({ln:2,title:'n < 2',body:'n = '+n+' nhỏ hơn 2 nên không phải số nguyên tố. Trả về false.',vars:[['n',n]]});c.out('False');c.snap({ln:2,title:'Xong',body:n+' không phải số nguyên tố.',vars:[['n',n]]});return;}
+   c.snap({ln:2,title:'Kiểm tra n < 2',body:'n = '+n+' không nhỏ hơn 2, tiếp tục thử chia.',vars:[['n',n],['số phép chia',0]]});
+   for(i=2;i<n;i++){
+    cnt++;
+    if(n%i===0){
+     c.snap({ln:4,title:'i = '+i+': '+n+' % '+i+' = 0',body:i+' là ước của '+n+'.',vars:[['i',i],['n % i',0],['số phép chia',cnt]]});
+     c.out('False');
+     c.snap({ln:5,title:'Gặp ước, dừng',body:'return false: '+n+' chia hết cho '+i+' nên không phải số nguyên tố. Không cần thử thêm.',note:'Đã dùng '+cnt+' phép chia.',vars:[['i',i],['số phép chia',cnt]]});
+     return;
+    }
+    c.snap({ln:4,title:'i = '+i+': '+n+' % '+i+' = '+(n%i),body:'Dư khác 0, '+i+' không là ước.',vars:[['i',i],['n % i',n%i],['số phép chia',cnt]]});
+   }
+   c.out('True');
+   c.snap({ln:6,title:'Hết vòng lặp',body:'Không có số nào từ 2 đến '+(n-1)+' chia hết '+n+'. Trả về true: '+n+' là số nguyên tố.',note:'Với số nguyên tố, phải thử hết n − 2 phép chia. Với n lớn sẽ rất chậm, bài sau sẽ tối ưu.',vars:[['số phép chia',cnt]]});
+  }};
+}
+/* 5. Tối ưu: 3 cột */
+var NTL={
+ a:['if (n < 2) return false;','for (int i = 2; i < n; i++)','    if (n % i == 0)','        return false;','return true;'],
+ b:['if (n < 2) return false;','for (int i = 2; i * i <= n; i++)','    if (n % i == 0)','        return false;','return true;'],
+ c:['if (n < 2) return false;','if (n % 2 == 0) return n == 2;','for (int i = 3; i * i <= n; i += 2)','    if (n % i == 0)','        return false;','return true;']};
+function NTCNT(kind,n){
+ var cnt=0,i;
+ if(kind==='c'){cnt=1;if(n%2===0)return cnt;for(i=3;i*i<=n;i+=2){cnt++;if(n%i===0)return cnt;}return cnt;}
+ for(i=2;kind==='a'?i<n:i*i<=n;i++){cnt++;if(n%i===0)return cnt;}
+ return cnt;
+}
+function NTCOL(kind,n){
+ var T={a:['Chia đến n − 1','Thử mọi i từ 2 đến n − 1.'],b:['Chia đến √n','Chỉ thử i khi i × i ≤ n.'],c:['Chia đến √n, bỏ số chẵn','Loại số chẵn một lần, rồi chỉ thử số lẻ.']}[kind];
+ return {title:T[0],sub:T[1],lines:NTL[kind],run:function(c){
+  var cnt=0,i,ifLn=kind==='c'?3:2,rf=kind==='c'?4:3,rt=kind==='c'?5:4,r;
+  var fin=function(res,why){c.out(res?'True':'False');c.snap({ln:res?rt:rf,title:res?'Là số nguyên tố':'Không phải số nguyên tố',body:why+' Tổng cộng '+cnt+' phép chia.',vars:[['số phép chia',cnt]]});};
+  c.snap({ln:0,title:'Kiểm tra n < 2',body:'n = '+n+', tiếp tục.',vars:[['n',n],['số phép chia',0]]});
+  if(kind==='c'){
+   cnt++;r=n%2;
+   c.snap({ln:1,title:n+' % 2 = '+r,body:r===0?'n chẵn: chỉ n = 2 mới là số nguyên tố.':'n lẻ, không cần thử số chẵn nữa.',vars:[['i',2],['n % i',r],['số phép chia',cnt]]});
+   if(r===0){fin(n===2,'n chia hết cho 2.');return;}
+   for(i=3;i*i<=n;i+=2){
+    cnt++;r=n%i;
+    c.snap({ln:ifLn,title:'i = '+i+': '+n+' % '+i+' = '+r,body:r===0?i+' là ước, dừng.':'Dư khác 0, thử số lẻ tiếp theo.',vars:[['i',i],['n % i',r],['số phép chia',cnt]]});
+    if(r===0){fin(false,i+' là ước của n.');return;}
+   }
+   fin(true,'Không có ước nào đến √n.');return;
+  }
+  for(i=2;kind==='a'?i<n:i*i<=n;i++){
+   cnt++;r=n%i;
+   c.snap({ln:ifLn,title:'i = '+i+': '+n+' % '+i+' = '+r,body:r===0?i+' là ước, dừng.':'Dư khác 0, thử i tiếp theo.',vars:[['i',i],['n % i',r],['số phép chia',cnt]]});
+   if(r===0){fin(false,i+' là ước của n.');return;}
+  }
+  fin(true,kind==='a'?'Không có ước nào từ 2 đến n − 1.':'Không có ước nào đến √n.');
+ }};
+}
+function NT3(n){
+ var a=NTCNT('a',n),b=NTCNT('b',n),c=NTCNT('c',n);
+ var tail=a===b?'Hợp số dừng ngay khi gặp ước nhỏ nhất nên cột 1 và 2 bằng nhau; cột 3 vẫn ít hơn nhờ bỏ số chẵn. Lợi ích lớn nhất khi n là số nguyên tố.':'Cả ba cho cùng kết luận, nhưng chỉ cần thử đến √n (và bỏ số chẵn) thì nhanh hơn rất nhiều.';
+ return {intro:'Ba cách kiểm tra n = '+n+' cùng chạy, mỗi bước là một phép chia.',running:'Mỗi cột thử chia từng số, nhưng cột bên phải thử ít số hơn.',
+  done:'Số phép chia: cột 1 = '+a+', cột 2 = '+b+', cột 3 = '+c+'. '+tail,
+  cols:[NTCOL('a',n),NTCOL('b',n),NTCOL('c',n)]};
+}
+/* 6. UCLN và BCNN */
+function UB(){
+ return {inputs:[{id:'a',label:'a',def:12,min:1,max:30},{id:'b',label:'b',def:18,min:1,max:30}],chips:[12,8,15],
+  intro:'Liệt kê ước chung và bội chung của a và b, rồi tìm ước chung lớn nhất (UCLN) và bội chung nhỏ nhất (BCNN). Bấm "Bước tiếp".',
+  lines:function(P){return ['// a = '+P.a+', b = '+P.b,'for (int i = 1; i <= Math.Min(a, b); i++)','    if (a % i == 0 && b % i == 0)','        uocChung.Add(i);','for (int k = a; k <= a * b; k += a)','    if (k % b == 0)','        boiChung.Add(k);','// UCLN: lớn nhất của uocChung','// BCNN: nhỏ nhất của boiChung'];},
+  run:function(c,P){
+   var a=P.a,b=P.b,m=Math.min(a,b),u=[],bo=[],i,k;
+   var V=function(x,y){return [[x,y]];};
+   for(i=1;i<=m;i++){
+    if(a%i===0&&b%i===0){u.push(i);c.snap({ln:3,title:'i = '+i+': ước chung',body:i+' chia hết cả '+a+' lẫn '+b+'. Thêm vào ước chung.',arrs:[AR('uocChung',u,[u.length-1])],vars:V('i',i)});}
+    else c.snap({ln:2,title:'i = '+i+': không là ước chung',body:i+' không chia hết cho cả hai số ('+a+' % '+i+' = '+(a%i)+', '+b+' % '+i+' = '+(b%i)+').',arrs:[AR('uocChung',u)],vars:V('i',i)});
+   }
+   var g=u[u.length-1];
+   for(k=a;k<=a*b;k+=a){
+    if(k%b===0){bo.push(k);c.snap({ln:6,title:'k = '+k+': bội chung',body:k+' là bội của '+a+' (đang xét các bội của a) và chia hết cho '+b+'.',arrs:[AR('uocChung',u),AR('boiChung',bo,[bo.length-1])],vars:V('k',k)});}
+    else c.snap({ln:5,title:'k = '+k+': chưa là bội của '+b,body:k+' là bội của '+a+' nhưng '+k+' % '+b+' = '+(k%b)+'.',arrs:[AR('uocChung',u),AR('boiChung',bo)],vars:V('k',k)});
+   }
+   var l=bo[0];
+   c.out('UCLN = '+g+', BCNN = '+l);
+   c.snap({ln:7,title:'Xong',body:'UCLN('+a+', '+b+') = '+g+' (ước chung lớn nhất). BCNN('+a+', '+b+') = '+l+' (bội chung nhỏ nhất).',note:'Bội chung có vô hạn số, ở đây chỉ liệt kê đến a × b. Số nhỏ nhất trong đó là BCNN. Ngoài ra UCLN × BCNN = a × b ('+g+' × '+l+' = '+(a*b)+').',arrs:[AR('uocChung',u,[u.length-1]),AR('boiChung',bo,[0])],vars:[['UCLN',g],['BCNN',l]]});
+  }};
+}
+/* 7. Euclid */
+function EU(){
+ return {inputs:[{id:'a',label:'a',def:48,min:1,max:99},{id:'b',label:'b',def:18,min:1,max:99}],chips:[48,35,99],
+  intro:'Lặp lại: lấy a % b, rồi thay (a, b) bằng (b, dư). Dừng khi dư bằng 0. Bấm "Bước tiếp".',
+  lines:function(P){return ['int a = '+P.a+', b = '+P.b+';','while (b != 0)','{','    int du = a % b;','    a = b;','    b = du;','}','Console.WriteLine(a);   // UCLN'];},
+  run:function(c,P){
+   var a=P.a,b=P.b,rows=[],k=0;
+   var A=function(hi){return rows.map(function(r,i){return {name:'lần '+(i+1)+' (a, b, dư)',cells:CC(r,i===rows.length-1&&hi?[2]:[])};});};
+   c.snap({ln:0,title:'Bắt đầu',body:'a = '+a+', b = '+b+'.',vars:[['a',a],['b',b]]});
+   while(b!==0){
+    k++;var d=a%b;rows.push([a,b,d]);
+    c.snap({ln:3,title:'Lần '+k+': '+a+' % '+b+' = '+d,body:a+' chia '+b+' dư '+d+'.',arrs:A(true),vars:[['a',a],['b',b],['du',d]]});
+    var oa=a,ob=b;a=b;b=d;
+    c.snap({ln:5,title:'Đổi (a, b) thành ('+a+', '+b+')',body:'a nhận giá trị cũ của b ('+oa+' → '+a+'), b nhận số dư ('+ob+' → '+b+').',arrs:A(false),vars:[['a',a],['b',b]]});
+   }
+   c.snap({ln:1,title:'b = 0, dừng',body:'b bằng 0 nên vòng lặp kết thúc. Số a còn lại chính là UCLN.',arrs:A(false),vars:[['a',a],['b',b]]});
+   c.out(String(a));
+   c.snap({ln:7,title:'Xong',body:'UCLN('+P.a+', '+P.b+') = '+a+'.',note:'Euclid dựa trên UCLN(a, b) = UCLN(b, a % b). Mỗi lần số dư giảm rất nhanh nên thuật toán chỉ cần ít bước.',arrs:A(false),vars:[['UCLN',a]]});
+  }};
+}
+/* 8. Khái niệm phân tích thừa số */
+function TSK(){
+ return {inputs:[{id:'n',label:'n',def:60,min:2,max:99}],chips:[60,84,97],
+  intro:'Mọi số n ≥ 2 đều viết được thành tích các số nguyên tố. Nhập n rồi bấm "Bước tiếp".',
+  lines:function(P){return ['int n = '+P.n+';','List<int> thuaSo = PhanTich(n);','int tich = 1;','foreach (int p in thuaSo)','    tich *= p;','// tich == n'];},
+  run:function(c,P){
+   var n=P.n,f=[],m=n,i=2;
+   while(m>1){if(m%i===0){f.push(i);m/=i;}else i++;}
+   c.snap({ln:0,title:'Số cần phân tích',body:'n = '+n+'.',vars:[['n',n]]});
+   c.snap({ln:1,title:'Tách thành thừa số nguyên tố',body:'Hàm PhanTich trả về danh sách các số nguyên tố nhân lại bằng '+n+'. Cách làm sẽ học ở bài sau.',arrs:[AR('thuaSo',f)],vars:[['n',n]]});
+   var t=1,j;
+   c.snap({ln:2,title:'Chuẩn bị nhân lại',body:'tich bắt đầu bằng 1.',arrs:[AR('thuaSo',f)],vars:[['tich',1]]});
+   for(j=0;j<f.length;j++){t*=f[j];c.snap({ln:4,title:'Nhân với '+f[j],body:'tich = tich × '+f[j]+' = '+t+'.',arrs:[AR('thuaSo',f,[j],f.map(function(x,q){return q;}).filter(function(q){return q<j;}))],vars:[['p',f[j]],['tich',t]]});}
+   var s=f.length===1?n+' là số nguyên tố, chỉ có thừa số là chính nó: '+n+' = '+n:n+' = '+JN(f);
+   c.out(s);
+   c.snap({ln:5,title:'Xong',body:s+'.',note:'Mỗi số tự nhiên từ 2 trở lên có đúng một cách phân tích thành tích các số nguyên tố (không kể thứ tự).',arrs:[AR('thuaSo',f)],vars:[['tich',t],['n',n]]});
+  }};
+}
+/* 9. Thuật toán phân tích thừa số */
+function TSB(){
+ return {inputs:[{id:'n',label:'n',def:60,min:2,max:99}],chips:[60,84,97],
+  intro:'Thử chia cho i = 2, 3, 4, ... Chia được thì ghi i vào kết quả và chia n cho i. Không chia được thì tăng i. Bấm "Bước tiếp".',
+  lines:function(P){return ['int n = '+P.n+', i = 2;','while (n > 1)','{','    if (n % i == 0)','    {','        thuaSo.Add(i);','        n = n / i;','    }','    else','        i++;','}'];},
+  run:function(c,P){
+   var n=P.n,i=2,f=[],n0=n;
+   c.snap({ln:0,title:'Bắt đầu',body:'Cần phân tích n = '+n+'. Thử từ i = 2.',arrs:[AR('thuaSo',f)],vars:[['n',n],['i',i]]});
+   while(n>1){
+    if(n%i===0){
+     f.push(i);var nn=n/i;
+     c.snap({ln:5,title:n+' % '+i+' = 0',body:i+' là ước của '+n+'. Ghi '+i+' vào thuaSo, rồi n = '+n+' / '+i+' = '+nn+'. Giữ nguyên i để thử lại.',arrs:[AR('thuaSo',f,[f.length-1])],vars:[['n',nn],['i',i]]});
+     n=nn;
+    } else {
+     c.snap({ln:9,title:n+' % '+i+' = '+(n%i),body:i+' không chia hết '+n+'. Tăng i lên '+(i+1)+'.',arrs:[AR('thuaSo',f)],vars:[['n',n],['i',i+1]]});
+     i++;
+    }
+   }
+   var s=f.length===1?n0+' là số nguyên tố: '+n0+' = '+n0:n0+' = '+JN(f);
+   c.out(s);
+   c.snap({ln:1,title:'n = 1, dừng',body:'Đã chia hết. '+s+'.',note:'Các ước tìm được luôn là số nguyên tố, vì mọi ước nhỏ hơn đã được chia hết ra trước đó.',arrs:[AR('thuaSo',f)],vars:[['n',n],['i',i]]});
+  }};
+}
+
+  var EX = {kieu:KT('kieu'),tran:KT('tran'),chia:KT('chia'),sai:KT('sai')};
+  var ex, P = {}, step = 0, snaps = [], timer = null, valid = true;
+  function build(){ var c = mk(); ex.run(c, P); snaps = c.snaps; }
+  function gridHtml(a){
+    var nc = a.rows[0].length, h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="g2"><div class="g2row"><div class="rl"></div>';
+    for (var j = 0; j < nc; j++) h += '<div class="ch">' + j + '</div>';
+    h += '</div>';
+    a.rows.forEach(function(r, i){
+      h += '<div class="g2row"><div class="rl">' + i + '</div>';
+      r.forEach(function(c){ h += '<div class="cell2' + (c.hi ? ' hi' : '') + (c.done ? ' donec' : '') + (c.dim ? ' dimc' : '') + '">' + esc(c.v) + '</div>'; });
+      h += '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function arrHtml(a){
+    if (a.rows) return gridHtml(a);
+    var h = '<div class="arow"><div class="aname">' + esc(a.name) + '</div><div class="cells">';
+    a.cells.forEach(function(c, i){
+      var cls = 'cell2' + (c.v === undefined || c.v === null ? ' empty' : '') + (c.hi ? ' hi' : '') + (c.done ? ' donec' : '') + (c.dim ? ' dimc' : '');
+      h += '<div class="cw"><div class="' + cls + '">' + (c.v === undefined || c.v === null ? '' : esc(c.v)) + '</div>' + (a.noIdx ? '' : '<div class="ix">' + i + '</div>') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function render(){
+    var sn = step > 0 ? snaps[step - 1] : null;
+    $('code').innerHTML = ex.lines(P).map(function(l, i){
+      return '<div class="ln' + (sn && sn.ln === i ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var t = sn ? sn.title : 'Sẵn sàng', b = sn ? sn.body : ex.intro, note = sn ? sn.note : '';
+    $('status').innerHTML = '<b>' + esc(t) + '</b>' + esc(b) + (note ? '<span class="note">' + esc(note) + '</span>' : '');
+    var arrs = sn && sn.arrs ? sn.arrs : [], vs = sn && sn.vars ? sn.vars : [];
+    $('mem').innerHTML = (arrs.length ? arrs.map(arrHtml).join('') : '') +
+      (vs.length ? '<div class="vars">' + vs.map(function(v){ return '<div class="var"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('') + '</div>' : '') +
+      (!arrs.length && !vs.length ? '<p class="cm" style="margin:0">Chưa có gì trong bộ nhớ.</p>' : '');
+    $('console').innerHTML = sn && sn.outs.length ? sn.outs.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+    var running = timer !== null;
+    $('next').disabled = !valid || step >= snaps.length || running;
+    $('all').disabled = !valid || running;
+    $('reset').disabled = running;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function reset(){ stop(); step = 0; if (valid) build(); render(); }
+  function onInput(){
+    var ok = true;
+    ex.inputs.forEach(function(i){
+      var el = $('in_' + i.id), s = el.value.trim(), good = i.text ? new RegExp(i.text).test(s) : (/^\d{1,2}$/.test(s) && Number(s) >= i.min && Number(s) <= i.max);
+      if (good) P[i.id] = i.text ? s : Number(s);
+      el.classList.toggle('bad', !good); if (!good) ok = false;
+    });
+    valid = ok;
+    $('err').textContent = ok ? '' : (ex.inputs[0].text ? '' : 'Hãy nhập số nguyên: ') + ex.inputs.map(function(i){ return i.text ? i.msg : i.label + ' từ ' + i.min + ' đến ' + i.max; }).join('; ') + '.';
+    reset();
+  }
+  function loadExample(k){
+    ex = EX[k];
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    $('fields').innerHTML = ex.inputs.map(function(i){
+      return '<div class="field"><label for="in_' + i.id + '">' + i.label + ' =</label><input id="in_' + i.id + '" type="text" inputmode="' + (i.text ? 'text' : 'numeric') + '" autocomplete="off" style="width:' + (i.w || 70) + 'px" value="' + i.def + '"></div>';
+    }).join('');
+    ex.inputs.forEach(function(i){ $('in_' + i.id).addEventListener('input', onInput); });
+    $('chips').innerHTML = (ex.chips || []).map(function(c){ return '<button class="chip" type="button" data-v="' + c + '">' + c + '</button>'; }).join(' ');
+    onInput();
+  }
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if (!b) return;
+    $('in_' + ex.inputs[0].id).value = b.dataset.v; onInput();
+  });
+  $('next').addEventListener('click', function(){ if (valid && step < snaps.length) { step++; render(); } });
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (!valid) return;
+    if (step >= snaps.length) step = 0;
+    step++; render();
+    timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 400);
+    render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ loadExample(b.dataset.ex); }); });
+  loadExample('kieu');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
