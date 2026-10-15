@@ -1,0 +1,24 @@
+[
+ {
+  "module": 6,
+  "lesson": "Phân tích yêu cầu trong OOAD",
+  "activity": "Ví dụ về Use Case cho hệ thống quản lý thư viện",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Use Case là chuỗi bước Tác nhân ↔ Hệ thống, có luồng chính và luồng thay thế.",
+  "description": "Use Case 'Mượn sách'. Mỗi bước tô sáng một dòng kịch bản (Độc giả quét thẻ → Hệ thống kiểm tra thẻ → ...), 2 làn Độc giả | Hệ thống. 3 tab: Luồng chính (mượn thành công), Thẻ hết hạn, Sách đã được mượn; tab 2-3 rẽ nhánh ở bước tương ứng.",
+  "form": "1 cột, nhiều tab",
+  "note": "Không có code C#; khung #code hiển thị kịch bản Use Case."
+ },
+ {
+  "module": 6,
+  "lesson": "Xác định Đối tượng, Thuộc tính và Hành vi",
+  "activity": "Kỹ thuật xác định danh từ và động từ",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Danh từ → ứng viên lớp/thuộc tính; động từ → ứng viên phương thức.",
+  "description": "Đoạn mô tả 3-4 câu (cửa hàng sách). Mỗi bước tô sáng một cụm từ: danh từ (xanh) đưa vào cột 'Ứng viên lớp', động từ (vàng) vào cột 'Phương thức'. Bước sau lọc: gộp từ trùng, loại danh từ là thuộc tính (tên, giá) chuyển vào lớp tương ứng. Bước cuối hiện 3 hộp lớp kết quả.",
+  "form": "1 cột",
+  "note": "Không có code; khung #code hiển thị đoạn mô tả yêu cầu."
+ }
+]

@@ -1,0 +1,123 @@
+[
+ {
+  "module": 7,
+  "lesson": "Tổng quan về mối quan hệ giữa các lớp và Kế thừa",
+  "activity": "Giới thiệu các loại mối quan hệ giữa các lớp",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Nhìn nhanh 5 quan hệ và ký hiệu UML.",
+  "description": "5 tab: Kế thừa, Kết hợp, Tập hợp, Hợp thành, Phụ thuộc. Mỗi tab: 3-4 dòng code C# và sơ đồ 2 hộp lớp; bấm tiếp vẽ dần mũi tên đúng ký hiệu (tam giác rỗng, đường thẳng, thoi rỗng, thoi đặc, nét đứt).",
+  "form": "1 cột, nhiều tab",
+  "note": "Cần thành phần vẽ sơ đồ lớp UML bằng SVG (dùng chung cho cả chương 7)."
+ },
+ {
+  "module": 7,
+  "lesson": "Tổng quan về mối quan hệ giữa các lớp và Kế thừa",
+  "activity": "Biểu diễn Kế thừa trong sơ đồ lớp UML",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "class Dog : Animal ↔ mũi tên tam giác rỗng từ con lên cha.",
+  "description": "Code bên trái, sơ đồ bên phải. Mỗi bước đọc một dòng code và vẽ phần tương ứng: hộp Animal, hộp Dog, mũi tên kế thừa, thêm Cat. Ghi chú: mũi tên luôn chỉ về lớp cha.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Hiểu rõ mối quan hệ Kết hợp (Association)",
+  "activity": "Giới thiệu về Kết hợp (Association)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Hai đối tượng biết nhau qua tham chiếu nhưng sống độc lập.",
+  "description": "Teacher có List<Student>. Tạo t, s1, s2; t.AddStudent(s1); ... Bộ nhớ hiện mũi tên từ Teacher#1 sang Student#1, #2. Bước t = null: Teacher biến mất, Student vẫn còn vì biến s1, s2 còn giữ.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Hiểu rõ mối quan hệ Kết hợp (Association)",
+  "activity": "Đa số (Multiplicity) trong Kết hợp",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "1, 0..1, *, 1..* nghĩa là bao nhiêu đối tượng ở đầu kia.",
+  "description": "3 tab theo đa số: Person 0..1 Passport (gán lần 2 bị từ chối), Order 1..* OrderItem (Order rỗng → không hợp lệ, thêm item → hợp lệ), Class * Student (thêm bao nhiêu cũng được). Mỗi bước thêm một đối tượng, ô trạng thái 'hợp lệ/không hợp lệ' theo đa số trên sơ đồ.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Phân biệt Tập hợp (Aggregation) với Kết hợp",
+  "activity": "Minh họa Tập hợp trong đời sống và mã nguồn",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Toàn thể chứa bộ phận nhưng bộ phận được tạo bên ngoài và sống tiếp khi toàn thể mất.",
+  "description": "Player được tạo ở Main rồi truyền vào team.Add(p). Bước team = null: hộp Team mờ đi (bị thu hồi), Player vẫn còn. Bước cuối p chuyển sang team2.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Mối quan hệ Hợp thành (Composition) và sự phụ thuộc vòng đời",
+  "activity": "Hợp thành (Composition) - Mối quan hệ mạnh mẽ",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Bộ phận được toàn thể tạo ra bên trong và mất cùng toàn thể.",
+  "description": "House tạo 3 Room trong constructor (new Room bên trong House). Bộ nhớ hiện Room chỉ được House tham chiếu. Bước house = null: House và cả 3 Room cùng mờ đi (không còn ai tham chiếu).",
+  "form": "1 cột",
+  "note": "Ghi chú: C# thu hồi bằng bộ gom rác, không xóa ngay; mô phỏng nói 'không còn truy cập được'."
+ },
+ {
+  "module": 7,
+  "lesson": "Mối quan hệ Hợp thành (Composition) và sự phụ thuộc vòng đời",
+  "activity": "So sánh Tập hợp và Hợp thành",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Khác nhau ở chỗ ai tạo bộ phận và bộ phận có sống tiếp không.",
+  "description": "2 cột chạy cùng nhịp: trái Department–Employee (tập hợp), phải Car–Engine (hợp thành). Bước cuối gán toàn thể = null: cột trái Employee còn, cột phải Engine mất.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Làm quen với Sơ đồ lớp UML và các thành phần cơ bản",
+  "activity": "Cấu trúc của một lớp trong UML",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Hộp lớp 3 ngăn và ký hiệu + - #.",
+  "description": "Vẽ dần hộp BankAccount: ngăn tên, ngăn thuộc tính (- balance: decimal), ngăn phương thức (+ Deposit(amount: decimal): void). Mỗi bước giải thích một ký hiệu.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Làm quen với Sơ đồ lớp UML và các thành phần cơ bản",
+  "activity": "Đối chiếu mã C# với sơ đồ lớp UML đơn giản",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Mỗi dòng code tương ứng một dòng trong hộp UML.",
+  "description": "2 cột: code C# lớp Book bên trái, hộp UML bên phải. Mỗi bước tô sáng cùng lúc một dòng code và dòng UML tương ứng (private → -, public → +, kiểu đặt sau dấu :). Tab 2: lớp có property và constructor.",
+  "form": "2 cột song song",
+  "note": "Đính kèm lại cho 'Giới thiệu sơ lược về Sơ đồ lớp' (chương 6)."
+ },
+ {
+  "module": 7,
+  "lesson": "Hướng dẫn từng bước vẽ Sơ đồ lớp UML hoàn chỉnh",
+  "activity": "Quy trình vẽ Sơ đồ lớp UML",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Quy trình: tìm lớp → thuộc tính → phương thức → quan hệ → đa số.",
+  "description": "Đề bài nhỏ (thư viện: Độc giả, Sách, Phiếu mượn). Mỗi bước thực hiện một giai đoạn quy trình, sơ đồ được vẽ thêm phần tương ứng; khung trạng thái nói đang ở bước nào của quy trình.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 7,
+  "lesson": "Phân tích và hiểu các sơ đồ lớp UML phức tạp",
+  "activity": "Các yếu tố nâng cao trong Sơ đồ lớp UML",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "abstract, interface, static, enum, phụ thuộc trong UML.",
+  "description": "5 tab, mỗi tab một yếu tố: tên nghiêng (abstract), «interface» + mũi tên nét đứt tam giác, gạch chân (static), «enumeration», mũi tên nét đứt (phụ thuộc). Mỗi tab: code C# ↔ hình vẽ.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ }
+]

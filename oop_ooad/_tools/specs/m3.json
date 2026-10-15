@@ -1,0 +1,90 @@
+[
+ {
+  "module": 3,
+  "lesson": "Giới thiệu về Kế thừa",
+  "activity": "Kế thừa là gì?",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Lớp con có sẵn trường và phương thức của lớp cha.",
+  "description": "Animal { Name; Eat() } và Dog : Animal { Bark() }. new Dog() → hộp đối tượng chia 2 phần: phần của Animal (Name) và phần của Dog. Gọi dog.Eat(): mô phỏng tìm Eat trong Dog, không thấy, lên Animal, tìm thấy (tô sáng đường đi). Gọi dog.Bark() tìm thấy ngay trong Dog.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 3,
+  "lesson": "Giới thiệu về Kế thừa",
+  "activity": "Mối quan hệ 'is-a' và lớp cha, lớp con",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Dog là một Animal, nhưng Animal chưa chắc là Dog.",
+  "description": "Từng bước chạy các phép kiểm tra is: dog is Animal → true, dog is Dog → true, animal is Dog → false, cat is Dog → false. Sơ đồ cây lớp bên cạnh tô sáng đường từ lớp con lên lớp cha khi true.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 3,
+  "lesson": "Các khái niệm cơ bản của Kế thừa trong C#",
+  "activity": "Cú pháp Kế thừa trong C#",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Cú pháp : và thứ tự chạy constructor: cha trước, con sau; : base(...) truyền tham số lên cha.",
+  "description": "new Dog(\"Lu\", \"Corgi\"). Dòng tô sáng: vào Dog(...) → nhảy lên Animal(name) qua : base(name) → gán Name → quay lại thân Dog gán Breed. Console in theo thứ tự \"Animal ctor\", \"Dog ctor\".",
+  "form": "1 cột",
+  "note": "Bổ trợ luôn cho 'Phân tích lỗi khi kết hợp Kế thừa và Constructor'."
+ },
+ {
+  "module": 3,
+  "lesson": "Các khái niệm cơ bản của Kế thừa trong C#",
+  "activity": "Thành viên được kế thừa và Tầm vực truy cập",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Lớp con kế thừa tất cả, nhưng chỉ truy cập được public/protected, không truy cập private.",
+  "description": "Lớp cha có public Name, protected Age, private secret. Trong phương thức của lớp con thử dùng từng cái: ✓, ✓, ✗ lỗi biên dịch. Tab 2: từ Main (ngoài) thử dog.Name ✓, dog.Age ✗, dog.secret ✗. Ghi chú: trường private vẫn nằm trong đối tượng (hiện mờ), chỉ là không truy cập trực tiếp.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 3,
+  "lesson": "Tái sử dụng mã và Cải tiến với Kế thừa",
+  "activity": "Kế thừa để Tái sử dụng Mã",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Code chung đưa lên lớp cha, sửa một chỗ.",
+  "description": "2 cột. Trái: Car và Truck mỗi lớp tự viết Start() giống nhau. Phải: Vehicle.Start() dùng chung. Kịch bản: đổi thông báo Start → cột trái sửa 2 chỗ, cột phải sửa 1 chỗ (ô đếm 'chỗ phải sửa').",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 3,
+  "lesson": "Kế thừa nâng cao: virtual, override, base",
+  "activity": "Từ khóa `virtual` và `override`",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "virtual + override: phương thức chạy theo đối tượng thật, không theo kiểu biến.",
+  "description": "2 tab. Tab Có virtual/override: Animal a = new Dog(); a.Speak(); → tô sáng Dog.Speak, in Gâu. Tab Không virtual (che bằng new): cùng code nhưng in âm thanh chung của Animal. Bộ nhớ hiện kiểu biến (Animal) và kiểu đối tượng (Dog) cạnh nhau.",
+  "form": "1 cột, nhiều tab",
+  "note": "Chương 4 (Ghi đè phương thức) dùng lại mô phỏng này."
+ },
+ {
+  "module": 3,
+  "lesson": "Kế thừa nâng cao: virtual, override, base",
+  "activity": "Sử dụng từ khóa `base`",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "base.Method() gọi phiên bản lớp cha rồi bổ sung.",
+  "description": "Employee.GetInfo() trả \"Tên: An\"; Manager.GetInfo() override = base.GetInfo() + \", Phòng: IT\". Dòng tô sáng nhảy Manager → Employee → quay về ghép chuỗi; ô biến hiện chuỗi tạm từng bước.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 3,
+  "lesson": "Các vấn đề và thực hành tốt nhất trong Kế thừa",
+  "activity": "Hạn chế của Kế thừa",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Lớp cha thay đổi có thể làm hỏng lớp con.",
+  "description": "Lớp cha Collection có Add và AddRange (AddRange gọi Add). Lớp con CountingList override Add để đếm. Gọi AddRange 3 phần tử → đếm ra 6 (đếm 2 lần) vì AddRange của cha lại gọi Add. Từng bước theo luồng gọi để thấy nguyên nhân.",
+  "form": "1 cột",
+  "note": "Ví dụ kinh điển 'fragile base class'; có thể thay bằng ví dụ bài đọc đang dùng."
+ }
+]

@@ -1,0 +1,79 @@
+[
+ {
+  "module": 5,
+  "lesson": "Giới thiệu về Trừu tượng và Abstract Class",
+  "activity": "Khái niệm Trừu tượng trong Lập trình hướng đối tượng (OOP)",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Người dùng chỉ thấy cái cần dùng, chi tiết bên trong được ẩn.",
+  "description": "car.Start() ở Main; bên trong là 4 bước riêng tư (CheckFuel, Ignite, ...). Chế độ mặc định chỉ thấy 1 dòng gọi; bấm tiếp mới 'mở nắp' thấy các bước ẩn hiện mờ. Ghi chú: người gọi không cần biết các bước này.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 5,
+  "lesson": "Giới thiệu về Trừu tượng và Abstract Class",
+  "activity": "Giới thiệu Abstract Class: Khái niệm và Mục đích",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Abstract class không tạo đối tượng được; lớp con phải hoàn thiện phần abstract.",
+  "description": "3 tab. Tab Không new được: new Shape() → lỗi biên dịch CS0144. Tab Lớp con hoàn chỉnh: new Circle(2).Describe() → Describe (code chung ở Shape) gọi Area() (abstract) → chạy Area của Circle. Tab Quên override: class Square : Shape không viết Area → lỗi CS0534.",
+  "form": "1 cột, nhiều tab",
+  "note": "Gộp luôn ý của bài 'Cấu trúc cơ bản của Abstract Class và Abstract Method'."
+ },
+ {
+  "module": 5,
+  "lesson": "Thực hành với Abstract Class",
+  "activity": "Các quy tắc và hạn chế khi sử dụng Abstract Class",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Abstract class vẫn có constructor và trường; chỉ kế thừa được một lớp.",
+  "description": "2 tab. Tab Constructor: new Circle(2) → constructor Shape chạy trước (gán Name) rồi Circle. Tab Một lớp cha: class C : A, B → lỗi CS1721.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 5,
+  "lesson": "Giới thiệu về Interface",
+  "activity": "Khái niệm Interface trong C# và vai trò của nó",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Interface là hợp đồng; lớp nào ký thì phải làm đủ.",
+  "description": "IFlyable { Fly() } cho Bird và Airplane (không cùng cha). Hàm LetItFly(IFlyable f) gọi f.Fly(). Bước 1 truyền Bird → chạy Bird.Fly; bước 2 truyền Airplane → chạy Airplane.Fly. Tab 2: lớp thiếu Fly → lỗi CS0535.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 5,
+  "lesson": "Thực hành với Interface",
+  "activity": "Kế thừa đa giao diện (Multiple Inheritance) qua Interface",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Một lớp có thể thực thi nhiều interface; mỗi interface là một 'góc nhìn'.",
+  "description": "class Duck : IFlyable, ISwimmable. Cùng một đối tượng Duck#1: IFlyable f = duck chỉ gọi được Fly(); ISwimmable s = duck chỉ gọi được Swim(); f.Swim() → lỗi biên dịch. Bộ nhớ hiện 3 biến cùng trỏ một hộp Duck#1.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 5,
+  "lesson": "So sánh và Lựa chọn giữa Abstract Class và Interface",
+  "activity": "So sánh chi tiết Abstract Class và Interface (Phần 1: Khác biệt cấu trúc và khả năng)",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Abstract class: có trường, constructor, code chung, 1 cha. Interface: hợp đồng, nhiều interface.",
+  "description": "2 cột chạy cùng tiêu chí, mỗi bước một tiêu chí (có trường? có constructor? có code sẵn? kế thừa nhiều?), ô kết quả ✓/✗ và đoạn code nhỏ minh họa.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 5,
+  "lesson": "Áp dụng Trừu tượng trong Thiết kế Hệ thống",
+  "activity": "Ví dụ thực tế: Cách các framework C# lớn sử dụng Abstract Class và Interface",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "List.Sort() dùng IComparable mà lớp của bạn thực thi.",
+  "description": "Student : IComparable<Student>, CompareTo theo điểm. Gọi list.Sort(): mỗi bước hiện một lần Sort gọi CompareTo(a, b) và kết quả âm/0/dương, mảng sinh viên đổi chỗ dần. Ghi chú: thư viện .NET không biết Student, chỉ biết IComparable.",
+  "form": "1 cột",
+  "note": "Dùng Insertion Sort để mô phỏng các lần gọi; ghi chú .NET thực tế dùng thuật toán khác."
+ }
+]

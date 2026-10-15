@@ -1,0 +1,24 @@
+[
+ {
+  "module": 1,
+  "lesson": "Giới thiệu Lập trình hướng đối tượng (OOP)",
+  "activity": "Khái niệm Lập trình hướng đối tượng (OOP) là gì?",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "OOP gom dữ liệu và hành vi vào một đối tượng.",
+  "description": "Cùng bài toán lưu 2 sinh viên. Cột trái (thủ tục): các biến rời name1, gpa1, name2, gpa2 và hàm In(name, gpa). Cột phải (OOP): lớp SinhVien có Name, Gpa, In(); tạo sv1, sv2 rồi gọi sv1.In(). Mỗi bước tô sáng dòng code, bộ nhớ cột trái là các ô biến rời, cột phải là 2 hộp đối tượng. Bước cuối ghi chú: dữ liệu của mỗi sinh viên nằm gọn trong một đối tượng.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 1,
+  "lesson": "Giới thiệu Lập trình hướng đối tượng (OOP)",
+  "activity": "Các khái niệm cốt lõi của OOP (Tổng quan)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Nhìn nhanh 4 trụ cột bằng một ví dụ nhỏ cho mỗi trụ cột.",
+  "description": "4 tab, mỗi tab 3-4 bước. Tab Đóng gói: acc.Deposit(-50) bị chặn, Balance giữ nguyên. Tab Kế thừa: Dog : Animal, dog.Eat() dùng phương thức của lớp cha. Tab Đa hình: Animal a lần lượt trỏ Dog, Cat; cùng lời gọi a.Speak() in Gâu, Meo. Tab Trừu tượng: chỉ gọi car.Start(), các bước bên trong ẩn (mờ). Bộ nhớ hiện hộp đối tượng và giá trị trường.",
+  "form": "1 cột, nhiều tab",
+  "note": "Mỗi tab chỉ là bản rút gọn; chi tiết có ở chương 2 đến 5."
+ }
+]

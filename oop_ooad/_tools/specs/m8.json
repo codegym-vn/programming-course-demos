@@ -1,0 +1,101 @@
+[
+ {
+  "module": 8,
+  "lesson": "Giới thiệu về Mã nguồn sạch và Thiết kế tốt",
+  "activity": "Mã nguồn sạch là gì?",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Cùng kết quả, code sạch dễ đọc hơn.",
+  "description": "2 cột chạy cùng dữ liệu: trái tên biến a, b, x, số 0.1 không giải thích; phải tên rõ (price, quantity, DiscountRate). Cả hai in cùng kết quả; bước cuối ghi chú: máy chạy như nhau, người đọc thì khác.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Đơn nhiệm (Single Responsibility Principle - SRP)",
+  "activity": "Ví dụ minh họa SRP trong thực tế",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Mỗi lớp một lý do để thay đổi.",
+  "description": "2 cột. Trái: Invoice tự tính tiền, in hóa đơn, lưu file. Phải: Invoice / InvoicePrinter / InvoiceRepository. 3 tab là 3 yêu cầu thay đổi (đổi thuế, đổi mẫu in, đổi chỗ lưu); mỗi tab tô sáng lớp bị sửa: cột trái luôn là Invoice, cột phải đúng 1 lớp chuyên trách.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Mở/Đóng (Open/Closed Principle - OCP)",
+  "activity": "Cách thiết kế để tuân thủ OCP với Đa hình và Interface",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Mở để mở rộng, đóng để sửa đổi.",
+  "description": "2 cột. Trái: DiscountCalculator if/else theo loại khách. Phải: IDiscount với Regular, Silver. Kịch bản thêm khách VIP: cột trái phải mở lớp cũ chèn else if (tô đỏ), cột phải thêm lớp VipDiscount (tô xanh), lớp cũ không đổi. Chạy tính giá 1.000.000 cho 3 loại khách, cả hai cột ra cùng kết quả.",
+  "form": "2 cột song song",
+  "note": "Khác domain với mô phỏng đa hình chương 4 để không trùng."
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Thay thế Liskov (Liskov Substitution Principle - LSP)",
+  "activity": "Giới thiệu Nguyên tắc Thay thế Liskov (LSP)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Lớp con phải thay được lớp cha mà không làm sai kết quả.",
+  "description": "Hàm Resize(Rectangle r) { r.Width = 5; r.Height = 4; } mong đợi Area = 20. Tab Rectangle: ra 20 ✓. Tab Square : Rectangle (set Width cũng đổi Height): từng bước thấy Width=5 kéo Height=5, rồi Height=4 kéo Width=4 → Area = 16 ✗.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Thay thế Liskov (Liskov Substitution Principle - LSP)",
+  "activity": "Phân tích ví dụ vi phạm và tuân thủ LSP",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Sửa vi phạm LSP bằng cách tách hành vi ra interface.",
+  "description": "2 cột. Trái: Penguin : Bird override Fly() ném NotSupportedException; vòng foreach birds gọi Fly → dừng ở Penguin với lỗi. Phải: IFlyable chỉ cho chim biết bay; vòng lặp chạy hết.",
+  "form": "2 cột song song",
+  "note": "Khóa học có 2 học liệu cùng tên (1 bài đọc, 1 hoạt động); gắn vào bài đọc."
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Tách biệt Giao diện (Interface Segregation Principle - ISP)",
+  "activity": "So sánh thiết kế với và không có ISP",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Interface nhỏ, đúng nhu cầu, không ép lớp làm việc thừa.",
+  "description": "2 cột. Trái: IWorker { Work(); Eat(); } — Robot buộc phải viết Eat() ném lỗi; vòng gọi Eat cho mọi worker dừng ở Robot. Phải: IWorkable, IEatable — Robot chỉ ký IWorkable; vòng gọi Eat chỉ duyệt IEatable, chạy hết.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Đảo ngược Phụ thuộc (Dependency Inversion Principle - DIP)",
+  "activity": "Giới thiệu Nguyên tắc Đảo ngược Phụ thuộc (DIP)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Lớp cấp cao phụ thuộc interface, không phụ thuộc lớp cụ thể.",
+  "description": "2 cột. Trái: OrderService tự new EmailSender() bên trong. Phải: OrderService nhận IMessageSender qua constructor. Kịch bản đổi sang SMS: cột trái phải sửa OrderService, cột phải chỉ đổi 1 dòng ở Main. Bộ nhớ hiện OrderService trỏ tới đối tượng sender nào.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Nguyên tắc Đảo ngược Phụ thuộc (Dependency Inversion Principle - DIP)",
+  "activity": "Lợi ích của việc giảm sự phụ thuộc trực tiếp",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Nhờ DIP có thể kiểm thử bằng đối tượng giả.",
+  "description": "Truyền FakeSender (chỉ ghi lại tin nhắn vào danh sách) cho OrderService, gọi PlaceOrder, kiểm tra danh sách có 1 tin → Test đạt ✓. Không gửi email thật.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 8,
+  "lesson": "Refactoring cơ bản và Thực hành SOLID",
+  "activity": "Các kỹ thuật Refactoring phổ biến",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Refactor đổi cấu trúc, không đổi hành vi.",
+  "description": "4 tab: Extract Method, Rename, Replace Magic Number bằng hằng số, Replace Conditional bằng Đa hình. Mỗi tab: bước 1 chạy code gốc ra kết quả X; các bước sau biến đổi code (dòng đổi tô vàng); bước cuối chạy lại cùng đầu vào vẫn ra X ✓.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ }
+]

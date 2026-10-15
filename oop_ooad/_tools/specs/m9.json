@@ -1,0 +1,68 @@
+[
+ {
+  "module": 9,
+  "lesson": "Phân tích yêu cầu và Xác định phạm vi dự án",
+  "activity": "Xác định các đối tượng chính và thuộc tính ban đầu",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Áp dụng danh từ/động từ cho đề bài dự án mẫu.",
+  "description": "Dùng lại khung mô phỏng 'Kỹ thuật xác định danh từ và động từ' (chương 6) nhưng thay đoạn mô tả bằng yêu cầu của dự án mẫu.",
+  "form": "1 cột",
+  "note": "Cần xác nhận đề tài dự án mẫu (đoán là Quản lý Thư viện)."
+ },
+ {
+  "module": 9,
+  "lesson": "Thiết kế hướng đối tượng (OOD) - Sơ đồ lớp UML và Nguyên tắc SOLID",
+  "activity": "Chuyển đổi mô hình OOA sang OOD",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Mô hình phân tích (khái niệm) được bổ sung chi tiết kỹ thuật thành mô hình thiết kế.",
+  "description": "Bắt đầu từ hộp Book chỉ có tên thuộc tính (OOA). Mỗi bước thêm một lớp chi tiết: kiểu dữ liệu, ký hiệu truy cập, phương thức, interface IBookRepository, lớp dịch vụ LibraryService. Bước cuối hiện sơ đồ OOD.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 9,
+  "lesson": "Triển khai dự án - Cấu trúc thư mục và Mã hóa cơ bản",
+  "activity": "Xây dựng các phương thức và xử lý logic nghiệp vụ",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Một phương thức nghiệp vụ = chuỗi kiểm tra rồi mới cập nhật trạng thái.",
+  "description": "library.BorrowBook(memberId, bookId): tìm thành viên → tìm sách → sách còn không → thành viên chưa vượt 3 cuốn → cập nhật. 3 tab: Thành công, Sách đã được mượn, Vượt hạn mức. Bộ nhớ hiện danh sách sách (cột IsBorrowed) và số sách của thành viên.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 9,
+  "lesson": "Triển khai dự án - Cấu trúc thư mục và Mã hóa cơ bản",
+  "activity": "Giới thiệu công cụ Debugging trong Visual Studio",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Breakpoint, Step Over, Step Into, cửa sổ Watch.",
+  "description": "Mô phỏng giao diện debug: chương trình dừng ở breakpoint (chấm đỏ). 2 tab: Step Over (chạy qua lời gọi hàm trong 1 bước) và Step Into (đi vào thân hàm). Khung Watch hiện biến thay đổi sau mỗi bước.",
+  "form": "1 cột, nhiều tab",
+  "note": "Khung mô phỏng hiện tại vốn giống trình debug nên rất hợp."
+ },
+ {
+  "module": 9,
+  "lesson": "Hoàn thiện dự án và Đánh giá",
+  "activity": "Xử lý đầu vào/đầu ra và hiển thị thông tin",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Nhập sai không làm chương trình sập khi dùng int.TryParse.",
+  "description": "Vòng menu console. 2 tab: int.Parse(\"abc\") → FormatException, chương trình dừng; int.TryParse → trả false, in 'Vui lòng nhập số', hỏi lại. Console mô phỏng lượt nhập.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 9,
+  "lesson": "Hoàn thiện dự án và Đánh giá",
+  "activity": "Các phương pháp kiểm thử đơn vị cơ bản (Unit Testing)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Arrange - Act - Assert; test đạt và test không đạt.",
+  "description": "Test cho BankAccount.Withdraw: 3 test (rút hợp lệ, rút quá số dư, rút số âm). Mỗi test 3 bước tô sáng Arrange/Act/Assert; mảng kết quả ✓/✗; console in 'Test k: ... → đạt/KHÔNG đạt'. Tab 2: Withdraw có lỗi cố ý (không kiểm tra số dư) → test 2 KHÔNG đạt.",
+  "form": "1 cột, nhiều tab",
+  "note": "Theo mẫu kiểm thử đã làm ở khóa Thuật toán. Đính kèm lại cho 'Hướng dẫn kiểm thử đơn vị một chức năng nhỏ'."
+ }
+]

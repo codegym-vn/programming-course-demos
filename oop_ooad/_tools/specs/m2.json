@@ -1,0 +1,101 @@
+[
+ {
+  "module": 2,
+  "lesson": "Các Thành phần của Lớp: Trường và Phương thức",
+  "activity": "Trường (Fields) trong C#",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Trường là dữ liệu của đối tượng; có giá trị mặc định; mỗi đối tượng giữ bản riêng.",
+  "description": "2 tab. Tab Giá trị mặc định: new Student() chưa gán gì, bộ nhớ hiện Name = null, Age = 0, IsActive = false; sau đó gán từng trường. Tab Mỗi đối tượng một bản: s1.Age = 18; s2.Age = 20; đổi s1 không ảnh hưởng s2 (ô s2 giữ nguyên, ô s1 tô vàng).",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 2,
+  "lesson": "Các Thành phần của Lớp: Trường và Phương thức",
+  "activity": "Phương thức (Methods) và Hành vi của Đối tượng",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Gọi phương thức: truyền tham số, chạy thân hàm, đổi trạng thái đối tượng, trả về giá trị.",
+  "description": "Lớp Counter có Count và Add(int step) trả về Count mới. Main gọi c.Add(2) rồi c.Add(3). Dòng tô sáng nhảy từ Main vào thân Add rồi quay lại. Bộ nhớ hiện ngăn gọi hàm: tham số step, đối tượng đang dùng (this →Counter#1), giá trị trả về; ngăn biến mất khi hàm kết thúc. Nhập được giá trị bước (1-9).",
+  "form": "1 cột",
+  "note": "Có ô nhập step."
+ },
+ {
+  "module": 2,
+  "lesson": "Các Thành phần của Lớp: Trường và Phương thức",
+  "activity": "Phân tích lỗi thường gặp về Tham số và Giá trị trả về",
+  "type": "Phân tích (kính lúp)",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Truyền int là truyền bản sao; truyền đối tượng là truyền tham chiếu; quên dùng giá trị trả về.",
+  "description": "3 tab. Tab Truyền int: Tang(x) tăng bản sao, x ở Main không đổi. Tab Truyền đối tượng: Tang(acc) đổi acc.Balance thật. Tab Bỏ quên giá trị trả về: gọi s.ToUpper() mà không gán, s không đổi. Mỗi tab có bộ nhớ trước/sau để so.",
+  "form": "1 cột, nhiều tab",
+  "note": "Học liệu hiện là hoạt động phân tích; mô phỏng đính kèm bổ trợ."
+ },
+ {
+  "module": 2,
+  "lesson": "Nguyên lý Đóng gói (Encapsulation) và Kiểm soát truy cập",
+  "activity": "Các Từ khóa Kiểm soát Truy cập (Access Modifiers)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "public, private, protected, internal: ai được truy cập thành viên nào.",
+  "description": "4 tab theo vị trí code đứng: Trong chính lớp, Trong lớp con, Lớp khác cùng project, Project khác. Mỗi bước thử truy cập một thành viên (public/private/protected/internal), ô kết quả hiện ✓ được phép (xanh) hoặc ✗ lỗi biên dịch CS0122 (đỏ). Bước cuối hiện bảng tổng hợp 4x4.",
+  "form": "1 cột, nhiều tab",
+  "note": "Không chạy code thật, mô phỏng kết quả biên dịch theo luật C#."
+ },
+ {
+  "module": 2,
+  "lesson": "Thuộc tính (Properties) trong C#",
+  "activity": "Giới thiệu về Thuộc tính (Properties)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Property trông như trường nhưng chạy qua get/set.",
+  "description": "Lớp Person có private int age và property Age { get; set { if (value >= 0) age = value; } }. Main: p.Age = 20; p.Age = -5; Console.WriteLine(p.Age);. Dòng tô sáng nhảy vào khối set (hiện ô value) và get. Bước -5 chỉ rõ điều kiện sai nên age vẫn 20. Nhập được giá trị gán thứ hai.",
+  "form": "1 cột",
+  "note": "Có ô nhập giá trị (cho phép số âm)."
+ },
+ {
+  "module": 2,
+  "lesson": "Thuộc tính (Properties) trong C#",
+  "activity": "Cú pháp và Các loại Thuộc tính",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Các dạng property hay gặp.",
+  "description": "4 tab: Auto-property { get; set; }; Chỉ đọc { get; } gán ngoài lớp báo lỗi biên dịch; private set chỉ lớp tự đổi; Tính toán (FullName => First + \" \" + Last) đổi First thì FullName đổi theo. Mỗi tab 3-4 bước.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 2,
+  "lesson": "Hàm tạo (Constructors) và Khởi tạo Đối tượng",
+  "activity": "Mục đích của Hàm tạo (Constructors)",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Constructor chạy ngay khi new, đảm bảo đối tượng có dữ liệu hợp lệ từ đầu.",
+  "description": "2 cột. Cột trái: không constructor, new Book() rồi quên gán Title → Title = null, in ra rỗng. Cột phải: Book(string title, decimal price), new Book(\"C#\", 99) → bước 1 cấp vùng nhớ (trường mặc định), bước 2 chạy thân constructor gán giá trị, bước 3 trả tham chiếu về biến.",
+  "form": "2 cột song song",
+  "note": ""
+ },
+ {
+  "module": 2,
+  "lesson": "Hàm tạo (Constructors) và Khởi tạo Đối tượng",
+  "activity": "Các loại Hàm tạo và Nạp chồng Hàm tạo",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Nhiều constructor khác tham số; C# chọn theo đối số; : this(...) gọi lẫn nhau.",
+  "description": "3 tab theo lời gọi: new Point(), new Point(5), new Point(5, 7). Mỗi tab tô sáng constructor được chọn, rồi theo : this(x, 0) nhảy sang constructor đầy đủ. Bộ nhớ hiện X, Y sau cùng.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 2,
+  "lesson": "Hàm tạo (Constructors) và Khởi tạo Đối tượng",
+  "activity": "Sử dụng từ khóa 'this' trong Hàm tạo",
+  "type": "Phân tích (kính lúp)",
+  "level": "Làm thêm nếu muốn",
+  "idea": "name = name gán tham số cho chính nó; this.name = name mới gán vào trường.",
+  "description": "2 cột cùng new Person(\"An\"). Cột trái name = name; → trường name vẫn null. Cột phải this.name = name; → trường name = \"An\". Bộ nhớ hiện song song tham số name và trường this.name.",
+  "form": "2 cột song song",
+  "note": "Học liệu hiện là hoạt động phân tích; lỗi rất hay gặp nên đáng làm."
+ }
+]

@@ -1,0 +1,101 @@
+[
+ {
+  "module": 4,
+  "lesson": "Giới thiệu về Đa hình trong C#",
+  "activity": "Khái niệm Đa hình là gì?",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Cùng một lời gọi, đối tượng khác nhau cho hành vi khác nhau.",
+  "description": "Một biến Animal a. Bước 1 a = new Dog(); a.Speak() → Gâu. Bước 2 a = new Cat(); a.Speak() → Meo. Bước 3 a = new Duck(); → Quạc. Dòng a.Speak() giữ nguyên, chỉ đổi đối tượng mà a trỏ tới (mũi tên trong bộ nhớ đổi hướng).",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình tĩnh: Nạp chồng phương thức (Method Overloading)",
+  "activity": "Nạp chồng phương thức là gì?",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Cùng tên, khác tham số; trình biên dịch chọn phiên bản theo đối số.",
+  "description": "Lớp Calc có Add(int,int), Add(double,double), Add(int,int,int). Main gọi lần lượt Add(2,3), Add(2.5,1.5), Add(1,2,3). Mỗi bước tô sáng lời gọi, rồi tô sáng phiên bản được chọn và nêu lý do (số lượng/kiểu đối số).",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình tĩnh: Nạp chồng phương thức (Method Overloading)",
+  "activity": "Cú pháp và ví dụ về Nạp chồng phương thức",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Nạp chồng hợp lệ và không hợp lệ.",
+  "description": "3 tab: Khác số tham số ✓; Khác kiểu tham số ✓; Chỉ khác kiểu trả về ✗ lỗi biên dịch CS0111. Mỗi tab 2-3 bước.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình với các lớp cơ sở và giao diện",
+  "activity": "Đa hình thông qua tham chiếu lớp cơ sở",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Kiểu biến quyết định gọi được gì; đối tượng thật quyết định chạy bản nào.",
+  "description": "Animal a = new Dog();. Bước a.Speak() → chạy Dog.Speak. Bước a.Fetch() → lỗi biên dịch vì Animal không có Fetch. Bước ((Dog)a).Fetch() → chạy được. Bộ nhớ hiện 'kiểu biến: Animal' và 'đối tượng: Dog#1'.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình với các lớp cơ sở và giao diện",
+  "activity": "Ví dụ về Đa hình với danh sách lớp cơ sở",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Một vòng foreach xử lý nhiều loại đối tượng.",
+  "description": "List<Shape> shapes = { Circle(r=2), Rect(3,4), Square(5) }. foreach gọi s.Area(): mỗi lần lặp tô sáng phần tử, nhảy vào Area đúng lớp, cộng dồn total. Mảng shapes hiện hi/done như các mô phỏng mảng trước.",
+  "form": "1 cột",
+  "note": "Làm tròn diện tích hình tròn 2 chữ số."
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình với các lớp cơ sở và giao diện",
+  "activity": "Đa hình với Interface (giới thiệu)",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Các lớp không cùng cha vẫn dùng chung được qua interface.",
+  "description": "IPayable { GetAmount() } cho Employee và Invoice. List<IPayable> duyệt và cộng tổng tiền. Sơ đồ nhỏ: 2 lớp không liên quan cùng nối vào IPayable.",
+  "form": "1 cột",
+  "note": ""
+ },
+ {
+  "module": 4,
+  "lesson": "Đa hình với các lớp cơ sở và giao diện",
+  "activity": "Phân biệt Upcasting và Downcasting",
+  "type": "Đã có nội dung",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Upcast luôn an toàn; downcast có thể lỗi; dùng is/as để kiểm tra.",
+  "description": "4 tab: Upcast Animal a = dog ✓; Downcast đúng (Dog)a ✓; Downcast sai (Cat)a → InvalidCastException; Dùng as → null thay vì lỗi, và if (a is Dog d).",
+  "form": "1 cột, nhiều tab",
+  "note": "Học liệu không phải bài đọc; mô phỏng đính kèm bổ trợ."
+ },
+ {
+  "module": 4,
+  "lesson": "Ứng dụng và Lợi ích của Đa hình trong thiết kế phần mềm",
+  "activity": "Đa hình giúp tạo mã linh hoạt và dễ mở rộng",
+  "type": "Bài đọc",
+  "level": "Nên làm",
+  "idea": "Thêm loại mới không phải sửa code cũ.",
+  "description": "2 cột. Trái: TinhDienTich(shape) dùng switch theo loại. Phải: shape.Area() đa hình. Kịch bản thêm Triangle: cột trái tô đỏ các dòng phải sửa trong switch, cột phải chỉ thêm lớp mới (tô xanh). Câu kết: số chỗ phải sửa 2 so với 0.",
+  "form": "2 cột song song",
+  "note": "Tab 'Lợi ích của Đa hình' đính kèm lại bài này."
+ },
+ {
+  "module": 4,
+  "lesson": "Ứng dụng và Lợi ích của Đa hình trong thiết kế phần mềm",
+  "activity": "Ví dụ thực tế về Đa hình trong thiết kế hệ thống",
+  "type": "Bài đọc",
+  "level": "Làm thêm nếu muốn",
+  "idea": "Một hàm Checkout làm việc với mọi phương thức thanh toán.",
+  "description": "3 tab: Tiền mặt, Thẻ, Ví điện tử. Cùng Checkout(IPayment p, 200000), mỗi tab chạy Pay của lớp tương ứng (phí khác nhau), console in kết quả.",
+  "form": "1 cột, nhiều tab",
+  "note": ""
+ }
+]
