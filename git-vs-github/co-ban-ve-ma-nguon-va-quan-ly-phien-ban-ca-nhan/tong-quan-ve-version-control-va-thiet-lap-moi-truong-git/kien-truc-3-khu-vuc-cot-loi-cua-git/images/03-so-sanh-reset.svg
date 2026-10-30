@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+<rect width="1200" height="660" fill="#ffffff"/>
+<text x="600" y="48" text-anchor="middle" font-size="28" font-weight="700" fill="#1d2330">So sánh các kiểu git reset</text>
+<text x="600" y="80" text-anchor="middle" font-size="16" fill="#5d6676">Ví dụ với <tspan font-family="Menlo, Consolas, monospace" fill="#1d2330">git reset &lt;kiểu&gt; HEAD~1</tspan>: đưa HEAD lùi về commit ngay trước đó</text>
+<rect x="50" y="130" width="1120" height="424" rx="14" fill="#fff" stroke="#e2e5eb" stroke-width="1.5"/>
+<path d="M50 144a14 14 0 0 1 14-14h1092a14 14 0 0 1 14 14v42H50z" fill="#f3f5f8"/>
+<text x="175.0" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#3b4352">Lệnh</text>
+<text x="395.0" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">③ Repository (HEAD)</text>
+<text x="585.0" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">② Staging Area</text>
+<text x="775.0" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#c2410c">① Working Directory</text>
+<text x="1020.0" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#3b4352">Thay đổi bị bỏ đi nằm ở đâu?</text>
+<line x1="50" y1="186" x2="1170" y2="186" stroke="#e2e5eb" stroke-width="1.5"/>
+<text x="74" y="238" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#1d2330">--soft</text>
+<rect x="318" y="208" width="154" height="48" rx="10" fill="#efe4ff" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="395.0" y="237.0" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">● Di chuyển</text>
+<text x="585.0" y="237.0" text-anchor="middle" font-size="15" fill="#8a93a3">— Giữ nguyên</text>
+<text x="775.0" y="237.0" text-anchor="middle" font-size="15" fill="#8a93a3">— Giữ nguyên</text>
+<text x="890" y="226" font-size="16" font-weight="700" fill="#15803d">Vẫn Staged</text>
+<text x="890" y="249" font-size="14" fill="#5d6676">sẵn sàng commit lại</text>
+<line x1="50" y1="278" x2="1170" y2="278" stroke="#e2e5eb" stroke-width="1.5"/>
+<text x="74" y="318" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#1d2330">--mixed</text>
+<text x="74" y="342" font-size="13.5" fill="#5d6676" font-weight="400">(mặc định)</text>
+<rect x="318" y="300" width="154" height="48" rx="10" fill="#efe4ff" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="395.0" y="329.0" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">● Di chuyển</text>
+<rect x="508" y="300" width="154" height="48" rx="10" fill="#dcf5e3" stroke="#15803d" stroke-width="1.5"/>
+<text x="585.0" y="329.0" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">● Ghi đè</text>
+<text x="775.0" y="329.0" text-anchor="middle" font-size="15" fill="#8a93a3">— Giữ nguyên</text>
+<text x="890" y="318" font-size="16" font-weight="700" fill="#c2410c">Thành Modified</text>
+<text x="890" y="341" font-size="14" fill="#5d6676">cần git add lại</text>
+<line x1="50" y1="370" x2="1170" y2="370" stroke="#e2e5eb" stroke-width="1.5"/>
+<text x="74" y="410" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#1d2330">--hard</text>
+<text x="74" y="434" font-size="13.5" fill="#b42318" font-weight="700">⚠ nguy hiểm</text>
+<rect x="318" y="392" width="154" height="48" rx="10" fill="#efe4ff" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="395.0" y="421.0" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">● Di chuyển</text>
+<rect x="508" y="392" width="154" height="48" rx="10" fill="#dcf5e3" stroke="#15803d" stroke-width="1.5"/>
+<text x="585.0" y="421.0" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">● Ghi đè</text>
+<rect x="698" y="392" width="154" height="48" rx="10" fill="#ffe8d6" stroke="#c2410c" stroke-width="1.5"/>
+<text x="775.0" y="421.0" text-anchor="middle" font-size="15" font-weight="700" fill="#c2410c">● Ghi đè</text>
+<text x="890" y="410" font-size="16" font-weight="700" fill="#b42318">Mất khỏi tệp đang sửa</text>
+<text x="890" y="433" font-size="14" fill="#5d6676">chỉ còn tìm qua git reflog</text>
+<line x1="50" y1="462" x2="1170" y2="462" stroke="#e2e5eb" stroke-width="1.5"/>
+<text x="74" y="502" font-family="Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#1d2330">git reset app.py</text>
+<text x="74" y="526" font-size="13.5" fill="#5d6676" font-weight="400">(bỏ add một tệp)</text>
+<text x="395.0" y="513.0" text-anchor="middle" font-size="15" fill="#8a93a3">— Giữ nguyên</text>
+<rect x="508" y="484" width="154" height="48" rx="10" fill="#dcf5e3" stroke="#15803d" stroke-width="1.5"/>
+<text x="585.0" y="513.0" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">● Ghi đè app.py</text>
+<text x="775.0" y="513.0" text-anchor="middle" font-size="15" fill="#8a93a3">— Giữ nguyên</text>
+<text x="890" y="502" font-size="16" font-weight="700" fill="#c2410c">Staged → Modified</text>
+<text x="890" y="525" font-size="14" fill="#5d6676">HEAD không di chuyển</text>
+<text x="600" y="598" text-anchor="middle" font-size="15" fill="#1d2330">Mức độ ảnh hưởng tăng dần: <tspan font-family="Menlo, Consolas, monospace" font-weight="700">--soft</tspan> &lt; <tspan font-family="Menlo, Consolas, monospace" font-weight="700">--mixed</tspan> &lt; <tspan font-family="Menlo, Consolas, monospace" font-weight="700" fill="#b42318">--hard</tspan>. Kiểm tra kỹ git status trước khi dùng --hard.</text>
+</svg>

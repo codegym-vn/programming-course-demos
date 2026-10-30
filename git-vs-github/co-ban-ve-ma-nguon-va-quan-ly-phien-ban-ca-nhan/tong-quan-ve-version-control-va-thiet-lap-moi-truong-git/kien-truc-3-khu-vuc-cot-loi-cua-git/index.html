@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ba khu vực của Git</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --bad:#b42318; --bad-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857;
+    --wd:#c2410c; --wds:#ffe8d6; --ix:#15803d; --ixs:#dcf5e3; --rp:#7c3aed; --rps:#efe4ff;
+    --node-line:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --bad:#f87171; --bad-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7;
+      --wd:#fdba74; --wds:#4a2c16; --ix:#4ade80; --ixs:#14361f; --rp:#c4a1ff; --rps:#33244f;
+      --node-line:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 32px;position:relative}
+  h1{font-size:22px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 16px}
+  code{font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);padding:1px 5px;border-radius:5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab:disabled{cursor:not-allowed;opacity:.6}
+  .seg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .seg:empty{display:none}
+  .seg b{font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  @media (max-width:820px){.btns{margin-left:0}}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:72px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)}
+  .status.err b{color:var(--bad)}
+  .bar{height:4px;background:var(--line);border-radius:2px;margin:-8px 0 14px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .grid>*{min-width:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 8px}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 12px 0 0;border-left:3px solid transparent}
+  .ln .no{width:34px;flex:none;text-align:right;padding-right:12px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.past{opacity:.55}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.cm{color:var(--muted);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;min-height:120px;max-height:250px;overflow:auto;
+    font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .console .t-cmd{color:#93c5fd}.console .t-cmd::before{content:"$ ";color:#6b7280}
+  .console .t-cm{color:#7b8494;font-style:italic}
+  .console .t-er{color:#fca5a5}
+
+  .fstate{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px;font-size:14px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:13px;border:1px solid var(--muted);color:var(--muted)}
+  .badge.m{color:var(--wd);border-color:var(--wd);background:var(--wds)}
+  .badge.s{color:var(--ix);border-color:var(--ix);background:var(--ixs)}
+  .badge.c{color:var(--rp);border-color:var(--rp);background:var(--rps)}
+
+  .zones{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:12px;margin-bottom:8px}
+  .zones>*{min-width:0}
+  @media (max-width:900px){.zones{grid-template-columns:1fr}}
+  .zone{background:var(--card);border:1px solid var(--line);border-top:5px solid;border-radius:12px;padding:12px;transition:box-shadow .25s}
+  .zone.wd{border-top-color:var(--wd)} .zone.ix{border-top-color:var(--ix)} .zone.rp{border-top-color:var(--rp)}
+  .zone.on{box-shadow:0 0 0 3px var(--cur-bar)}
+  .zone h3{margin:0;font-size:16px}
+  .zone.wd h3{color:var(--wd)} .zone.ix h3{color:var(--ix)} .zone.rp h3{color:var(--rp)}
+  .zsub{margin:0 0 8px;color:var(--muted);font-size:13px}
+  .fname{font:600 12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin:0 0 4px}
+  .file{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;min-height:96px;
+    font:13.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .file .ln .no{width:28px;padding-right:10px}
+  .zone.wd .ln.chg{background:var(--wds);border-left-color:var(--wd)}
+  .zone.ix .ln.chg{background:var(--ixs);border-left-color:var(--ix)}
+  .znote{margin-top:8px;font-size:13px;min-height:20px;color:var(--muted)}
+  .zone.wd .znote.diff{color:var(--wd);font-weight:600}
+  .zone.ix .znote.diff{color:var(--ix);font-weight:600}
+  .zone.rp .znote{color:var(--rp);font-weight:600}
+  .graph{width:100%;height:auto;display:block;margin-bottom:8px}
+  .graph .eg{fill:none;stroke:var(--node-line);stroke-width:2}
+  .graph .eg.faded{stroke-dasharray:4 4}
+  .graph .cn{fill:var(--card);stroke:var(--rp);stroke-width:2.5}
+  .graph .cn.head{fill:var(--rp)}
+  .graph .faded{opacity:.45}
+  .graph .chip rect{fill:var(--card);stroke:var(--muted);stroke-width:1}
+  .graph .chip text{fill:var(--muted);font:700 11px system-ui,sans-serif}
+  .graph .chip.h rect{fill:var(--rps);stroke:var(--rp)}
+  .graph .chip.h text{fill:var(--rp)}
+  .graph .hs{fill:var(--rp);font:600 12px ui-monospace,Menlo,Consolas,monospace}
+  .graph .msg{fill:var(--text);font:12.5px system-ui,sans-serif}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border-left:3px solid}
+  .legend .lw{background:var(--wds);border-color:var(--wd)} .legend .li{background:var(--ixs);border-color:var(--ix)}
+
+  .packet{position:fixed;z-index:50;pointer-events:none;background:var(--card);color:var(--text);border:2px solid var(--accent);
+    border-radius:10px;padding:6px 12px;font:700 13px ui-monospace,Menlo,Consolas,monospace;box-shadow:0 8px 24px rgba(0,0,0,.25);
+    transition:transform .7s cubic-bezier(.5,.05,.3,1);text-align:center}
+  .packet small{display:block;font:600 11px system-ui,sans-serif;color:var(--accent)}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ba khu vực của Git: dữ liệu di chuyển như thế nào?</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+
+  <p class="lead">Chọn một tình huống rồi bấm <b>Bước tiếp</b> để chạy từng lệnh, quan sát tệp <code>app.py</code> đi qua Working Directory, Staging Area và Repository.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-ex="fwd">Luồng xuôi: add &amp; commit</button>
+      <button class="tab" role="tab" data-ex="pit">Sửa tiếp sau khi add</button>
+      <button class="tab" role="tab" data-ex="co">Luồng ngược: checkout / switch</button>
+      <button class="tab" role="tab" data-ex="rs">Luồng ngược: reset</button>
+    </div>
+    <div class="seg" id="opts"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="bar"><i id="bar"></i></div>
+
+  <div class="grid">
+    <div class="card"><p class="panel-title">Các lệnh sẽ chạy</p><div class="code" id="code"></div></div>
+    <div class="card"><p class="panel-title">Terminal</p><div class="console" id="term"></div></div>
+  </div>
+
+  <div class="fstate" id="fstate"></div>
+  <div class="zones">
+    <section class="zone wd" id="zWD">
+      <h3>① Working Directory</h3>
+      <p class="zsub">Thư mục làm việc: nơi bạn mở và sửa tệp</p>
+      <p class="fname">app.py</p>
+      <div class="file" id="fWD"></div>
+      <div class="znote" id="nWD"></div>
+    </section>
+    <section class="zone ix" id="zIX">
+      <h3>② Staging Area (Index)</h3>
+      <p class="zsub">Vùng tạm: bản nháp cho commit tiếp theo</p>
+      <p class="fname">app.py</p>
+      <div class="file" id="fIX"></div>
+      <div class="znote" id="nIX"></div>
+    </section>
+    <section class="zone rp" id="zRP">
+      <h3>③ Repository (.git)</h3>
+      <p class="zsub">Kho lưu lịch sử commit; HEAD là commit hiện tại</p>
+      <div id="gRP"></div>
+      <p class="fname">app.py trong commit HEAD</p>
+      <div class="file" id="fRP"></div>
+      <div class="znote" id="nRP"></div>
+    </section>
+  </div>
+  <div class="legend"><span><i class="lw"></i>Dòng có ở Working Directory nhưng chưa add</span><span><i class="li"></i>Dòng đã add vào Staging Area nhưng chưa commit</span></div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function eq(a, b){ return a.length === b.length && a.every(function(x, i){ return x === b[i]; }); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, RM ? 0 : ms); }); }
+  function hl(src){
+    if (/^\s*#/.test(src)) return '<span class="cm">' + esc(src) + '</span>';
+    return esc(src).replace(/"([^"]*)"/, '<span class="str">"$1"</span>').replace(/^git\b/, '<span class="kw">git</span>');
+  }
+
+  /* ---------- Nội dung tệp và commit mẫu ---------- */
+  var V_A = ['def chao():', '    print("Xin chào")'];
+  var V_B = V_A.concat(['    print("Học Git")']);
+  var V_C = V_B.concat(['chao()']);
+  var V_C2 = V_C.concat(['print("Tạm biệt")']);
+  var CM = {
+    a1f3c9e:{msg:'Tạo app.py', c:V_A},
+    b72d410:{msg:'Thêm dòng Học Git', c:V_B},
+    c5e88a2:{msg:'Gọi hàm chao()', c:V_C}
+  };
+  function mkCommit(id, parent, lane){ return {id:id, msg:CM[id].msg, c:CM[id].c, parent:parent || null, lane:lane || 0}; }
+  function linear(n){
+    var ids = ['a1f3c9e', 'b72d410', 'c5e88a2'].slice(0, n);
+    var cs = ids.map(function(id, i){ return mkCommit(id, i ? ids[i - 1] : null); });
+    return {commits:cs, branches:{main:ids[n - 1]}, head:{branch:'main'}, wd:cs[n - 1].c, ix:cs[n - 1].c};
+  }
+
+  /* ---------- Trạng thái Git ---------- */
+  function commitOf(S, id){ return S.commits.filter(function(c){ return c.id === id; })[0]; }
+  function headId(S){ return S.head.branch ? S.branches[S.head.branch] : S.head.id; }
+  function headC(S){ return commitOf(S, headId(S)).c; }
+  function where(S){ return S.head.branch ? 'On branch ' + S.head.branch : 'HEAD detached at ' + S.head.id; }
+  function gitStatus(S){
+    var staged = !eq(S.ix, headC(S)), wdD = !eq(S.wd, S.ix), o = [where(S)];
+    if (!staged && !wdD) { o.push('nothing to commit, working tree clean'); return o.join('\n'); }
+    if (staged) o.push('Changes to be committed:', '  (use "git restore --staged <file>..." to unstage)', '\tmodified:   app.py');
+    if (staged && wdD) o.push('');
+    if (wdD) o.push('Changes not staged for commit:', '  (use "git add <file>..." to update what will be committed)', '  (use "git restore <file>..." to discard changes in working directory)', '\tmodified:   app.py');
+    if (wdD && !staged) o.push('', 'no changes added to commit (use "git add" and/or "git commit -a")');
+    return o.join('\n');
+  }
+
+  /* ---------- Bộ ghi các bước ---------- */
+  function mk(init){
+    var S = clone(init), snaps = [], outs = [];
+    return {S:S, init:clone(init), snaps:snaps,
+      cmd:function(s){ outs.push({t:'cmd', s:s}); },
+      out:function(s, t){ outs.push({t:t || 'out', s:s}); },
+      snap:function(o){ o.st = clone(S); o.outs = outs.slice(); snaps.push(o); }};
+  }
+
+  /* ================= Tình huống 1: Luồng xuôi ================= */
+  var L_FWD = ['# Sửa app.py: thêm dòng print("Học Git")', 'git status', 'git add app.py', 'git status', 'git commit -m "Thêm dòng Học Git"', 'git status'];
+  function FWD(c){
+    var S = c.S;
+    S.wd = V_B; c.out('# (Bạn sửa app.py trong trình soạn thảo và lưu lại)', 'cm');
+    c.snap({ln:0, on:['WD'], title:'Sửa tệp trong Working Directory',
+      body:'Bạn thêm dòng print("Học Git") vào app.py. Chỉ Working Directory thay đổi (dòng tô cam).',
+      note:'Git chưa ghi nhận gì: Staging Area và Repository vẫn giữ bản cũ. app.py đang ở trạng thái Modified.'});
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:1, title:'Kiểm tra bằng git status',
+      body:'Git so sánh Working Directory với Staging Area, thấy khác nhau nên báo "Changes not staged for commit".',
+      note:'git status chỉ xem, không thay đổi khu vực nào.'});
+    c.cmd('git add app.py'); S.ix = S.wd;
+    c.snap({ln:2, fly:['fWD', 'fIX', 'git add'], on:['IX'], title:'git add: chép sang Staging Area',
+      body:'Git chép nội dung hiện tại của app.py từ Working Directory vào Staging Area. Dòng tô xanh là thay đổi đã add, đang chờ commit.',
+      note:'Working Directory không bị ảnh hưởng: Git chỉ chép, không di chuyển tệp.'});
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:3, title:'Kiểm tra lại bằng git status',
+      body:'Staging Area giờ khác HEAD nên Git báo "Changes to be committed": app.py ở trạng thái Staged.',
+      note:'Working Directory và Staging Area đã giống nhau nên không còn mục "not staged".'});
+    c.cmd('git commit -m "Thêm dòng Học Git"');
+    S.commits.push(mkCommit('b72d410', 'a1f3c9e')); S.fresh = 'b72d410';
+    c.snap({ln:4, fly:['fIX', 'gRP', 'git commit'], on:['RP'], transient:true, title:'git commit (1/2): đóng gói bản chụp',
+      body:'Git lấy toàn bộ nội dung đang có trong Staging Area, đóng gói thành commit mới b72d410 và lưu vào Repository.',
+      note:'Commit được tạo từ Staging Area, không phải từ Working Directory.'});
+    S.branches.main = 'b72d410'; delete S.fresh;
+    c.out('[main b72d410] Thêm dòng Học Git\n 1 file changed, 1 insertion(+)');
+    c.snap({ln:4, on:['RP'], title:'git commit (2/2): HEAD tiến lên',
+      body:'Nhánh main, cùng với HEAD, chuyển sang commit mới b72d410. Cả ba khu vực giờ cùng một nội dung.',
+      note:'app.py chuyển sang trạng thái Committed.'});
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:5, title:'Hoàn tất một vòng',
+      body:'"nothing to commit, working tree clean": Working Directory = Staging Area = HEAD.',
+      note:'Lần sửa tiếp theo sẽ bắt đầu một vòng mới: Modified → Staged → Committed.'});
+  }
+
+  /* ================= Tình huống 2: Sửa tiếp sau khi add ================= */
+  var L_PIT = ['# Sửa app.py: thêm dòng print("Học Git")', 'git add app.py', '# Sửa tiếp: thêm dòng chao()', 'git status', 'git commit -m "Thêm dòng Học Git"', 'git status', 'git add app.py', 'git commit -m "Gọi hàm chao()"'];
+  function PIT(c){
+    var S = c.S;
+    S.wd = V_B; c.out('# (Bạn thêm dòng print("Học Git"))', 'cm');
+    c.snap({ln:0, on:['WD'], title:'Sửa tệp lần 1', body:'Thêm dòng print("Học Git"). Chỉ Working Directory thay đổi.'});
+    c.cmd('git add app.py'); S.ix = S.wd;
+    c.snap({ln:1, fly:['fWD', 'fIX', 'git add'], on:['IX'], title:'git add', body:'Bản app.py có dòng "Học Git" được chép vào Staging Area.'});
+    S.wd = V_C; c.out('# (Bạn thêm tiếp dòng chao())', 'cm');
+    c.snap({ln:2, on:['WD'], title:'Sửa tiếp sau khi đã add',
+      body:'Dòng chao() chỉ có trong Working Directory. Staging Area vẫn giữ bản đã add trước lần sửa này.',
+      note:'Lúc này app.py vừa có thay đổi Staged (dòng "Học Git") vừa có thay đổi Modified (dòng chao()).'});
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:3, title:'git status hiện cả hai mục',
+      body:'app.py xuất hiện ở cả "Changes to be committed" lẫn "Changes not staged for commit".',
+      note:'Đây không phải lỗi: Git đang cho biết có hai phiên bản khác nhau của cùng một tệp.'});
+    c.cmd('git commit -m "Thêm dòng Học Git"');
+    S.commits.push(mkCommit('b72d410', 'a1f3c9e')); S.branches.main = 'b72d410';
+    c.out('[main b72d410] Thêm dòng Học Git\n 1 file changed, 1 insertion(+)');
+    c.snap({ln:4, fly:['fIX', 'gRP', 'git commit'], on:['RP'], title:'git commit: chỉ lấy bản trong Staging Area',
+      body:'Commit mới b72d410 chứa dòng "Học Git" nhưng không có dòng chao().',
+      note:'Commit luôn đóng gói Staging Area, không đọc Working Directory.'});
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:5, title:'Dòng chao() vẫn chưa được lưu',
+      body:'Staging Area đã giống HEAD, nhưng Working Directory vẫn khác: app.py còn ở trạng thái Modified.',
+      note:'Muốn lưu nốt dòng chao() thì phải git add rồi commit thêm một lần.'});
+    c.cmd('git add app.py'); S.ix = S.wd;
+    c.snap({ln:6, fly:['fWD', 'fIX', 'git add'], on:['IX'], title:'git add lần 2', body:'Bản mới nhất, có dòng chao(), được chép vào Staging Area.'});
+    c.cmd('git commit -m "Gọi hàm chao()"');
+    S.commits.push(mkCommit('c5e88a2', 'b72d410')); S.branches.main = 'c5e88a2';
+    c.out('[main c5e88a2] Gọi hàm chao()\n 1 file changed, 1 insertion(+)');
+    c.snap({ln:7, fly:['fIX', 'gRP', 'git commit'], on:['RP'], title:'git commit lần 2',
+      body:'Commit c5e88a2 lưu nốt dòng chao(). Cả ba khu vực đồng bộ.',
+      note:'Kết luận: hãy git add ngay trước khi commit để chắc chắn commit có đủ những gì bạn muốn.'});
+  }
+
+  /* ================= Tình huống 3: checkout / switch ================= */
+  function coInit(){
+    return {commits:[mkCommit('a1f3c9e'), mkCommit('b72d410', 'a1f3c9e'), mkCommit('c5e88a2', 'b72d410', 1)],
+      branches:{main:'b72d410', feature:'c5e88a2'}, head:{branch:'main'}, wd:V_B, ix:V_B};
+  }
+  function SW(c, ln, cmd, to, lastNote){
+    var S = c.S, tid = to.branch ? S.branches[to.branch] : to.id, tc = commitOf(S, tid).c;
+    var name = to.branch ? 'nhánh ' + to.branch : 'commit ' + tid;
+    c.cmd(cmd);
+    S.head = to.branch ? {branch:to.branch} : {id:tid};
+    c.snap({ln:ln, on:['RP'], transient:true, title:'① HEAD trỏ sang ' + name + (to.branch ? ' (' + tid + ')' : ''),
+      body:'Git lấy bản chụp của commit ' + tid + ' trong Repository. Staging Area và Working Directory chưa đổi.',
+      note:to.branch ? 'Ngoài thực tế ba việc này xảy ra gần như tức thì; ở đây tách ra để dễ quan sát.' : 'HEAD trỏ thẳng vào một commit thay vì một nhánh: trạng thái này gọi là "detached HEAD".'});
+    S.ix = tc;
+    c.snap({ln:ln, fly:['gRP', 'fIX', 'bản chụp ' + tid], on:['IX'], transient:true, title:'② Cập nhật Staging Area',
+      body:'Staging Area được thay bằng nội dung của commit ' + tid + ', giờ giống hệt HEAD.',
+      note:'Working Directory vẫn còn bản cũ, chờ bước cuối.'});
+    S.wd = tc;
+    c.out(to.branch ? "Switched to branch '" + to.branch + "'"
+      : "Note: switching to '" + tid + "'.\n\nYou are in 'detached HEAD' state. You can look around, make experimental\nchanges and commit them, ...\n\nHEAD is now at " + tid + ' ' + commitOf(S, tid).msg);
+    c.snap({ln:ln, fly:['fIX', 'fWD', 'giải nén, ghi đè'], on:['WD'], title:'③ Ghi đè Working Directory',
+      body:'Nội dung được giải nén và ghi đè lên app.py trong thư mục làm việc. Cả ba khu vực lại đồng bộ, giờ ở ' + name + '.',
+      note:lastNote || ''});
+  }
+  function ST(c, ln, body){ c.cmd('git status'); c.out(gitStatus(c.S)); c.snap({ln:ln, title:'git status', body:body}); }
+  var CO_OPTS = {
+    feature:{label:'git switch feature', lines:['git switch feature', 'git status', 'git switch main'],
+      intro:'Nhánh main có 2 commit; nhánh feature có thêm commit c5e88a2 (thêm dòng chao()). Đang ở main. Bấm "Bước tiếp" để chuyển sang feature rồi quay lại.',
+      run:function(c){
+        SW(c, 0, 'git switch feature', {branch:'feature'}, 'Mở app.py trong trình soạn thảo, bạn sẽ thấy dòng chao() xuất hiện.');
+        ST(c, 1, 'Đang ở nhánh feature và không có thay đổi nào: cả ba khu vực khớp với commit c5e88a2.');
+        SW(c, 2, 'git switch main', {branch:'main'}, 'Quay về main, dòng chao() biến mất khỏi tệp vì commit c5e88a2 chỉ có ở nhánh feature. Nó không mất mà vẫn nằm an toàn trong Repository.');
+      }},
+    old:{label:'git checkout a1f3c9e', lines:['git checkout a1f3c9e', 'git status', 'git switch main'],
+      intro:'Lấy lại phiên bản cũ nhất của dự án (commit a1f3c9e) để xem, rồi quay về main. Bấm "Bước tiếp".',
+      run:function(c){
+        SW(c, 0, 'git checkout a1f3c9e', {id:'a1f3c9e'}, 'Bạn đang xem dự án đúng như lúc tạo commit đầu tiên.');
+        ST(c, 1, 'git status báo "HEAD detached at a1f3c9e": HEAD không gắn với nhánh nào.');
+        SW(c, 2, 'git switch main', {branch:'main'}, 'HEAD gắn lại vào nhánh main, mọi thứ trở về phiên bản mới nhất.');
+      }},
+    dirty:{label:'Còn thay đổi chưa commit', lines:['# Sửa app.py nhưng chưa commit', 'git switch feature', 'git restore app.py', 'git switch feature'],
+      intro:'Điều gì xảy ra nếu bạn chuyển nhánh khi tệp còn thay đổi chưa commit? Bấm "Bước tiếp".',
+      run:function(c){
+        var S = c.S;
+        S.wd = S.wd.concat(['# TODO: viết thêm']); c.out('# (Bạn sửa app.py nhưng chưa commit)', 'cm');
+        c.snap({ln:0, on:['WD'], title:'Có thay đổi chưa commit', body:'app.py trong Working Directory có thêm một dòng, đang ở trạng thái Modified.'});
+        c.cmd('git switch feature');
+        c.out('error: Your local changes to the following files would be overwritten by checkout:\n\tapp.py\nPlease commit your changes or stash them before you switch branches.\nAborting', 'er');
+        c.snap({ln:1, err:true, title:'Git từ chối chuyển nhánh',
+          body:'Bước ③ (ghi đè Working Directory) sẽ làm mất thay đổi chưa commit của bạn. Git dừng lại để bảo vệ dữ liệu, không khu vực nào bị đổi.',
+          note:'Cách xử lý: commit thay đổi đó, hoặc hủy nó bằng git restore.'});
+        c.cmd('git restore app.py'); S.wd = S.ix;
+        c.snap({ln:2, fly:['fIX', 'fWD', 'git restore'], on:['WD'], title:'git restore: hủy thay đổi chưa add',
+          body:'Git chép app.py từ Staging Area đè lên Working Directory. Đây cũng là một luồng ngược: Staging Area → Working Directory.',
+          note:'Thay đổi bị hủy theo cách này không lấy lại được.'});
+        SW(c, 3, 'git switch feature', {branch:'feature'}, 'Lần này Working Directory sạch nên Git chuyển nhánh thành công.');
+      }}
+  };
+
+  /* ================= Tình huống 4: reset ================= */
+  var RS_OPTS = {
+    soft:{label:'--soft', cmd:'git reset --soft HEAD~1'},
+    mixed:{label:'--mixed (mặc định)', cmd:'git reset --mixed HEAD~1'},
+    hard:{label:'--hard', cmd:'git reset --hard HEAD~1'},
+    file:{label:'git reset app.py', cmd:'git reset app.py'}
+  };
+  var RS_SUM = {
+    soft:{t:'Kết quả --soft', b:'Chỉ HEAD lùi lại. Staging Area và Working Directory vẫn giữ nội dung của c5e88a2, nên dòng chao() giờ ở trạng thái Staged, sẵn sàng commit lại.', n:'Thường dùng để gộp hoặc viết lại commit vừa tạo.'},
+    mixed:{t:'Kết quả --mixed', b:'HEAD lùi lại và Staging Area về theo HEAD. Working Directory giữ nguyên, nên dòng chao() giờ ở trạng thái Modified, cần git add lại.', n:'Nội dung tệp không mất; lệnh chỉ hủy commit và hủy add.'},
+    hard:{t:'Kết quả --hard ⚠', b:'Cả ba khu vực bị đưa về b72d410. Dòng chao() đã biến mất khỏi app.py trong thư mục làm việc.', n:'Lệnh nguy hiểm: thay đổi chưa commit bị mất hẳn. Commit c5e88a2 chỉ còn tìm lại được qua git reflog trong một thời gian.'},
+    file:{t:'Kết quả git reset app.py', b:'HEAD không di chuyển. Bản app.py trong Staging Area được thay bằng bản trong HEAD, nên thay đổi quay về trạng thái Modified. Working Directory không mất gì.', n:'Đây là cách "bỏ add" một tệp, tương đương git restore --staged app.py.'}
+  };
+  function RS(c, m){
+    var S = c.S, last;
+    c.cmd(RS_OPTS[m].cmd);
+    if (m !== 'file') {
+      S.branches.main = 'b72d410'; last = m === 'soft';
+      if (last) c.out('# (reset --soft chạy xong và không in gì)', 'cm');
+      c.snap({ln:0, on:['RP'], transient:!last, title:'① Di chuyển HEAD (cùng nhánh main) về b72d410',
+        body:'HEAD~1 là commit ngay trước HEAD. Commit c5e88a2 không bị xóa ngay, nhưng không còn nhánh nào trỏ tới (nét đứt).',
+        note:last ? '--soft dừng ở đây: Staging Area và Working Directory giữ nguyên.' : 'Bước tiếp theo: Staging Area.'});
+    }
+    if (m !== 'soft') {
+      S.ix = headC(S); last = m !== 'hard';
+      if (last) c.out('Unstaged changes after reset:\nM\tapp.py');
+      c.snap({ln:0, fly:['gRP', 'fIX', m === 'file' ? 'app.py từ HEAD' : 'bản chụp b72d410'], on:['IX'], transient:!last,
+        title:m === 'file' ? 'Chép app.py từ HEAD vào Staging Area' : '② Ghi đè Staging Area theo HEAD',
+        body:m === 'file' ? 'HEAD không di chuyển. Bản đã add trong Staging Area bị thay bằng bản trong commit HEAD (c5e88a2).' : 'Staging Area giờ giống commit b72d410.',
+        note:m === 'mixed' ? '--mixed dừng ở đây: Working Directory giữ nguyên.' : m === 'file' ? 'Working Directory vẫn giữ dòng "Tạm biệt".' : '--hard còn một bước nữa.'});
+    }
+    if (m === 'hard') {
+      S.wd = S.ix; c.out('HEAD is now at b72d410 Thêm dòng Học Git');
+      c.snap({ln:0, fly:['fIX', 'fWD', 'ghi đè'], on:['WD'], err:true, title:'③ Ghi đè Working Directory theo HEAD',
+        body:'Tệp trong thư mục làm việc bị ghi đè bằng bản của b72d410. Dòng chao() biến mất!'});
+    }
+    c.cmd('git status'); c.out(gitStatus(S));
+    c.snap({ln:1, err:m === 'hard', title:RS_SUM[m].t, body:RS_SUM[m].b, note:RS_SUM[m].n});
+  }
+
+  /* ---------- Danh sách tình huống ---------- */
+  var EX = {
+    fwd:{opts:null, init:function(){ return linear(1); }, lines:function(){ return L_FWD; }, run:FWD,
+      intro:function(){ return 'Kho đã có 1 commit (a1f3c9e), cả ba khu vực đồng bộ. Bấm "Bước tiếp" để chạy lần lượt từng lệnh và quan sát app.py đi qua từng khu vực.'; }},
+    pit:{opts:null, init:function(){ return linear(1); }, lines:function(){ return L_PIT; }, run:PIT,
+      intro:function(){ return 'Tình huống hay gặp: sửa tệp, git add, rồi sửa tiếp trước khi commit. Commit sẽ lưu phiên bản nào? Bấm "Bước tiếp" để kiểm chứng.'; }},
+    co:{opts:CO_OPTS, def:'feature', label:'Tình huống:', init:coInit,
+      lines:function(o){ return CO_OPTS[o].lines; }, run:function(c, o){ CO_OPTS[o].run(c); }, intro:function(o){ return CO_OPTS[o].intro; }},
+    rs:{opts:RS_OPTS, def:'mixed', label:'Kiểu reset:',
+      init:function(o){ var s = linear(3); if (o === 'file') { s.wd = V_C2; s.ix = V_C2; } return s; },
+      lines:function(o){ return [RS_OPTS[o].cmd, 'git status']; }, run:RS,
+      intro:function(o){ return o === 'file'
+        ? 'app.py vừa được sửa (thêm dòng "Tạm biệt") và đã git add. Bấm "Bước tiếp" để "bỏ add" bằng git reset app.py.'
+        : 'Nhánh main có 3 commit, HEAD ở c5e88a2, cả ba khu vực đồng bộ. Lệnh sẽ đưa HEAD lùi về commit ngay trước đó. Hãy thử cả ba kiểu và so sánh khu vực nào bị thay đổi.'; }}
+  };
+
+  /* ---------- Hoạt ảnh ---------- */
+  function fly(from, to, label){
+    return new Promise(function(res){
+      if (RM) return res();
+      var a = $(from).getBoundingClientRect(), b = $(to).getBoundingClientRect();
+      var p = document.createElement('div'); p.className = 'packet';
+      p.innerHTML = '📄 app.py<small>' + esc(label) + '</small>';
+      document.body.appendChild(p);
+      var w = p.offsetWidth, h = p.offsetHeight;
+      var x0 = a.left + a.width / 2 - w / 2, y0 = a.top + Math.min(a.height, 140) / 2 - h / 2;
+      var x1 = b.left + b.width / 2 - w / 2, y1 = b.top + Math.min(b.height, 140) / 2 - h / 2;
+      p.style.left = x0 + 'px'; p.style.top = y0 + 'px';
+      void p.offsetWidth;
+      p.style.transform = 'translate(' + (x1 - x0) + 'px,' + (y1 - y0) + 'px)';
+      setTimeout(function(){ p.remove(); res(); }, 760);
+    });
+  }
+
+  /* ---------- Vẽ đồ thị commit ---------- */
+  function refsFor(S){
+    var r = {};
+    if (!S.head.branch) r[S.head.id] = [{t:'HEAD', cls:'h'}];
+    Object.keys(S.branches).forEach(function(b){
+      var id = S.branches[b]; r[id] = r[id] || [];
+      r[id].push(S.head.branch === b ? {t:'HEAD → ' + b, cls:'h'} : {t:b, cls:'b'});
+    });
+    return r;
+  }
+  function graphSVG(S){
+    var RH = 34, W = 340, n = S.commits.length, reach = {}, pos = {}, lanes = 0;
+    var tips = Object.keys(S.branches).map(function(b){ return S.branches[b]; });
+    if (!S.head.branch) tips.push(S.head.id);
+    if (S.fresh) tips.push(S.fresh);
+    tips.forEach(function(id){ while (id && !reach[id]) { reach[id] = 1; id = commitOf(S, id).parent; } });
+    function LX(l){ return 16 + l * 22; } function RY(r){ return 17 + r * RH; }
+    S.commits.forEach(function(c, i){ lanes = Math.max(lanes, c.lane); pos[c.id] = [LX(c.lane), RY(n - 1 - i)]; });
+    var H = RY(n - 1) + 17, tx0 = LX(lanes) + 18, hid = headId(S), refs = refsFor(S);
+    var s = '<svg class="graph" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Đồ thị commit">';
+    S.commits.forEach(function(c){
+      if (!c.parent) return;
+      var a = pos[c.id], p = pos[c.parent];
+      var d = a[0] === p[0] ? 'M' + a[0] + ' ' + a[1] + 'L' + p[0] + ' ' + p[1]
+        : 'M' + a[0] + ' ' + a[1] + 'C' + a[0] + ' ' + (a[1] + 22) + ' ' + p[0] + ' ' + (p[1] - 22) + ' ' + p[0] + ' ' + p[1];
+      s += '<path class="eg' + (reach[c.id] ? '' : ' faded') + '" d="' + d + '"/>';
+    });
+    S.commits.forEach(function(c){
+      var x = pos[c.id][0], y = pos[c.id][1], tx = tx0, faded = !reach[c.id];
+      var msg = c.msg + (c.id === S.fresh ? ' (vừa tạo)' : faded ? ' (không còn nhánh trỏ tới)' : '');
+      s += '<g' + (faded ? ' class="faded"' : '') + '><circle class="cn' + (c.id === hid ? ' head' : '') + '" cx="' + x + '" cy="' + y + '" r="7"/>';
+      (refs[c.id] || []).forEach(function(r){
+        var w = r.t.length * 6.6 + 14;
+        s += '<g class="chip ' + r.cls + '"><rect x="' + tx + '" y="' + (y - 10) + '" width="' + w + '" height="20" rx="10"/><text x="' + (tx + 7) + '" y="' + (y + 4) + '">' + esc(r.t) + '</text></g>';
+        tx += w + 6;
+      });
+      s += '<text class="hs" x="' + tx + '" y="' + (y + 4) + '">' + c.id + '</text>';
+      tx += 58;
+      var max = Math.floor((W - tx - 4) / 6.4);
+      s += '<text class="msg" x="' + tx + '" y="' + (y + 4) + '">' + esc(msg.length > max ? msg.slice(0, Math.max(1, max - 1)) + '…' : msg) + '</text></g>';
+    });
+    return s + '</svg>';
+  }
+
+  /* ---------- Điều khiển chung ---------- */
+  var ex, opt, init, snaps = [], step = 0, busy = false;
+  function build(){ var c = mk(ex.init(opt)); ex.run(c, opt); init = c.init; snaps = c.snaps; }
+  function fileHTML(lines, ref){
+    return lines.map(function(s, i){
+      return '<div class="ln' + (ref && ref.indexOf(s) < 0 ? ' chg' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + (esc(s) || ' ') + '</span></div>';
+    }).join('');
+  }
+  function render(k, zk){
+    if (zk === undefined) zk = k;
+    var sn = k > 0 ? snaps[k - 1] : null, zs = zk > 0 ? snaps[zk - 1] : null, S = zs ? zs.st : init;
+    $('code').innerHTML = ex.lines(opt).map(function(l, i){
+      var cls = sn && sn.ln === i ? ' cur' : sn && i < sn.ln ? ' past' : '';
+      return '<div class="ln' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    $('status').className = 'status' + (sn && sn.err ? ' err' : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + k + '/' + snaps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + snaps.length + ' bước</b>' + esc(ex.intro(opt));
+    $('bar').style.width = (100 * k / snaps.length) + '%';
+    var term = $('term'), outs = sn ? sn.outs : [];
+    term.innerHTML = outs.length ? outs.map(function(o){ return '<span class="t-' + o.t + '">' + esc(o.s) + '</span>'; }).join('\n') : '<span class="ph">Chưa chạy lệnh nào.</span>';
+    term.scrollTop = term.scrollHeight;
+
+    var head = headC(S), wdD = !eq(S.wd, S.ix), ixD = !eq(S.ix, head), on = zs && zs.on ? zs.on : [];
+    ['WD', 'IX', 'RP'].forEach(function(z){ $('z' + z).classList.toggle('on', on.indexOf(z) >= 0); });
+    $('fWD').innerHTML = fileHTML(S.wd, S.ix);
+    $('fIX').innerHTML = fileHTML(S.ix, head);
+    $('fRP').innerHTML = fileHTML(head, null);
+    $('gRP').innerHTML = graphSVG(S);
+    $('nWD').className = 'znote' + (wdD ? ' diff' : '');
+    $('nWD').textContent = wdD ? '● Khác Staging Area: có thay đổi chưa add' : '✓ Giống Staging Area';
+    $('nIX').className = 'znote' + (ixD ? ' diff' : '');
+    $('nIX').textContent = ixD ? '● Khác HEAD: có thay đổi đã add, chờ commit' : '✓ Giống HEAD';
+    $('nRP').textContent = S.head.branch ? 'HEAD → ' + S.head.branch + ' → ' + headId(S) : 'HEAD → ' + S.head.id + ' (detached HEAD)';
+    var st = [];
+    if (zs && zs.transient) st.push('<span class="badge">…</span> Lệnh đang chạy dở: các khu vực tạm thời lệch nhau');
+    else {
+      if (ixD) st.push('<span class="badge s">Staged</span>');
+      if (wdD) st.push('<span class="badge m">Modified</span>');
+      if (!st.length) st.push('<span class="badge c">Committed</span> cả ba khu vực đồng bộ');
+      else if (ixD && wdD) st.push('một phần đã add, một phần sửa sau khi add');
+    }
+    $('fstate').innerHTML = 'Trạng thái <code>app.py</code>: ' + st.join(' ');
+    buttons();
+  }
+  function buttons(){
+    $('next').disabled = busy || step >= snaps.length;
+    $('all').disabled = busy;
+    $('reset').disabled = busy;
+    document.querySelectorAll('.tab, #opts button').forEach(function(b){ b.disabled = busy; });
+  }
+  async function advance(){
+    var k = step + 1, sn = snaps[k - 1];
+    if (sn.fly && !RM) { step = k; render(k, k - 1); await fly(sn.fly[0], sn.fly[1], sn.fly[2]); }
+    step = k; render(k);
+  }
+  function reset(){ step = 0; build(); render(0); }
+  function renderOpts(){
+    $('opts').innerHTML = ex.opts ? '<b>' + ex.label + '</b>' + Object.keys(ex.opts).map(function(k){
+      return '<button type="button" data-v="' + k + '" aria-pressed="' + (k === opt) + '">' + esc(ex.opts[k].label) + '</button>';
+    }).join('') : '';
+  }
+  function loadExample(k){
+    ex = EX[k]; opt = ex.opts ? ex.def : null;
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.ex === k ? 'true' : 'false'); });
+    try { localStorage.setItem('git3zones.ex', k); } catch (_) {}
+    renderOpts(); reset();
+  }
+  $('opts').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-v]'); if (!b || busy) return;
+    opt = b.dataset.v; renderOpts(); reset();
+  });
+  $('next').addEventListener('click', async function(){
+    if (busy || step >= snaps.length) return;
+    busy = true; buttons(); await advance(); busy = false; buttons();
+  });
+  $('all').addEventListener('click', async function(){
+    if (busy) return;
+    if (step >= snaps.length) { step = 0; render(0); }
+    busy = true; buttons();
+    while (step < snaps.length) { await advance(); if (step < snaps.length) await wait(650); }
+    busy = false; buttons();
+  });
+  $('reset').addEventListener('click', function(){ if (!busy) reset(); });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ if (!busy) loadExample(b.dataset.ex); }); });
+  var first = 'fwd';
+  try { var s = localStorage.getItem('git3zones.ex'); if (EX[s]) first = s; } catch (_) {}
+  loadExample(first);
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>

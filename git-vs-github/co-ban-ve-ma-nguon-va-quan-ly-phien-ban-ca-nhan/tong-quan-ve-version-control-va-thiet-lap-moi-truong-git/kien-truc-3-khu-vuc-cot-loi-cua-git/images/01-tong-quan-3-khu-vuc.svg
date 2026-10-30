@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="aB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2563eb"/></marker>
+    <marker id="aO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker>
+    <marker id="aR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b42318"/></marker>
+  </defs>
+  <rect width="1200" height="720" fill="#ffffff"/>
+  <text x="600" y="48" text-anchor="middle" font-size="28" font-weight="700" fill="#1d2330">Ba khu vực cốt lõi của Git</text>
+  <text x="600" y="78" text-anchor="middle" font-size="16" fill="#5d6676">Mọi thao tác Git là việc chép dữ liệu qua lại giữa ba khu vực này</text>
+
+  <!-- Luồng xuôi -->
+  <text x="40" y="128" font-size="13" font-weight="700" fill="#2563eb" letter-spacing="1.5">LUỒNG XUÔI · LƯU THAY ĐỔI</text>
+  <path d="M250 196 C300 120 510 120 556 192" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#aB)"/>
+  <rect x="345" y="122" width="110" height="30" rx="15" fill="#e7eefc"/>
+  <text x="400" y="143" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#2563eb">git add</text>
+  <path d="M640 196 C690 120 900 120 946 192" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#aB)"/>
+  <rect x="723" y="122" width="134" height="30" rx="15" fill="#e7eefc"/>
+  <text x="790" y="143" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#2563eb">git commit</text>
+
+  <!-- Working Directory -->
+  <rect x="60" y="200" width="300" height="270" rx="16" fill="#fff7f1" stroke="#c2410c" stroke-width="2"/>
+  <path d="M60 216a16 16 0 0 1 16-16h268a16 16 0 0 1 16 16v38H60z" fill="#c2410c"/>
+  <text x="210" y="234" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">① Working Directory</text>
+  <text x="210" y="284" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2330">Thư mục làm việc</text>
+  <text x="210" y="310" text-anchor="middle" font-size="14" fill="#5d6676">Các tệp bạn nhìn thấy, mở và sửa</text>
+  <text x="210" y="330" text-anchor="middle" font-size="14" fill="#5d6676">trong trình soạn thảo</text>
+  <g transform="translate(176 350)"><path d="M0 0h44l20 20v56H0z" fill="#fff" stroke="#c2410c" stroke-width="2"/><path d="M44 0v20h20" fill="none" stroke="#c2410c" stroke-width="2"/><path d="M10 34h36M10 46h28M10 58h40" stroke="#c2410c" stroke-width="3" stroke-linecap="round"/></g>
+  <rect x="135" y="436" width="150" height="24" rx="12" fill="#ffe8d6"/>
+  <text x="210" y="453" text-anchor="middle" font-size="13" font-weight="700" fill="#c2410c">Trạng thái: Modified</text>
+
+  <!-- Staging Area -->
+  <rect x="450" y="200" width="300" height="270" rx="16" fill="#f2fbf4" stroke="#15803d" stroke-width="2"/>
+  <path d="M450 216a16 16 0 0 1 16-16h268a16 16 0 0 1 16 16v38H450z" fill="#15803d"/>
+  <text x="600" y="234" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">② Staging Area (Index)</text>
+  <text x="600" y="284" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2330">Vùng tạm</text>
+  <text x="600" y="310" text-anchor="middle" font-size="14" fill="#5d6676">Bản nháp của commit tiếp theo:</text>
+  <text x="600" y="330" text-anchor="middle" font-size="14" fill="#5d6676">chỉ chứa những gì đã git add</text>
+  <g transform="translate(560 350)"><rect x="0" y="10" width="80" height="66" rx="8" fill="#fff" stroke="#15803d" stroke-width="2"/><path d="M14 10V0h52v10" fill="none" stroke="#15803d" stroke-width="2"/><path d="M24 42l12 12 22-24" fill="none" stroke="#15803d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <rect x="530" y="436" width="140" height="24" rx="12" fill="#dcf5e3"/>
+  <text x="600" y="453" text-anchor="middle" font-size="13" font-weight="700" fill="#15803d">Trạng thái: Staged</text>
+
+  <!-- Repository -->
+  <rect x="840" y="200" width="300" height="270" rx="16" fill="#f8f4ff" stroke="#7c3aed" stroke-width="2"/>
+  <path d="M840 216a16 16 0 0 1 16-16h268a16 16 0 0 1 16 16v38H840z" fill="#7c3aed"/>
+  <text x="990" y="234" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">③ Repository (.git)</text>
+  <text x="990" y="284" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2330">Kho lưu trữ</text>
+  <text x="990" y="310" text-anchor="middle" font-size="14" fill="#5d6676">Lịch sử các bản chụp (commit);</text>
+  <text x="990" y="330" text-anchor="middle" font-size="14" fill="#5d6676">HEAD chỉ commit hiện tại</text>
+  <g transform="translate(905 395)">
+    <path d="M0 0H130" stroke="#c9ced8" stroke-width="3"/>
+    <circle cx="0" cy="0" r="11" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+    <circle cx="65" cy="0" r="11" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+    <circle cx="130" cy="0" r="11" fill="#7c3aed" stroke="#7c3aed" stroke-width="3"/>
+    <text x="130" y="-20" text-anchor="middle" font-size="12" font-weight="700" fill="#7c3aed">HEAD ▾</text>
+  </g>
+  <rect x="910" y="436" width="160" height="24" rx="12" fill="#efe4ff"/>
+  <text x="990" y="453" text-anchor="middle" font-size="13" font-weight="700" fill="#7c3aed">Trạng thái: Committed</text>
+
+  <!-- Luồng ngược: checkout/switch -->
+  <path d="M1010 476V550H210V484" fill="none" stroke="#b45309" stroke-width="3" marker-end="url(#aO)"/>
+  <path d="M580 550V484" fill="none" stroke="#b45309" stroke-width="3" marker-end="url(#aO)"/>
+  <circle cx="580" cy="550" r="5" fill="#b45309"/>
+  <rect x="690" y="535" width="250" height="30" rx="15" fill="#fef3e2"/>
+  <text x="815" y="556" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#b45309">git checkout / git switch</text>
+  <text x="570" y="508" text-anchor="end" font-size="12.5" fill="#b45309" font-weight="700">1. cập nhật Index</text>
+  <text x="198" y="508" text-anchor="end" font-size="12.5" fill="#b45309" font-weight="700">2. ghi đè tệp</text>
+
+  <!-- Luồng ngược: reset -->
+  <path d="M970 476V620H620V484" fill="none" stroke="#b42318" stroke-width="3" marker-end="url(#aR)"/>
+  <path d="M620 620H240V484" fill="none" stroke="#b42318" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#aR)"/>
+  <rect x="680" y="605" width="230" height="30" rx="15" fill="#fbe9e7"/>
+  <text x="795" y="626" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#b42318">git reset (--mixed)</text>
+  <rect x="300" y="605" width="250" height="30" rx="15" fill="#fff" stroke="#b42318" stroke-dasharray="5 4"/>
+  <text x="425" y="626" text-anchor="middle" font-size="14" font-weight="700" fill="#b42318">--hard: ghi đè cả tệp đang sửa</text>
+
+  <text x="40" y="676" font-size="13" font-weight="700" fill="#b45309" letter-spacing="1.5">LUỒNG NGƯỢC · KHÔI PHỤC VÀ CHUYỂN BỐI CẢNH</text>
+  <text x="1160" y="676" text-anchor="end" font-size="13" fill="#5d6676">Nét đứt: chỉ xảy ra với tùy chọn --hard</text>
+</svg>
