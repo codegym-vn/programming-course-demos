@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reset và checkout</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --bad:#b42318; --bad-soft:#fbe9e7; --ok:#15803d; --ok-soft:#e3f4e8;
+    --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --g:#15803d; --gs:#dcf5e3; --r:#c2410c; --rs:#ffe8d6; --p:#7c3aed; --ps:#efe4ff;
+    --node-line:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --bad:#f87171; --bad-soft:#3a1717; --ok:#4ade80; --ok-soft:#13301f;
+      --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --g:#4ade80; --gs:#14361f; --r:#fdba74; --rs:#4a2c16; --p:#c4a1ff; --ps:#33244f;
+      --node-line:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  code{font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .cmds{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-bottom:12px}
+  .cmds b{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .cmds div{display:flex;gap:6px;flex-wrap:wrap}
+  .cmds button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:8px;
+    cursor:pointer;font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .cmds button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .cmds button:disabled{cursor:not-allowed;opacity:.6}
+  @media (max-width:560px){.cmds{grid-template-columns:1fr}}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 11px;font-size:13px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .steps li.skip{text-decoration:line-through;opacity:.55}
+  .steps li.warn.done,.steps li.warn.cur{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:6px;min-height:92px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .sum span{font-size:12.5px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:1px 10px;color:var(--muted)}
+  .sum span i{font-style:normal;font-weight:700;color:var(--text)}
+  .sum span.chg{border-color:var(--accent)} .sum span.chg i{color:var(--accent)}
+  .sum span.bad{border-color:var(--bad)} .sum span.bad i{color:var(--bad)}
+  .sum span.good{border-color:var(--ok)} .sum span.good i{color:var(--ok)}
+  .bar{height:4px;background:var(--line);border-radius:2px;margin-bottom:14px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+
+  .graph{width:100%;max-width:560px;height:auto;display:block;margin:0 auto 6px}
+  .graph .eg{stroke:var(--node-line);stroke-width:2.5}
+  .graph .eg.faded{stroke-dasharray:5 5;opacity:.5}
+  .graph .cn{fill:var(--card);stroke:var(--p);stroke-width:2.5}
+  .graph .cn.head{fill:var(--p)}
+  .graph .faded{opacity:.4}
+  .graph .hs{fill:var(--p);font:600 12.5px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle}
+  .graph .msg{fill:var(--muted);font:12px system-ui,sans-serif;text-anchor:middle}
+  .graph .ptr{transition:transform .6s cubic-bezier(.5,.05,.3,1)}
+  .graph .ptr rect{fill:var(--card);stroke:var(--muted);stroke-width:1.2}
+  .graph .ptr text{fill:var(--muted);font:700 12px system-ui,sans-serif;text-anchor:middle}
+  .graph .ptr.hd rect{fill:var(--ps);stroke:var(--p)} .graph .ptr.hd text{fill:var(--p)}
+  .graph .ptr.mv rect{stroke:var(--cur-bar);stroke-width:3}
+  @media (prefers-reduced-motion: reduce){.graph .ptr{transition:none}}
+
+  .tw{overflow-x:auto;border-top:1px solid var(--line);padding-top:6px}
+  table{width:100%;border-collapse:collapse;min-width:520px}
+  th{font:600 13px system-ui,sans-serif;text-align:center;padding:6px 4px;border-bottom:1px solid var(--line)}
+  th small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+  th.f,td.f{text-align:left;padding-left:6px}
+  td{text-align:center;padding:8px 4px;border-bottom:1px solid var(--line);transition:background .25s}
+  tr:last-child td{border-bottom:0}
+  td.f{font:600 14px ui-monospace,Menlo,Consolas,monospace}
+  .col-h .c-h,.col-i .c-i,.col-w .c-w{background:var(--accent-soft)}
+  .v{display:inline-block;min-width:38px;padding:2px 9px;border-radius:7px;font:700 13px ui-monospace,Menlo,Consolas,monospace;
+    border:1px solid;cursor:help}
+  .v1{background:var(--ps);color:var(--p);border-color:var(--p)}
+  .v2{background:var(--gs);color:var(--g);border-color:var(--g)}
+  .v3{background:var(--rs);color:var(--r);border-color:var(--r)}
+  .v4{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+  .chg .v{animation:pop .6s ease-out}
+  @keyframes pop{0%{transform:scale(1.35);box-shadow:0 0 0 4px var(--cur-bar)}100%{transform:scale(1);box-shadow:none}}
+  @media (prefers-reduced-motion: reduce){.chg .v{animation:none}}
+  .badge{display:inline-block;padding:1px 9px;border-radius:999px;font-weight:700;font-size:12.5px;border:1px solid;white-space:nowrap}
+  .b-u{color:var(--muted);border-color:var(--line)}
+  .b-m{color:var(--r);border-color:var(--r);background:var(--rs)}
+  .b-s{color:var(--g);border-color:var(--g);background:var(--gs)}
+  .b-sm{color:var(--p);border-color:var(--p);background:var(--ps)}
+  .legend{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;height:200px;overflow:auto;
+    font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .cmd{color:#93c5fd}.console .cmd::before{content:"$ ";color:#6b7280}
+  .console .cm{color:#7b8494;font-style:italic}
+  .console .er{color:#fca5a5}
+  .console .x{color:#4ade80}.console .y{color:#f87171}
+  .console .old{opacity:.55}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>reset hay checkout: lệnh nào chạm vào đâu?</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Mọi lệnh đều bắt đầu từ cùng một trạng thái. Chọn một lệnh rồi bấm <b>Bước tiếp</b> để xem lệnh đó di chuyển con trỏ nào và thay đổi cây nào.</p>
+
+  <div class="cmds" id="cmds"></div>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="bar"><i id="bar"></i></div>
+
+  <div class="card">
+    <p class="panel-title">Lịch sử commit và ba cây</p>
+    <svg class="graph" id="graph" viewBox="0 0 520 124" role="img" aria-label="Đồ thị commit"></svg>
+    <div class="tw"><table id="tbl">
+      <thead><tr>
+        <th class="f">Tệp</th>
+        <th class="c-h" id="hHead">HEAD</th>
+        <th class="c-i">Index<small>Staging Area</small></th>
+        <th class="c-w">Working Directory<small>thư mục làm việc</small></th>
+        <th>Trạng thái</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <p class="legend">Ô v1, v2… là phiên bản của tệp trong từng cây; rê chuột lên để xem nội dung. Cột được tô nền là cây đang bị thay đổi ở bước hiện tại.</p>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Terminal</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- Dữ liệu mẫu ---------- */
+  var VERS = {
+    'app.py':{v1:['def chao():', '    print("Xin chào")'],
+              v2:['def chao():', '    print("Xin chào")', '    print("Học Git")'],
+              v3:['def chao():', '    print("Xin chào")', '    print("Học Git")', 'chao()'],
+              v4:['def chao():', '    print("Xin chào")', '    print("Học Git")', 'chao()', 'chao()  # đang thử, chưa commit']},
+    'notes.txt':{v1:['- Học Git mỗi ngày'], v2:['- Học Git mỗi ngày', '- Ôn lại git reset  (đang viết, chưa commit)']}
+  };
+  var FILES = ['app.py', 'notes.txt'];
+  var COMMITS = {
+    a1f3c9e:{msg:'Tạo app.py', x:70, parent:null, tree:{'app.py':'v1', 'notes.txt':'v1'}},
+    b72d410:{msg:'Thêm dòng Học Git', x:260, parent:'a1f3c9e', tree:{'app.py':'v2', 'notes.txt':'v1'}},
+    c5e88a2:{msg:'Gọi hàm chao()', x:450, parent:'b72d410', tree:{'app.py':'v3', 'notes.txt':'v1'}}
+  };
+  function initState(key){
+    return {head:{branch:'main'}, branches:{main:'c5e88a2', dev:'b72d410'},
+      ix:{'app.py':'v3', 'notes.txt':'v1'}, wd:{'app.py':key === 'codirty' ? 'v4' : 'v3', 'notes.txt':'v2'}};
+  }
+  function headId(S){ return S.head.branch ? S.branches[S.head.branch] : S.head.id; }
+  function headV(S, f){ return COMMITS[headId(S)].tree[f]; }
+  function codes(S, f){ return [S.ix[f] === headV(S, f) ? ' ' : 'M', S.wd[f] === S.ix[f] ? ' ' : 'M']; }
+  function badge(S, f){
+    var c = codes(S, f), k = c.join('');
+    if (k === '  ') return '<span class="badge b-u">Unmodified</span>';
+    if (c[1] === ' ') return '<span class="badge b-s">M · Staged</span>';
+    if (c[0] === ' ') return '<span class="badge b-m">&nbsp;M · Modified</span>';
+    return '<span class="badge b-sm">MM · Staged + Modified</span>';
+  }
+  function shortStatus(S){
+    var L = FILES.map(function(f){ var c = codes(S, f); return c.join('') === '  ' ? null : {t:'short', x:c[0], y:c[1], f:f}; }).filter(Boolean);
+    return L.length ? L : [{t:'cm', s:'(không in gì)'}];
+  }
+
+  /* ---------- 7 lệnh ---------- */
+  var STEP_LABELS = ['0 · Kiểm tra an toàn', '① Di chuyển con trỏ', '② Cập nhật Index', '③ Cập nhật Working Directory', 'Kết quả'];
+  function moveMain(c){
+    c.S.branches.main = 'b72d410';
+    c.snap({k:1, moved:['main', 'HEAD'], col:'h', title:'① Kéo nhánh main (cùng HEAD) về b72d410',
+      body:'reset di chuyển con trỏ của nhánh hiện tại. HEAD đang gắn với main nên đi theo. Commit c5e88a2 không còn nhánh nào trỏ tới (nét đứt).',
+      note:c.key === 'soft' ? '--soft dừng ở đây: Index và Working Directory giữ nguyên.' : 'Bước tiếp theo: Index.'});
+  }
+  function ixToB(c, rowsNote){
+    c.S.ix['app.py'] = 'v2';
+    c.snap({k:2, col:'i', rows:['app.py'], title:'② Cập nhật Index theo b72d410',
+      body:'app.py trong Index được thay bằng v2. notes.txt giống nhau ở mọi commit nên không đổi.', note:rowsNote});
+  }
+  function result(c, o){ c.cmd('git status -s'); c.out(shortStatus(c.S)); o.k = 4; c.snap(o); }
+  var CMDS = {
+    soft:{group:0, cmd:'git reset --soft HEAD~1', skip:[0, 2, 3],
+      run:function(c){
+        c.cmd(this.cmd); moveMain(c); c.out([{t:'cm', s:'(reset --soft không in gì)'}]);
+        result(c, {title:'Kết quả --soft',
+          body:'app.py trong Index (v3) khác HEAD mới (v2) nên ở trạng thái Staged: nội dung của commit vừa hủy vẫn còn nguyên, sẵn sàng commit lại.',
+          note:'Dùng để gộp nhiều commit nháp thành một, hoặc viết lại thông điệp commit.',
+          sum:[['Nhánh main', 'lùi về B', 'chg'], ['HEAD', 'đi theo main', 'chg'], ['Index', 'giữ nguyên'], ['Working Directory', 'giữ nguyên'], ['Kiểm tra an toàn', 'không cần']]});
+      }},
+    mixed:{group:0, cmd:'git reset --mixed HEAD~1', skip:[0, 3],
+      run:function(c){
+        c.cmd(this.cmd); moveMain(c);
+        ixToB(c, '--mixed dừng ở đây: Working Directory giữ nguyên.');
+        c.out([{s:'Unstaged changes after reset:'}, {s:'M\tapp.py'}, {s:'M\tnotes.txt'}]);
+        result(c, {title:'Kết quả --mixed (chế độ mặc định)',
+          body:'app.py trong Working Directory (v3) khác Index (v2) nên ở trạng thái Modified. Commit bị hủy, trạng thái Staged cũng bị hủy, nhưng nội dung vẫn còn trong tệp.',
+          note:'Gõ git reset <commit> không kèm tham số chính là --mixed.',
+          sum:[['Nhánh main', 'lùi về B', 'chg'], ['HEAD', 'đi theo main', 'chg'], ['Index', 'đổi', 'chg'], ['Working Directory', 'giữ nguyên'], ['Kiểm tra an toàn', 'không cần']]});
+      }},
+    hard:{group:0, cmd:'git reset --hard HEAD~1', skip:[], warn0:true,
+      run:function(c){
+        c.cmd(this.cmd);
+        c.snap({k:0, err:true, title:'0 · Không có kiểm tra an toàn',
+          body:'notes.txt đang có thay đổi chưa commit, nhưng reset --hard không kiểm tra gì và chạy tiếp.',
+          note:'Khác với checkout, Git không cảnh báo.'});
+        moveMain(c);
+        ixToB(c, 'Bước tiếp theo: Working Directory.');
+        c.S.wd['app.py'] = 'v2'; c.S.wd['notes.txt'] = 'v1';
+        c.out([{s:'HEAD is now at b72d410 Thêm dòng Học Git'}]);
+        c.snap({k:3, col:'w', rows:['app.py', 'notes.txt'], err:true, title:'③ Ghi đè Working Directory',
+          body:'app.py về v2 và notes.txt về v1. Phần bạn đang viết dở trong notes.txt bị xóa vĩnh viễn.'});
+        result(c, {err:true, title:'Kết quả --hard ⚠',
+          body:'Cả ba cây giống hệt commit b72d410. Commit c5e88a2 và phần sửa trong notes.txt đều biến mất.',
+          note:'Commit c5e88a2 còn tìm lại được qua git reflog trong một thời gian; phần sửa chưa commit thì mất hẳn.',
+          sum:[['Nhánh main', 'lùi về B', 'chg'], ['HEAD', 'đi theo main', 'chg'], ['Index', 'đổi', 'chg'], ['Working Directory', 'bị ghi đè', 'bad'], ['Kiểm tra an toàn', 'không có', 'bad']]});
+      }},
+    co:{group:0, cmd:'git checkout dev', skip:[],
+      run:function(c){
+        c.cmd(this.cmd);
+        c.snap({k:0, ok:true, title:'0 · Kiểm tra an toàn: đạt',
+          body:'Git so sánh c5e88a2 với b72d410: chỉ app.py khác nhau, và app.py không có thay đổi chưa commit nên đổi được an toàn.',
+          note:'notes.txt giống nhau ở hai commit nên phần sửa của bạn sẽ được giữ nguyên.'});
+        c.S.head = {branch:'dev'};
+        c.snap({k:1, moved:['HEAD'], col:'h', title:'① Chỉ HEAD chuyển sang nhánh dev',
+          body:'Nhánh main vẫn đứng yên ở c5e88a2, lịch sử không thay đổi. HEAD giờ gắn với dev (b72d410).'});
+        c.S.ix['app.py'] = 'v2';
+        c.snap({k:2, col:'i', rows:['app.py'], title:'② Cập nhật Index theo b72d410', body:'app.py trong Index được thay bằng v2.'});
+        c.S.wd['app.py'] = 'v2';
+        c.out([{s:'M\tnotes.txt'}, {s:"Switched to branch 'dev'"}]);
+        c.snap({k:3, col:'w', rows:['app.py'], title:'③ Cập nhật Working Directory',
+          body:'app.py đổi thành v2. notes.txt vẫn giữ phần sửa (v2) của bạn, Git còn nhắc lại bằng dòng "M notes.txt".'});
+        result(c, {ok:true, title:'Kết quả checkout dev',
+          body:'Cùng đưa dự án về b72d410 như reset --hard, nhưng nhánh main vẫn ở c5e88a2 và phần sửa trong notes.txt còn nguyên.',
+          note:'Muốn quay lại: git checkout main.',
+          sum:[['Nhánh main', 'đứng yên'], ['HEAD', 'sang dev', 'chg'], ['Index', 'đổi', 'chg'], ['Working Directory', 'đổi, giữ phần sửa', 'chg'], ['Kiểm tra an toàn', 'có', 'good']]});
+      }},
+    rfile:{group:1, cmd:'git reset HEAD~1 app.py', skip:[0, 1, 3],
+      run:function(c){
+        c.cmd(this.cmd); c.S.ix['app.py'] = 'v2';
+        c.out([{s:'Unstaged changes after reset:'}, {s:'M\tapp.py'}, {s:'M\tnotes.txt'}]);
+        c.snap({k:2, col:'i', rows:['app.py'], title:'② Chép app.py từ b72d410 vào Index',
+          body:'HEAD và nhánh main không di chuyển. Chỉ app.py trong Index đổi thành v2; Working Directory không bị ảnh hưởng.'});
+        result(c, {title:'Kết quả git reset HEAD~1 app.py',
+          body:'app.py có mã MM: Index (v2) khác HEAD (v3), Working Directory (v3) khác Index. Nếu commit ngay, commit sẽ đưa app.py về v2.',
+          note:'Cách dùng phổ biến nhất là git reset HEAD app.py: chép bản trong HEAD vào Index, tức là bỏ tệp ra khỏi Staging Area.',
+          sum:[['Nhánh main', 'đứng yên'], ['HEAD', 'đứng yên'], ['Index', 'đổi app.py', 'chg'], ['Working Directory', 'giữ nguyên'], ['Kiểm tra an toàn', 'không cần']]});
+      }},
+    cofile:{group:1, cmd:'git checkout HEAD~1 app.py', skip:[1], warn0:true,
+      run:function(c){
+        c.cmd(this.cmd);
+        c.snap({k:0, err:true, title:'0 · Không có kiểm tra an toàn',
+          body:'Khi có đường dẫn tệp, checkout ghi đè tệp mà không hỏi. Lần này app.py chưa bị sửa nên không mất gì.',
+          note:'Nếu app.py đang có thay đổi chưa lưu, chúng sẽ mất ngay lập tức.'});
+        c.S.ix['app.py'] = 'v2';
+        c.snap({k:2, col:'i', rows:['app.py'], title:'② Chép app.py từ b72d410 vào Index', body:'HEAD và nhánh main không di chuyển. app.py trong Index đổi thành v2.'});
+        c.S.wd['app.py'] = 'v2';
+        c.out([{s:'Updated 1 path from 4f2a9d1'}]);
+        c.snap({k:3, col:'w', rows:['app.py'], title:'③ Chép tiếp vào Working Directory', body:'app.py trong thư mục làm việc bị ghi đè bằng v2.'});
+        result(c, {title:'Kết quả git checkout HEAD~1 app.py',
+          body:'HEAD và main vẫn ở c5e88a2. app.py ở Index và Working Directory đều là v2 nên ở trạng thái Staged: commit tiếp theo sẽ đưa app.py về bản cũ.',
+          note:'So với git reset HEAD~1 app.py: reset chỉ chạm Index, checkout chạm cả Index lẫn Working Directory.',
+          sum:[['Nhánh main', 'đứng yên'], ['HEAD', 'đứng yên'], ['Index', 'đổi app.py', 'chg'], ['Working Directory', 'ghi đè app.py', 'bad'], ['Kiểm tra an toàn', 'không có', 'bad']]});
+      }},
+    codirty:{group:2, cmd:'git checkout dev', label:'git checkout dev (app.py đang sửa)', skip:[1, 2, 3], warn0:true,
+      run:function(c){
+        c.cmd('git checkout dev');
+        c.out([{t:'er', s:'error: Your local changes to the following files would be overwritten by checkout:\n\tapp.py\nPlease commit your changes or stash them before you switch branches.\nAborting'}]);
+        c.snap({k:0, err:true, title:'0 · Kiểm tra an toàn: không đạt, Git dừng lệnh',
+          body:'app.py khác nhau giữa c5e88a2 và b72d410, mà trong Working Directory app.py đang có thay đổi chưa commit (v4). Chuyển nhánh sẽ đè mất thay đổi đó.',
+          note:'Các bước ①②③ không được thực hiện.'});
+        result(c, {ok:true, title:'Kết quả: không có gì bị thay đổi',
+          body:'Không con trỏ nào di chuyển, không cây nào bị ghi đè; v4 trong app.py vẫn an toàn.',
+          note:'Cách xử lý: commit hoặc stash thay đổi trước khi chuyển nhánh. Nếu chạy git reset --hard trong tình huống này, v4 sẽ bị xóa mà không có cảnh báo.',
+          sum:[['Nhánh main', 'đứng yên'], ['HEAD', 'đứng yên'], ['Index', 'giữ nguyên'], ['Working Directory', 'giữ nguyên'], ['Kiểm tra an toàn', 'chặn lệnh', 'good']]});
+      }}
+  };
+  var GROUPS = ['Không có đường dẫn', 'Có đường dẫn tệp', 'Có xung đột'];
+
+  function build(key){
+    var S = initState(key), snaps = [], log = [
+      {t:'cm', s:'# main: a1f3c9e ← b72d410 ← c5e88a2 (HEAD → main)   dev → b72d410'},
+      {t:'cmd', s:'git status -s'}].concat(shortStatus(S));
+    var c = {S:S, key:key,
+      cmd:function(s){ log.push({t:'cmd', s:s}); },
+      out:function(L){ L.forEach(function(l){ log.push(l); }); },
+      snap:function(o){ o.st = clone(S); o.log = log.slice(); snaps.push(o); }};
+    var init = {st:clone(S), log:log.slice()};
+    CMDS[key].run(c);
+    return {init:init, snaps:snaps};
+  }
+
+  /* ---------- Vẽ đồ thị ---------- */
+  var G = $('graph'), NS = 'http://www.w3.org/2000/svg';
+  (function(){
+    var s = '<line class="eg" id="e1" x1="70" y1="70" x2="260" y2="70"/><line class="eg" id="e2" x1="260" y1="70" x2="450" y2="70"/>';
+    Object.keys(COMMITS).forEach(function(id){
+      var C = COMMITS[id];
+      s += '<g id="n_' + id + '"><circle class="cn" cx="' + C.x + '" cy="70" r="9"/><text class="hs" x="' + C.x + '" y="100">' + id + '</text><text class="msg" x="' + C.x + '" y="117">' + esc(C.msg) + '</text></g>';
+    });
+    ['HEAD', 'main', 'dev'].forEach(function(p){ s += '<g class="ptr' + (p === 'HEAD' ? ' hd' : '') + '" id="p_' + p + '"><rect height="20" rx="10" y="0"/><text y="14"></text></g>'; });
+    G.innerHTML = s;
+  })();
+  function setPtr(p, text, cx, y, moved){
+    var g = $('p_' + p), w = text.length * 7 + 18;
+    g.querySelector('rect').setAttribute('width', w); g.querySelector('rect').setAttribute('x', -w / 2);
+    g.querySelector('text').textContent = text;
+    g.style.transform = 'translate(' + cx + 'px,' + y + 'px)';
+    g.classList.toggle('mv', !!moved);
+    return w;
+  }
+  function drawGraph(S, moved){
+    var reach = {}, hid = headId(S);
+    [S.branches.main, S.branches.dev, hid].forEach(function(id){ while (id && !reach[id]) { reach[id] = 1; id = COMMITS[id].parent; } });
+    Object.keys(COMMITS).forEach(function(id){
+      $('n_' + id).classList.toggle('faded', !reach[id]);
+      $('n_' + id).querySelector('circle').classList.toggle('head', id === hid);
+    });
+    $('e2').classList.toggle('faded', !reach.c5e88a2);
+    var byNode = {};
+    ['main', 'dev'].forEach(function(b){ (byNode[S.branches[b]] = byNode[S.branches[b]] || []).push(b); });
+    Object.keys(byNode).forEach(function(id){
+      var bs = byNode[id], x = COMMITS[id].x;
+      bs.forEach(function(b, i){
+        var off = bs.length > 1 ? (i ? 1 : -1) * 34 : 0;
+        setPtr(b, b, x + off, 32, moved.indexOf(b) >= 0);
+      });
+    });
+    setPtr('HEAD', S.head.branch ? 'HEAD → ' + S.head.branch : 'HEAD', COMMITS[hid].x + (S.head.branch && byNode[hid].length > 1 ? (byNode[hid].indexOf(S.head.branch) ? 34 : -34) : 0), 6, moved.indexOf('HEAD') >= 0);
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var key = 'soft', data = build(key), step = 0, timer = null;
+  function chip(f, v){ return '<span class="v ' + v + '" title="' + esc(f + ' (' + v + '):\n' + VERS[f][v].join('\n')) + '">' + v + '</span>'; }
+  function renderCmds(){
+    var run = timer !== null;
+    $('cmds').innerHTML = GROUPS.map(function(g, gi){
+      return '<b>' + g + ':</b><div>' + Object.keys(CMDS).filter(function(k){ return CMDS[k].group === gi; }).map(function(k){
+        return '<button type="button" data-k="' + k + '" aria-pressed="' + (k === key) + '"' + (run ? ' disabled' : '') + '>' + esc(CMDS[k].label || CMDS[k].cmd) + '</button>';
+      }).join('') + '</div>';
+    }).join('');
+  }
+  function render(){
+    var snaps = data.snaps, sn = step ? snaps[step - 1] : null, cur = sn || data.init, S = cur.st;
+    var prev = step > 1 ? snaps[step - 2].st : data.init.st, C = CMDS[key];
+    $('steps').innerHTML = STEP_LABELS.map(function(l, i){
+      var skip = C.skip.indexOf(i) >= 0, k = sn ? sn.k : -1;
+      var cls = skip ? 'skip' : i < k ? 'done' : i === k ? 'cur' : '';
+      if (i === 0 && C.warn0 && !skip) { cls += ' warn'; l = key === 'codirty' ? '0 · Kiểm tra an toàn ✗' : '0 · Không kiểm tra an toàn ⚠'; }
+      else if (i === 0 && key === 'co') l = '0 · Kiểm tra an toàn ✓';
+      if (i === 1 && (key === 'rfile' || key === 'cofile')) l = '① Không con trỏ nào di chuyển';
+      return '<li class="' + cls + '">' + l + '</li>';
+    }).join('');
+    $('status').className = 'status' + (sn && sn.err ? ' err' : sn && sn.ok ? ' ok' : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + snaps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '') +
+        (sn.sum ? '<div class="sum">' + sn.sum.map(function(s){ return '<span class="' + (s[2] || '') + '">' + esc(s[0]) + ': <i>' + esc(s[1]) + '</i></span>'; }).join('') + '</div>' : '')
+      : '<b>Sẵn sàng · ' + C.cmd + ' · ' + snaps.length + ' bước</b>Nhánh main: a1f3c9e ← b72d410 ← c5e88a2, HEAD gắn với main. Nhánh dev trỏ vào b72d410. notes.txt đang được sửa dở, chưa commit' + (key === 'codirty' ? '; app.py cũng đang sửa dở (v4).' : '.') + ' Bấm "Bước tiếp" để chạy lệnh.';
+    $('bar').style.width = (100 * step / snaps.length) + '%';
+    drawGraph(S, sn && sn.moved ? sn.moved : []);
+    $('tbl').className = sn && sn.col ? 'col-' + sn.col : '';
+    $('hHead').innerHTML = 'HEAD<small>commit ' + headId(S) + '</small>';
+    $('rows').innerHTML = FILES.map(function(f){
+      function cell(v, pv, cls){ return '<td class="' + cls + (sn && v !== pv ? ' chg' : '') + '">' + chip(f, v) + '</td>'; }
+      return '<tr><td class="f">' + f + '</td>' + cell(headV(S, f), headV(prev, f), 'c-h') + cell(S.ix[f], prev.ix[f], 'c-i') + cell(S.wd[f], prev.wd[f], 'c-w') + '<td>' + badge(S, f) + '</td></tr>';
+    }).join('');
+    var log = cur.log, lastCmd = 0;
+    log.forEach(function(l, i){ if (l.t === 'cmd') lastCmd = i; });
+    $('term').innerHTML = log.map(function(l, i){
+      var o = i < lastCmd ? ' old' : '';
+      if (l.t === 'short') return '<span class="' + o + '"><span class="x">' + l.x + '</span><span class="y">' + l.y + '</span> ' + esc(l.f) + '</span>';
+      return '<span class="' + (l.t || '') + o + '">' + esc(l.s) + '</span>';
+    }).join('\n');
+    $('term').scrollTop = $('term').scrollHeight;
+    var run = timer !== null;
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= snaps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } renderCmds(); }
+  function load(k){ key = k; data = build(k); step = 0; renderCmds(); render(); }
+  $('cmds').addEventListener('click', function(e){ var b = e.target.closest('button[data-k]'); if (b && timer === null) load(b.dataset.k); });
+  $('next').addEventListener('click', function(){ if (step < data.snaps.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= data.snaps.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= data.snaps.length) { step = data.snaps.length; stop(); } render(); }, 1500);
+    renderCmds(); render();
+  });
+  load('soft');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
