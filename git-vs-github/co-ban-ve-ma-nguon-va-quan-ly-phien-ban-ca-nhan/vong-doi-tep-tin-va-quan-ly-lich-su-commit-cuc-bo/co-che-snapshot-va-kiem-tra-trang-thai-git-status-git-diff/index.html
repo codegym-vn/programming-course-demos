@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>git status và git diff</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --g:#15803d; --gs:#dcf5e3; --r:#c2410c; --rs:#ffe8d6; --p:#7c3aed; --ps:#efe4ff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --g:#4ade80; --gs:#14361f; --r:#fdba74; --rs:#4a2c16; --p:#c4a1ff; --ps:#33244f;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 14px;font-size:14.5px}
+  code{font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:6px;min-height:92px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .bar{height:4px;background:var(--line);border-radius:2px;margin-bottom:14px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .cap{font-size:13.5px;color:var(--muted);margin:0 0 10px;min-height:21px}
+  .cap b{color:var(--accent)}
+
+  .tw{overflow-x:auto}
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:600px}
+  th{font:600 13px system-ui,sans-serif;text-align:center;padding:6px 4px;color:var(--text);border-bottom:1px solid var(--line)}
+  th small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+  th.f,td.f{text-align:left;padding-left:6px}
+  td{text-align:center;padding:8px 4px;border-bottom:1px solid var(--line);transition:background .25s}
+  tr:last-child td{border-bottom:0}
+  td.f{font:600 14px ui-monospace,Menlo,Consolas,monospace}
+  th.s,td.s{width:46px}
+  th.s{font:700 14px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  td.s{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  td.s.eq{color:var(--line);font-weight:400}
+  td.s.sx{color:var(--g)} td.s.sy{color:var(--bad)}
+  .cmp-x .c-h,.cmp-x .c-i,.cmp-x .s-x,.cmp-y .c-i,.cmp-y .c-w,.cmp-y .s-y{background:var(--accent-soft)}
+  tr.on td{box-shadow:inset 0 2px 0 var(--cur-bar),inset 0 -2px 0 var(--cur-bar)}
+  tr.on td.f{box-shadow:inset 0 2px 0 var(--cur-bar),inset 0 -2px 0 var(--cur-bar),inset 3px 0 0 var(--cur-bar)}
+  .v{display:inline-block;min-width:38px;padding:2px 9px;border-radius:7px;font:700 13px ui-monospace,Menlo,Consolas,monospace;
+    background:var(--ps);color:var(--p);border:1px solid var(--p);cursor:help}
+  .v.v2{background:var(--gs);color:var(--g);border-color:var(--g)}
+  .v.v3{background:var(--rs);color:var(--r);border-color:var(--r)}
+  .none{color:var(--muted);opacity:.6}
+  .chg .v{animation:pop .6s ease-out}
+  @keyframes pop{0%{transform:scale(1.35);box-shadow:0 0 0 4px var(--cur-bar)}100%{transform:scale(1);box-shadow:none}}
+  @media (prefers-reduced-motion: reduce){.chg .v{animation:none}}
+  .badge{display:inline-block;padding:1px 9px;border-radius:999px;font-weight:700;font-size:12.5px;border:1px solid;white-space:nowrap}
+  .b-u{color:var(--muted);border-color:var(--line)}
+  .b-n{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+  .b-m{color:var(--r);border-color:var(--r);background:var(--rs)}
+  .b-s{color:var(--g);border-color:var(--g);background:var(--gs)}
+  .b-sm{color:var(--p);border-color:var(--p);background:var(--ps)}
+  .legend{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;height:250px;overflow:auto;
+    font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .console .cmd{color:#93c5fd}.console .cmd::before{content:"$ ";color:#6b7280}
+  .console .cmd.old{opacity:.6}
+  .console .cm{color:#7b8494;font-style:italic}
+  .console .g,.console .add,.console .x{color:#4ade80}
+  .console .r,.console .del,.console .y{color:#f87171}
+  .console .hunk{color:#22d3ee}
+  .console .meta{color:#e5e7eb;font-weight:700}
+  .console .old-out{opacity:.6}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Đọc trạng thái dự án với git status và git diff</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Bấm <b>Bước tiếp</b> để chạy từng lệnh. Quan sát phiên bản của mỗi tệp trong ba khu vực và cách Git báo cáo sự khác nhau.</p>
+
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="bar"><i id="bar"></i></div>
+
+  <div class="card">
+    <p class="panel-title">Phiên bản của từng tệp</p>
+    <p class="cap" id="cap"></p>
+    <div class="tw"><table id="tbl">
+      <thead><tr>
+        <th class="f">Tệp</th>
+        <th class="c-h" id="hHead">HEAD<small>commit gần nhất</small></th>
+        <th class="s s-x" title="Cột trái của git status -s: so Staging Area với HEAD">X</th>
+        <th class="c-i">Staging Area<small>(Index)</small></th>
+        <th class="s s-y" title="Cột phải của git status -s: so Working Directory với Staging Area">Y</th>
+        <th class="c-w">Working Directory<small>thư mục làm việc</small></th>
+        <th>Trạng thái</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <p class="legend"><b>X</b>: so Staging Area với HEAD (cột trái của <code>git status -s</code>). <b>Y</b>: so Working Directory với Staging Area (cột phải). Dấu chấm mờ nghĩa là hai bên giống nhau. Rê chuột lên ô v1, v2… để xem nội dung tệp.</p>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Terminal</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function same(a, b){ return a === b || (a && b && a.join('\n') === b.join('\n')); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function hash(lines){ var s = lines.join('\n'), h = 5381; for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 7); }
+
+  /* ---------- Nội dung các phiên bản ---------- */
+  var VERS = {
+    'app.py':[['def chao():', '    print("Xin chào")'],
+              ['def chao():', '    print("Xin chào")', '    print("Học Git")'],
+              ['def chao():', '    print("Xin chào")', '    print("Học Git")', 'chao()']],
+    'README.md':[['# Dự án chào hỏi']],
+    'utils.py':[['def cong(a, b):', '    return a + b']]
+  };
+  var ORDER = ['app.py', 'README.md', 'utils.py'];
+  function verNo(f, c){ for (var i = 0; i < VERS[f].length; i++) if (same(VERS[f][i], c)) return i + 1; return 0; }
+
+  /* ---------- Trạng thái Git ---------- */
+  function codes(F){
+    if (!F.h && !F.i) return ['?', '?'];
+    return [!F.h && F.i ? 'A' : same(F.i, F.h) ? ' ' : 'M', same(F.w, F.i) ? ' ' : 'M'];
+  }
+  function badge(F){
+    var c = codes(F), k = c.join('');
+    if (k === '??') return '<span class="badge b-n">?? Untracked</span>';
+    if (k === '  ') return '<span class="badge b-u">Unmodified</span>';
+    if (c[1] === ' ') return '<span class="badge b-s">' + c[0] + ' · Staged</span>';
+    if (c[0] === ' ') return '<span class="badge b-m">&nbsp;' + c[1] + ' · Modified</span>';
+    return '<span class="badge b-sm">' + k + ' · Staged + Modified</span>';
+  }
+  function files(S){ return ORDER.filter(function(f){ return S.files[f]; }); }
+  function shortStatus(S){
+    return files(S).map(function(f){ var c = codes(S.files[f]); return c.join('') === '  ' ? null : {t:'short', x:c[0], y:c[1], f:f}; }).filter(Boolean);
+  }
+  function longStatus(S){
+    var L = [{s:'On branch main'}, {s:S.ahead ? "Your branch is ahead of 'origin/main' by 1 commit." : "Your branch is up to date with 'origin/main'."}];
+    var staged = [], unstaged = [], untracked = [];
+    files(S).forEach(function(f){
+      var c = codes(S.files[f]);
+      if (c[0] === '?') untracked.push(f);
+      else { if (c[0] !== ' ') staged.push((c[0] === 'A' ? 'new file:   ' : 'modified:   ') + f); if (c[1] !== ' ') unstaged.push('modified:   ' + f); }
+    });
+    if (staged.length) { L.push({s:''}, {s:'Changes to be committed:'}, {s:'  (use "git restore --staged <file>..." to unstage)'}); staged.forEach(function(x){ L.push({t:'g', s:'\t' + x}); }); }
+    if (unstaged.length) { L.push({s:''}, {s:'Changes not staged for commit:'}, {s:'  (use "git add <file>..." to update what will be committed)'}, {s:'  (use "git restore <file>..." to discard changes in working directory)'}); unstaged.forEach(function(x){ L.push({t:'r', s:'\t' + x}); }); }
+    if (untracked.length) { L.push({s:''}, {s:'Untracked files:'}, {s:'  (use "git add <file>..." to include in what will be committed)'}); untracked.forEach(function(x){ L.push({t:'r', s:'\t' + x}); }); }
+    if (!staged.length && !unstaged.length && !untracked.length) L.push({s:''}, {s:'nothing to commit, working tree clean'});
+    return L;
+  }
+  function diffFile(f, a, b){
+    var L = [{t:'meta', s:'diff --git a/' + f + ' b/' + f}];
+    if (!a) {
+      L.push({t:'meta', s:'new file mode 100644'}, {t:'meta', s:'index 0000000..' + hash(b)}, {t:'meta', s:'--- /dev/null'}, {t:'meta', s:'+++ b/' + f}, {t:'hunk', s:'@@ -0,0 +1,' + b.length + ' @@'});
+      b.forEach(function(l){ L.push({t:'add', s:'+' + l}); });
+      return L;
+    }
+    L.push({t:'meta', s:'index ' + hash(a) + '..' + hash(b) + ' 100644'}, {t:'meta', s:'--- a/' + f}, {t:'meta', s:'+++ b/' + f}, {t:'hunk', s:'@@ -1,' + a.length + ' +1,' + b.length + ' @@'});
+    var p = 0, ea = a.length, eb = b.length, i;
+    while (p < ea && p < eb && a[p] === b[p]) p++;
+    while (ea > p && eb > p && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+    for (i = 0; i < p; i++) L.push({s:' ' + a[i]});
+    for (i = p; i < ea; i++) L.push({t:'del', s:'-' + a[i]});
+    for (i = p; i < eb; i++) L.push({t:'add', s:'+' + b[i]});
+    for (i = ea; i < a.length; i++) L.push({s:' ' + a[i]});
+    return L;
+  }
+  function gitDiff(S, staged){
+    var L = [];
+    files(S).forEach(function(f){
+      var F = S.files[f];
+      if (staged) { if (F.i && !same(F.i, F.h)) L = L.concat(diffFile(f, F.h, F.i)); }
+      else if (F.i && !same(F.w, F.i)) L = L.concat(diffFile(f, F.i, F.w));
+    });
+    return L;
+  }
+
+  /* ---------- Kịch bản ---------- */
+  var A1 = VERS['app.py'][0], A2 = VERS['app.py'][1], A3 = VERS['app.py'][2], R1 = VERS['README.md'][0], U1 = VERS['utils.py'][0];
+  var INIT = {head:'a1f3c9e', ahead:false, files:{'app.py':{h:A1, i:A1, w:A1}, 'README.md':{h:R1, i:R1, w:R1}}};
+  var INTRO = 'Dự án có hai tệp app.py và README.md, đều nằm trong commit gần nhất (a1f3c9e) và chưa bị sửa. Cả ba khu vực đang giữ cùng một phiên bản v1.';
+
+  function build(){
+    var S = clone(INIT), snaps = [], log = [];
+    function cmd(s){ log.push({t:'cmd', s:s}); }
+    function out(lines){ if (!lines.length) log.push({t:'cm', s:'(không in gì)'}); else lines.forEach(function(l){ log.push(l); }); }
+    function cm(s){ log.push({t:'cm', s:s}); }
+    function snap(o){ o.st = clone(S); o.log = log.slice(); snaps.push(o); }
+
+    cm('# (Tạo tệp mới utils.py)'); S.files['utils.py'] = {h:null, i:null, w:U1};
+    snap({rows:['utils.py'], title:'Tạo tệp mới utils.py',
+      body:'utils.py chỉ có trong Working Directory. Git chưa từng chụp tệp này nên nó thuộc nhóm Untracked (chưa được theo dõi).',
+      note:'app.py và README.md đã nằm trong bản chụp gần nhất và không bị sửa: chúng là tệp Tracked ở trạng thái Unmodified.'});
+
+    cmd('git status -s'); out(shortStatus(S));
+    snap({cmp:'xy', title:'git status -s: "??" là tệp Untracked',
+      body:'Dạng ngắn in hai ký tự trước tên tệp. "??" nghĩa là Git chưa theo dõi tệp này. Tệp Unmodified không được in ra.',
+      note:'Hai ký tự đó chính là hai ô X và Y trong bảng.'});
+
+    cm('# (Sửa app.py: thêm dòng print("Học Git"))'); S.files['app.py'].w = A2;
+    snap({rows:['app.py'], title:'Sửa app.py',
+      body:'Chỉ bản trong Working Directory đổi thành v2. Staging Area và HEAD vẫn giữ v1.',
+      note:'app.py chuyển từ Unmodified sang Modified.'});
+
+    cmd('git status -s'); out(shortStatus(S));
+    snap({cmp:'xy', title:'git status -s: " M" (chữ M ở cột phải)',
+      body:'Cột phải (Y) so Working Directory với Staging Area: khác nhau nên hiện M. Cột trái (X) so Staging Area với HEAD: giống nhau nên để trống.',
+      note:'Đọc là: đã sửa nhưng chưa add.'});
+
+    cmd('git diff'); out(gitDiff(S, false));
+    snap({cmp:'y', title:'git diff: so Working Directory với Staging Area',
+      body:'git diff không tham số cho biết chính xác dòng nào đã đổi mà chưa add: dòng bắt đầu bằng "+" là dòng được thêm, "-" là dòng bị xóa.',
+      note:'utils.py không xuất hiện: git diff bỏ qua tệp Untracked vì Staging Area chưa có bản nào của nó để so sánh.'});
+
+    cmd('git add app.py utils.py'); S.files['app.py'].i = A2; S.files['utils.py'].i = U1;
+    snap({rows:['app.py', 'utils.py'], title:'git add app.py utils.py',
+      body:'Bản hiện tại của hai tệp được chép vào Staging Area. Từ đây utils.py được Git theo dõi (Tracked).'});
+
+    cmd('git status -s'); out(shortStatus(S));
+    snap({cmp:'xy', title:'git status -s: chữ cái chuyển sang cột trái',
+      body:'"M " app.py: Staging Area khác HEAD (đã add). "A " utils.py: tệp mới vừa được thêm vào Staging Area. Cột phải trống vì Working Directory đã giống Staging Area.',
+      note:'Cả hai tệp đều ở trạng thái Staged.'});
+
+    cmd('git diff'); out(gitDiff(S, false));
+    snap({cmp:'y', title:'git diff không in gì!',
+      body:'Working Directory và Staging Area giờ giống hệt nhau nên git diff không có gì để hiển thị.',
+      note:'Hiểu nhầm hay gặp: thay đổi không hề mất, nó đã nằm trong Staging Area. Muốn xem thì dùng git diff --staged.'});
+
+    cmd('git diff --staged'); out(gitDiff(S, true));
+    snap({cmp:'x', title:'git diff --staged: so Staging Area với HEAD',
+      body:'Hiển thị chính xác những gì sẽ được ghi vào commit tiếp theo: dòng "Học Git" của app.py và toàn bộ tệp mới utils.py.',
+      note:'git diff --cached là cách viết tương đương.'});
+
+    cm('# (Sửa tiếp app.py: thêm dòng chao())'); S.files['app.py'].w = A3;
+    snap({rows:['app.py'], title:'Sửa tiếp app.py sau khi đã add',
+      body:'Working Directory giờ có v3, Staging Area vẫn giữ v2, HEAD vẫn là v1.',
+      note:'Ba khu vực đang giữ ba phiên bản khác nhau của cùng một tệp.'});
+
+    cmd('git status -s'); out(shortStatus(S));
+    snap({cmp:'xy', title:'git status -s: "MM"',
+      body:'M ở cột trái: Staging Area (v2) khác HEAD (v1), tức là có phần đã add. M ở cột phải: Working Directory (v3) khác Staging Area (v2), tức là có phần sửa sau khi add.',
+      note:'app.py vừa Staged vừa Modified.'});
+
+    cmd('git diff'); out(gitDiff(S, false));
+    snap({cmp:'y', title:'git diff: chỉ phần chưa add',
+      body:'Chỉ thấy dòng chao(): đây là chênh lệch giữa Staging Area (v2) và Working Directory (v3).'});
+
+    cmd('git diff --staged'); out(gitDiff(S, true));
+    snap({cmp:'x', title:'git diff --staged: chỉ phần đã add',
+      body:'Thấy dòng "Học Git" (v1 → v2) và tệp utils.py. Dòng chao() không có ở đây: nếu commit ngay lúc này, dòng đó chưa được lưu.'});
+
+    cmd('git status'); out(longStatus(S));
+    snap({cmp:'xy', title:'git status: dạng đầy đủ',
+      body:'"Changes to be committed" ứng với cột trái (X), "Changes not staged for commit" ứng với cột phải (Y). app.py xuất hiện ở cả hai mục vì có mã MM.',
+      note:'Hai dòng đầu cho biết nhánh đang làm việc (main) và mức đồng bộ với nhánh từ xa (origin/main). Nếu còn tệp Untracked, Git in thêm mục "Untracked files" (ứng với "??").'});
+
+    cmd('git add app.py'); S.files['app.py'].i = A3;
+    cmd('git commit -m "Thêm utils.py và lời chào"');
+    S.files['app.py'].h = A3; S.files['utils.py'].h = U1; S.head = '7c1d2e9'; S.ahead = true;
+    out([{s:'[main 7c1d2e9] Thêm utils.py và lời chào'}, {s:' 2 files changed, 4 insertions(+)'}, {s:' create mode 100644 utils.py'}]);
+    snap({rows:['app.py', 'README.md', 'utils.py'], title:'git add rồi git commit: tạo bản chụp mới',
+      body:'Git chụp lại toàn bộ dự án đúng như trong Staging Area: app.py v3, README.md v1 và utils.py v1. HEAD chuyển sang commit 7c1d2e9.',
+      note:'README.md không đổi nên Git không sao chép lại mà chỉ trỏ tới bản đã lưu từ trước. Đó là cơ chế snapshot.'});
+
+    cmd('git status -s'); out(shortStatus(S));
+    snap({cmp:'xy', title:'git status -s: không in gì',
+      body:'Cả ba khu vực đồng bộ, mọi tệp đều Unmodified nên dạng ngắn không in dòng nào.',
+      note:'Dạng đầy đủ sẽ báo "nothing to commit, working tree clean".'});
+
+    return snaps;
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var snaps = build(), step = 0, timer = null;
+  var CAP = {x:'Lệnh đang so sánh: <b>Staging Area ↔ HEAD</b> (ô X)', y:'Lệnh đang so sánh: <b>Working Directory ↔ Staging Area</b> (ô Y)',
+    xy:'git status so sánh <b>cả hai cặp</b>: ô X (Staging ↔ HEAD) và ô Y (Working Directory ↔ Staging)'};
+  function chip(f, c){
+    if (!c) return '<span class="none">—</span>';
+    var n = verNo(f, c);
+    return '<span class="v v' + n + '" title="' + esc(f + ' (v' + n + '):\n' + c.join('\n')) + '">v' + n + '</span>';
+  }
+  function sep(ch, cls){ return '<td class="s ' + cls + (ch === ' ' ? ' eq">·' : ' ' + (cls === 's-x' ? 'sx' : 'sy') + '">' + ch) + '</td>'; }
+  function render(){
+    var sn = step ? snaps[step - 1] : null, prev = step > 1 ? snaps[step - 2].st : INIT, S = sn ? sn.st : INIT;
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + snaps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + snaps.length + ' bước</b>' + esc(INTRO);
+    $('bar').style.width = (100 * step / snaps.length) + '%';
+    $('tbl').className = sn && sn.cmp ? sn.cmp.split('').map(function(k){ return 'cmp-' + k; }).join(' ') : '';
+    $('cap').innerHTML = sn && sn.cmp ? CAP[sn.cmp] : 'Mỗi ô X, Y cho biết hai khu vực hai bên nó có giống nhau không.';
+    $('hHead').innerHTML = 'HEAD<small>commit ' + S.head + '</small>';
+    $('rows').innerHTML = files(S).map(function(f){
+      var F = S.files[f], P = prev.files[f] || {}, c = codes(F), on = sn && sn.rows && sn.rows.indexOf(f) >= 0;
+      function cell(k, cls){ return '<td class="' + cls + (sn && !same(F[k], P[k]) ? ' chg' : '') + '">' + chip(f, F[k]) + '</td>'; }
+      return '<tr' + (on ? ' class="on"' : '') + '><td class="f">' + f + '</td>' + cell('h', 'c-h') + sep(c[0], 's-x') + cell('i', 'c-i') + sep(c[1], 's-y') + cell('w', 'c-w') + '<td>' + badge(F) + '</td></tr>';
+    }).join('');
+    var log = sn ? sn.log : [], last = -1;
+    log.forEach(function(l, i){ if (l.t === 'cmd' || (l.t === 'cm' && /^#/.test(l.s))) last = i; });
+    for (var j = last - 1; j >= 0 && log[j].t === 'cmd'; j--) last = j;
+    $('term').innerHTML = log.length ? log.map(function(l, i){
+      var o = i < last ? ' old-out' : '';
+      if (l.t === 'short') return '<span class="' + o + '"><span class="x">' + l.x + '</span><span class="y">' + l.y + '</span> ' + esc(l.f) + '</span>';
+      return '<span class="' + (l.t || '') + o + '">' + esc(l.s) + '</span>';
+    }).join('\n') : '<span class="ph">Chưa chạy lệnh nào.</span>';
+    $('term').scrollTop = $('term').scrollHeight;
+    var run = timer !== null;
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= snaps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('next').addEventListener('click', function(){ if (step < snaps.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= snaps.length) step = 0;
+    step++; timer = setInterval(function(){ step++; if (step >= snaps.length) { step = snaps.length; stop(); } render(); }, 1400);
+    render();
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
