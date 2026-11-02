@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Một vòng GitHub Flow</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318;
+    --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --p:#7c3aed; --ps:#efe4ff; --code-bg:#f3f5f8;
+    --node-line:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171;
+      --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --p:#c4a1ff; --ps:#33244f; --code-bg:#11151c;
+      --node-line:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 11px;font-size:13px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .panel-title small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  .graph{width:100%;max-width:560px;height:auto;display:block;margin:0 auto}
+  .graph .lane{fill:var(--muted);font:600 11.5px system-ui,sans-serif;opacity:.8}
+  .graph .eg{fill:none;stroke:var(--node-line);stroke-width:2.5}
+  .graph .eg.par{stroke:var(--accent);stroke-width:3.5}
+  .graph .nd circle{fill:var(--card);stroke:var(--p);stroke-width:2.5}
+  .graph .nd text{fill:var(--muted);font:11px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle}
+  .graph .nd.local circle{stroke-dasharray:4 3;opacity:.7}
+  .graph .nd.mg circle{stroke:var(--accent);stroke-width:3.5}
+  .graph .nd.on circle{stroke:var(--cur-bar);stroke-width:5}
+  .graph .hide{display:none}
+  .graph .nd{transform-box:fill-box;transform-origin:center}
+  .graph .nd.pop{animation:pop .6s ease-out}
+  @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+  .graph .ptr{transition:transform .6s cubic-bezier(.5,.05,.3,1),opacity .4s}
+  .graph .ptr rect{fill:var(--card);stroke:var(--muted);stroke-width:1.2}
+  .graph .ptr text{fill:var(--muted);font:700 12px system-ui,sans-serif;text-anchor:middle}
+  .graph .ptr.mv rect{stroke:var(--cur-bar);stroke-width:3}
+  @media (prefers-reduced-motion: reduce){.graph .ptr{transition:none}.graph .nd.pop{animation:none}}
+
+  .pr{border:1px solid var(--line);border-radius:10px;margin-top:10px;overflow:hidden}
+  .pr[hidden]{display:none}
+  .pr-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .pr-h strong{font-size:15px}
+  .pr-h .sub{width:100%;font-size:12.5px;color:var(--muted)}
+  .pr-h code{font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);padding:1px 6px;border-radius:5px}
+  .badge{display:inline-block;padding:1px 10px;border-radius:999px;font-weight:700;font-size:12.5px;color:#fff}
+  .b-open{background:#15803d}.b-chg{background:#c2410c}.b-ok{background:#15803d}.b-merged{background:#7c3aed}
+  .checks{list-style:none;margin:0;padding:6px 12px}
+  .checks li{display:flex;gap:10px;align-items:center;padding:4px 0;font-size:13.5px;border-bottom:1px dashed var(--line);transition:background .3s}
+  .checks li:last-child{border-bottom:0}
+  .checks li span:first-child{width:150px;flex:none;color:var(--muted)}
+  .checks li.on{background:var(--cur)}
+  .s-wait{color:var(--muted)} .s-run{color:var(--accent);font-weight:600} .s-ok{color:var(--ok);font-weight:700} .s-chg{color:var(--warn);font-weight:700}
+  .rev{border-top:1px solid var(--line);padding:8px 12px}
+  .rev[hidden]{display:none}
+  .rev .fn{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-bottom:4px}
+  .code{background:var(--code-bg);border-radius:6px;padding:4px 0;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto}
+  .code .ln{display:flex;white-space:pre;padding-right:10px;border-left:3px solid transparent}
+  .code .ln span:first-child{width:30px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7}
+  .code .ln.cm{background:var(--warn-soft);border-left-color:var(--warn)}
+  .code .ln.add{background:var(--ok-soft);border-left-color:var(--ok)}
+  .bubble{margin:6px 0 2px 30px;border:1px solid var(--warn);background:var(--card);border-radius:8px;padding:5px 10px;font-size:13px}
+  .bubble b{color:var(--warn)}
+  .bubble.done{border-color:var(--ok)} .bubble.done b{color:var(--ok)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;height:180px;overflow:auto;
+    font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .console .cmd{color:#93c5fd}.console .cmd::before{content:"$ ";color:#6b7280}
+  .console .cm{color:#7b8494;font-style:italic}
+  .console .add{color:#4ade80}
+  .console .old{opacity:.55}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Một vòng GitHub Flow: từ nhánh tính năng đến khi merge</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Bấm <b>Bước tiếp</b> để đưa tính năng "trang đăng nhập" đi qua đủ 6 bước của GitHub Flow, từ lúc tạo nhánh đến khi được hợp nhất vào main.</p>
+
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card">
+    <p class="panel-title">Lịch sử commit <small>· viền nét đứt: commit chỉ có trên máy bạn, chưa push</small></p>
+    <svg class="graph" id="graph" viewBox="0 0 500 164" role="img" aria-label="Đồ thị commit"></svg>
+    <div class="pr" id="pr" hidden>
+      <div class="pr-h">
+        <strong>#12 Thêm trang đăng nhập</strong><span class="badge" id="prBadge"></span>
+        <span class="sub"><code>feature-login-page</code> → <code>main</code> · <span id="prCommits"></span></span>
+      </div>
+      <ul class="checks">
+        <li id="ckRev"><span>Code review</span><span id="ckRevV"></span></li>
+        <li id="ckCi"><span>Kiểm thử tự động</span><span id="ckCiV"></span></li>
+        <li id="ckStg"><span>Triển khai staging</span><span id="ckStgV"></span></li>
+      </ul>
+      <div class="rev" id="rev" hidden>
+        <div class="fn">login.js</div>
+        <div class="code" id="code"></div>
+        <div class="bubble" id="bubble"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Terminal <small>· lệnh Git trên máy bạn</small></p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- Dữ liệu ---------- */
+  var MY = 62, FY = 122;
+  var NODES = {
+    M1:{hash:'a1f3c9e', msg:'Khởi tạo dự án', x:50, y:MY},
+    M2:{hash:'3e9f1b2', msg:'Thêm trang chủ', x:130, y:MY},
+    F1:{hash:'7a1c2e4', msg:'Thêm form đăng nhập', x:215, y:FY},
+    F2:{hash:'8b3d5f6', msg:'Gọi API xác thực', x:295, y:FY},
+    F3:{hash:'9c4e7a8', msg:'Kiểm tra mật khẩu rỗng', x:375, y:FY},
+    MG:{hash:'d41a7c3', msg:'Merge pull request #12', x:455, y:MY}
+  };
+  var EDGES = {m12:['M1', 'M2'], f2a:['M2', 'F1'], f12:['F1', 'F2'], f23:['F2', 'F3'], mgm:['M2', 'MG'], mgf:['F3', 'MG']};
+  var STAGES = ['1. Tạo topic branch', '2. Commit', '3. Mở Pull Request', '4. Code review', '5. Kiểm thử & staging', '6. Merge & dọn dẹp'];
+  var CODE_OLD = ['function dangNhap(user, matKhau) {', "  return api.post('/login', { user, matKhau });", '}'];
+  var CODE_NEW = ['function dangNhap(user, matKhau) {', "  if (!matKhau) return loi('Thiếu mật khẩu');", "  return api.post('/login', { user, matKhau });", '}'];
+  var URL = 'https://github.com/nhom/du-an.git';
+
+  /* ---------- Kịch bản ---------- */
+  function build(){
+    var S = {nodes:['M1', 'M2'], local:[], branches:{main:'M2'}, pr:null};
+    var snaps = [], log = [];
+    function cmd(s){ log.push({t:'cmd', s:s}); }
+    function out(L){ L.forEach(function(l){ log.push(typeof l === 'string' ? {s:l} : l); }); }
+    function cm(s){ log.push({t:'cm', s:s}); }
+    function snap(o){ o.st = clone(S); o.log = log.slice(); snaps.push(o); }
+    var init = {st:clone(S), log:[]};
+
+    cmd('git switch main'); out(["Already on 'main'"]);
+    cmd('git pull'); out(['Already up to date.']);
+    cmd('git switch -c feature-login-page'); out(["Switched to a new branch 'feature-login-page'"]);
+    S.branches.feature = 'M2';
+    snap({stage:1, moved:['feature'], title:'Tạo nhánh tính năng từ main',
+      body:'Luôn bắt đầu từ main mới nhất (git pull), rồi tạo nhánh ngắn hạn có tên nói rõ công việc: feature-login-page.',
+      note:'Không ai commit thẳng lên main. main luôn ở trạng thái sẵn sàng triển khai.'});
+
+    cmd('git add login.html'); cmd('git commit -m "Thêm form đăng nhập"');
+    out(['[feature-login-page 7a1c2e4] Thêm form đăng nhập', ' 1 file changed, 28 insertions(+)']);
+    cmd('git add login.js'); cmd('git commit -m "Gọi API xác thực"');
+    out(['[feature-login-page 8b3d5f6] Gọi API xác thực', ' 1 file changed, 3 insertions(+)']);
+    S.nodes.push('F1', 'F2'); S.local = ['F1', 'F2']; S.branches.feature = 'F2';
+    snap({stage:2, pop:['F1', 'F2'], moved:['feature'], title:'Commit từng đơn vị công việc nhỏ',
+      body:'Hai commit, mỗi commit làm một việc trọn vẹn và có thông điệp rõ ràng: thêm form, rồi gọi API.',
+      note:'Viền nét đứt: hai commit này mới chỉ nằm trên máy bạn, đồng đội chưa thấy.'});
+
+    cmd('git push -u origin feature-login-page');
+    out(['remote: Create a pull request for \'feature-login-page\' on GitHub by visiting:', 'remote:      https://github.com/nhom/du-an/pull/new/feature-login-page', 'To ' + URL, ' * [new branch]      feature-login-page -> feature-login-page', {t:'add', s:"branch 'feature-login-page' set up to track 'origin/feature-login-page'."}]);
+    cm('# (Mở Pull Request #12 trên GitHub)');
+    S.local = []; S.pr = {status:'open', commits:2, rev:'wait', ci:'wait', stg:'wait'};
+    snap({stage:3, on:['F1', 'F2'], title:'Đẩy nhánh lên và mở Pull Request #12',
+      body:'Nhánh được push lên GitHub, rồi bạn mở Pull Request đề nghị hợp nhất feature-login-page vào main. PR là nơi cả nhóm thảo luận công khai về thay đổi này.',
+      note:'Có thể mở PR từ sớm, khi mới làm xong một phần, để xin góp ý hướng đi.'});
+
+    cm('# (Minh để lại góp ý trên dòng 2 của login.js)');
+    S.pr.status = 'chg'; S.pr.rev = 'chg'; S.pr.review = 'comment';
+    snap({stage:4, ck:'ckRev', warn:true, title:'Code review: người review yêu cầu chỉnh sửa',
+      body:'Minh đọc mã nguồn và góp ý ngay trên dòng gọi API: chưa kiểm tra mật khẩu rỗng. PR chuyển sang trạng thái "Yêu cầu chỉnh sửa".',
+      note:'Góp ý gắn với từng dòng code cụ thể nên người viết biết chính xác cần sửa ở đâu.'});
+
+    cmd('git commit -am "Kiểm tra mật khẩu rỗng"');
+    out(['[feature-login-page 9c4e7a8] Kiểm tra mật khẩu rỗng', ' 1 file changed, 1 insertion(+)']);
+    cmd('git push');
+    out(['To ' + URL, '   8b3d5f6..9c4e7a8  feature-login-page -> feature-login-page']);
+    S.nodes.push('F3'); S.branches.feature = 'F3'; S.pr.commits = 3; S.pr.review = 'fixed';
+    snap({stage:4, pop:['F3'], moved:['feature'], ck:'ckRev', title:'Sửa theo góp ý và push thêm commit',
+      body:'Bạn thêm dòng kiểm tra mật khẩu, commit rồi git push lên đúng nhánh đó. PR tự cập nhật thành 3 commit, không cần mở PR mới.',
+      note:'Vòng "góp ý → sửa → push" có thể lặp lại nhiều lần cho đến khi PR được chấp thuận.'});
+
+    cm('# (Minh bấm Approve)');
+    S.pr.status = 'ok'; S.pr.rev = 'ok';
+    snap({stage:4, ck:'ckRev', ok:true, title:'PR được chấp thuận (Approved)',
+      body:'Góp ý đã được xử lý, Minh chấp thuận Pull Request.'});
+
+    cm('# (Kiểm thử tự động chạy trên PR #12)');
+    S.pr.ci = 'ok'; S.pr.review = null;
+    snap({stage:5, ck:'ckCi', ok:true, title:'Kiểm thử tự động: đạt 24/24',
+      body:'Mỗi lần có commit mới trên PR, hệ thống tích hợp liên tục (CI) tự chạy bộ kiểm thử. Toàn bộ 24 bài kiểm thử đều đạt.',
+      note:'Nếu có bài kiểm thử thất bại, PR sẽ bị chặn merge cho đến khi được sửa.'});
+
+    cm('# (Triển khai nhánh feature-login-page lên staging)');
+    S.pr.stg = 'ok';
+    snap({stage:5, ck:'ckStg', ok:true, title:'Triển khai thử lên môi trường staging',
+      body:'Nhánh được chạy thử trên staging, một môi trường giống thật, để xác minh lần cuối trước khi đưa vào main.'});
+
+    cm('# (Bấm "Merge pull request" trên GitHub)');
+    S.nodes.push('MG'); S.branches.main = 'MG'; S.pr.status = 'merged';
+    snap({stage:6, pop:['MG'], moved:['main'], par:true, ok:true, title:'Merge PR vào main',
+      body:'Pull Request được hợp nhất: main có thêm merge commit nối với nhánh tính năng. main vẫn giữ trạng thái sẵn sàng triển khai vì mọi thay đổi đã qua review và kiểm thử.'});
+
+    cmd('git switch main'); out(["Switched to branch 'main'"]);
+    cmd('git pull'); out(['Updating 3e9f1b2..d41a7c3', 'Fast-forward', {t:'add', s:' login.html | 28 ++++'}, {t:'add', s:' login.js   |  4 ++++'}, ' 2 files changed, 32 insertions(+)']);
+    cmd('git branch -d feature-login-page'); out(['Deleted branch feature-login-page (was 9c4e7a8).']);
+    delete S.branches.feature; S.pr.deleted = true;
+    snap({stage:6, title:'Dọn dẹp: xóa nhánh tính năng',
+      body:'Nhánh được xóa trên GitHub (nút "Delete branch" trong PR) và trên máy (git branch -d). Máy bạn cập nhật main mới nhất bằng git pull.',
+      note:'Các commit vẫn còn trong lịch sử của main; chỉ con trỏ nhánh bị xóa. Công việc tiếp theo lại bắt đầu từ bước 1 với một nhánh mới.'});
+    return {init:init, snaps:snaps};
+  }
+  var INTRO = 'Nhánh main có 2 commit và đang sẵn sàng triển khai. Bạn được giao làm trang đăng nhập. Bấm "Bước tiếp" để bắt đầu.';
+
+  /* ---------- Vẽ đồ thị ---------- */
+  var G = $('graph');
+  (function(){
+    function d(a, b){
+      var A = NODES[a], B = NODES[b];
+      return A.y === B.y ? 'M' + A.x + ' ' + A.y + 'L' + B.x + ' ' + B.y
+        : 'M' + A.x + ' ' + A.y + 'C' + (A.x + 45) + ' ' + A.y + ' ' + (B.x - 45) + ' ' + B.y + ' ' + B.x + ' ' + B.y;
+    }
+    var s = '<text class="lane" x="4" y="' + (MY - 30) + '">main</text><text class="lane" x="4" y="' + (FY + 36) + '">nhánh tính năng</text>';
+    Object.keys(EDGES).forEach(function(e){ s += '<path class="eg" id="' + e + '" d="' + d(EDGES[e][0], EDGES[e][1]) + '"/>'; });
+    Object.keys(NODES).forEach(function(id){
+      var N = NODES[id];
+      s += '<g class="nd" id="n_' + id + '"><title>' + N.hash + ' ' + esc(N.msg) + '</title><circle cx="' + N.x + '" cy="' + N.y + '" r="11"/>' +
+        '<text x="' + N.x + '" y="' + (N.y === MY ? N.y + 26 : N.y - 18) + '">' + N.hash + '</text></g>';
+    });
+    ['main', 'feature'].forEach(function(p){ s += '<g class="ptr" id="p_' + p + '"><rect height="20" rx="10"/><text y="14"></text></g>'; });
+    G.innerHTML = s;
+  })();
+  var instant = false;
+  function setPtr(p, text, x, y, show, moved){
+    var g = $('p_' + p), w = text.length * 7 + 18, r = g.querySelector('rect'), jump = instant || g.style.opacity === '0' || !g.style.transform;
+    r.setAttribute('width', w); r.setAttribute('x', -w / 2);
+    g.querySelector('text').textContent = text;
+    if (jump) g.style.transition = 'none';
+    if (show) g.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    g.style.opacity = show ? '1' : '0';
+    if (jump) { void g.getBoundingClientRect(); g.style.transition = ''; }
+    g.classList.toggle('mv', !!moved);
+  }
+  function drawGraph(S, sn, forward){
+    var on = sn && sn.on || [], moved = sn && sn.moved || [], pop = sn && sn.pop || [];
+    Object.keys(NODES).forEach(function(id){
+      var g = $('n_' + id);
+      g.setAttribute('class', 'nd' + (S.nodes.indexOf(id) >= 0 ? '' : ' hide') + (S.local.indexOf(id) >= 0 ? ' local' : '') + (id === 'MG' ? ' mg' : '') + (on.indexOf(id) >= 0 ? ' on' : ''));
+      if (forward && pop.indexOf(id) >= 0) { void g.getBoundingClientRect(); g.classList.add('pop'); }
+    });
+    Object.keys(EDGES).forEach(function(e){
+      var vis = S.nodes.indexOf(EDGES[e][0]) >= 0 && S.nodes.indexOf(EDGES[e][1]) >= 0;
+      $(e).setAttribute('class', 'eg' + (vis ? '' : ' hide') + (sn && sn.par && (e === 'mgm' || e === 'mgf') ? ' par' : ''));
+    });
+    var m = NODES[S.branches.main];
+    setPtr('main', 'main', m.x, m.y - 46, true, moved.indexOf('main') >= 0);
+    var f = S.branches.feature ? NODES[S.branches.feature] : null;
+    setPtr('feature', 'feature-login-page', f ? f.x : 0, f ? (f.y === MY ? f.y + 34 : f.y + 18) : 0, !!f, moved.indexOf('feature') >= 0);
+  }
+  var BADGE = {open:['b-open', 'Open'], chg:['b-chg', 'Yêu cầu chỉnh sửa'], ok:['b-ok', 'Approved'], merged:['b-merged', 'Merged']};
+  var VAL = {
+    rev:{wait:['s-wait', 'Đang chờ người review'], chg:['s-chg', '✎ Yêu cầu chỉnh sửa (1 góp ý)'], ok:['s-ok', '✓ Minh đã chấp thuận']},
+    ci:{wait:['s-wait', 'Chưa chạy'], ok:['s-ok', '✓ Đạt 24/24 bài kiểm thử']},
+    stg:{wait:['s-wait', 'Chưa triển khai'], ok:['s-ok', '✓ Đang chạy ổn định trên staging']}
+  };
+  function drawPR(P, sn){
+    $('pr').hidden = !P;
+    if (!P) return;
+    var b = BADGE[P.status];
+    $('prBadge').className = 'badge ' + b[0]; $('prBadge').textContent = b[1];
+    $('prCommits').textContent = P.commits + ' commit' + (P.deleted ? ' · nhánh đã được xóa' : '');
+    [['ckRev', 'rev'], ['ckCi', 'ci'], ['ckStg', 'stg']].forEach(function(c){
+      var v = VAL[c[1]][P[c[1]]];
+      $(c[0] + 'V').className = v[0]; $(c[0] + 'V').textContent = v[1];
+      $(c[0]).classList.toggle('on', !!(sn && sn.ck === c[0]));
+    });
+    $('rev').hidden = !P.review;
+    if (P.review) {
+      var fixed = P.review === 'fixed', lines = fixed ? CODE_NEW : CODE_OLD;
+      $('code').innerHTML = lines.map(function(l, i){
+        var cls = fixed ? (i === 1 ? ' add' : '') : (i === 1 ? ' cm' : '');
+        return '<div class="ln' + cls + '"><span>' + (i + 1) + '</span><span>' + esc(l) + '</span></div>';
+      }).join('');
+      $('bubble').className = 'bubble' + (fixed ? ' done' : '');
+      $('bubble').innerHTML = fixed ? '<b>✓ Đã xử lý</b> · bạn đã thêm kiểm tra mật khẩu rỗng ở dòng 2.' : '<b>Minh</b> góp ý dòng 2: Cần kiểm tra mật khẩu rỗng trước khi gọi API.';
+    }
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var data = build(), step = 0, shown = 0, timer = null;
+  function render(){
+    var snaps = data.snaps, sn = step ? snaps[step - 1] : null, cur = sn || data.init, forward = step === shown + 1, st = sn ? sn.stage : 0;
+    shown = step;
+    $('steps').innerHTML = STAGES.map(function(l, i){ return '<li class="' + (i + 1 < st || (st === 6 && step === snaps.length) ? 'done' : i + 1 === st ? 'cur' : '') + '">' + esc(l) + '</li>'; }).join('');
+    $('status').className = 'status' + (sn && sn.warn ? ' warn' : sn && sn.ok ? ' ok' : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + snaps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + snaps.length + ' bước</b>' + esc(INTRO);
+    drawGraph(cur.st, sn, forward);
+    drawPR(cur.st.pr, sn);
+    var log = cur.log, firstOfStep = sn ? (step > 1 ? snaps[step - 2].log.length : 0) : 0;
+    $('term').innerHTML = log.length ? log.map(function(l, i){ return '<span class="' + (l.t || '') + (i < firstOfStep ? ' old' : '') + '">' + esc(l.s) + '</span>'; }).join('\n') : '<span class="ph">Chưa chạy lệnh nào.</span>';
+    $('term').scrollTop = $('term').scrollHeight;
+    var run = timer !== null;
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= snaps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('next').addEventListener('click', function(){ if (step < data.snaps.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; shown = 0; instant = true; render(); instant = false; });
+  $('all').addEventListener('click', function(){
+    if (step >= data.snaps.length) { step = 0; shown = 0; }
+    step++;
+    timer = setInterval(function(){ step++; if (step >= data.snaps.length) { step = data.snaps.length; stop(); } render(); }, 1800);
+    render();
+  });
+  instant = true; render(); instant = false;
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
