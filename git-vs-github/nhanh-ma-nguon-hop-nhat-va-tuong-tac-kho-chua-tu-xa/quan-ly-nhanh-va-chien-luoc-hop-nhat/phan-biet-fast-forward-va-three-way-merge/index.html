@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fast-forward và Three-way Merge</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8;
+    --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --g:#15803d; --gs:#dcf5e3; --r:#c2410c; --rs:#ffe8d6; --p:#7c3aed; --ps:#efe4ff;
+    --node-line:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f;
+      --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --g:#4ade80; --gs:#14361f; --r:#fdba74; --rs:#4a2c16; --p:#c4a1ff; --ps:#33244f;
+      --node-line:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:10px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font:inherit}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  @media (max-width:700px){.btns{margin-left:0}}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 11px;font-size:13px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .sum span{font-size:12.5px;border:1px solid var(--accent);background:var(--card);border-radius:999px;padding:1px 10px;color:var(--muted)}
+  .sum span i{font-style:normal;font-weight:700;color:var(--accent)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+
+  .graph{width:100%;max-width:580px;height:auto;display:block;margin:0 auto}
+  .graph .lane{fill:var(--muted);font:600 11.5px system-ui,sans-serif;opacity:.8}
+  .graph .eg{fill:none;stroke:var(--node-line);stroke-width:2.5;transition:opacity .4s,stroke .3s}
+  .graph .eg.par{stroke:var(--accent);stroke-width:3.5}
+  .graph .nd{transition:opacity .4s}
+  .graph .nd circle{fill:var(--card);stroke:var(--p);stroke-width:2.5;transition:all .3s}
+  .graph .nd text.id{fill:var(--p);font:700 12px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle}
+  .graph .nd text.hs{fill:var(--muted);font:11px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle}
+  .graph .nd.head circle{fill:var(--p)} .graph .nd.head text.id{fill:var(--card)}
+  .graph .nd.mg circle{stroke:var(--accent);stroke-width:3.5}
+  .graph .nd.on circle{stroke:var(--cur-bar);stroke-width:5}
+  .graph .nd.r-base circle{stroke:var(--muted);stroke-width:5}
+  .graph .nd.r-ours circle{stroke:var(--r);stroke-width:5}
+  .graph .nd.r-theirs circle{stroke:var(--g);stroke-width:5}
+  .graph .nd.r-base text.hs{fill:var(--text);font-weight:700}
+  .graph .nd.r-ours text.hs{fill:var(--r);font-weight:700}
+  .graph .nd.r-theirs text.hs{fill:var(--g);font-weight:700}
+  .graph .nd.on text.hs{fill:var(--text);font-weight:700}
+  .graph .hide{opacity:0;pointer-events:none}
+  .graph .ptr{transition:transform .6s cubic-bezier(.5,.05,.3,1)}
+  .graph .ptr rect{fill:var(--card);stroke:var(--muted);stroke-width:1.2}
+  .graph .ptr text{fill:var(--muted);font:700 12px system-ui,sans-serif;text-anchor:middle}
+  .graph .ptr.hd rect{fill:var(--ps);stroke:var(--p)} .graph .ptr.hd text{fill:var(--p)}
+  .graph .ptr.mv rect{stroke:var(--cur-bar);stroke-width:3}
+  @media (prefers-reduced-motion: reduce){.graph .ptr,.graph .nd,.graph .eg{transition:none}}
+
+  .tw{overflow-x:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+  .tw[hidden]{display:none}
+  table{width:100%;border-collapse:collapse;min-width:540px}
+  th{font:600 13px system-ui,sans-serif;text-align:center;padding:6px 4px;border-bottom:1px solid var(--line)}
+  th small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+  th.base{color:var(--muted)} th.ours{color:var(--r)} th.theirs{color:var(--g)} th.res{color:var(--accent)}
+  th.f,td.f{text-align:left;padding-left:6px}
+  td{text-align:center;padding:7px 4px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:0}
+  td.f{font:600 14px ui-monospace,Menlo,Consolas,monospace}
+  td.res{background:var(--accent-soft)}
+  td.res small{display:block;font-size:12px;color:var(--muted)}
+  .v{display:inline-block;min-width:36px;padding:1px 8px;border-radius:7px;font:700 13px ui-monospace,Menlo,Consolas,monospace;border:1px solid;cursor:help}
+  .v.diff{box-shadow:0 0 0 2px var(--cur-bar)}
+  .v1{background:var(--ps);color:var(--p);border-color:var(--p)}
+  .v2{background:var(--gs);color:var(--g);border-color:var(--g)}
+  .v3{background:var(--rs);color:var(--r);border-color:var(--r)}
+  .q{color:var(--muted);font-weight:700}
+  .legend{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 12px;height:190px;overflow:auto;
+    font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .console .cmd{color:#93c5fd}.console .cmd::before{content:"$ ";color:#6b7280}
+  .console .cm{color:#7b8494;font-style:italic}
+  .console .add{color:#4ade80}
+  .console .ref{color:#fbbf24}
+  .console .old{opacity:.55}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>git merge: Fast-forward hay Three-way?</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Hai tình huống chỉ khác nhau ở một commit trên nhánh main. Chọn tình huống rồi bấm <b>Bước tiếp</b> để xem Git chọn chiến lược hợp nhất như thế nào.</p>
+
+  <div class="bar">
+    <div class="seg" id="sc">
+      <button type="button" data-k="ff">A. main không có commit mới</button>
+      <button type="button" data-k="tw">B. main có commit mới (C5)</button>
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="prev">◀ Bước trước</button>
+      <button class="btn" id="next">Bước tiếp ▶</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card">
+    <p class="panel-title">Lịch sử commit</p>
+    <svg class="graph" id="graph" viewBox="0 0 560 234" role="img" aria-label="Đồ thị commit hai nhánh"></svg>
+    <div class="tw" id="tw" hidden>
+      <table>
+        <thead><tr>
+          <th class="f">Tệp</th>
+          <th class="base">Base<small>tổ tiên chung C2</small></th>
+          <th class="ours">Ours<small>đỉnh main C5</small></th>
+          <th class="theirs">Theirs<small>đỉnh feature C4</small></th>
+          <th class="res">Kết quả gộp</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="legend">Viền vàng: phiên bản khác với Base, tức là bên đó đã sửa tệp. Rê chuột lên ô v1, v2… để xem nội dung tệp.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Terminal</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- Dữ liệu ---------- */
+  var VERS = {
+    'app.py':{v1:['def main():', '    print("Trang chủ")'],
+              v3:['def main():', '    print("Trang chủ")', 'def dang_nhap(user, mk):', '    return user != "" and len(mk) >= 6']},
+    'README.md':{v1:['# Dự án Web'], v2:['# Dự án Web', 'Cài đặt: pip install -r requirements.txt']},
+    'utils.py':{v1:['def dinh_dang(s):', '    return s.strip()']}
+  };
+  var MAIN_Y = 80, FEAT_Y = 162;
+  var NODES = {
+    C1:{hash:'a1f3c9e', msg:'Khởi tạo dự án', x:50, y:MAIN_Y},
+    C2:{hash:'2b7e1d0', msg:'Thêm README', x:150, y:MAIN_Y},
+    C3:{hash:'3d81c4a', msg:'Viết hàm đăng nhập', x:260, y:FEAT_Y},
+    C4:{hash:'4c9a3f2', msg:'Kiểm tra mật khẩu', x:370, y:FEAT_Y},
+    C5:{hash:'5e02b7f', msg:'Cập nhật README', x:260, y:MAIN_Y},
+    M:{hash:'6f4d8a1', msg:"Merge branch 'feature'", x:480, y:MAIN_Y}
+  };
+  var EDGES = {e12:['C1', 'C2'], e23:['C2', 'C3'], e34:['C3', 'C4'], e25:['C2', 'C5'], e5M:['C5', 'M'], e4M:['C4', 'M']};
+  var THREE = [
+    {f:'app.py', base:'v1', ours:'v1', theirs:'v3', res:'v3', why:'chỉ feature sửa → lấy bản feature'},
+    {f:'README.md', base:'v1', ours:'v2', theirs:'v1', res:'v2', why:'chỉ main sửa → lấy bản main'},
+    {f:'utils.py', base:'v1', ours:'v1', theirs:'v1', res:'v1', why:'không bên nào sửa → giữ nguyên'}
+  ];
+
+  /* ---------- Kịch bản ---------- */
+  function build(k){
+    var tw = k === 'tw';
+    var S = {nodes:tw ? ['C1', 'C2', 'C3', 'C4', 'C5'] : ['C1', 'C2', 'C3', 'C4'], head:'feature', branches:{main:tw ? 'C5' : 'C2', feature:'C4'}};
+    var snaps = [], log = [];
+    function cmd(s){ log.push({t:'cmd', s:s}); }
+    function out(L){ L.forEach(function(l){ log.push(typeof l === 'string' ? {s:l} : l); }); }
+    function snap(o){ o.st = clone(S); o.log = log.slice(); snaps.push(o); }
+    var init = {st:clone(S), log:[]};
+
+    cmd('git switch main'); S.head = 'main'; out(["Switched to branch 'main'"]);
+    snap({chip:'Đứng ở nhánh đích', moved:['HEAD'], title:'Đứng ở nhánh đích: git switch main',
+      body:'git merge luôn đưa thay đổi VÀO nhánh hiện tại. Muốn hợp nhất feature vào main thì phải đứng ở main trước: HEAD chuyển sang main.'});
+
+    cmd('git merge feature');
+    out([{t:'cm', s:'# Git tìm tổ tiên chung của main và feature: 2b7e1d0 (C2)'}]);
+    if (!tw) {
+      snap({chip:'Phân tích lịch sử', on:['C2'], tags:{C2:'tổ tiên chung = đỉnh main'}, ok:true, title:'Git phân tích lịch sử: chọn Fast-forward',
+        body:'Tổ tiên chung của hai nhánh là C2, và đỉnh main cũng chính là C2: main không có commit mới nào kể từ khi rẽ nhánh. C4 nằm thẳng phía trước main.',
+        note:'Không có gì cần gộp nên không cần tạo commit mới.'});
+      S.branches.main = 'C4';
+      out(['Updating 2b7e1d0..4c9a3f2', 'Fast-forward', {t:'add', s:' app.py | 2 ++'}, ' 1 file changed, 2 insertions(+)']);
+      snap({chip:'Trượt con trỏ main', moved:['main', 'HEAD'], on:['C4'], title:'Fast-forward: con trỏ main trượt tới C4',
+        body:'Git chỉ di chuyển con trỏ main tiến thẳng tới commit mới nhất của feature. Không có commit nào được tạo ra.',
+        note:'Index và Working Directory cũng được cập nhật theo bản chụp C4.'});
+      cmd('git log --oneline --graph');
+      out([{t:'ref', s:'* 4c9a3f2 (HEAD -> main, feature) Kiểm tra mật khẩu'}, '* 3d81c4a Viết hàm đăng nhập', '* 2b7e1d0 Thêm README', '* a1f3c9e Khởi tạo dự án']);
+      snap({chip:'Kết quả', title:'Kết quả: lịch sử là một đường thẳng',
+        body:'git log cho thấy C1 → C2 → C3 → C4 nối thẳng hàng, main và feature cùng trỏ vào C4.',
+        note:'Nhìn vào lịch sử, không còn biết C3 và C4 từng nằm trên một nhánh riêng.',
+        sum:[['Commit mới', 'không có'], ['Con trỏ main', 'trượt C2 → C4'], ['Lịch sử', 'đường thẳng'], ['Dấu vết nhánh feature', 'không còn']]});
+    } else {
+      snap({chip:'Phân tích lịch sử', on:['C2', 'C5'], tags:{C2:'tổ tiên chung', C5:'đỉnh main'}, title:'Git phân tích lịch sử: không thể Fast-forward',
+        body:'Tổ tiên chung vẫn là C2, nhưng đỉnh main giờ là C5: main đã có commit riêng sau khi rẽ nhánh. Lịch sử đã tách thành hai nhánh song song nên không thể chỉ trượt con trỏ.',
+        note:'Nếu trượt main tới C4, commit C5 sẽ bị bỏ lại. Git chọn Three-way Merge.'});
+      snap({chip:'① Ba bản chụp', table:1, roles:{C2:'base', C5:'ours', C4:'theirs'}, tags:{C2:'Base', C5:'Ours', C4:'Theirs'},
+        title:'① Lấy ba bản chụp để so sánh',
+        body:'Base: tổ tiên chung C2. Ours: đỉnh nhánh đích main (C5). Theirs: đỉnh nhánh nguồn feature (C4).',
+        note:'Bảng bên dưới là phiên bản của từng tệp trong ba bản chụp.'});
+      snap({chip:'② Gộp thay đổi', table:2, roles:{C2:'base', C5:'ours', C4:'theirs'}, tags:{C2:'Base', C5:'Ours', C4:'Theirs'},
+        title:'② Gộp thay đổi của từng tệp',
+        body:'So mỗi bên với Base: tệp chỉ một bên sửa thì lấy bản của bên đó; không bên nào sửa thì giữ nguyên.',
+        note:'app.py chỉ feature sửa, README.md chỉ main sửa, nên Git tự gộp được. Nếu cả hai bên cùng sửa một chỗ, Git sẽ dừng lại báo xung đột để bạn tự xử lý.'});
+      S.nodes.push('M'); S.branches.main = 'M';
+      out(["Merge made by the 'ort' strategy.", {t:'add', s:' app.py | 2 ++'}, ' 1 file changed, 2 insertions(+)']);
+      snap({chip:'③ Tạo merge commit', table:2, moved:['main', 'HEAD'], par:true, title:'③ Tạo merge commit M với hai commit cha',
+        body:'Kết quả gộp được lưu thành commit mới M. M có hai cha là C5 (main) và C4 (feature), nối hai nhánh lịch sử lại với nhau. Nhánh main tiến lên M.',
+        note:'Git tự đặt thông điệp "Merge branch \'feature\'" và có thể mở trình soạn thảo để bạn sửa.'});
+      cmd('git log --oneline --graph');
+      out([{t:'ref', s:'*   6f4d8a1 (HEAD -> main) Merge branch \'feature\''}, '|\\', {t:'ref', s:'| * 4c9a3f2 (feature) Kiểm tra mật khẩu'}, '| * 3d81c4a Viết hàm đăng nhập', '* | 5e02b7f Cập nhật README', '|/', '* 2b7e1d0 Thêm README', '* a1f3c9e Khởi tạo dự án']);
+      snap({chip:'Kết quả', par:true, title:'Kết quả: lịch sử rẽ nhánh rồi nối lại',
+        body:'git log --graph vẽ hai đường song song gặp nhau tại merge commit. Nhánh feature vẫn trỏ vào C4.',
+        note:'Dấu vết của nhánh feature được giữ lại trong lịch sử.',
+        sum:[['Commit mới', 'M (merge commit)'], ['Số commit cha', '2: C5 và C4'], ['Lịch sử', 'rẽ nhánh rồi nối lại'], ['Dấu vết nhánh feature', 'còn']]});
+    }
+    return {init:init, snaps:snaps};
+  }
+  var INTRO = {
+    ff:'Bạn đã làm xong nhánh feature (C3, C4), rẽ ra từ C2. Trong lúc đó nhánh main không có commit mới nào. HEAD đang ở feature. Bấm "Bước tiếp" để hợp nhất feature vào main.',
+    tw:'Bạn đã làm xong nhánh feature (C3, C4), rẽ ra từ C2. Trong lúc đó một đồng đội đã thêm commit C5 vào main. HEAD đang ở feature. Bấm "Bước tiếp" để hợp nhất feature vào main.'
+  };
+
+  /* ---------- Vẽ đồ thị ---------- */
+  var G = $('graph');
+  (function(){
+    function d(a, b){
+      var A = NODES[a], B = NODES[b];
+      return A.y === B.y ? 'M' + A.x + ' ' + A.y + 'L' + B.x + ' ' + B.y
+        : 'M' + A.x + ' ' + A.y + 'C' + (A.x + 55) + ' ' + A.y + ' ' + (B.x - 55) + ' ' + B.y + ' ' + B.x + ' ' + B.y;
+    }
+    var s = '<text class="lane" x="4" y="' + (MAIN_Y - 26) + '">main</text><text class="lane" x="4" y="' + (FEAT_Y + 32) + '">feature</text>';
+    Object.keys(EDGES).forEach(function(e){ s += '<path class="eg" id="' + e + '" d="' + d(EDGES[e][0], EDGES[e][1]) + '"/>'; });
+    Object.keys(NODES).forEach(function(id){
+      var N = NODES[id], hy = N.y === MAIN_Y ? N.y + 30 : N.y - 22;
+      s += '<g class="nd" id="n_' + id + '"><title>' + N.hash + ' ' + esc(N.msg) + '</title><circle cx="' + N.x + '" cy="' + N.y + '" r="15"/>' +
+        '<text class="id" x="' + N.x + '" y="' + (N.y + 4) + '">' + id + '</text><text class="hs" x="' + N.x + '" y="' + hy + '">' + N.hash + '</text></g>';
+    });
+    ['main', 'feature', 'HEAD'].forEach(function(p){ s += '<g class="ptr' + (p === 'HEAD' ? ' hd' : '') + '" id="p_' + p + '"><rect height="20" rx="10"/><text y="14"></text></g>'; });
+    G.innerHTML = s;
+  })();
+  function setPtr(p, text, x, y, moved){
+    var g = $('p_' + p), w = text.length * 7 + 18, r = g.querySelector('rect');
+    r.setAttribute('width', w); r.setAttribute('x', -w / 2);
+    g.querySelector('text').textContent = text;
+    g.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    g.classList.toggle('mv', !!moved);
+  }
+  function drawGraph(S, sn){
+    var moved = sn && sn.moved || [], on = sn && sn.on || [], roles = sn && sn.roles || {}, tags = sn && sn.tags || {};
+    var hid = S.branches[S.head];
+    Object.keys(NODES).forEach(function(id){
+      var g = $('n_' + id), vis = S.nodes.indexOf(id) >= 0;
+      g.setAttribute('class', 'nd' + (vis ? '' : ' hide') + (id === hid ? ' head' : '') + (id === 'M' ? ' mg' : '') +
+        (on.indexOf(id) >= 0 ? ' on' : '') + (roles[id] ? ' r-' + roles[id] : ''));
+      g.querySelector('text.hs').textContent = tags[id] || NODES[id].hash;
+    });
+    Object.keys(EDGES).forEach(function(e){
+      var vis = S.nodes.indexOf(EDGES[e][0]) >= 0 && S.nodes.indexOf(EDGES[e][1]) >= 0;
+      $(e).setAttribute('class', 'eg' + (vis ? '' : ' hide') + (sn && sn.par && (e === 'e5M' || e === 'e4M') ? ' par' : ''));
+    });
+    var byNode = {};
+    ['main', 'feature'].forEach(function(b){ (byNode[S.branches[b]] = byNode[S.branches[b]] || []).push(b); });
+    var px = {};
+    Object.keys(byNode).forEach(function(id){
+      var N = NODES[id], bs = byNode[id], top = N.y === MAIN_Y;
+      bs.forEach(function(b, i){
+        var x = N.x + (bs.length > 1 ? (i ? 1 : -1) * 36 : 0);
+        px[b] = [x, top];
+        setPtr(b, b, x, top ? N.y - 46 : N.y + 22, moved.indexOf(b) >= 0);
+      });
+    });
+    var h = px[S.head], hn = NODES[hid];
+    setPtr('HEAD', 'HEAD → ' + S.head, h[0], h[1] ? hn.y - 72 : hn.y + 48, moved.indexOf('HEAD') >= 0);
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var key = 'ff', data, step = 0, timer = null;
+  function chip(f, v, base){ return '<span class="v ' + v + (base && v !== base ? ' diff' : '') + '" title="' + esc(f + ' (' + v + '):\n' + VERS[f][v].join('\n')) + '">' + v + '</span>'; }
+  function render(){
+    var snaps = data.snaps, sn = step ? snaps[step - 1] : null, S = (sn || data.init).st;
+    $('steps').innerHTML = snaps.map(function(s, i){ return '<li class="' + (i < step - 1 ? 'done' : i === step - 1 ? 'cur' : '') + '">' + (i + 1) + '. ' + esc(s.chip) + '</li>'; }).join('');
+    $('status').className = 'status' + (sn && sn.ok ? ' ok' : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + snaps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '') +
+        (sn.sum ? '<div class="sum">' + sn.sum.map(function(s){ return '<span>' + esc(s[0]) + ': <i>' + esc(s[1]) + '</i></span>'; }).join('') + '</div>' : '')
+      : '<b>Sẵn sàng · ' + snaps.length + ' bước</b>' + esc(INTRO[key]);
+    drawGraph(S, sn);
+    $('tw').hidden = !(sn && sn.table);
+    if (sn && sn.table) $('rows').innerHTML = THREE.map(function(r){
+      return '<tr><td class="f">' + r.f + '</td><td>' + chip(r.f, r.base) + '</td><td>' + chip(r.f, r.ours, r.base) + '</td><td>' + chip(r.f, r.theirs, r.base) + '</td><td class="res">' +
+        (sn.table > 1 ? chip(r.f, r.res) + '<small>' + esc(r.why) + '</small>' : '<span class="q">?</span>') + '</td></tr>';
+    }).join('');
+    var log = (sn || data.init).log, last = 0;
+    log.forEach(function(l, i){ if (l.t === 'cmd') last = i; });
+    $('term').innerHTML = log.length ? log.map(function(l, i){ return '<span class="' + (l.t || '') + (i < last ? ' old' : '') + '">' + esc(l.s) + '</span>'; }).join('\n') : '<span class="ph">Chưa chạy lệnh nào.</span>';
+    $('term').scrollTop = $('term').scrollHeight;
+    var run = timer !== null;
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= snaps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+    document.querySelectorAll('#sc button').forEach(function(b){ b.disabled = run; b.setAttribute('aria-pressed', b.dataset.k === key); });
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function load(k){ key = k; data = build(k); step = 0; render(); }
+  $('sc').addEventListener('click', function(e){ var b = e.target.closest('button[data-k]'); if (b && timer === null) load(b.dataset.k); });
+  $('next').addEventListener('click', function(){ if (step < data.snaps.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= data.snaps.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= data.snaps.length) { step = data.snaps.length; stop(); } render(); }, 1600);
+    render();
+  });
+  load('ff');
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
