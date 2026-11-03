@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chú rùa cầm bút</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --kw:#7c3aed; --fn:#7c3aed; --num:#c2410c; --cm:#8a93a3;
+    --paper:#ffffff; --grid:#eef0f4; --axis:#d5d9e1; --ink:#1d4ed8; --shell:#16a34a; --skin:#86efac; --arc:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --kw:#c4a1ff; --fn:#c4a1ff; --num:#fdba74; --cm:#6b7385;
+      --paper:#10141b; --grid:#1b212b; --axis:#2c3442; --ink:#6ea0ff; --shell:#22c55e; --skin:#4ade80; --arc:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:8px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 11px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  @media (max-width:700px){.btns{margin-left:0}}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 10px;font-size:12.5px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+  @media (max-width:720px){.main{grid-template-columns:minmax(0,1fr)}}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:13px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding-right:10px;border-left:4px solid transparent;min-height:1.9em;transition:background .25s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.done{border-left-color:var(--ok)}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:700}.fn{color:var(--fn)}.num{color:var(--num);font-weight:700}.cm{color:var(--cm);font-style:italic}
+
+  .win{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+  .win .tb{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .win .tb i{width:9px;height:9px;border-radius:50%;background:var(--axis);display:inline-block}
+  .win.off .tb{opacity:.5}
+  .cv{display:block;width:100%;height:auto}
+  .cv .gd{stroke:var(--grid);stroke-width:1}
+  .cv .ax{stroke:var(--axis);stroke-width:1.2}
+  .cv .tk{fill:var(--muted);font:9px ui-monospace,Menlo,Consolas,monospace;opacity:.8}
+  .cv .seg{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+  .cv .lbl{fill:var(--ink);font:700 10px system-ui,sans-serif}
+  .cv .arc{fill:none;stroke:var(--arc);stroke-width:2;stroke-dasharray:3 3}
+  .cv .arct{fill:var(--arc);font:700 11px system-ui,sans-serif}
+  .cv .empty{fill:var(--muted);font:12px system-ui,sans-serif;text-anchor:middle}
+  .cv .shell{fill:var(--shell)} .cv .skin{fill:var(--skin)} .cv .pen{fill:var(--ink)}
+  .cv .tag{fill:var(--accent);font:700 10px ui-monospace,Menlo,Consolas,monospace}
+  .info{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .info span{font-size:12.5px;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--muted)}
+  .info span b{color:var(--text);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700}
+  .info span.chg{border-color:var(--cur-bar);background:var(--cur)}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Chú rùa cầm bút: forward, left và right</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Bấm <b>Bước tiếp</b> để chạy từng dòng lệnh và xem chú rùa di chuyển, xoay mặt trên khung vẽ.</p>
+
+  <div class="bar">
+    <div class="seg" id="opt"></div>
+    <div class="btns">
+      <button class="btn ghost" id="prev">◀ Bước trước</button>
+      <button class="btn" id="next">Bước tiếp ▶</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card main">
+    <div>
+      <p class="panel-title">Chương trình Python</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div>
+      <p class="panel-title">Khung vẽ (Canvas)</p>
+      <div class="win" id="win">
+        <div class="tb"><i></i><i></i><i></i><span id="wt"></span></div>
+        <svg class="cv" id="cv" viewBox="-150 -105 300 210" role="img" aria-label="Khung vẽ turtle"></svg>
+      </div>
+      <div class="info" id="info"></div>
+    </div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ---------- Code mẫu ---------- */
+  function prog(v){
+    var L = v === 'R';
+    return [
+      'import turtle', 'rua = turtle.Turtle()', '',
+      '# Tiến thẳng 100 bước', 'rua.forward(100)', '',
+      '# Đứng im và quay mặt sang ' + (L ? 'phải' : 'trái') + ' 90 độ', 'rua.' + (L ? 'right' : 'left') + '(90)', '',
+      '# Tiếp tục tiến thẳng 50 bước theo hướng vừa quay', 'rua.forward(50)'
+    ];
+  }
+  function hl(src){
+    if (/^#/.test(src)) return '<span class="cm">' + esc(src) + '</span>';
+    return esc(src).replace(/^import\b/, '<span class="kw">import</span>')
+      .replace(/\.(Turtle|forward|left|right)\(/, '.<span class="fn">$1</span>(').replace(/\((\d+)\)/, '(<span class="num">$1</span>)');
+  }
+
+  /* ---------- Xây các bước ---------- */
+  var DIR = {0:'sang phải →', 90:'lên trên ↑', 180:'sang trái ←', 270:'xuống dưới ↓'};
+  function build(v){
+    var R = v === 'R', h2 = R ? 270 : 90, y2 = R ? -50 : 50, S = [];
+    var seg1 = {x1:0, y1:0, x2:100, y2:0, label:'100 px'}, seg2 = {x1:100, y1:0, x2:100, y2:y2, label:'50 px'};
+    S.push({chip:'import turtle', ln:0, lib:true, show:false, x:0, y:0, h:0, segs:[],
+      title:'Dòng 1 · Đánh thức thư viện đồ họa',
+      body:'import turtle nạp thư viện vẽ của Python vào chương trình. Khung vẽ vẫn trống, vì bạn chưa tạo chú rùa nào.'});
+    S.push({chip:'Tạo rùa', ln:1, lib:true, show:true, pop:true, x:0, y:0, h:0, segs:[], chg:['x', 'h'],
+      title:'Dòng 2 · Tạo chú rùa và cất vào hộp biến rua',
+      body:'turtle.Turtle() tạo ra một chú rùa đứng ở chính giữa khung vẽ, tọa độ (0, 0), mặt hướng sang phải.',
+      note:'Từ giờ, mọi lệnh viết dạng rua.lệnh(...) đều được gửi tới chú rùa này.'});
+    S.push({chip:'forward(100)', ln:4, lib:true, show:true, x:100, y:0, h:0, segs:[seg1], anim:{t:'move', x0:0, y0:0}, chg:['x'],
+      title:'Dòng 5 · rua.forward(100): tiến thẳng 100 bước',
+      body:'Rùa bò theo hướng mặt hiện tại (sang phải) 100 điểm ảnh, kéo theo cây bút nên vẽ ra một đoạn thẳng dài 100 px.'});
+    S.push({chip:(R ? 'right' : 'left') + '(90)', ln:7, lib:true, show:true, x:100, y:0, h:h2, segs:[seg1], anim:{t:'turn', h0:0}, arc:{from:0, d:R ? -90 : 90}, chg:['h'], warn:true,
+      title:'Dòng 8 · rua.' + (R ? 'right' : 'left') + '(90): đứng im, quay mặt sang ' + (R ? 'phải' : 'trái') + ' 90°',
+      body:'Rùa không di chuyển và không vẽ thêm nét nào. Chỉ có hướng mặt thay đổi: từ sang phải thành ' + DIR[h2].slice(0, -2) + '.',
+      note:'Lệnh xoay chỉ đổi hướng. Vị trí vẫn là (100, 0). Phải có forward() tiếp theo thì rùa mới đi theo hướng mới.'});
+    S.push({chip:'forward(50)', ln:10, lib:true, show:true, x:100, y:y2, h:h2, segs:[seg1, seg2], anim:{t:'move', x0:100, y0:0}, chg:['y'], ok:true,
+      title:'Dòng 11 · rua.forward(50): tiến 50 bước theo hướng mới',
+      body:'Lần này rùa đi ' + DIR[h2].slice(0, -2) + ' 50 px. Hai đoạn thẳng nối nhau thành đường gấp khúc hình chữ L' + (R ? ' lộn ngược.' : '.'),
+      note:R ? 'So sánh với phương án left(90): cùng hai lệnh forward, chỉ đổi hướng xoay mà nét thứ hai đi ngược chiều.'
+        : 'Thử chọn phương án right(90) ở trên để xem rùa rẽ sang phía còn lại.'});
+    return S;
+  }
+  var OPTS = [['L', 'Dòng 8: left(90)'], ['R', 'Đổi thành right(90)']];
+
+  /* ---------- Khung vẽ ---------- */
+  var cv = $('cv'), grid = '';
+  for (var gx = -150; gx <= 150; gx += 25) grid += '<line class="gd" x1="' + gx + '" y1="-105" x2="' + gx + '" y2="105"/>';
+  for (var gy = -100; gy <= 100; gy += 25) grid += '<line class="gd" x1="-150" y1="' + gy + '" x2="150" y2="' + gy + '"/>';
+  grid += '<line class="ax" x1="-150" y1="0" x2="150" y2="0"/><line class="ax" x1="0" y1="-105" x2="0" y2="105"/>';
+  [-100, -50, 50, 100].forEach(function(t){ grid += '<text class="tk" x="' + (t - 6) + '" y="11">' + t + '</text><text class="tk" x="3" y="' + (-t + 3) + '">' + t + '</text>'; });
+  grid += '<text class="tk" x="3" y="11">0</text>';
+  var TURTLE = '<g class="tt">' +
+    '<ellipse class="skin" cx="13" cy="0" rx="5" ry="4"/>' +
+    '<ellipse class="skin" cx="5" cy="-9" rx="3.5" ry="2.5"/><ellipse class="skin" cx="5" cy="9" rx="3.5" ry="2.5"/>' +
+    '<ellipse class="skin" cx="-6" cy="-8.5" rx="3.5" ry="2.5"/><ellipse class="skin" cx="-6" cy="8.5" rx="3.5" ry="2.5"/>' +
+    '<path class="skin" d="M-11 0L-15 -2L-15 2Z"/>' +
+    '<ellipse class="shell" cx="0" cy="0" rx="10.5" ry="8.5"/>' +
+    '<circle class="pen" cx="0" cy="0" r="2.2"/></g>';
+  cv.innerHTML = grid + '<g id="segs"></g><g id="arc"></g><g id="tur">' + TURTLE + '</g><text class="tag" id="tag">rua</text><text class="empty" id="empty" x="0" y="-40"></text>';
+
+  function segSvg(s, frac){
+    var x2 = s.x1 + (s.x2 - s.x1) * frac, y2 = s.y1 + (s.y2 - s.y1) * frac;
+    var out = '<line class="seg" x1="' + s.x1 + '" y1="' + (-s.y1) + '" x2="' + x2 + '" y2="' + (-y2) + '"/>';
+    if (frac >= 1) {
+      var vert = s.x1 === s.x2, mx = (s.x1 + s.x2) / 2, my = -(s.y1 + s.y2) / 2;
+      out += '<text class="lbl" x="' + (vert ? mx + 8 : mx) + '" y="' + (vert ? my + 4 : my - 8) + '" text-anchor="' + (vert ? 'start' : 'middle') + '">' + s.label + '</text>';
+    }
+    return out;
+  }
+  function arcSvg(a, x, y, frac){
+    var r = 26, d = a.d * frac, a0 = a.from * Math.PI / 180, a1 = (a.from + d) * Math.PI / 180;
+    var p0 = [x + r * Math.cos(a0), -(y + r * Math.sin(a0))], p1 = [x + r * Math.cos(a1), -(y + r * Math.sin(a1))];
+    var mid = (a.from + d / 2) * Math.PI / 180;
+    return '<path class="arc" d="M' + p0[0] + ' ' + p0[1] + 'A' + r + ' ' + r + ' 0 0 ' + (d > 0 ? 0 : 1) + ' ' + p1[0] + ' ' + p1[1] + '"/>' +
+      (frac >= 1 ? '<text class="arct" x="' + (x + 40 * Math.cos(mid) - 6) + '" y="' + (-(y + 40 * Math.sin(mid)) + 4) + '">' + Math.abs(a.d) + '°</text>' : '');
+  }
+  function drawCanvas(sn, x, y, h, segFrac, arcFrac){
+    $('win').classList.toggle('off', !sn || !sn.show);
+    $('wt').textContent = sn && sn.show ? 'Python Turtle Graphics' : sn && sn.lib ? 'turtle đã sẵn sàng · chưa có rùa' : 'Chưa chạy chương trình';
+    $('empty').textContent = sn && sn.show ? '' : sn && sn.lib ? 'Khung vẽ trống: chưa có rùa' : '';
+    var show = sn && sn.show;
+    $('tur').style.display = show ? '' : 'none'; $('tag').style.display = show ? '' : 'none';
+    var segs = sn ? sn.segs : [];
+    $('segs').innerHTML = segs.map(function(s, i){ return segSvg(s, i === segs.length - 1 ? segFrac : 1); }).join('');
+    $('arc').innerHTML = sn && sn.arc ? arcSvg(sn.arc, sn.x, sn.y, arcFrac) : '';
+    $('tur').setAttribute('transform', 'translate(' + x + ' ' + (-y) + ') rotate(' + (-h) + ')');
+    var side = Math.abs(Math.sin(h * Math.PI / 180)) > .7;
+    $('tag').setAttribute('x', side ? x + 15 : x - 8); $('tag').setAttribute('y', side ? -y + (y !== 0 ? 4 : Math.sin(h * Math.PI / 180) > 0 ? 18 : -10) : -y - 16);
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var v = 'L', steps = [], step = 0, timer = null, raf = 0;
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rebuild(){ steps = build(v); step = 0; }
+  function animate(sn){
+    cancelAnimationFrame(raf);
+    var A = sn.anim, dur = A.t === 'move' ? 1000 : 750, t0 = null;
+    function frame(ts){
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      if (A.t === 'move') drawCanvas(sn, A.x0 + (sn.x - A.x0) * e, A.y0 + (sn.y - A.y0) * e, sn.h, e, 1);
+      else drawCanvas(sn, sn.x, sn.y, A.h0 + sn.arc.d * e, 1, e);
+      if (p < 1) raf = requestAnimationFrame(frame);
+    }
+    drawCanvas(sn, A.t === 'move' ? A.x0 : sn.x, A.t === 'move' ? A.y0 : sn.y, A.t === 'move' ? sn.h : A.h0, 0, 0);
+    raf = requestAnimationFrame(frame);
+  }
+  function render(forward){
+    var sn = step ? steps[step - 1] : null, run = timer !== null;
+    $('opt').innerHTML = '<b>Phương án:</b>' + OPTS.map(function(x){ return '<button type="button" data-o="' + x[0] + '" aria-pressed="' + (x[0] === v) + '"' + (run ? ' disabled' : '') + '>' + esc(x[1]) + '</button>'; }).join('');
+    $('steps').innerHTML = steps.map(function(s, i){ return '<li class="' + (i < step - 1 ? 'done' : i === step - 1 ? 'cur' : '') + '">' + (i + 1) + '. ' + esc(s.chip) + '</li>'; }).join('');
+    $('status').className = 'status' + (sn ? (sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + steps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + steps.length + ' bước</b>Chương trình vẽ đường gấp khúc hình chữ L. Các dòng bắt đầu bằng # là chú thích, Python bỏ qua chúng. Bấm "Bước tiếp" để chạy dòng đầu tiên.';
+    var doneLines = steps.slice(0, Math.max(0, step - 1)).map(function(s){ return s.ln; });
+    $('code').innerHTML = prog(v).map(function(l, i){
+      var cls = sn && sn.ln === i ? ' cur' : doneLines.indexOf(i) >= 0 ? ' done' : '';
+      return '<div class="ln' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    var show = sn && sn.show, chg = sn && sn.chg || [];
+    $('info').innerHTML = show
+      ? '<span class="' + (chg.indexOf('x') >= 0 || chg.indexOf('y') >= 0 ? 'chg' : '') + '">Vị trí (x, y): <b>(' + sn.x + ', ' + sn.y + ')</b></span>' +
+        '<span class="' + (chg.indexOf('h') >= 0 ? 'chg' : '') + '">Hướng mặt: <b>' + sn.h + '°</b> ' + DIR[sn.h] + '</span>' +
+        '<span>Đã vẽ: <b>' + sn.segs.length + '</b> đoạn</span>'
+      : '<span>Chưa có rùa trên khung vẽ</span>';
+    cancelAnimationFrame(raf);
+    if (forward && sn && sn.anim && !calm) animate(sn);
+    else drawCanvas(sn, sn ? sn.x : 0, sn ? sn.y : 0, sn ? sn.h : 0, 1, 1);
+    if (forward && sn && sn.pop && !calm && $('tur').animate)
+      $('tur').firstChild.animate([{transform:'scale(0)'}, {transform:'scale(1.3)', offset:.7}, {transform:'scale(1)'}], {duration:500, easing:'ease-out'});
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= steps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('opt').addEventListener('click', function(e){ var b = e.target.closest('button[data-o]'); if (!b || timer) return; v = b.dataset.o; rebuild(); render(); });
+  $('next').addEventListener('click', function(){ if (step < steps.length) { step++; render(true); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= steps.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= steps.length) { step = steps.length; stop(); } render(true); }, 1700);
+    render(true);
+  });
+  rebuild(); render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
