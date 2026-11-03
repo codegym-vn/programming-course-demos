@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ngã rẽ if/else</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --fn:#7c3aed; --str:#047857; --num:#c2410c;
+    --bif:#2563eb; --bifs:#eaf1ff; --bel:#c2410c; --bels:#fff2e8; --node-line:#c9ced8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --fn:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --bif:#6ea0ff; --bifs:#17233d; --bel:#fdba74; --bels:#33231a; --node-line:#3a4250;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:8px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:600}
+  .seg.opt button{padding:4px 11px;font-size:14px}
+  .seg.opt button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  @media (max-width:700px){.btns{margin-left:0}}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 10px;font-size:12.5px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px}
+  .main.solo{grid-template-columns:1fr}
+  .main.solo #flowCol{display:none}
+  @media (max-width:680px){.main{grid-template-columns:minmax(0,1fr)}}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:14.5px/1.95 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;align-items:center;white-space:pre;padding-right:10px;border-left:4px solid transparent;transition:background .25s,opacity .25s}
+  .ln .no{width:30px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.b-if{border-left-color:var(--bif);background:var(--bifs)}
+  .ln.b-el{border-left-color:var(--bel);background:var(--bels)}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.skip{opacity:.38}
+  .ln.err{background:var(--bad-soft);border-left-color:var(--bad)}
+  .ln .tg{margin-left:10px;font:600 11.5px system-ui,sans-serif;padding:0 7px;border-radius:999px}
+  .ln .tg.skip{background:var(--line);color:var(--muted)}
+  .ln .tg.err{background:var(--bad);color:#fff}
+  .ws{color:var(--muted);opacity:.45}
+  .kw{color:var(--kw);font-weight:700}.fn{color:var(--fn)}.str{color:var(--str)}.num{color:var(--num);font-weight:700}
+  .legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-1px;border-left:4px solid}
+  .legend .lif{background:var(--bifs);border-color:var(--bif)} .legend .lel{background:var(--bels);border-color:var(--bel)}
+  .calc{margin-top:10px;border:1.5px dashed var(--line);border-radius:8px;padding:8px 10px;min-height:46px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .calc .lb{font-size:12.5px;color:var(--muted);font-weight:600}
+  .calc .st{font:600 15px ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:2px 9px;color:var(--muted)}
+  .calc .st.last{color:var(--text);background:var(--cur)}
+  .calc .st.T{background:var(--ok-soft);color:var(--ok)} .calc .st.F{background:var(--bad-soft);color:var(--bad)}
+  .calc .ar{color:var(--muted)}
+  .calc .none{color:var(--muted);font-size:13px;font-style:italic}
+
+  .flow{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+  .flow .nd rect,.flow .nd polygon{fill:var(--card);stroke:var(--node-line);stroke-width:2;transition:all .3s}
+  .flow .nd text{fill:var(--text);font:600 12.5px system-ui,sans-serif;text-anchor:middle}
+  .flow .nd text.m{font:600 12.5px ui-monospace,Menlo,Consolas,monospace}
+  .flow .nd.on rect,.flow .nd.on polygon{fill:var(--cur);stroke:var(--cur-bar);stroke-width:3}
+  .flow .nd.done rect,.flow .nd.done polygon{stroke:var(--accent)}
+  .flow .nd.dim{opacity:.3}
+  .flow .eg{fill:none;stroke:var(--node-line);stroke-width:2.5;transition:all .3s}
+  .flow .eg.on{stroke:var(--accent);stroke-width:3.5}
+  .flow .eg.dim{opacity:.25}
+  .flow .el{font:700 12px system-ui,sans-serif}
+  .flow .el.y{fill:var(--ok)} .flow .el.n{fill:var(--bad)}
+  .flow .ah{fill:var(--node-line)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 14px;min-height:84px;
+    font:15px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow-x:auto}
+  .console .ph{color:#7b8494;font:13px system-ui,sans-serif}
+  .console .er{color:#fca5a5}
+  .console .new{background:rgba(250,204,21,.18);border-radius:4px}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ngã rẽ của chương trình: if/else và thụt lề</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Chọn tab và dữ liệu, rồi bấm <b>Bước tiếp</b> để xem Python chạy dòng nào và bỏ qua dòng nào.</p>
+
+  <div class="bar">
+    <div class="seg" id="sc">
+      <button type="button" data-k="br">1. Ngã rẽ if/else</button>
+      <button type="button" data-k="ind">2. Quy tắc thụt lề</button>
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="prev">◀ Bước trước</button>
+      <button class="btn" id="next">Bước tiếp ▶</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="seg opt" id="opt"></div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card main" id="main">
+    <div>
+      <p class="panel-title">Chương trình Python</p>
+      <div class="code" id="code"></div>
+      <div class="legend"><span><i class="lif"></i>khối lệnh của if</span><span><i class="lel"></i>khối lệnh của else</span><span><span class="ws" style="opacity:.8">····</span> 4 dấu cách thụt lề</span></div>
+      <div class="calc" id="calc"></div>
+    </div>
+    <div id="flowCol"><p class="panel-title">Sơ đồ ngã rẽ</p><svg class="flow" id="flow" viewBox="0 0 300 340" role="img" aria-label="Sơ đồ ngã rẽ if/else"></svg></div>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Màn hình (kết quả)</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ---------- Code mẫu ---------- */
+  var MSG = {yes1:'Chúc mừng, bạn đã đỗ!', yes2:'Hẹn gặp lại ở lớp sau', no:'Rất tiếc, bạn chưa đạt', end:'Kết thúc chương trình'};
+  function prog(v, variant){
+    var L = [
+      ['diem = ' + v, null],
+      ['if diem >= 5:', null],
+      ['    print("' + MSG.yes1 + '")', 'if'],
+      ['    print("' + MSG.yes2 + '")', 'if'],
+      ['else:', null],
+      ['    print("' + MSG.no + '")', 'el'],
+      ['print("' + MSG.end + '")', null]
+    ];
+    if (variant === 'B') { L[2] = ['print("' + MSG.yes1 + '")', null]; L[3] = ['print("' + MSG.yes2 + '")', null]; }
+    if (variant === 'C') { L[3] = ['  print("' + MSG.yes2 + '")', 'if']; }
+    if (variant === 'D') { L[6] = ['    print("' + MSG.end + '")', 'el']; }
+    return L;
+  }
+  function hl(src){
+    var m = src.match(/^ */)[0].length, rest = src.slice(m);
+    var body = esc(rest).replace(/(&quot;|")[^"]*"/g, function(s){ return '<span class="str">' + s + '</span>'; })
+      .replace(/^(if|else)\b/, '<span class="kw">$1</span>').replace(/\bprint\b/, '<span class="fn">print</span>')
+      .replace(/(= |&gt;= )(\d+)/g, '$1<span class="num">$2</span>');
+    return '<span class="ws">' + Array(m + 1).join('·') + '</span>' + body;
+  }
+
+  /* ---------- Xây các bước ---------- */
+  function buildBranch(v){
+    var ok = v >= 5, S = [], out = [];
+    S.push({chip:'diem = ' + v, ln:0, flow:'start', calc:['diem ← ' + v],
+      title:'Dòng 1 · Cất ' + v + ' vào biến diem', body:'Chương trình bắt đầu với điểm thi là ' + v + '.'});
+    S.push({chip:'Kiểm tra điều kiện', ln:1, flow:'cond', calc:['diem >= 5', v + ' >= 5', ok ? 'True' : 'False'], ok:ok, warn:!ok,
+      title:'Dòng 2 · if diem >= 5: điều kiện ' + (ok ? 'ĐÚNG' : 'SAI'),
+      body:'Python thay diem bằng ' + v + ' rồi so sánh: ' + v + ' >= 5 là ' + (ok ? 'True (đúng)' : 'False (sai)') + '. ' + (ok ? 'Chương trình rẽ vào khối lệnh của if.' : 'Khối lệnh của if bị bỏ qua, chương trình rẽ sang else.'),
+      note:v === 5 ? 'Dấu >= nghĩa là "lớn hơn hoặc bằng", nên 5 >= 5 vẫn là True.' : 'Dấu hai chấm ở cuối dòng báo hiệu: các dòng thụt lề bên dưới thuộc về trường hợp này.'});
+    if (ok) {
+      out = out.concat([MSG.yes1]);
+      S.push({chip:'Khối if: dòng 3', ln:2, flow:'yes', skip:[4, 5], out:out.slice(), title:'Dòng 3 · Chạy lệnh đầu tiên trong khối if',
+        body:'Dòng này thụt lề nên thuộc khối if. Điều kiện đúng nên nó được chạy.', note:'Khối else (dòng 5–6) mờ đi vì sẽ bị bỏ qua.'});
+      out = out.concat([MSG.yes2]);
+      S.push({chip:'Khối if: dòng 4', ln:3, flow:'yes', skip:[4, 5], out:out.slice(), title:'Dòng 4 · Lệnh thứ hai cũng thuộc khối if',
+        body:'Mọi dòng thụt lề cùng một khoảng ngay dưới if đều thuộc khối if và được chạy lần lượt.'});
+    } else {
+      out = out.concat([MSG.no]);
+      S.push({chip:'Khối else', ln:5, flow:'no', skip:[2, 3], out:out.slice(), title:'Dòng 5–6 · Nhảy tới else và chạy khối lệnh của nó',
+        body:'Điều kiện sai nên Python bỏ qua dòng 3–4 và chạy khối else. else không cần viết điều kiện: nó lo mọi trường hợp còn lại.'});
+    }
+    out = out.concat([MSG.end]);
+    S.push({chip:'Dòng cuối', ln:6, flow:'end', skip:ok ? [4, 5] : [2, 3], out:out.slice(), ok:true,
+      title:'Dòng 7 · Dòng sát lề luôn được chạy',
+      body:'Dòng cuối không thụt lề nên không thuộc if hay else. Dù điều kiện đúng hay sai, nó luôn được chạy.',
+      note:ok ? 'Thử chọn điểm 3 để xem chương trình rẽ sang nhánh còn lại.' : 'Thử chọn điểm 7 để xem chương trình rẽ sang nhánh còn lại.'});
+    S.forEach(function(s){ s.branch = s.flow === 'start' ? null : ok; s.out = s.out || []; });
+    return S;
+  }
+  var ERR = {
+    B:{line:2, text:'  File "main.py", line 3\n    print("' + MSG.yes1 + '")\n    ^\nIndentationError: expected an indented block after \'if\' statement on line 2'},
+    C:{line:3, text:'  File "main.py", line 4\n    print("' + MSG.yes2 + '")\n' + Array(('    print("' + MSG.yes2 + '")').length + 1).join(' ') + '^\nIndentationError: unindent does not match any outer indentation level'}
+  };
+  function buildIndent(variant){
+    var S = [];
+    if (variant === 'A') {
+      S.push({chip:'Kiểm tra thụt lề', ln:-1, blocks:true, ok:true, title:'Python kiểm tra thụt lề: hợp lệ',
+        body:'Trước khi chạy, Python đọc toàn bộ chương trình. Dòng 3–4 cùng lùi 4 dấu cách nên thuộc khối if; dòng 6 thuộc khối else; dòng 7 sát lề.'});
+      S.push({chip:'Chạy', ln:-1, blocks:true, skip:[4, 5], out:[MSG.yes1, MSG.yes2, MSG.end], ok:true, title:'Chạy chương trình với diem = 7',
+        body:'Điều kiện đúng: in hai dòng của khối if, bỏ qua else, rồi in dòng cuối.'});
+    } else if (variant === 'B' || variant === 'C') {
+      var E = ERR[variant];
+      S.push({chip:'Kiểm tra thụt lề', ln:-1, blocks:variant === 'C', errLine:E.line, err:true,
+        title:variant === 'B' ? 'Phát hiện lỗi: quên thụt lề sau if' : 'Phát hiện lỗi: thụt lề không thẳng hàng',
+        body:variant === 'B' ? 'Sau "if diem >= 5:" Python chờ ít nhất một dòng thụt lề, nhưng dòng 3 lại viết sát lề. Python không biết khối lệnh của if gồm những dòng nào.'
+          : 'Dòng 3 lùi 4 dấu cách nhưng dòng 4 chỉ lùi 2 dấu cách. Hai dòng không thẳng hàng nên Python không biết dòng 4 thuộc khối nào.'});
+      S.push({chip:'Kết quả', ln:-1, blocks:variant === 'C', errLine:E.line, out:E.text.split('\n'), errOut:true, err:true,
+        title:'IndentationError: chương trình không chạy dòng nào',
+        body:'Python báo lỗi ngay từ lúc đọc code, nên không có dòng print nào được chạy, kể cả dòng 1.',
+        note:variant === 'B' ? 'Cách sửa: lùi các dòng thuộc khối if vào 4 dấu cách (hoặc 1 phím Tab).' : 'Cách sửa: cho mọi dòng trong cùng một khối lùi vào đúng cùng một khoảng.'});
+    } else {
+      S.push({chip:'Kiểm tra thụt lề', ln:-1, blocks:true, warn:true, title:'Python kiểm tra thụt lề: không có lỗi',
+        body:'Dòng 7 bị lùi vào 4 dấu cách, thẳng hàng với dòng 6. Python không báo lỗi nhưng hiểu dòng 7 thuộc khối else (khung cam).'});
+      S.push({chip:'Chạy', ln:-1, blocks:true, skip:[4, 5, 6], out:[MSG.yes1, MSG.yes2], warn:true, title:'Chạy được nhưng thiếu dòng "Kết thúc chương trình"',
+        body:'Với diem = 7, khối else bị bỏ qua, và dòng 7 giờ thuộc else nên cũng bị bỏ qua theo. Chương trình không báo lỗi, chỉ chạy sai ý định.',
+        note:'Lỗi logic kiểu này khó phát hiện hơn IndentationError, vì Python không cảnh báo gì cả. Hãy luôn để ý dòng nào thụt lề vào khối nào.'});
+    }
+    return S;
+  }
+  var OPTS = {
+    br:{label:'Chọn điểm thi:', list:[['7', 'diem = 7'], ['5', 'diem = 5'], ['3', 'diem = 3']], def:'7'},
+    ind:{label:'Phiên bản:', list:[['A', 'A. Đúng'], ['B', 'B. Quên thụt lề'], ['C', 'C. Không thẳng hàng'], ['D', 'D. Thụt lề sai chỗ']], def:'A'}
+  };
+  var INTRO = {
+    br:function(o){ return 'Chương trình kiểm tra điểm thi: từ 5 trở lên là đỗ. Điểm đang chọn là ' + o + '. Bấm "Bước tiếp" để chạy, hoặc chọn điểm khác ở trên.'; },
+    ind:function(o){ return {A:'Phiên bản thụt lề đúng, dùng làm mẫu để so sánh.', B:'Dòng 3 và 4 quên thụt lề sau if.', C:'Dòng 4 chỉ lùi 2 dấu cách trong khi dòng 3 lùi 4 dấu cách.', D:'Dòng cuối bị lùi vào trong, thẳng hàng với khối else.'}[o] + ' Các dấu chấm mờ (·) là dấu cách. Bấm "Bước tiếp".'; }
+  };
+
+  /* ---------- Sơ đồ ngã rẽ ---------- */
+  var F = $('flow');
+  F.innerHTML =
+    '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>' +
+    '<path class="eg" id="e_sc" d="M150 44V72" marker-end="url(#ah)"/>' +
+    '<path class="eg" id="e_cy" d="M96 112H62V178" marker-end="url(#ah)"/>' +
+    '<path class="eg" id="e_cn" d="M204 112H238V178" marker-end="url(#ah)"/>' +
+    '<path class="eg" id="e_ye" d="M62 236V270H118" marker-end="url(#ah)"/>' +
+    '<path class="eg" id="e_ne" d="M238 236V270H182" marker-end="url(#ah)"/>' +
+    '<text class="el y" x="70" y="104">Đúng</text><text class="el n" x="200" y="104">Sai</text>' +
+    '<g class="nd" id="n_start"><rect x="90" y="8" width="120" height="36" rx="18"/><text class="m" id="t_start" x="150" y="31"></text></g>' +
+    '<g class="nd" id="n_cond"><polygon points="150,74 204,112 150,150 96,112"/><text class="m" x="150" y="116">diem &gt;= 5 ?</text></g>' +
+    '<g class="nd" id="n_yes"><rect x="8" y="180" width="108" height="56" rx="8"/><text x="62" y="204">In 2 dòng</text><text x="62" y="222">chúc mừng</text></g>' +
+    '<g class="nd" id="n_no"><rect x="184" y="180" width="108" height="56" rx="8"/><text x="238" y="204">In</text><text x="238" y="222">"Rất tiếc…"</text></g>' +
+    '<g class="nd" id="n_end"><rect x="90" y="252" width="120" height="44" rx="8"/><text x="150" y="271">In "Kết thúc</text><text x="150" y="287">chương trình"</text></g>' +
+    '<text x="150" y="326" text-anchor="middle" style="fill:var(--muted);font:12px system-ui,sans-serif">Nhánh sáng: đường chương trình đã đi</text>';
+  F.querySelector('.ah').style.color = 'var(--node-line)';
+  var ORDER = ['start', 'cond', 'branch', 'end'];
+  function drawFlow(v, sn){
+    $('t_start').textContent = 'diem = ' + v;
+    var stage = sn ? sn.flow : null, b = sn ? sn.branch : null;
+    var idx = stage ? ORDER.indexOf(stage === 'yes' || stage === 'no' ? 'branch' : stage) : -1;
+    function nd(id, i, taken){ var g = $('n_' + id); g.setAttribute('class', 'nd' + (taken === false ? ' dim' : idx === i ? ' on' : idx > i && taken !== false ? ' done' : '')); }
+    nd('start', 0); nd('cond', 1);
+    nd('yes', 2, b === null ? null : b === true ? true : false);
+    nd('no', 2, b === null ? null : b === false ? true : false);
+    nd('end', 3);
+    function eg(id, on, dim){ $(id).setAttribute('class', 'eg' + (on ? ' on' : '') + (dim ? ' dim' : '')); }
+    eg('e_sc', idx >= 1);
+    eg('e_cy', idx >= 2 && b === true, b === false);
+    eg('e_cn', idx >= 2 && b === false, b === true);
+    eg('e_ye', idx >= 3 && b === true, b === false);
+    eg('e_ne', idx >= 3 && b === false, b === true);
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var tab = 'br', opt = '7', steps = [], step = 0, timer = null;
+  function rebuild(){ steps = tab === 'br' ? buildBranch(+opt) : buildIndent(opt); step = 0; }
+  function render(){
+    var sn = step ? steps[step - 1] : null, run = timer !== null;
+    var O = OPTS[tab];
+    $('opt').innerHTML = '<b>' + O.label + '</b>' + O.list.map(function(x){ return '<button type="button" data-o="' + x[0] + '" aria-pressed="' + (x[0] === opt) + '"' + (run ? ' disabled' : '') + '>' + esc(x[1]) + '</button>'; }).join('');
+    document.querySelectorAll('#sc button').forEach(function(b){ b.disabled = run; b.setAttribute('aria-pressed', b.dataset.k === tab); });
+    $('main').classList.toggle('solo', tab === 'ind');
+    $('steps').innerHTML = steps.map(function(s, i){ return '<li class="' + (i < step - 1 ? 'done' : i === step - 1 ? 'cur' : '') + '">' + (i + 1) + '. ' + esc(s.chip) + '</li>'; }).join('');
+    $('status').className = 'status' + (sn ? (sn.err ? ' err' : sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + steps.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + steps.length + ' bước</b>' + esc(INTRO[tab](opt));
+    var lines = prog(tab === 'br' ? opt : 7, tab === 'ind' ? opt : null);
+    var showBlocks = tab === 'br' || (sn && sn.blocks);
+    $('code').innerHTML = lines.map(function(l, i){
+      var cls = '', tag = '';
+      if (showBlocks && l[1]) cls += ' b-' + l[1];
+      if (sn && sn.skip && sn.skip.indexOf(i) >= 0) { cls += ' skip'; if (i === sn.skip[0]) tag = '<span class="tg skip">bỏ qua</span>'; }
+      if (sn && sn.ln === i) cls += ' cur';
+      if (sn && sn.errLine === i) { cls += ' err'; tag = '<span class="tg err">lỗi thụt lề</span>'; }
+      return '<div class="ln' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l[0]) + '</span>' + tag + '</div>';
+    }).join('');
+    var c = sn && sn.calc;
+    $('calc').style.display = tab === 'br' ? '' : 'none';
+    $('calc').innerHTML = '<span class="lb">Python đang tính:</span>' + (c && c.length ? c.map(function(s, i){
+      var last = i === c.length - 1, tf = s === 'True' ? ' T' : s === 'False' ? ' F' : '';
+      return (i ? '<span class="ar">→</span>' : '') + '<span class="st' + (last ? ' last' : '') + tf + '">' + esc(s) + (tf ? (s === 'True' ? ' ✓' : ' ✗') : '') + '</span>';
+    }).join('') : '<span class="none">(chưa có)</span>');
+    if (tab === 'br') drawFlow(opt, sn);
+    var out = sn && sn.out ? sn.out : [], prevLen = step > 1 && steps[step - 2].out ? steps[step - 2].out.length : 0;
+    $('term').innerHTML = out.length ? out.map(function(l, i){
+      return '<span class="' + (sn.errOut ? 'er' : i >= prevLen ? 'new' : '') + '">' + esc(l) + '</span>';
+    }).join('\n') : '<span class="ph">Chưa có gì được in ra.</span>';
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= steps.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('sc').addEventListener('click', function(e){ var b = e.target.closest('button[data-k]'); if (!b || timer) return; tab = b.dataset.k; opt = OPTS[tab].def; rebuild(); render(); });
+  $('opt').addEventListener('click', function(e){ var b = e.target.closest('button[data-o]'); if (!b || timer) return; opt = b.dataset.o; rebuild(); render(); });
+  $('next').addEventListener('click', function(){ if (step < steps.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= steps.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= steps.length) { step = steps.length; stop(); } render(); }, 1500);
+    render();
+  });
+  rebuild(); render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
