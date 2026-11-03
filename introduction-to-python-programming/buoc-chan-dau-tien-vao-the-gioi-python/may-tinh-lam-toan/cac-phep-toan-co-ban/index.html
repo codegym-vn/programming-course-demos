@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python tính toán từng bước</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --fn:#7c3aed; --str:#047857; --num:#c2410c;
+    --box:#c98a3c; --box-bg:#fdf6ec; --tag:#fde68a; --tag-text:#5b3d00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --fn:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --box:#d9a35c; --box-bg:#2a2218; --tag:#facc15; --tag-text:#2a1d00;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:10px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font:inherit}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  @media (max-width:700px){.btns{margin-left:0}}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+  .steps li{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 10px;font-size:12.5px;color:var(--muted)}
+  .steps li.cur{border-color:var(--cur-bar);background:var(--cur);color:var(--text);font-weight:700}
+  .steps li.done{border-color:var(--ok);color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+  .main.solo{grid-template-columns:1fr}
+  .main.solo #memCol{display:none}
+  @media (max-width:640px){.main{grid-template-columns:1fr}}
+  .code{background:var(--code-bg);border-radius:8px;padding:8px 0;overflow-x:auto;
+    font:15px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding-right:12px;border-left:3px solid transparent;transition:background .25s}
+  .ln .no{width:30px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.edit{background:var(--ok-soft);border-left-color:var(--ok)}
+  .ln .tagE{margin-left:10px;font:600 12px system-ui,sans-serif;color:var(--ok)}
+  .fn{color:var(--fn);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+
+  .calc{margin-top:10px;border:1.5px dashed var(--line);border-radius:8px;padding:8px 10px;min-height:52px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .calc .lb{font-size:12.5px;color:var(--muted);font-weight:600;margin-right:4px}
+  .calc .st{font:600 15px ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:2px 9px;color:var(--muted)}
+  .calc .st.last{color:var(--text);background:var(--cur);font-size:17px}
+  .calc .st.txt{background:var(--warn-soft);color:var(--warn)}
+  .calc .st mark{background:none;color:inherit;border-bottom:3px solid var(--accent);padding:0 1px}
+  .calc .ar{color:var(--muted)}
+  .calc .none{color:var(--muted);font-size:13px;font-style:italic}
+
+  .mem{display:flex;flex-wrap:wrap;gap:22px 14px;align-items:flex-start;min-height:120px;padding:14px 2px 2px}
+  .mem .empty{color:var(--muted);font-size:13.5px;font-style:italic;align-self:center}
+  .box{position:relative;width:116px}
+  .box .tag{position:absolute;left:8px;top:-13px;z-index:2;background:var(--tag);color:var(--tag-text);
+    font:700 13px ui-monospace,Menlo,Consolas,monospace;padding:2px 8px;border-radius:4px;transform:rotate(-4deg);box-shadow:0 2px 4px rgba(0,0,0,.18);white-space:nowrap}
+  .box .body{height:70px;border:2.5px solid var(--box);border-top-width:6px;border-radius:4px 4px 10px 10px;background:var(--box-bg);
+    display:flex;align-items:center;justify-content:center;font:700 18px ui-monospace,Menlo,Consolas,monospace;color:var(--num);transition:box-shadow .3s}
+  .box .body .none{font:italic 13px system-ui,sans-serif;color:var(--muted)}
+  .box.hl .body{box-shadow:0 0 0 3px var(--cur-bar)}
+  .box.new{animation:appear .5s ease-out}
+  @keyframes appear{0%{transform:scale(.4);opacity:0}100%{transform:none;opacity:1}}
+
+  .fly{position:fixed;z-index:50;pointer-events:none;background:var(--card);border:2px solid var(--accent);border-radius:8px;
+    padding:2px 10px;font:700 16px ui-monospace,Menlo,Consolas,monospace;color:var(--text);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 14px;min-height:80px;max-height:200px;overflow:auto;
+    font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .console .ph{color:#7b8494;font:13px system-ui,sans-serif}
+  .console .sep{color:#7b8494;font:italic 13px system-ui,sans-serif}
+  .console .new{background:rgba(250,204,21,.18);border-radius:4px}
+  @media (prefers-reduced-motion: reduce){.box.new{animation:none}}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Python tính toán từng bước</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Chọn một tab rồi bấm <b>Bước tiếp</b>. Dải "Python đang tính" cho thấy phép tính được rút gọn dần cho tới kết quả cuối cùng.</p>
+
+  <div class="bar">
+    <div class="seg" id="sc">
+      <button type="button" data-k="var">1. Làm toán với biến</button>
+      <button type="button" data-k="ord">2. Thứ tự phép tính</button>
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="prev">◀ Bước trước</button>
+      <button class="btn" id="next">Bước tiếp ▶</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <ol class="steps" id="steps"></ol>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card main" id="main">
+    <div>
+      <p class="panel-title">Chương trình Python</p>
+      <div class="code" id="code"></div>
+      <div class="calc" id="calc"></div>
+    </div>
+    <div id="memCol"><p class="panel-title">Bộ nhớ (các chiếc hộp)</p><div class="mem" id="mem"></div></div>
+  </div>
+
+  <div class="card">
+    <p class="panel-title">Màn hình (kết quả của print)</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, RM ? 0 : ms); }); }
+
+  /* ---------- Hai chương trình ---------- */
+  var PROG = {
+    var:[
+      [['fn', 'print'], ['', '(5 + 3)']],
+      [['fn', 'print'], ['', '('], ['str', '"5 + 3"'], ['', ')']],
+      [['', 'gia_tien = '], ['num', '50000', 'src2']],
+      [['', 'so_luong = '], ['num', '3', 'src3']],
+      [['', 'tong_tien = gia_tien * so_luong']],
+      [['fn', 'print'], ['', '(tong_tien)']]
+    ],
+    ord:[
+      [['fn', 'print'], ['', '(2 + 3 * 4)']],
+      [['fn', 'print'], ['', '((2 + 3) * 4)']]
+    ]
+  };
+  var EDITED3 = [['', 'so_luong = '], ['num', '5', 'src3']];
+
+  /* ---------- Các bước ----------
+     calc: các chặng rút gọn; [[...]] là phần đang được tính trước */
+  var STEPS = {
+    var:[
+      {chip:'print(5 + 3)', ln:0, mem:[], out:['8'], calc:['5 + 3', '8'], anim:{type:'print'},
+        title:'Dòng 1 · print(5 + 3): tính trước, in sau',
+        body:'Không có dấu ngoặc kép, nên Python hiểu 5 + 3 là một phép tính. Python tính ra 8 rồi mới đưa cho print in lên màn hình.'},
+      {chip:'print("5 + 3")', ln:1, mem:[], out:['8', '5 + 3'], calc:['"5 + 3"'], txt:true, anim:{type:'print'}, warn:true,
+        title:'Dòng 2 · print("5 + 3"): chỉ là chữ, không tính gì',
+        body:'Có dấu ngoặc kép, nên "5 + 3" là một đoạn chữ bình thường. Python không tính toán mà in y nguyên: 5 + 3.',
+        note:'Quy tắc dấu ngoặc kép của bài trước: trong ngoặc kép là chữ, ngoài ngoặc kép là lệnh để Python xử lý.'},
+      {chip:'gia_tien = 50000', ln:2, mem:[['gia_tien', '50000']], out:['8', '5 + 3'], calc:[], anim:{type:'store', name:'gia_tien', src:'src2', newBox:true},
+        title:'Dòng 3 · Tạo hộp gia_tien, cất 50000',
+        body:'Giá một món hàng là 50000 đồng, được cất vào hộp gia_tien.'},
+      {chip:'so_luong = 3', ln:3, mem:[['gia_tien', '50000'], ['so_luong', '3']], out:['8', '5 + 3'], calc:[], anim:{type:'store', name:'so_luong', src:'src3', newBox:true},
+        title:'Dòng 4 · Tạo hộp so_luong, cất 3',
+        body:'Bạn mua 3 món, số 3 được cất vào hộp so_luong.'},
+      {chip:'Dòng 5 (a): mở hộp', ln:4, mem:[['gia_tien', '50000'], ['so_luong', '3']], out:['8', '5 + 3'], calc:['gia_tien * so_luong', '50000 * 3'], hl:['gia_tien', 'so_luong'], anim:{type:'fromBoxes', names:['gia_tien', 'so_luong']},
+        title:'Dòng 5 · (a) Mở hai hộp, lấy giá trị ra',
+        body:'Python nhìn vế phải của dấu =: gia_tien * so_luong. Nó mở từng hộp, lấy bản sao giá trị ra thay vào chỗ tên hộp: phép tính trở thành 50000 * 3.',
+        note:'Hai hộp gia_tien và so_luong vẫn giữ nguyên giá trị của chúng.'},
+      {chip:'Dòng 5 (b): tính', ln:4, mem:[['gia_tien', '50000'], ['so_luong', '3']], out:['8', '5 + 3'], calc:['gia_tien * so_luong', '50000 * 3', '150000'], anim:{type:'none'},
+        title:'Dòng 5 · (b) Thực hiện phép nhân',
+        body:'50000 * 3 = 150000. Dấu * là phép nhân trong Python.'},
+      {chip:'Dòng 5 (c): cất kết quả', ln:4, mem:[['gia_tien', '50000'], ['so_luong', '3'], ['tong_tien', '150000']], out:['8', '5 + 3'], calc:['gia_tien * so_luong', '50000 * 3', '150000'], anim:{type:'toBox', name:'tong_tien'},
+        title:'Dòng 5 · (c) Cất kết quả vào hộp mới tong_tien',
+        body:'Kết quả 150000 được cất vào chiếc hộp thứ ba là tong_tien. Ta không tự điền con số này: máy tính đã tính hộ.'},
+      {chip:'print(tong_tien)', ln:5, mem:[['gia_tien', '50000'], ['so_luong', '3'], ['tong_tien', '150000']], out:['8', '5 + 3', '150000'], calc:[], hl:['tong_tien'], anim:{type:'print', box:'tong_tien'},
+        title:'Dòng 6 · print(tong_tien): mở hộp và in',
+        body:'print mở hộp tong_tien và in con số bên trong: 150000.'},
+      {chip:'Sửa so_luong = 5', ln:-1, edited:true, mem:[['gia_tien', '50000'], ['so_luong', '3'], ['tong_tien', '150000']], out:['8', '5 + 3', '150000'], calc:[], anim:{type:'none'}, warn:true,
+        title:'Bạn sửa dòng 4 thành so_luong = 5',
+        body:'Bạn muốn mua 5 món nên sửa code. Nhưng nhìn bộ nhớ: so_luong vẫn là 3, tong_tien vẫn là 150000.',
+        note:'Sửa code chưa làm thay đổi gì. Python chỉ tính lại khi chương trình được chạy lại.'},
+      {chip:'Chạy lại', ln:5, edited:true, mem:[['gia_tien', '50000'], ['so_luong', '5'], ['tong_tien', '250000']], out:['8', '5 + 3', '150000', '— chạy lại chương trình —', '8', '5 + 3', '250000'], calc:['gia_tien * so_luong', '50000 * 5', '250000'], hl:['so_luong', 'tong_tien'], anim:{type:'rerun'}, ok:true,
+        title:'Chạy lại chương trình: tong_tien tự được tính lại thành 250000',
+        body:'Chạy lại từ đầu, dòng 5 lấy giá trị mới trong hộp so_luong: 50000 * 5 = 250000. Công thức ở dòng 5 không hề phải sửa.',
+        note:'Đó là sức mạnh của làm toán với biến: chỉ cần thay dữ liệu và chạy lại, kết quả được tính lại theo đúng công thức.'}
+    ],
+    ord:[
+      {chip:'Nhân trước', ln:0, out:[], calc:['2 + [[3 * 4]]'], anim:{type:'none'},
+        title:'Dòng 1 · 2 + 3 * 4: tìm phép nhân trước',
+        body:'Python không tính từ trái sang phải. Nó tuân theo quy tắc nhân chia trước, cộng trừ sau, nên phần 3 * 4 (gạch chân) được tính trước.'},
+      {chip:'3 * 4 = 12', ln:0, out:[], calc:['2 + [[3 * 4]]', '[[2 + 12]]'], anim:{type:'none'},
+        title:'3 * 4 = 12, phép tính còn lại là 2 + 12',
+        body:'Phần đã tính được thay bằng kết quả 12. Giờ chỉ còn một phép cộng.'},
+      {chip:'Kết quả 14', ln:0, out:['14'], calc:['2 + [[3 * 4]]', '[[2 + 12]]', '14'], anim:{type:'print'},
+        title:'2 + 12 = 14, in ra 14',
+        body:'Python in 14. Nếu tính lần lượt từ trái sang phải sẽ ra 20, đó là kết quả sai.'},
+      {chip:'Ngoặc trước', ln:1, out:['14'], calc:['[[(2 + 3)]] * 4'], anim:{type:'none'},
+        title:'Dòng 2 · (2 + 3) * 4: phần trong ngoặc được ưu tiên',
+        body:'Dấu ngoặc đơn bắt Python tính phép cộng 2 + 3 trước, dù phép nhân thường được ưu tiên hơn.'},
+      {chip:'2 + 3 = 5', ln:1, out:['14'], calc:['[[(2 + 3)]] * 4', '[[5 * 4]]'], anim:{type:'none'},
+        title:'2 + 3 = 5, phép tính còn lại là 5 * 4',
+        body:'Phần trong ngoặc được thay bằng kết quả 5.'},
+      {chip:'Kết quả 20', ln:1, out:['14', '20'], calc:['[[(2 + 3)]] * 4', '[[5 * 4]]', '20'], anim:{type:'print'}, ok:true,
+        title:'5 * 4 = 20, in ra 20',
+        body:'Cùng ba con số 2, 3, 4 và hai phép tính, chỉ thêm dấu ngoặc mà kết quả đổi từ 14 thành 20.',
+        note:'Khi muốn phép cộng hoặc trừ được tính trước, hãy đặt nó trong dấu ngoặc đơn ().'}
+    ]
+  };
+  var INTRO = {
+    var:'Chương trình có 6 dòng: hai dòng in đầu tiên so sánh có và không có dấu ngoặc kép, bốn dòng sau tính tiền đi siêu thị. Bấm "Bước tiếp" để bắt đầu.',
+    ord:'Hai dòng code dùng cùng các con số 2, 3, 4 nhưng một dòng có dấu ngoặc đơn. Bấm "Bước tiếp" để xem Python tính theo thứ tự nào.'
+  };
+
+  /* ---------- Vẽ ---------- */
+  var key = 'var', step = 0, busy = false;
+  function codeHTML(sn){
+    var lines = PROG[key].slice();
+    if (sn && sn.edited) lines[3] = EDITED3;
+    return lines.map(function(toks, i){
+      var edit = sn && sn.edited && i === 3;
+      var cls = sn && sn.ln === i ? ' cur' : edit && sn.ln === -1 ? ' edit' : '';
+      return '<div class="ln' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + toks.map(function(t){
+        return '<span' + (t[0] ? ' class="' + t[0] + '"' : '') + (t[2] ? ' id="' + t[2] + '"' : '') + '>' + esc(t[1]) + '</span>';
+      }).join('') + '</span>' + (edit ? '<span class="tagE">✎ đã sửa</span>' : '') + '</div>';
+    }).join('');
+  }
+  function calcHTML(c, txt){
+    if (!c || !c.length) return '<span class="lb">Python đang tính:</span><span class="none">(không có phép tính nào)</span>';
+    return '<span class="lb">Python đang tính:</span>' + c.map(function(s, i){
+      var last = i === c.length - 1;
+      var h = esc(s).replace(/\[\[(.*?)\]\]/g, '<mark>$1</mark>');
+      return (i ? '<span class="ar">→</span>' : '') + '<span class="st' + (last ? ' last' : '') + (txt ? ' txt' : '') + '"' + (last ? ' id="calcLast"' : '') + '>' + h + '</span>';
+    }).join('') + (txt ? '<span class="lb" style="margin-left:6px">chỉ là chữ, không tính</span>' : '');
+  }
+  function memHTML(mem, opt){
+    if (!mem || !mem.length) return '<span class="empty">Chưa có chiếc hộp nào.</span>';
+    return mem.map(function(m){
+      return '<div class="box' + (opt.newBox === m[0] ? ' new' : '') + (opt.hl && opt.hl.indexOf(m[0]) >= 0 ? ' hl' : '') + '">' +
+        '<span class="tag">' + m[0] + '</span><div class="body" id="val_' + m[0] + '">' + (m[1] ? esc(m[1]) : '<span class="none">(trống)</span>') + '</div></div>';
+    }).join('');
+  }
+  function termHTML(out, fresh){
+    return out && out.length ? out.map(function(l, i){
+      var cls = /^—/.test(l) ? 'sep' : fresh && i === out.length - 1 ? 'new' : '';
+      return '<span class="' + cls + '">' + esc(l) + '</span>';
+    }).join('\n') : '<span class="ph">Chưa có gì được in ra.</span>';
+  }
+  function draw(k, opt){
+    opt = opt || {};
+    var list = STEPS[key], sn = k ? list[k - 1] : null;
+    $('main').classList.toggle('solo', key === 'ord');
+    $('steps').innerHTML = list.map(function(s, i){ return '<li class="' + (i < k - 1 ? 'done' : i === k - 1 ? 'cur' : '') + '">' + (i + 1) + '. ' + esc(s.chip) + '</li>'; }).join('');
+    $('status').className = 'status' + (sn && sn.warn ? ' warn' : sn && sn.ok ? ' ok' : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + k + '/' + list.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + list.length + ' bước</b>' + esc(INTRO[key]);
+    $('code').innerHTML = codeHTML(sn);
+    $('calc').innerHTML = calcHTML(opt.calc || (sn ? sn.calc : []), sn && sn.txt);
+    $('mem').innerHTML = memHTML(opt.mem || (sn ? sn.mem : []), {newBox:opt.newBox, hl:opt.hl !== undefined ? opt.hl : sn && sn.hl});
+    $('term').innerHTML = termHTML(opt.out || (sn ? sn.out : []), opt.fresh);
+    $('term').scrollTop = $('term').scrollHeight;
+    $('prev').disabled = busy || k === 0;
+    $('next').disabled = busy || k >= list.length;
+    $('all').disabled = busy;
+    $('reset').disabled = busy;
+    document.querySelectorAll('#sc button').forEach(function(b){ b.disabled = busy; b.setAttribute('aria-pressed', b.dataset.k === key); });
+  }
+  function fly(fromEl, toEl, text){
+    return new Promise(function(res){
+      if (RM || !fromEl || !toEl || !document.body.animate) return res();
+      var a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+      var p = document.createElement('div'); p.className = 'fly'; p.textContent = text;
+      document.body.appendChild(p);
+      var w = p.offsetWidth, h = p.offsetHeight;
+      var x0 = a.left + a.width / 2 - w / 2, y0 = a.top + a.height / 2 - h / 2;
+      var x1 = b.left + b.width / 2 - w / 2, y1 = b.top + Math.min(b.height, 50) / 2 - h / 2;
+      p.style.left = x0 + 'px'; p.style.top = y0 + 'px';
+      p.animate([{transform:'none'}, {transform:'translate(' + (x1 - x0) + 'px,' + (y1 - y0) + 'px)'}], {duration:750, easing:'cubic-bezier(.5,.05,.3,1)', fill:'forwards'});
+      setTimeout(function(){ p.remove(); res(); }, 780);
+    });
+  }
+  function fresh(sn){ return sn.anim.type === 'print' || sn.anim.type === 'rerun'; }
+
+  async function advance(){
+    var list = STEPS[key], k = step + 1, sn = list[k - 1], prev = k > 1 ? list[k - 2] : {mem:[], out:[], calc:[]}, A = sn.anim;
+    busy = true; step = k;
+    if (A.type === 'store') {
+      var pre = (prev.mem || []).concat([[A.name, null]]);
+      draw(k, {mem:pre, out:prev.out, newBox:A.name, hl:[], calc:[]});
+      await wait(550);
+      await fly($(A.src), $('val_' + A.name), $(A.src).textContent);
+    } else if (A.type === 'fromBoxes') {
+      draw(k, {calc:sn.calc.slice(0, 1)});
+      await Promise.all(A.names.map(function(n, i){
+        var v = sn.mem.filter(function(m){ return m[0] === n; })[0][1];
+        return wait(i * 200).then(function(){ return fly($('val_' + n), $('calcLast'), v); });
+      }));
+    } else if (A.type === 'toBox') {
+      draw(k, {mem:prev.mem.concat([[A.name, null]]), newBox:A.name, calc:sn.calc, hl:[]});
+      await wait(550);
+      await fly($('calcLast'), $('val_' + A.name), sn.calc[sn.calc.length - 1]);
+    } else if (A.type === 'print') {
+      draw(k, {out:prev.out});
+      var from = A.box ? $('val_' + A.box) : $('calcLast');
+      await fly(from, $('term'), A.box ? sn.mem.filter(function(m){ return m[0] === A.box; })[0][1] : sn.out[sn.out.length - 1]);
+    } else if (A.type === 'rerun') {
+      draw(k, {mem:[], out:prev.out.concat(['— chạy lại chương trình —']), calc:[]});
+      await wait(700);
+    }
+    busy = false;
+    draw(k, fresh(sn) ? {fresh:true} : {});
+  }
+  function load(k){ key = k; step = 0; draw(0); }
+  $('sc').addEventListener('click', function(e){ var b = e.target.closest('button[data-k]'); if (b && !busy) load(b.dataset.k); });
+  $('next').addEventListener('click', function(){ if (!busy && step < STEPS[key].length) advance(); });
+  $('prev').addEventListener('click', function(){ if (!busy && step > 0) { step--; draw(step); } });
+  $('reset').addEventListener('click', function(){ if (!busy) { step = 0; draw(0); } });
+  $('all').addEventListener('click', async function(){
+    if (busy) return;
+    if (step >= STEPS[key].length) { step = 0; draw(0); await wait(300); }
+    while (step < STEPS[key].length) {
+      await advance();
+      busy = true; draw(step, fresh(STEPS[key][step - 1]) ? {fresh:true} : {});
+      await wait(1100);
+    }
+    busy = false; draw(step);
+  });
+  draw(0);
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
