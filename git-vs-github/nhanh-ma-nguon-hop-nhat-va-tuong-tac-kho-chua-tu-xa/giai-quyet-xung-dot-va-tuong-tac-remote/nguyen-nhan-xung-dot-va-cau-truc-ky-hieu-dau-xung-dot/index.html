@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xử lý xung đột</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8;
+    --ours:#e7eefc; --ours-b:#2563eb; --theirs:#ffe8d6; --theirs-b:#c2410c; --base:#eceef2; --base-b:#5d6676;
+    --con-bg:#111827; --con-text:#e5e7eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c;
+      --ours:#1e2a44; --ours-b:#6ea0ff; --theirs:#4a2c16; --theirs-b:#fdba74; --base:#252a33; --base-b:#9aa3b2;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;min-height:90px;overflow-x:auto;font:13.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;align-items:center;gap:10px;white-space:pre;padding:0 10px;border-left:4px solid transparent;max-height:30px;overflow:hidden;
+    transition:max-height .45s ease,opacity .35s ease,background .3s}
+  .ln .tg{margin-left:auto;font:600 11.5px system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+  .ln.mk{font-weight:700;color:var(--warn)}
+  .ln.ours.on{background:var(--ours);border-left-color:var(--ours-b)}
+  .ln.theirs.on{background:var(--theirs);border-left-color:var(--theirs-b)}
+  .ln.base.on{background:var(--base);border-left-color:var(--base-b)}
+  .ln.mk.lit{background:var(--cur)}
+  .ln.drop{text-decoration:line-through;opacity:.45}
+  .ln.keep{background:var(--ok-soft);border-left-color:var(--ok)}
+  .ln.gone{max-height:0;opacity:0}
+  .ln.bad{background:var(--bad-soft);border-left-color:var(--bad)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:9px 12px;margin-top:12px;min-height:92px;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  .console .c{color:#86efac;font-weight:700}.console .e{color:#fca5a5}.console .m{color:#7b8494}.console .g{color:#86efac}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Xử lý xung đột: đọc dấu phân cách và tự quyết định</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Nhánh <code>main</code> và <code>feature/sale</code> cùng sửa một dòng. Chọn cách xử lý rồi bấm <b>Bước tiếp</b>.</p>
+  <div class="seg" id="optC"></div>
+  <div class="seg" id="optS"></div>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <p class="panel-title">Tệp sale.js</p>
+    <div class="code" id="code"></div>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  /* Mã băm và output lấy từ một repo Git chạy thật */
+  var LINES = [
+    {k:'fn', t:'function thongBaoGiam() {'},
+    {k:'m1', t:'<<<<<<< HEAD', mk:1, tag:'bắt đầu phần của nhánh hiện tại'},
+    {k:'ours', t:'  return "Giảm 10%";', cls:'ours', tag:'main'},
+    {k:'m2', t:'||||||| 6f27012', mk:1, tag:'bắt đầu bản gốc chung', d3:1},
+    {k:'base', t:'  return "Giảm giá";', cls:'base', tag:'bản gốc', d3:1},
+    {k:'m3', t:'=======', mk:1, tag:'ranh giới giữa hai bên'},
+    {k:'theirs', t:'  return "Giảm giá hôm nay";', cls:'theirs', tag:'feature/sale'},
+    {k:'m4', t:'>>>>>>> feature/sale', mk:1, tag:'kết thúc phần của nhánh mới'},
+    {k:'both', t:'  return "Giảm 10% hôm nay";', add:1},
+    {k:'end', t:'}'}
+  ];
+  var CH = {
+    ours:{label:'Giữ của main', keep:'ours', hash:'1cbbebb', say:'Giữ dòng của nhánh hiện tại, bỏ dòng của feature/sale.'},
+    theirs:{label:'Giữ của feature', keep:'theirs', hash:'7964823', say:'Giữ dòng của nhánh mới, bỏ dòng của main.'},
+    both:{label:'Kết hợp cả hai', keep:'both', hash:'bd9bf3b', say:'Cả hai đều có ý đúng: mức giảm 10% và chữ "hôm nay". Bạn viết một dòng mới gộp cả hai ý.'},
+    forgot:{label:'Quên xóa dấu', hash:'f76fabc'}
+  };
+  var MERGE = [['$ git merge feature/sale', 'c'], ['Auto-merging sale.js', ''], ['CONFLICT (content): Merge conflict in sale.js', 'e'], ['Automatic merge failed; fix conflicts and then commit the result.', 'e']];
+  function build(c, d3){
+    var S = [], C = CH[c], forgot = c === 'forgot';
+    S.push({v:'raw', title:'Hai nhánh cùng sửa một dòng: Git dừng lại', body:'main đổi dòng return thành "Giảm 10%", còn feature/sale đổi thành "Giảm giá hôm nay". Git không tự chọn được bên nào nên đánh dấu ngay trong tệp.', warn:true, cmd:MERGE});
+    S.push({v:'raw', title:'git status: tệp nào đang xung đột?', body:'Tệp ở trạng thái both modified nghĩa là cả hai nhánh đều đã sửa nó. Merge đang dở dang, chờ bạn xử lý.', cmd:[['$ git status', 'c'], ['You have unmerged paths.', ''], ['  (fix conflicts and run "git commit")', 'm'], ['Unmerged paths:', ''], ['	both modified:   sale.js', 'e']]});
+    S.push({v:'read', title:'Step 1: đọc nội dung giữa các dấu phân cách', body:d3 ? 'Phần trên ||||||| là của main, phần giữa ||||||| và ======= là bản gốc chung của hai nhánh, phần dưới ======= là của feature/sale.' : 'Phần giữa <<<<<<< và ======= là của nhánh hiện tại. Phần giữa ======= và >>>>>>> là của nhánh mới.',
+      note:d3 ? 'Dấu ||||||| chỉ xuất hiện khi bật merge.conflictstyle=diff3. Bản gốc giúp bạn biết mỗi bên đã đổi điều gì.' : 'Bật tùy chọn "Có bản gốc (diff3)" ở trên để xem thêm dấu |||||||.', cmd:[['# Mở sale.js trong trình biên soạn', 'm']]});
+    if (forgot) {
+      S.push({v:'read', warn:true, title:'Tệp được lưu nhưng các dấu vẫn còn', body:'Bạn lưu tệp mà chưa xử lý gì. Các dòng ký hiệu vẫn nằm nguyên trong mã nguồn.', cmd:[['# Lưu tệp, chưa xóa dấu phân cách', 'm']]});
+      S.push({v:'read', warn:true, title:'Step 3: git add vẫn thành công', body:'git add chỉ ghi nhận tệp đã xử lý xong, nó không kiểm tra trong tệp còn dấu xung đột hay không. Git tin vào xác nhận của bạn.', cmd:[['$ git add sale.js', 'c'], ['$ git status -s', 'c'], ['M  sale.js', '']]});
+      S.push({v:'read', warn:true, title:'Step 4: git commit cũng thành công', body:'Merge Commit được tạo, chứa luôn các dòng ký hiệu. Nhìn vào Git thì mọi thứ có vẻ bình thường.', cmd:[['$ git commit', 'c'], ['[main ' + C.hash + "] Merge branch 'feature/sale'", '']]});
+      S.push({v:'bad', err:true, title:'Chương trình hỏng vì còn dấu xung đột', body:'Các dấu phân cách không phải mã JavaScript, nên chạy tệp là báo lỗi cú pháp. Lỗi này đã nằm trong lịch sử của main.',
+        note:'Hãy luôn tìm lại các dấu trước khi add. Lệnh git diff --check phát hiện được các dấu còn sót.', cmd:[['$ node sale.js', 'c'], ["SyntaxError: Unexpected token '<<'", 'e'], ['$ git diff --check HEAD~1', 'c'], ['sale.js:2: leftover conflict marker', 'e']]});
+      return S;
+    }
+    S.push({v:'pick', title:'Quyết định: ' + C.label.toLowerCase(), body:C.say, note:'Dòng gạch ngang sẽ bị bỏ. Git không quyết định thay bạn được, vì đây là câu hỏi về ý nghĩa của mã.', cmd:[['# Sửa tệp trong trình biên soạn', 'm']]});
+    S.push({v:'clean', title:'Step 2: xóa toàn bộ dòng ký hiệu phân cách', body:'Các dòng ' + (d3 ? '<<<<<<<, |||||||, ======= và >>>>>>>' : '<<<<<<<, ======= và >>>>>>>') + ' không phải mã nguồn, phải xóa hết. Tệp trở lại thành mã chạy được.', cmd:[['# Lưu tệp', 'm']]});
+    S.push({v:'clean', title:'Step 3: git add để xác nhận đã giải quyết', body:'git add báo cho Git biết xung đột ở tệp này đã xử lý xong. Trạng thái both modified biến mất.', cmd:[['$ git add sale.js', 'c'], ['$ git status -s', 'c'], ['M  sale.js', '']]});
+    S.push({v:'clean', ok:true, title:'Step 4: git commit tạo Merge Commit', body:'Merge hoàn tất. Commit ' + C.hash + ' có hai commit cha, là đỉnh của main và đỉnh của feature/sale.',
+      note:c === 'both' ? 'Thử chọn "Quên xóa dấu" để xem chuyện gì xảy ra nếu bỏ qua Step 2.' : 'Thử chọn "Kết hợp cả hai": đây là cách xử lý thường gặp khi hai bên đều có ý đúng.', cmd:[['$ git commit', 'c'], ['[main ' + C.hash + "] Merge branch 'feature/sale'", 'g']]});
+    return S;
+  }
+
+  var ch = 'ours', d3 = false, S = build(ch, d3), step = 0, timer = null;
+  $('code').innerHTML = LINES.map(function(l){ return '<div class="ln' + (l.mk ? ' mk' : '') + (l.cls ? ' ' + l.cls : '') + '" data-k="' + l.k + '"><span>' + esc(l.t) + '</span><span class="tg"></span></div>'; }).join('');
+  function paint(sn){
+    var v = sn ? sn.v : 'none', C = CH[ch];
+    LINES.forEach(function(l){
+      var el = $('code').querySelector('[data-k="' + l.k + '"]'), cls = ['ln'], tag = '';
+      if (l.mk) cls.push('mk');
+      if (l.cls) cls.push(l.cls);
+      var core = l.k === 'fn' || l.k === 'end', gone = false;
+      if (v === 'none') gone = !core && l.k !== 'ours';
+      else if (l.d3 && !d3) gone = true;
+      else if (l.add) gone = !(ch === 'both' && (v === 'pick' || v === 'clean'));
+      else if (v === 'clean') gone = !core && !(l.k === C.keep);
+      if (v === 'none' && l.k === 'ours') cls.splice(cls.indexOf('ours'), 1);
+      if (gone) cls.push('gone');
+      if (v === 'read' || v === 'pick' || v === 'bad') {
+        if (l.cls) cls.push('on');
+        if (v === 'read') { tag = l.tag || ''; if (l.mk) cls.push('lit'); }
+      }
+      if (v === 'bad' && l.mk) cls.push('bad');
+      if (v === 'pick' && l.cls) { if (l.k === C.keep) cls.push('keep'); else cls.push('drop'); }
+      if (v === 'pick' && l.add) cls.push('keep');
+      if (v === 'clean' && (l.k === C.keep || l.add)) cls.push('keep');
+      el.className = cls.join(' ');
+      el.querySelector('.tg').textContent = tag;
+    });
+  }
+  function render(){
+    var sn = step ? S[step - 1] : null, run = timer !== null, dis = run ? ' disabled' : '';
+    $('optC').innerHTML = '<b>Cách xử lý:</b>' + Object.keys(CH).map(function(k){ return '<button type="button" data-c="' + k + '" aria-pressed="' + (k === ch) + '"' + dis + '>' + CH[k].label + '</button>'; }).join('');
+    $('optS').innerHTML = '<b>Hiển thị:</b><button type="button" data-d="0" aria-pressed="' + !d3 + '"' + dis + '>Mặc định</button><button type="button" data-d="1" aria-pressed="' + d3 + '"' + dis + '>Có bản gốc (diff3)</button>';
+    $('status').className = 'status' + (sn ? (sn.err ? ' err' : sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn ? '<b>Bước ' + step + '/' + S.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + S.length + ' bước</b>Bạn đang ở nhánh main và chuẩn bị hợp nhất feature/sale vào. Bấm "Bước tiếp" để chạy git merge.';
+    paint(sn);
+    $('term').innerHTML = sn ? sn.cmd.map(function(x){ return '<span class="' + x[1] + '">' + esc(x[0]) + '</span>'; }).join('\n') : '<span class="m">Lệnh sẽ hiện ở đây.</span>';
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= S.length;
+    $('all').disabled = run; $('reset').disabled = run;
+  }
+  function reload(){ S = build(ch, d3); step = 0; render(); }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('optC').addEventListener('click', function(e){ var b = e.target.closest('button[data-c]'); if (!b || timer) return; ch = b.dataset.c; reload(); });
+  $('optS').addEventListener('click', function(e){ var b = e.target.closest('button[data-d]'); if (!b || timer) return; d3 = b.dataset.d === '1'; reload(); });
+  $('next').addEventListener('click', function(){ if (step < S.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= S.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= S.length) { step = S.length; stop(); } render(); }, 2100);
+    render();
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
