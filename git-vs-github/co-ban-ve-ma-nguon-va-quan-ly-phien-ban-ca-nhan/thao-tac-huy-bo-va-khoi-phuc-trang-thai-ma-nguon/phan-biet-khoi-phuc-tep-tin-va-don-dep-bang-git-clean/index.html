@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dọn dẹp với git clean</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --con-bg:#111827; --con-text:#e5e7eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --code-bg:#11151c; --con-bg:#05070b; --con-text:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+
+  .groups{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  @media (max-width:560px){.groups{grid-template-columns:minmax(0,1fr)}}
+  .grp{background:var(--code-bg);border-radius:8px;padding:8px;min-height:104px}
+  .grp h3{margin:0 0 5px;font-size:12.5px;color:var(--muted)}
+  .f{display:flex;align-items:center;gap:8px;font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:3px 8px;margin-bottom:4px;max-height:40px;overflow:hidden;
+    transition:max-height .45s ease,opacity .35s ease,padding .45s ease,margin .45s ease,border-width .45s ease,background .25s,border-color .25s}
+  .f span.tg{margin-left:auto;font:600 11px system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+  .f.will{border-style:dashed;border-color:var(--bad);background:var(--bad-soft)}
+  .f.will span.tg{color:var(--bad)}
+  .f.gone{max-height:0;opacity:0;padding-top:0;padding-bottom:0;margin-bottom:0;border-width:0}
+  .f.safe{border-color:var(--ok);background:var(--ok-soft)}
+  .f.safe span.tg{color:var(--ok)}
+  .empty{font-size:12.5px;color:var(--muted);font-style:italic;padding:2px 4px;display:none}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:9px 12px;margin-top:12px;min-height:84px;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  .console .c{color:#86efac;font-weight:700}.console .e{color:#fca5a5}.console .m{color:#7b8494}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>git clean: mỗi tùy chọn xóa thêm những gì?</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Bấm <b>Bước tiếp</b> để chạy lần lượt từng lệnh. Viền đỏ nét đứt là tệp <b>sẽ</b> bị xóa, tệp biến mất là đã bị xóa thật.</p>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="groups" id="groups"></div>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  /* Output lấy từ một repo Git chạy thật */
+  var G = [
+    {t:'Được Git theo dõi (Tracked)', f:[['g', '.gitignore'], ['r', 'README.md', 'đã sửa, chưa commit'], ['s', 'src/app.js']]},
+    {t:'Tệp rác chưa theo dõi (Untracked)', f:[['d', 'debug.tmp'], ['o', 'main.o']]},
+    {t:'Thư mục chưa theo dõi', f:[['b', 'build/', 'có app.bin bên trong'], ['e', 'empty/', 'thư mục rỗng']]},
+    {t:'Bị bỏ qua bởi .gitignore', f:[['v', '.env', 'cấu hình tạm'], ['l', 'server.log']]}
+  ];
+  var F = 'do', D = 'be', X = 'vl';
+  var ST = [
+    {gone:'', cmd:[['$ git clean', 'c'], ['fatal: clean.requireForce defaults to true and neither -i, -n, nor -f given; refusing to clean', 'e']], err:true, title:'git clean không kèm tùy chọn: Git từ chối',
+      body:'Đây là lớp bảo vệ để tránh vô tình xóa. Không có tệp nào bị đụng tới. Git buộc bạn phải nói rõ muốn xem trước (-n) hay xóa thật (-f).'},
+    {gone:'', will:F, cmd:[['$ git clean -n', 'c'], ['Would remove debug.tmp', ''], ['Would remove main.o', '']], title:'-n (Dry Run): xem trước, chưa xóa gì',
+      body:'Git chỉ in danh sách sẽ xóa. Hai tệp được đánh dấu vẫn còn trên đĩa. Luôn chạy bước này trước, vì tệp Untracked bị xóa thì Git không có gì để khôi phục.'},
+    {gone:F, cmd:[['$ git clean -f', 'c'], ['Removing debug.tmp', ''], ['Removing main.o', '']], warn:true, title:'-f (Force): xóa thật các tệp Untracked',
+      body:'Đúng hai tệp vừa xem trước đã biến mất, và không lấy lại được qua lịch sử Git. Thư mục chưa theo dõi và tệp bị bỏ qua vẫn còn.'},
+    {gone:F, will:D, cmd:[['$ git clean -n -d', 'c'], ['Would remove build/', ''], ['Would remove empty/', '']], title:'Thêm -d: tính cả thư mục chưa theo dõi',
+      body:'Xem trước cho thấy cả empty/ và build/ đều nằm trong danh sách, dù build/ đang có tệp bên trong.',
+      note:'Vì vậy cần đọc kỹ kết quả -n: -d xóa cả thư mục lẫn nội dung của nó, không chỉ thư mục rỗng.'},
+    {gone:F + D, cmd:[['$ git clean -f -d', 'c'], ['Removing build/', ''], ['Removing empty/', '']], warn:true, title:'git clean -f -d: xóa thư mục rác', body:'Hai thư mục đã biến mất cùng toàn bộ nội dung. Các tệp trong danh sách .gitignore vẫn được giữ lại theo mặc định.'},
+    {gone:F + D, will:X, cmd:[['$ git clean -n -x', 'c'], ['Would remove .env', ''], ['Would remove server.log', '']], title:'Thêm -x: tính cả tệp bị .gitignore bỏ qua',
+      body:'Danh sách giờ có .env và server.log. Hãy cẩn thận: tệp bị bỏ qua thường là cấu hình tạm hoặc mật khẩu cục bộ, xóa nhầm là mất hẳn.'},
+    {gone:F + D + X, cmd:[['$ git clean -f -d -x', 'c'], ['Removing .env', ''], ['Removing server.log', '']], warn:true, title:'git clean -f -d -x: dọn dẹp triệt để', body:'Toàn bộ những gì Git không theo dõi đã bị xóa, thường dùng khi muốn build lại từ đầu. Thư mục làm việc giờ chỉ còn các tệp Tracked.'},
+    {gone:F + D + X, safe:'r', cmd:[['$ git status -s', 'c'], [' M README.md', ''], ['$ git restore README.md', 'c'], ['# Thay đổi trên README.md được hoàn tác về bản đã commit', 'm']], ok:true, title:'Phân biệt: clean dọn tệp Untracked, restore khôi phục tệp Tracked',
+      body:'Dù đã chạy mọi tùy chọn, thay đổi trên README.md vẫn còn nguyên, vì git clean không đụng tới tệp Tracked. Muốn hoàn tác nó, bạn dùng git restore.',
+      note:'git restore có bản đã commit để lấy lại. Tệp Untracked thì không, nên git clean xóa là mất hẳn.'}
+  ];
+  var step = 0, timer = null;
+  $('groups').innerHTML = G.map(function(g){ return '<div class="grp"><h3>' + esc(g.t) + '</h3>' + g.f.map(function(x){ return '<div class="f" id="f' + x[0] + '"><span>' + esc(x[1]) + '</span><span class="tg"></span></div>'; }).join('') + '</div>'; }).join('');
+  var NOTE = {}; G.forEach(function(g){ g.f.forEach(function(x){ NOTE[x[0]] = x[2] || ''; }); });
+  function render(){
+    var sn = step ? ST[step - 1] : null, run = timer !== null;
+    $('status').className = 'status' + (sn ? (sn.err ? ' err' : sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn ? '<b>Bước ' + step + '/' + ST.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + ST.length + ' bước</b>Thư mục làm việc có 4 nhóm tệp. Hãy đoán xem mỗi lệnh sẽ xóa nhóm nào, rồi bấm "Bước tiếp" để kiểm tra.';
+    Object.keys(NOTE).forEach(function(k){
+      var el = $('f' + k), gone = sn && sn.gone.indexOf(k) >= 0, will = sn && sn.will && sn.will.indexOf(k) >= 0, safe = sn && sn.safe === k;
+      el.className = 'f' + (gone ? ' gone' : '') + (will ? ' will' : '') + (safe ? ' safe' : '');
+      el.querySelector('.tg').textContent = will ? 'sẽ bị xóa' : safe ? 'vẫn còn thay đổi' : NOTE[k];
+    });
+    [].forEach.call(document.querySelectorAll('.grp'), function(g){
+      g.querySelector('.empty').style.display = g.querySelector('.f:not(.gone)') ? 'none' : 'block';
+    });
+    $('term').innerHTML = sn ? sn.cmd.map(function(x){ return '<span class="' + x[1] + '">' + esc(x[0]) + '</span>'; }).join('\n') : '<span class="m">Lệnh sẽ hiện ở đây.</span>';
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= ST.length;
+    $('all').disabled = run; $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('next').addEventListener('click', function(){ if (step < ST.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= ST.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= ST.length) { step = ST.length; stop(); } render(); }, 2300);
+    render();
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
