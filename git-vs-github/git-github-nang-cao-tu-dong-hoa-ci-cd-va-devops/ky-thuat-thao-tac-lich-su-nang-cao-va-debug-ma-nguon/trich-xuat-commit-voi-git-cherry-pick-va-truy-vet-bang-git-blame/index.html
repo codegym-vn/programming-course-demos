@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blame và cherry-pick</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --node-line:#c9ced8;
+    --con-bg:#111827; --con-text:#e5e7eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --node-line:#3a4250;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:8px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 11px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  @media (max-width:700px){.btns{margin-left:0}}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin:0 0 8px}
+
+  .gwrap{overflow-x:auto}
+  .graph{width:100%;min-width:560px;height:auto;display:block}
+  .graph .eg{fill:none;stroke:var(--node-line);stroke-width:3}
+  .graph .eg.dim{opacity:.35}
+  .graph .link{fill:none;stroke:var(--ok);stroke-width:2;stroke-dasharray:5 4}
+  .graph .nd circle{fill:var(--card);stroke:var(--accent);stroke-width:3;transition:fill .25s,stroke .25s}
+  .graph .nd text{text-anchor:middle;fill:var(--text)}
+  .graph .nd .hs{font:700 11px ui-monospace,Menlo,Consolas,monospace}
+  .graph .nd .lb{font:11.5px system-ui,sans-serif;fill:var(--muted)}
+  .graph .nd.dim{opacity:.38}
+  .graph .nd.hl circle{fill:var(--cur);stroke:var(--cur-bar);stroke-width:4}
+  .graph .nd.un circle{stroke:var(--warn);stroke-dasharray:4 3}
+  .graph .nd.new circle{fill:var(--ok-soft);stroke:var(--ok);stroke-width:4}
+  .graph .nd.gh circle{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
+  .graph .chip{transition:transform .5s cubic-bezier(.4,0,.2,1)}
+  .graph .chip rect{fill:var(--accent)}
+  .graph .chip text{fill:#fff;font:700 11px ui-monospace,Menlo,Consolas,monospace}
+  .graph .chip.f rect{fill:var(--muted)}
+  @media (prefers-color-scheme: dark){.graph .chip text{fill:#0f1218}}
+  .fly{position:fixed;z-index:30;pointer-events:none;font:700 12px ui-monospace,Menlo,Consolas,monospace;
+    background:var(--cur);border:1.5px solid var(--cur-bar);color:var(--text);padding:2px 8px;border-radius:6px;white-space:nowrap}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:10px 14px;min-height:150px;
+    font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow-x:auto}
+  .console .ph{color:#7b8494;font:13px system-ui,sans-serif}
+  .console .cmd{color:#86efac;font-weight:700}
+  .console .cm{color:#7b8494}
+  .console .er{color:#fca5a5}
+  .console .okk{color:#86efac}
+  .console .mk{color:#fbbf24;font-weight:700}
+  .console .add{color:#86efac}
+  .console .del{color:#fca5a5}
+  .console .hi{background:rgba(250,204,21,.2);border-radius:3px}
+  .console .hx{color:#93c5fd;font-weight:700}
+  .console .au{color:#fbbf24;font-weight:700}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full:hover{filter:brightness(1.1)}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Từ dòng code lỗi đến commit sửa lỗi: blame và cherry-pick</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Nhánh <span style="font-family:ui-monospace,Menlo,monospace">main</span> có lỗi tính giảm giá. Hãy truy vết xem ai viết dòng đó, rồi lấy đúng một commit sửa lỗi từ nhánh khác về.</p>
+
+  <div class="bar">
+    <div class="seg" id="opt"></div>
+    <div class="btns">
+      <button class="btn ghost" id="prev">◀ Bước trước</button>
+      <button class="btn" id="next">Bước tiếp ▶</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card">
+    <p class="panel-title">Lịch sử commit</p>
+    <div class="gwrap"><svg class="graph" id="graph" viewBox="0 0 660 172" role="img" aria-label="Đồ thị commit của main và feature/thanh-toan"></svg></div>
+  </div>
+  <div class="card">
+    <p class="panel-title" id="conTitle">Terminal</p>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ---------- Dữ liệu (lấy từ một repo Git chạy thật) ---------- */
+  var FIX = '50655cd', NEW_A = '3ca75e9', NEW_B = '46b7cac', HOT = '1be86e8';
+  var MY = 118, FY = 42;
+  var N = {
+    c1:{h:'07cdc4c', l:'Hàm tiện ích', x:50, y:MY}, c2:{h:'aba664a', l:'Tách hàm', x:140, y:MY}, c3:{h:'16e4f45', l:'Tổng giỏ hàng', x:230, y:MY},
+    f1:{h:'890cb53', l:'Form đang làm', x:320, y:FY}, f2:{h:FIX, l:'fix: tính giảm', x:410, y:FY}, f3:{h:'f8508c2', l:'QR chưa xong', x:500, y:FY},
+    m4:{h:HOT, l:'hotfix làm tròn', x:320, y:MY},
+    nA:{h:NEW_A, l:'fix: tính giảm', x:320, y:MY}, nB:{h:NEW_B, l:'fix: tính giảm', x:445, y:MY}
+  };
+
+  function bl(hash, who, date, n, code, hi, file){
+    var html = '<span class="hx">' + hash + '</span> ' + (file ? esc(file) + ' ' : '') + '(<span class="au">' + esc(who) + '</span> ' + date + ' +0700 ' + n + ') ' + esc(code);
+    return {html:html, cls:hi ? 'hi' : ''};
+  }
+  function cmpRow(a, b, c, cls){ return [(a + '                   ').slice(0, 19) + (b + '                        ').slice(0, 25) + c, cls]; }
+  var BN = 'Bình', D_B = '2026-03-10 14:20:00', D_C = '2026-03-12 10:05:00', D_A = '2026-03-02 09:15:00', D_F = '2026-03-21 16:45:00';
+  var L1 = 'function tinhGiam(gia, phanTram) {', L2 = '  return gia - gia * phanTram;', L3 = '}';
+  var L2F = '  return gia - gia * phanTram / 100;';
+
+  /* ---------- Kịch bản A ---------- */
+  var A = [
+    {g:{main:['c1', 'c2', 'c3']}, title:'Phát hiện lỗi trong cart.js',
+      body:'Khách báo: giảm 10% cho món 100.000 đ lại ra số âm. Dòng 2 của hàm tinhGiam nhân thẳng với 10 mà không chia cho 100, nên tinhGiam(100000, 10) trả về -900000.',
+      note:'Trước khi sửa, bạn cần biết ai viết dòng này và trong bối cảnh nào.',
+      con:{title:'Tệp cart.js trên nhánh main', lines:[[L1, ''], [L2, 'hi'], [L3, ''], ['', ''], ['function tongGioHang(ds) {', ''], ['  return ds.reduce((t, sp) => t + sp.gia, 0);', ''], ['}', '']]}},
+    {g:{main:['c1', 'c2', 'c3'], hl:['c2', 'c3']}, title:'git blame cart.js: xem nguồn gốc từng dòng',
+      body:'Mỗi dòng hiện commit, tác giả và thời gian viết ra nó. Dòng 2 thuộc commit aba664a của Bình.',
+      note:'Tệp này mới 7 dòng. Với tệp hàng nghìn dòng, in cả tệp sẽ rất khó đọc.',
+      con:{title:'Terminal', lines:[['$ git blame cart.js', 'cmd'],
+        bl('aba664af', BN, D_B, 1, L1), bl('aba664af', BN, D_B, 2, L2, true), bl('aba664af', BN, D_B, 3, L3),
+        bl('16e4f456', 'Chi ', D_C, 4, ''), bl('16e4f456', 'Chi ', D_C, 5, 'function tongGioHang(ds) {'), bl('16e4f456', 'Chi ', D_C, 6, '  return ds.reduce((t, sp) => t + sp.gia, 0);'), bl('16e4f456', 'Chi ', D_C, 7, '}')]}},
+    {g:{main:['c1', 'c2', 'c3'], hl:['c2'], dim:['c3']}, title:'-L 1,3: chỉ xem khoảng dòng cần quan tâm',
+      body:'Tùy chọn -L giới hạn phạm vi, ở đây là dòng 1 đến 3. Kết quả gọn lại, chỉ còn hàm tinhGiam.',
+      note:'Nhưng commit aba664a có tên "Tách hàm tính giảm sang cart.js". Có vẻ Bình chỉ chuyển code sang đây, chưa chắc đã viết ra nó.',
+      con:{title:'Terminal', lines:[['$ git blame -L 1,3 cart.js', 'cmd'], bl('aba664af', BN, D_B, 1, L1), bl('aba664af', BN, D_B, 2, L2, true), bl('aba664af', BN, D_B, 3, L3)]}},
+    {g:{main:['c1', 'c2', 'c3'], hl:['c1'], dim:['c3']}, ok:true, title:'-C: lần ra commit gốc, kể cả khi code đã chuyển tệp',
+      body:'Với -C, Git phát hiện các dòng này được chuyển từ utils.js sang. Tác giả thật là An, trong commit 07cdc4c. Đây mới là người nên hỏi về dòng code này.',
+      note:'Dấu ^ trước mã băm nghĩa là commit biên, ở đây là commit đầu tiên của kho. Mặc định -C chỉ tìm trong các tệp được sửa cùng commit; lặp lại -C để tìm rộng hơn.',
+      con:{title:'Terminal', lines:[['$ git blame -C -L 1,3 cart.js', 'cmd'], bl('^07cdc4c', 'An', D_A, 1, L1, false, 'utils.js'), bl('^07cdc4c', 'An', D_A, 2, L2, true, 'utils.js'), bl('^07cdc4c', 'An', D_A, 3, L3, false, 'utils.js')]}},
+    {g:{main:['c1', 'c2', 'c3'], hl:['f2'], un:['f1', 'f3']}, warn:true, title:'An đã sửa lỗi này, nhưng ở một nhánh chưa xong',
+      body:'An cho biết lỗi đã được sửa trong commit 50655cd trên nhánh feature/thanh-toan. Nếu merge cả nhánh, main sẽ nhận luôn form thanh toán và mã QR còn dở.',
+      note:'Bạn chỉ cần đúng một commit ở giữa nhánh. Đây là lúc dùng cherry-pick.',
+      con:{title:'Terminal', lines:[['$ git log feature/thanh-toan --oneline -3', 'cmd'], ['f8508c2 Thêm thanh toán mã QR (chưa xong)', 'cm'], ['50655cd fix: chia phanTram cho 100 khi tính giảm', 'hi'], ['890cb53 Thêm form thanh toán (đang làm)', 'cm']]}},
+    {g:{main:['c1', 'c2', 'c3'], hl:['f2'], un:['f1', 'f3']}, title:'Bản vá của commit: phần chênh lệch mà cherry-pick sẽ lấy',
+      body:'Cherry-pick không sao chép cả nhánh. Nó lấy phần chênh lệch (patch) của commit được chỉ định: bỏ một dòng, thêm một dòng trong cart.js.',
+      con:{title:'Terminal', lines:[['$ git show 50655cd', 'cmd'], ['50655cd fix: chia phanTram cho 100 khi tính giảm', ''], ['--- a/cart.js', 'cm'], ['+++ b/cart.js', 'cm'], ['@@ -1,5 +1,5 @@', 'cm'], [' ' + L1, ''], ['-' + L2, 'del'], ['+' + L2F, 'add'], [' ' + L3, '']]}},
+    {g:{main:['c1', 'c2', 'c3', 'nA'], hl:['f2'], fresh:['nA'], un:['f1', 'f3']}, fly:['f2', 'nA'], ok:true, title:'git cherry-pick 50655cd: tạo commit mới trên đỉnh main',
+      body:'Bản vá được áp dụng lên đỉnh nhánh hiện tại, tạo thành commit hoàn toàn mới 3ca75e9. Con trỏ main tiến lên. Nhánh feature không hề thay đổi.',
+      note:'Tệp checkout.js và qr.js của hai commit còn dở không xuất hiện trên main.',
+      con:{title:'Terminal', lines:[['$ git cherry-pick 50655cd', 'cmd'], ['[main 3ca75e9] fix: chia phanTram cho 100 khi tính giảm', 'okk'], [' Author: An <An@x.vn>', ''], [' Date: Sat Mar 21 16:45:00 2026 +0700', ''], [' 1 file changed, 1 insertion(+), 1 deletion(-)', '']]}},
+    {g:{main:['c1', 'c2', 'c3', 'nA'], hl:['f2'], fresh:['nA'], un:['f1', 'f3'], link:['f2', 'nA']}, title:'So sánh: cùng nội dung, khác mã băm',
+      body:'Hai commit có bản vá giống hệt nhau nhưng mã băm khác, vì commit cha và người commit khác nhau. Thời gian commit là mốc mới, lúc bạn chạy cherry-pick.',
+      note:'Git giữ nguyên tác giả và thời gian tác giả (An, 21/03). Người chạy lệnh được ghi vào phần người commit.',
+      con:{title:'So sánh hai commit', lines:[cmpRow('', 'Trên feature/thanh-toan', 'Trên main', 'cm'), cmpRow('Mã băm', '50655cd', '3ca75e9', 'hi'), cmpRow('Commit cha', '890cb53', '16e4f45', 'hi'), cmpRow('Tác giả', 'An', 'An', ''), cmpRow('Thời gian tác giả', '2026-03-21 16:45', '2026-03-21 16:45', ''), cmpRow('Người commit', 'An', 'Bạn', 'hi'), cmpRow('Thời gian commit', '2026-03-21 16:45', '2026-04-20 09:00', 'hi'), cmpRow('Bản vá', '-1 dòng, +1 dòng', 'giống hệt', '')]}},
+    {g:{main:['c1', 'c2', 'c3', 'nA'], fresh:['nA'], dim:['f1', 'f2', 'f3']}, ok:true, title:'Kiểm tra lại bằng git blame',
+      body:'Dòng 2 giờ thuộc commit mới 3ca75e9, tác giả An. Hai dòng còn lại vẫn của Bình. tinhGiam(100000, 10) đã trả về 90000.',
+      note:'Blame hiển thị thời gian tác giả nên vẫn là 21/03, dù commit được tạo ngày 20/04.',
+      con:{title:'Terminal', lines:[['$ git blame -L 1,3 cart.js', 'cmd'], bl('aba664af', BN, D_B, 1, L1), bl('3ca75e94', 'An  ', D_F, 2, L2F, true), bl('aba664af', BN, D_B, 3, L3)]}}
+  ];
+
+  /* ---------- Kịch bản B: xung đột ---------- */
+  var B4 = ['c1', 'c2', 'c3', 'm4'];
+  var B = [
+    {g:{main:B4, hl:['m4', 'f2'], un:['f1', 'f3']}, warn:true, title:'Trên main, Chi đã sửa đúng dòng đó',
+      body:'Commit 1be86e8 của Chi bọc dòng 2 bằng Math.round để làm tròn tiền giảm. Bản vá của An cũng sửa dòng này, nên hai bên sẽ đụng nhau.',
+      con:{title:'Terminal', lines:[['$ git show 1be86e8', 'cmd'], ['1be86e8 hotfix: làm tròn tiền giảm', ''], ['-' + L2, 'del'], ['+  return Math.round(gia - gia * phanTram);', 'add']]}},
+    {g:{main:B4, hl:['f2'], ghost:['nB'], un:['f1', 'f3']}, fly:['f2', 'nB'], warn:true, title:'git cherry-pick 50655cd: Git tạm dừng vì xung đột',
+      body:'Git không tự quyết được nên giữ dòng nào. Commit mới chưa được tạo (vòng tròn nét đứt), con trỏ main vẫn đứng yên.',
+      note:'Muốn hủy và quay về như cũ: git cherry-pick --abort.',
+      con:{title:'Terminal', lines:[['$ git cherry-pick 50655cd', 'cmd'], ['Auto-merging cart.js', ''], ['CONFLICT (content): Merge conflict in cart.js', 'er'], ['error: could not apply 50655cd... fix: chia phanTram cho 100 khi tính giảm', 'er'], ['hint: After resolving the conflicts, mark them with', 'cm'], ['hint: "git add/rm <pathspec>", then run', 'cm'], ['hint: "git cherry-pick --continue".', 'cm']]}},
+    {g:{main:B4, hl:['f2'], ghost:['nB'], un:['f1', 'f3']}, warn:true, title:'Mở cart.js và xem vùng xung đột',
+      body:'Phần trên ======= (HEAD) là code hiện có trên main, phần dưới là code từ commit đang lấy. Ở đây ta cần cả hai ý: vừa làm tròn, vừa chia cho 100.',
+      con:{title:'Tệp cart.js đang xung đột', lines:[[L1, ''], ['<<<<<<< HEAD', 'mk'], ['  return Math.round(gia - gia * phanTram);', ''], ['=======', 'mk'], [L2F, ''], ['>>>>>>> 50655cd (fix: chia phanTram cho 100 khi tính giảm)', 'mk'], [L3, '']]}},
+    {g:{main:B4, hl:['f2'], ghost:['nB'], un:['f1', 'f3']}, title:'Sửa tay rồi đánh dấu đã xử lý bằng git add',
+      body:'Viết lại dòng 2 kết hợp cả hai thay đổi và xóa ba dòng đánh dấu. git add báo cho Git biết tệp đã xử lý xong.',
+      con:{title:'Tệp cart.js sau khi sửa', lines:[[L1, ''], ['  return Math.round(gia - gia * phanTram / 100);', 'hi'], [L3, ''], ['', ''], ['$ git add cart.js', 'cmd']]}},
+    {g:{main:['c1', 'c2', 'c3', 'm4', 'nB'], hl:['f2'], fresh:['nB'], un:['f1', 'f3']}, ok:true, title:'git cherry-pick --continue: hoàn tất',
+      body:'Git mở trình biên soạn để xác nhận message, lưu lại là commit mới 46b7cac được tạo trên đỉnh main. Con trỏ main tiến lên.',
+      note:'So với kịch bản A, mã băm khác (46b7cac thay vì 3ca75e9) vì commit cha và nội dung đều khác.',
+      con:{title:'Terminal', lines:[['$ git cherry-pick --continue', 'cmd'], ['[main 46b7cac] fix: chia phanTram cho 100 khi tính giảm', 'okk'], [' Author: An <An@x.vn>', ''], [' Date: Sat Mar 21 16:45:00 2026 +0700', ''], [' 1 file changed, 1 insertion(+), 1 deletion(-)', '']]}}
+  ];
+
+  var SC = {
+    A:{label:'A. Truy vết rồi cherry-pick', steps:A, intro:'Bạn đang ở nhánh main. Nhánh feature/thanh-toan (phía trên) còn dở dang, chưa thể merge. Bấm "Bước tiếp" để bắt đầu truy vết lỗi.', g:{main:['c1', 'c2', 'c3']}},
+    B:{label:'B. Cherry-pick bị xung đột', steps:B, intro:'Tình huống khác: trong lúc đó, Chi đã đẩy một hotfix lên main sửa đúng dòng lỗi. Bấm "Bước tiếp" để xem chuyện gì xảy ra khi lấy commit của An về.', g:{main:B4}}
+  };
+
+  /* ---------- Đồ thị ---------- */
+  function drawGraph(g){
+    var hl = g.hl || [], dim = g.dim || [], un = g.un || [], fresh = g.fresh || [], ghost = g.ghost || [];
+    var out = '';
+    g.main.forEach(function(id, i){ if (i) { var a = N[g.main[i - 1]], b = N[id]; out += '<path class="eg" d="M' + a.x + ' ' + a.y + 'L' + b.x + ' ' + b.y + '"/>'; } });
+    var dimF = dim.indexOf('f1') >= 0;
+    out += '<path class="eg' + (dimF ? ' dim' : '') + '" d="M230 ' + MY + 'C275 ' + MY + ' 275 ' + FY + ' 320 ' + FY + 'L500 ' + FY + '"/>';
+    if (g.link) { var p = N[g.link[0]], q = N[g.link[1]]; out += '<path class="link" d="M' + p.x + ' ' + p.y + 'L' + q.x + ' ' + q.y + '"/><text x="' + ((p.x + q.x) / 2 + 12) + '" y="' + ((p.y + q.y) / 2 + 4) + '" style="fill:var(--ok);font:700 11px system-ui,sans-serif">cùng bản vá</text>'; }
+    g.main.concat(['f1', 'f2', 'f3']).concat(ghost).forEach(function(id){
+      var n = N[id], cls = 'nd', top = n.y === FY;
+      if (hl.indexOf(id) >= 0) cls += ' hl';
+      if (un.indexOf(id) >= 0) cls += ' un';
+      if (fresh.indexOf(id) >= 0) cls += ' new';
+      if (ghost.indexOf(id) >= 0) cls += ' gh';
+      if (dim.indexOf(id) >= 0) cls += ' dim';
+      out += '<g class="' + cls + '" id="n_' + id + '"><circle cx="' + n.x + '" cy="' + n.y + '" r="13"/>' +
+        '<text class="hs" x="' + n.x + '" y="' + (n.y + 29) + '">' + (ghost.indexOf(id) >= 0 ? '???????' : n.h) + '</text>' +
+        '<text class="lb" x="' + n.x + '" y="' + (top ? n.y - 21 : n.y + 44) + '">' + (ghost.indexOf(id) >= 0 ? 'chưa tạo' : esc(n.l)) + '</text></g>';
+    });
+    var tip = N[g.main[g.main.length - 1]];
+    out += '<g class="chip f" transform="translate(522 ' + (FY - 11) + ')"><rect width="130" height="22" rx="5"/><text x="65" y="15" text-anchor="middle">feature/thanh-toan</text></g>';
+    out += '<g class="chip" id="mainChip" style="transform:translate(' + (tip.x + 20) + 'px,' + (MY - 11) + 'px)"><rect width="84" height="22" rx="5"/><text x="42" y="15" text-anchor="middle">HEAD → main</text></g>';
+    return out;
+  }
+
+  /* ---------- Hiển thị ---------- */
+  var sc = 'A', step = 0, timer = null, lastX = null;
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function steps(){ return SC[sc].steps; }
+  function fly(pair){
+    if (calm) return;
+    var a = $('n_' + pair[0]), b = $('n_' + pair[1]);
+    if (!a || !b || !a.animate) return;
+    var ra = a.querySelector('circle').getBoundingClientRect(), rb = b.querySelector('circle').getBoundingClientRect();
+    var chip = document.createElement('div');
+    chip.className = 'fly'; chip.textContent = 'bản vá ' + FIX;
+    chip.style.left = (ra.left - 30) + 'px'; chip.style.top = (ra.top + 2) + 'px';
+    document.body.appendChild(chip);
+    chip.animate([{transform:'translate(0,0)', opacity:1}, {transform:'translate(' + (rb.left - ra.left) + 'px,' + (rb.top - ra.top) + 'px)', opacity:1}],
+      {duration:750, easing:'cubic-bezier(.4,0,.2,1)'}).onfinish = function(){ chip.remove(); };
+    b.animate([{opacity:0}, {opacity:0, offset:.85}, {opacity:1}], {duration:900});
+  }
+  function render(forward){
+    var S = steps(), sn = step ? S[step - 1] : null, run = timer !== null;
+    $('opt').innerHTML = '<b>Tình huống:</b>' + Object.keys(SC).map(function(k){
+      return '<button type="button" data-o="' + k + '" aria-pressed="' + (k === sc) + '"' + (run ? ' disabled' : '') + '>' + esc(SC[k].label) + '</button>';
+    }).join('');
+    $('status').className = 'status' + (sn ? (sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn
+      ? '<b>Bước ' + step + '/' + S.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + S.length + ' bước</b>' + esc(SC[sc].intro);
+    var g = sn ? sn.g : SC[sc].g, prevTip = lastX;
+    $('graph').innerHTML = drawGraph(g);
+    var tipX = N[g.main[g.main.length - 1]].x;
+    if (forward && prevTip !== null && prevTip !== tipX && !calm) {
+      var chip = $('mainChip'), to = chip.style.transform;
+      chip.style.transition = 'none';
+      chip.style.transform = 'translate(' + (prevTip + 20) + 'px,' + (MY - 11) + 'px)';
+      chip.getBoundingClientRect();
+      chip.style.transition = '';
+      chip.style.transform = to;
+    }
+    lastX = tipX;
+    var con = sn ? sn.con : null;
+    $('conTitle').textContent = con ? con.title : 'Terminal';
+    $('term').innerHTML = con ? con.lines.map(function(l){
+      if (l.html !== undefined) return '<span class="' + l.cls + '">' + l.html + '</span>';
+      return '<span class="' + l[1] + '">' + esc(l[0]) + '</span>';
+    }).join('\n') : '<span class="ph">Chưa chạy lệnh nào.</span>';
+    if (forward && sn && sn.fly) fly(sn.fly);
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= S.length;
+    $('all').disabled = run;
+    $('reset').disabled = run;
+  }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('opt').addEventListener('click', function(e){ var b = e.target.closest('button[data-o]'); if (!b || timer) return; sc = b.dataset.o; step = 0; lastX = null; render(); });
+  $('next').addEventListener('click', function(){ if (step < steps().length) { step++; render(true); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; lastX = null; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= steps().length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= steps().length) { step = steps().length; stop(); } render(true); }, 2600);
+    render(true);
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
