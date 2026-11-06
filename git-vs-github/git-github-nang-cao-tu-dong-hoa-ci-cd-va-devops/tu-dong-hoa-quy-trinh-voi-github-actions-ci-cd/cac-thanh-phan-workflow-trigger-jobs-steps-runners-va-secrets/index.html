@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Một lần chạy workflow</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800; --node-line:#c9ced8; --key:#7c3aed;
+    --con-bg:#111827; --con-text:#e5e7eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400; --node-line:#3a4250; --key:#c4a1ff;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin:0 0 8px}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+  @media (max-width:680px){.main{grid-template-columns:minmax(0,1fr)}}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding-right:10px;border-left:4px solid transparent;transition:background .25s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ws{color:var(--muted);opacity:.4}.key{color:var(--key);font-weight:700}
+
+  .trg{border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13.5px;font-weight:600;transition:background .3s,border-color .3s;overflow-wrap:anywhere}
+  .trg.on{background:var(--ok-soft);border-color:var(--ok)}
+  .ar{width:3px;height:14px;margin-left:18px;background:var(--node-line);position:relative;overflow:hidden}
+  .ar::after{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleY(0);transform-origin:top;transition:transform .35s}
+  .ar.on::after{transform:scaleY(1)}
+  .jobs{display:grid;gap:0}
+  .jobs.par{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  .job{border:1.5px solid var(--line);border-radius:10px;padding:8px;transition:border-color .3s,opacity .3s}
+  .job.run{border-color:var(--cur-bar)} .job.ok{border-color:var(--ok)} .job.idle{opacity:.55}
+  .job h3{margin:0;font:700 13.5px ui-monospace,Menlo,Consolas,monospace}
+  .rn{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+  .rn.on{color:var(--accent);font-weight:600}
+  .st{display:flex;gap:6px;align-items:center;padding:2px 6px;border-radius:5px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;transition:background .25s;overflow-wrap:anywhere}
+  .st i{flex:none;width:14px;text-align:center;font-style:normal;font-weight:700;color:var(--muted)}
+  .st.run{background:var(--cur);animation:pulse 1.2s infinite}
+  .st.ok i{color:var(--ok)}
+  @keyframes pulse{50%{box-shadow:0 0 0 3px rgba(224,168,0,.28)}}
+  @media (prefers-reduced-motion:reduce){.st.run{animation:none}}
+  .needs{font:12px system-ui,sans-serif;color:var(--muted);margin-left:8px;position:relative;top:-2px}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:9px 12px;margin-top:10px;min-height:86px;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  .console .cm{color:#7b8494}.console .mask{background:rgba(250,204,21,.25);border-radius:3px;font-weight:700}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bên trong một lần chạy workflow</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Chọn sự kiện kích hoạt và cách chạy job, rồi bấm <b>Bước tiếp</b> để xem từng thành phần vào việc.</p>
+  <div class="seg" id="optE"></div>
+  <div class="seg" id="optJ"></div>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card main">
+    <div>
+      <p class="panel-title">.github/workflows/deploy.yml</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div>
+      <p class="panel-title">Lần chạy trên GitHub</p>
+      <div class="trg" id="trg"></div>
+      <div class="ar" id="a1"></div>
+      <div class="jobs" id="jobs"></div>
+      <div class="console" id="term"></div>
+    </div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var YAML = ['name: Deploy', 'on:', '  push:', '    branches: [main]', '  pull_request:', '    branches: [main]', '  schedule:', '    - cron: "0 0 * * *"', '  workflow_dispatch:',
+    'jobs:', '  build:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - run: npm ci', '      - run: npm test',
+    '  deploy:', '    needs: build', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - run: ./deploy.sh', '        env:', '          API_TOKEN: ${{ secrets.API_TOKEN }}'];
+  var EV = {
+    push:{label:'push', chip:'Sự kiện: push lên nhánh main', lines:[2, 3], title:'on: push', body:'Có người push code lên main, khớp với điều kiện branches nên workflow khởi chạy.', log:'github.event_name: push'},
+    pull_request:{label:'pull_request', chip:'Sự kiện: Pull Request vào main', lines:[4, 5], title:'on: pull_request', body:'Có người mở hoặc cập nhật Pull Request nhắm vào main nên workflow khởi chạy.', log:'github.event_name: pull_request'},
+    schedule:{label:'schedule', chip:'Sự kiện: lịch cron đến giờ', lines:[6, 7], title:'on: schedule', body:'Không cần ai thao tác: đến giờ theo cú pháp cron, workflow tự khởi chạy. "0 0 * * *" nghĩa là 00:00 mỗi ngày.', note:'GitHub tính cron theo giờ UTC, nên 00:00 ở đây là 07:00 giờ Việt Nam.', log:'github.event_name: schedule'},
+    workflow_dispatch:{label:'workflow_dispatch', chip:'Sự kiện: bấm nút Run workflow', lines:[8], title:'on: workflow_dispatch', body:'Người dùng bấm nút Run workflow trên giao diện web của GitHub để kích hoạt thủ công.', log:'github.event_name: workflow_dispatch'}
+  };
+  var RUNNER = 'ubuntu-latest';
+  var STEPS = {b:['uses: checkout', 'run: npm ci', 'run: npm test'], d:['uses: checkout', 'run: ./deploy.sh']};
+  var SECRET = [['# Settings > Secrets: API_TOKEN (đã mã hóa)', 'cm'], ['Run ./deploy.sh', ''], ['env:', ''], ['  API_TOKEN: ***', 'mask'], ['Deploying with token ***', 'mask']];
+
+  function build(e, par){
+    var src = par ? YAML.filter(function(l){ return l.indexOf('needs') < 0; }) : YAML;
+    function L(t, from){ for (var i = from || 0; i < src.length; i++) if (src[i].indexOf(t) >= 0) return i; return -1; }
+    var B = L('build:'), D = L('deploy:'), E = EV[e], S = [];
+    function add(o){ S.push(o); }
+    add({trg:true, rb:0, rd:0, b:[0, 0, 0], d:[0, 0], lines:E.lines, title:E.title + ': workflow được kích hoạt', body:E.body, note:E.note, log:[[E.log, 'cm']]});
+    var rbL = L('runs-on', B), rdL = L('runs-on', D);
+    if (par) {
+      add({trg:true, rb:1, rd:1, b:[0, 0, 0], d:[0, 0], jb:'run', jd:'run', lines:[rbL, rdL], title:'Không có needs: hai job khởi động cùng lúc',
+        body:'Mặc định các job chạy song song. Mỗi job nhận một máy ảo riêng theo runs-on, ở đây là hai máy ' + RUNNER + ' tách biệt.',
+        note:'Runner có thể do GitHub cung cấp (Hosted) hoặc do doanh nghiệp tự dựng (Self-hosted).', log:[['Job build  → máy ảo #1', ''], ['Job deploy → máy ảo #2', '']]});
+      add({trg:true, rb:1, rd:1, b:[1, 0, 0], d:[1, 0], jb:'run', jd:'run', lines:[L('uses', B), L('uses', D)], title:'uses: mỗi job tự lấy mã nguồn',
+        body:'uses gọi một Action đóng gói sẵn từ cộng đồng. Máy ảo của hai job độc lập, nên job nào cũng phải checkout riêng.', log:[['Run actions/checkout@v4', '']]});
+      add({trg:true, rb:1, rd:1, b:[2, 1, 0], d:[2, 1], jb:'run', jd:'run', lines:[L('npm ci'), L('deploy.sh'), L('API_TOKEN')], warn:true, title:'Nguy hiểm: deploy chạy khi build chưa xong',
+        body:'Trong lúc job build mới cài thư viện, job deploy đã đưa code lên production. Chưa có bài kiểm thử nào chạy xong.',
+        note:'Secret vẫn được bảo vệ: GitHub thay giá trị thật vào lúc chạy và che thành *** trong log.', log:SECRET});
+      add({trg:true, rb:1, rd:1, b:[2, 2, 1], d:[2, 2], jb:'run', jd:'ok', lines:[L('npm test')], warn:true, title:'Deploy đã xong, npm test vẫn đang chạy',
+        body:'Nếu kiểm thử này thất bại thì đã muộn, vì code lỗi đã lên production rồi. Thứ tự này chỉ an toàn khi có needs.',
+        note:'Thử chuyển sang "Có needs" để so sánh.', log:[['Run npm test', '']]});
+      return {src:src, S:S};
+    }
+    add({trg:true, rb:1, rd:0, b:[0, 0, 0], d:[0, 0], jb:'run', lines:[B, rbL], title:'runs-on: job build nhận một máy ảo',
+      body:'Job build khởi động trên máy ảo ' + RUNNER + '. Job deploy có needs: build nên vẫn phải chờ.',
+      note:'Runner có thể do GitHub cung cấp (Hosted) hoặc do doanh nghiệp tự dựng (Self-hosted).', log:[['Job build → máy ảo #1', '']]});
+    add({trg:true, rb:1, rd:0, b:[1, 0, 0], d:[0, 0], jb:'run', lines:[L('uses', B)], title:'Step 1 (uses): dùng Action có sẵn',
+      body:'uses gọi một Action đóng gói sẵn từ cộng đồng, ở đây là actions/checkout để lấy mã nguồn về máy ảo.', log:[['Run actions/checkout@v4', '']]});
+    add({trg:true, rb:1, rd:0, b:[2, 1, 0], d:[0, 0], jb:'run', lines:[L('npm ci')], title:'Step 2 (run): chạy lệnh trên runner',
+      body:'run chạy trực tiếp một câu lệnh trên máy ảo. Các step trong một job luôn chạy tuần tự, xong bước này mới tới bước sau.', log:[['Run npm ci', '']]});
+    add({trg:true, rb:1, rd:0, b:[2, 2, 1], d:[0, 0], jb:'run', lines:[L('npm test')], title:'Step 3 (run): chạy kiểm thử', body:'Bước cuối của job build. Kết quả bước này quyết định job deploy có được chạy hay không.', log:[['Run npm test', '']]});
+    add({trg:true, rb:1, rd:1, needs:true, b:[2, 2, 2], d:[0, 0], jb:'ok', jd:'run', lines:[L('needs'), rdL], title:'needs: build thành công, job deploy mới bắt đầu',
+      body:'needs tạo thứ tự nối tiếp giữa các job. Job deploy nhận một máy ảo mới, không dùng chung với job build.', log:[['Job build: thành công', ''], ['Job deploy → máy ảo #2', '']]});
+    add({trg:true, rb:1, rd:1, needs:true, b:[2, 2, 2], d:[1, 0], jb:'ok', jd:'run', lines:[L('uses', D)], title:'Máy ảo mới nên phải checkout lại', body:'Máy ảo của job deploy trống hoàn toàn, nên nó cần lấy lại mã nguồn trước khi triển khai.', log:[['Run actions/checkout@v4', '']]});
+    add({trg:true, rb:1, rd:1, needs:true, b:[2, 2, 2], d:[2, 1], jb:'ok', jd:'run', lines:[L('deploy.sh'), L('API_TOKEN')], title:'Secrets: dùng mật khẩu mà không lộ ra',
+      body:'Tệp YAML chỉ ghi tên ${{ secrets.API_TOKEN }}. Giá trị thật nằm mã hóa trong Settings, được đưa vào lúc chạy và bị che thành *** trong log.',
+      note:'GitHub còn tự cấp sẵn ${{ secrets.GITHUB_TOKEN }} để gọi API trong chính kho chứa này.', log:SECRET});
+    add({trg:true, rb:1, rd:1, needs:true, b:[2, 2, 2], d:[2, 2], jb:'ok', jd:'ok', ok:true, lines:[], title:'Workflow hoàn tất',
+      body:'Trigger kích hoạt, runner cung cấp máy, job chia việc, step thực thi, secret giữ an toàn mật khẩu. Đủ 5 thành phần đã vào việc.',
+      note:'Thử chọn sự kiện khác: chỉ bước đầu thay đổi, phần còn lại của workflow vẫn giống hệt.', log:[['Job deploy: thành công', '']]});
+    return {src:src, S:S};
+  }
+
+  var e = 'push', par = false, P = build(e, par), step = 0, timer = null;
+  function layoutJobs(){
+    function job(k, name, rid){
+      return '<div class="job idle" id="j' + k + '"><h3>' + name + '</h3><span class="rn" id="r' + k + '">' + rid + '</span>' +
+        STEPS[k].map(function(s, i){ return '<div class="st" id="s' + k + i + '"><i></i><span>' + esc(s) + '</span></div>'; }).join('') + '</div>';
+    }
+    $('jobs').className = 'jobs' + (par ? ' par' : '');
+    $('jobs').innerHTML = job('b', 'build', 'chờ runner') + (par ? '' : '<div class="ar" id="a2"></div>') + job('d', 'deploy', 'chờ runner');
+  }
+  function paint(k, sn){
+    var run = sn ? (k === 'b' ? sn.rb : sn.rd) : 0, st = sn ? sn[k] : STEPS[k].map(function(){ return 0; });
+    var js = sn ? (k === 'b' ? sn.jb : sn.jd) : '';
+    $('j' + k).className = 'job ' + (js || 'idle');
+    $('r' + k).className = 'rn' + (run ? ' on' : '');
+    $('r' + k).textContent = run ? RUNNER + ' · máy ảo #' + (k === 'b' ? 1 : 2) : (k === 'd' && !par ? 'chờ build (needs)' : 'chờ runner');
+    st.forEach(function(v, i){
+      var n = $('s' + k + i);
+      n.className = 'st' + (v === 1 ? ' run' : v === 2 ? ' ok' : '');
+      n.querySelector('i').textContent = v === 2 ? '✓' : v === 1 ? '▸' : '';
+    });
+  }
+  function render(){
+    var S = P.S, sn = step ? S[step - 1] : null, run = timer !== null;
+    $('optE').innerHTML = '<b>Sự kiện:</b>' + Object.keys(EV).map(function(k){ return '<button type="button" data-e="' + k + '" aria-pressed="' + (k === e) + '"' + (run ? ' disabled' : '') + '>' + k + '</button>'; }).join('');
+    $('optJ').innerHTML = '<b>Job:</b><button type="button" data-p="0" aria-pressed="' + !par + '"' + (run ? ' disabled' : '') + '>Có needs (nối tiếp)</button><button type="button" data-p="1" aria-pressed="' + par + '"' + (run ? ' disabled' : '') + '>Bỏ needs (song song)</button>';
+    $('status').className = 'status' + (sn ? (sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn ? '<b>Bước ' + step + '/' + S.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + S.length + ' bước</b>Workflow này có 2 job: build và deploy. Bấm "Bước tiếp" để bắn sự kiện ' + e + '.';
+    $('code').innerHTML = P.src.map(function(l, i){
+      var m = l.match(/^ */)[0].length, b = esc(l.slice(m)).replace(/^(- )?([\w-]+):/, function(a, d, k){ return (d || '') + '<span class="key">' + k + '</span>:'; });
+      return '<div class="ln' + (sn && sn.lines.indexOf(i) >= 0 ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span><span class="ws">' + Array(m + 1).join('·') + '</span>' + b + '</span></div>';
+    }).join('');
+    $('trg').className = 'trg' + (sn ? ' on' : '');
+    $('trg').textContent = EV[e].chip;
+    $('a1').className = 'ar' + (sn && sn.rb ? ' on' : '');
+    paint('b', sn); paint('d', sn);
+    if ($('a2')) $('a2').className = 'ar' + (sn && sn.needs ? ' on' : '');
+    $('term').innerHTML = sn ? sn.log.map(function(x){ return '<span class="' + x[1] + '">' + esc(x[0]) + '</span>'; }).join('\n') : '<span class="cm">Nhật ký chạy sẽ hiện ở đây.</span>';
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= S.length;
+    $('all').disabled = run; $('reset').disabled = run;
+  }
+  function reload(){ P = build(e, par); step = 0; layoutJobs(); render(); }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('optE').addEventListener('click', function(ev){ var b = ev.target.closest('button[data-e]'); if (!b || timer) return; e = b.dataset.e; reload(); });
+  $('optJ').addEventListener('click', function(ev){ var b = ev.target.closest('button[data-p]'); if (!b || timer) return; par = b.dataset.p === '1'; reload(); });
+  $('next').addEventListener('click', function(){ if (step < P.S.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= P.S.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= P.S.length) { step = P.S.length; stop(); } render(); }, 2200);
+    render();
+  });
+  layoutJobs(); render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
