@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thử quyền thành viên</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px;min-height:100px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+
+  .chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px;font-size:13.5px}
+  .chain span{border:1.5px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:600;transition:background .3s,border-color .3s}
+  .chain i{font-style:normal;color:var(--muted)}
+  .chain.on span{background:var(--accent-soft);border-color:var(--accent)}
+  .row{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;transition:background .25s,border-color .25s}
+  .row .ic{flex:none;width:22px;height:22px;border-radius:50%;background:var(--code-bg);display:flex;align-items:center;justify-content:center;font:700 13px system-ui,sans-serif;color:var(--card);transition:background .25s,transform .25s;transform:scale(.75)}
+  .row .tx{flex:1;min-width:0;font-size:14px;line-height:1.35}
+  .row .tg{flex:none;font:600 11.5px system-ui,sans-serif;border-radius:999px;padding:1px 8px}
+  .row.cur{border-color:var(--cur-bar);box-shadow:0 0 0 2px var(--cur-bar) inset}
+  .row.yes .ic,.row.by .ic{background:var(--ok);transform:scale(1)}
+  .row.no .ic{background:var(--bad);transform:scale(1)}
+  .row.rule .ic{background:var(--warn);transform:scale(1)}
+  .row.yes .tg{background:var(--ok-soft);color:var(--ok)}
+  .row.by .tg{background:var(--ok-soft);color:var(--ok)}
+  .row.no .tg{background:var(--bad-soft);color:var(--bad)}
+  .row.rule .tg{background:var(--warn-soft);color:var(--warn)}
+  @media (max-width:520px){.row{flex-wrap:wrap}.row .tx{flex-basis:70%}.row .tg{margin-left:32px}}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Thử quyền: An được làm gì trên kho chứa?</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Chọn vai trò của An, bật hoặc tắt bảo vệ nhánh, rồi bấm <b>Bước tiếp</b> để thử từng thao tác trên kho riêng tư <code>shop-api</code>.</p>
+  <div class="seg" id="optR"></div>
+  <div class="seg" id="optP"></div>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="chain" id="chain"></div>
+    <div id="rows"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var ROLE = {
+    billing:{label:'Billing Manager', r:-1, org:true}, read:{label:'Read', r:0, team:'Team Thực tập'}, triage:{label:'Triage', r:1, team:'Team QA'},
+    write:{label:'Write', r:2, team:'Team Backend'}, maintain:{label:'Maintain', r:3, team:'Team Lead'}, admin:{label:'Admin', r:4, team:'Team DevOps'}, owner:{label:'Owner', r:5, org:true}
+  };
+  var GUARD = 'remote: error: GH006: Protected branch update failed for refs/heads/main.';
+  var DENY = 'ERROR: Permission to shop/shop-api.git denied to an.';
+  var ROWS = [
+    {t:'Clone mã nguồn, mở Issue, thảo luận PR', min:0, y:'Quyền Read trở lên đều làm được, kể cả khi chưa được ghi mã nguồn.'},
+    {t:'Gắn nhãn, phân công Issue và PR', min:1, y:'Từ Triage trở lên được quản lý Issue và PR.', n:'Read chỉ xem và thảo luận, chưa được quản lý Issue và PR.'},
+    {t:'Push lên nhánh feature/login', min:2, y:'Từ Write trở lên được push lên các nhánh không bị bảo vệ.', n:'Cần ít nhất quyền Write mới ghi được mã nguồn.', msg:DENY},
+    {t:'Push thẳng lên nhánh main', min:2, guard:true, y:'Không có quy tắc bảo vệ nên push thẳng được. Một lần push nhầm là main bị ảnh hưởng ngay.', g:'An đủ quyền ghi, nhưng quy tắc bắt buộc mọi thay đổi phải qua Pull Request.', n:'Cần ít nhất quyền Write mới ghi được mã nguồn.', msg:DENY, gm:GUARD},
+    {t:'Merge PR chưa có review, CI chưa đạt', min:2, guard:true, y:'Không có quy tắc nên merge được, dù chưa ai duyệt và kiểm thử chưa đạt.', g:'Quy tắc yêu cầu đủ lượt Review phê duyệt và CI/CD thành công thì mới được merge.', n:'Cần ít nhất quyền Write mới merge được.'},
+    {t:'Force push lên main', min:2, guard:true, all:true, y:'Không có quy tắc nên force push được, và có thể ghi đè lịch sử của cả nhóm.', g:'Quy tắc bảo vệ mặc định chặn force push và chặn cả việc xóa nhánh main.', n:'Cần ít nhất quyền Write mới ghi được mã nguồn.', msg:DENY, gm:GUARD},
+    {t:'Sửa mô tả và wiki của kho', min:3, y:'Từ Maintain trở lên được quản lý các cài đặt này của kho.', n:'Cần ít nhất quyền Maintain mới được đổi các cài đặt này.'},
+    {t:'Sửa quy tắc bảo vệ nhánh, xóa kho', min:4, y:'Đây là quyền quản trị kho cao nhất.', n:'Chỉ Admin mới được làm. Maintain cũng không có quyền này.'},
+    {t:'Xem hóa đơn của tổ chức', billing:true, y:'Vai trò này được quản lý hóa đơn và thanh toán.', n:'Thông tin thanh toán chỉ dành cho Owner và Billing Manager.'}
+  ];
+  function check(row, role, prot){
+    var R = ROLE[role].r;
+    if (row.billing) return role === 'billing' || role === 'owner' ? 'yes' : 'no';
+    if (R < row.min) return 'no';
+    if (row.guard && prot) { if (row.all) return 'rule'; return R >= 4 ? 'by' : 'rule'; }
+    return 'yes';
+  }
+  var TAG = {yes:'Được phép', no:'Không đủ quyền', rule:'Bị quy tắc chặn', by:'Admin được bỏ qua'}, ICON = {yes:'✓', by:'✓', no:'✕', rule:'!'};
+  function build(role, prot){
+    var A = ROLE[role], S = [];
+    S.push({chain:true, row:-1, res:[], title:A.org ? 'An giữ vai trò ' + A.label + ' của tổ chức' : 'Thêm An vào ' + A.team + ': nhóm có quyền ' + A.label,
+      body:A.org ? (role === 'owner' ? 'Owner có quyền tối cao trong tổ chức: quản lý thanh toán, thành viên và mọi cài đặt bảo mật.' : 'Billing Manager chỉ quản lý hóa đơn và thanh toán, không có quyền truy cập mã nguồn.')
+        : 'An là Member của tổ chức. Quyền trên kho do nhóm quyết định: chỉ cần thêm An vào nhóm, không phải phân quyền thủ công từng kho.'});
+    var res = [];
+    ROWS.forEach(function(r, i){
+      var v = check(r, role, prot);
+      res = res.concat([v]);
+      var o = {chain:true, row:i, res:res, title:r.t + ': ' + TAG[v]};
+      if (v === 'yes') { o.body = r.y; o.ok = !(r.guard); o.warn = !!r.guard; }
+      else if (v === 'no') { o.body = role === 'billing' ? 'Billing Manager không có quyền truy cập mã nguồn hay kho chứa.' : r.n; o.err = true; if (r.msg) o.note = r.msg; }
+      else if (v === 'rule') { o.body = r.g; o.warn = true; if (r.gm) o.note = r.gm; if (r.all && A.r >= 4) o.note = 'Admin cũng bị chặn, trừ khi tự sửa quy tắc để cho phép force push.'; }
+      else { o.body = 'Mặc định, quy tắc bảo vệ không áp dụng với người có quyền Admin trên kho.'; o.ok = true; o.note = 'Bật tùy chọn "Do not allow bypassing the above settings" để áp dụng quy tắc cho cả Admin.'; }
+      S.push(o);
+    });
+    var c = {yes:0, by:0, no:0, rule:0}; res.forEach(function(x){ c[x]++; });
+    S[S.length - 1].sum = (c.yes + c.by) + ' thao tác được phép, ' + c.no + ' không đủ quyền, ' + c.rule + ' bị quy tắc chặn.';
+    return S;
+  }
+
+  var role = 'write', prot = true, S = build(role, prot), step = 0, timer = null;
+  $('rows').innerHTML = ROWS.map(function(r, i){ return '<div class="row" id="r' + i + '"><span class="ic"></span><span class="tx">' + esc(r.t) + '</span><span class="tg"></span></div>'; }).join('');
+  function render(){
+    var sn = step ? S[step - 1] : null, run = timer !== null, dis = run ? ' disabled' : '', A = ROLE[role];
+    $('optR').innerHTML = '<b>Vai trò:</b>' + Object.keys(ROLE).map(function(k){ return '<button type="button" data-r="' + k + '" aria-pressed="' + (k === role) + '"' + dis + '>' + ROLE[k].label + '</button>'; }).join('');
+    $('optP').innerHTML = '<b>Bảo vệ nhánh main:</b><button type="button" data-p="1" aria-pressed="' + prot + '"' + dis + '>Bật</button><button type="button" data-p="0" aria-pressed="' + !prot + '"' + dis + '>Tắt</button>';
+    $('status').className = 'status' + (sn ? (sn.err ? ' err' : sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn ? '<b>Bước ' + step + '/' + S.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '') + (sn.sum ? '<span class="note"><strong>Tổng kết:</strong> ' + esc(sn.sum) + ' Thử đổi vai trò hoặc tắt bảo vệ nhánh để so sánh.</span>' : '')
+      : '<b>Sẵn sàng · ' + S.length + ' bước</b>An sẽ thử lần lượt ' + ROWS.length + ' thao tác với vai trò ' + A.label + '. Bấm "Bước tiếp" để bắt đầu.';
+    $('chain').className = 'chain' + (sn ? ' on' : '');
+    $('chain').innerHTML = A.org ? '<span>An</span><i>→</i><span>Tổ chức: ' + A.label + '</span>'
+      : '<span>An (Member)</span><i>→</i><span>' + A.team + '</span><i>→</i><span>shop-api: ' + A.label + '</span>';
+    ROWS.forEach(function(r, i){
+      var v = sn ? sn.res[i] : null, n = $('r' + i);
+      n.className = 'row' + (v ? ' ' + v : '') + (sn && sn.row === i ? ' cur' : '');
+      n.querySelector('.ic').textContent = v ? ICON[v] : '';
+      n.querySelector('.tg').textContent = v ? TAG[v] : '';
+    });
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= S.length;
+    $('all').disabled = run; $('reset').disabled = run;
+  }
+  function reload(){ S = build(role, prot); step = 0; render(); }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('optR').addEventListener('click', function(e){ var b = e.target.closest('button[data-r]'); if (!b || timer) return; role = b.dataset.r; reload(); });
+  $('optP').addEventListener('click', function(e){ var b = e.target.closest('button[data-p]'); if (!b || timer) return; prot = b.dataset.p === '1'; reload(); });
+  $('next').addEventListener('click', function(){ if (step < S.length) { step++; render(); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= S.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= S.length) { step = S.length; stop(); } render(); }, 1500);
+    render();
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
