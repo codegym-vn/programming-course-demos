@@ -109,7 +109,7 @@
       note:'git restore có bản đã commit để lấy lại. Tệp Untracked thì không, nên git clean xóa là mất hẳn.'}
   ];
   var step = 0, timer = null;
-  $('groups').innerHTML = G.map(function(g){ return '<div class="grp"><h3>' + esc(g.t) + '</h3>' + g.f.map(function(x){ return '<div class="f" id="f' + x[0] + '"><span>' + esc(x[1]) + '</span><span class="tg"></span></div>'; }).join('') + '</div>'; }).join('');
+  $('groups').innerHTML = G.map(function(g){ return '<div class="grp"><h3>' + esc(g.t) + '</h3>' + g.f.map(function(x){ return '<div class="f" id="f' + x[0] + '"><span>' + esc(x[1]) + '</span><span class="tg"></span></div>'; }).join('') + '<div class="empty">Đã xóa hết</div></div>'; }).join('');
   var NOTE = {}; G.forEach(function(g){ g.f.forEach(function(x){ NOTE[x[0]] = x[2] || ''; }); });
   function render(){
     var sn = step ? ST[step - 1] : null, run = timer !== null;
