@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>So sánh hai workflow</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#ffe8d6; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --node-line:#c9ced8;
+    --con-bg:#111827; --con-text:#e5e7eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#4a2c16; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --node-line:#3a4250;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 28px;position:relative}
+  h1{font-size:21px;margin:0 0 4px;padding-right:130px}
+  .lead{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:8px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .seg b{font-size:13px;color:var(--muted);font-weight:600}
+  .seg button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .seg button:disabled{cursor:not-allowed;opacity:.6}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px;min-height:96px}
+  .status b{display:block;font-size:13px;color:var(--accent);margin-bottom:2px}
+  .status .note{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+  .status.ok{border-left-color:var(--ok);background:var(--ok-soft)} .status.ok b{color:var(--ok)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)} .status.warn b{color:var(--warn)}
+  .status.err{border-left-color:var(--bad);background:var(--bad-soft)} .status.err b{color:var(--bad)}
+
+  .gwrap{overflow-x:auto}
+  .dg{display:block;width:100%;min-width:560px;height:auto}
+  .eg{fill:none;stroke:var(--node-line);stroke-width:2.5;transition:stroke .25s}
+  .eg.on{stroke:var(--accent);stroke-width:4}
+  .eg.deny{stroke-dasharray:6 5}
+  .eg.no{stroke:var(--bad);stroke-width:4}
+  .el{font:600 12px system-ui,sans-serif;fill:var(--muted);text-anchor:middle;paint-order:stroke;stroke:var(--card);stroke-width:5px}
+  .rp rect{fill:var(--card);stroke:var(--node-line);stroke-width:2;transition:fill .25s,stroke .25s}
+  .rp.act rect{stroke:var(--cur-bar);stroke-width:3}
+  .rp.bad rect{fill:var(--bad-soft);stroke:var(--bad);stroke-width:3}
+  .rp .t{font:700 13px system-ui,sans-serif;fill:var(--text)}
+  .rp .perm{font:600 11px system-ui,sans-serif;fill:var(--muted);text-anchor:end}
+  .cm circle{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .cm text{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--text);text-anchor:middle}
+  .cm.x circle{fill:var(--bad-soft);stroke:var(--bad)}
+  #tok circle{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  #tok.x circle{fill:var(--bad-soft);stroke:var(--bad)}
+  #tok text{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--text);text-anchor:middle}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:9px 12px;margin-top:10px;min-height:72px;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  .console .c{color:#86efac;font-weight:700}.console .e{color:#fca5a5}.console .m{color:#7b8494}
+
+  #full{position:absolute;right:16px;top:18px;background:#f59e0b;color:#1c1300;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:0;cursor:pointer;font-family:inherit}
+  #fullnote{position:absolute;right:16px;top:56px;max-width:320px;background:#7f1d1d;color:#fecaca;font-size:13px;padding:8px 10px;border-radius:8px;z-index:20}
+  #full[hidden]{display:none}
+  @media (max-width:640px){h1{padding-right:0}#full{position:static;display:inline-block;margin:4px 0 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cùng một commit, hai con đường vào kho chính</h1>
+  <button id="full" type="button" hidden>⛶ Phóng to</button>
+  <div id="fullnote" hidden>Khung bài học này không cho phóng to. Hãy dùng liên kết &quot;Mở bài tương tác toàn màn hình&quot; đặt ngay trong bài.</div>
+  <p class="lead">Chọn mô hình và chất lượng commit của An, rồi bấm <b>Bước tiếp</b>. Hãy thử commit lỗi ở cả hai mô hình để so sánh.</p>
+  <div class="opts"><div class="seg" id="optM"></div><div class="seg" id="optQ"></div></div>
+  <div class="btns">
+    <button class="btn ghost" id="prev">◀ Bước trước</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="gwrap"><svg class="dg" id="dg" viewBox="0 0 660 284" role="img" aria-label="Sơ đồ các kho chứa và luồng commit"></svg></div>
+    <div class="console" id="term"></div>
+  </div>
+</div>
+
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var W = 180, H = 72;
+  var MODEL = {
+    cen:{label:'Centralized', nodes:{
+        main:{x:330, y:52, t:'Kho trung tâm (main)', p:''}, an:{x:150, y:232, t:'Máy An', p:'quyền Write'}, binh:{x:510, y:232, t:'Máy Bình', p:'quyền Write'}},
+      edges:{an:['an', 'main', 'push / pull', 212, 138], binh:['binh', 'main', 'push / pull', 448, 138]}},
+    im:{label:'Integration-Manager', nodes:{
+        bl:{x:150, y:52, t:'Kho chính (Blessed)', p:''}, fork:{x:510, y:52, t:'Fork của An', p:''}, an:{x:510, y:232, t:'Máy An', p:'chỉ Read kho chính'}, mg:{x:150, y:232, t:'Máy Manager', p:'quyền Write'}},
+      edges:{bf:['bl', 'fork', 'Fork', 330, 46], fa:['fork', 'an', 'clone / push', 510, 146], pr:['fork', 'mg', 'Pull Request', 412, 106], mb:['mg', 'bl', 'pull rồi push', 150, 146], ab:['an', 'bl', 'không có quyền ghi', 412, 182, true]}}
+  };
+  function build(m, bad){
+    var B = bad ? 'B!' : 'B', S = [];
+    function add(o){ S.push(o); }
+    if (m === 'cen') {
+      add({rep:{main:['A'], an:['A'], binh:['A']}, on:['an', 'binh'], act:['an', 'binh'], cmd:[['$ git clone git@github.com:team/app.git', 'c']], title:'Cả nhóm dùng chung một kho trung tâm',
+        body:'An và Bình cùng clone một kho duy nhất, không có Fork. Ai cũng có quyền ghi trực tiếp vào kho này.'});
+      add({rep:{main:['A'], an:['A', B], binh:['A']}, act:['an'], cmd:[['$ git commit -m "Thêm giỏ hàng"', 'c']], warn:bad, title:'An tạo commit B trên máy mình',
+        body:bad ? 'Commit này có lỗi, nhưng An chưa phát hiện ra.' : 'Commit vẫn nằm trên máy An, chưa ai khác nhìn thấy.'});
+      add({rep:{main:['A', B], an:['A', B], binh:['A']}, on:['an'], act:['main'], fl:['an', 'main', B], err:bad, ok:!bad, cmd:[['$ git push origin main', 'c'], ['   a1b2c3d..d4e5f6a  main -> main', '']], title:bad ? 'Push thẳng: lỗi đã vào main' : 'Push thẳng lên main: nhanh và đơn giản',
+        body:bad ? 'Không có ai kiểm duyệt ở giữa. Nhánh chính giờ đang chứa mã lỗi, và cả nhóm đều bị ảnh hưởng.' : 'Không cần Fork hay chờ duyệt. Đây là ưu điểm lớn nhất của mô hình này với nhóm nhỏ.'});
+      add({rep:{main:['A', B], an:['A', B], binh:['A', 'C']}, on:['binh'], act:['binh'], fl:['binh', 'main', 'C', true], warn:true, cmd:[['$ git commit -m "Sửa trang chủ"', 'c'], ['$ git push origin main', 'c'], [' ! [rejected]        main -> main (fetch first)', 'e'], ['error: failed to push some refs', 'e']], title:'Bình push cùng lúc: bị từ chối',
+        body:'Main đã có commit B mà máy Bình chưa có. Git từ chối để tránh ghi đè lên việc của An.'});
+      add({rep:{main:['A', B], an:['A', B], binh:['A', B, 'C']}, on:['binh'], act:['binh'], fl:['main', 'binh', B], warn:bad, cmd:[['$ git pull --rebase origin main', 'c']], title:bad ? 'Bình phải kéo về, và nhận luôn lỗi của An' : 'Bình kéo commit mới về trước',
+        body:bad ? 'Lỗi của An giờ nằm trên cả máy Bình, dù Bình không liên quan gì tới nó.' : 'Commit C của Bình được đặt lên sau B.',
+        note:'Nếu hai người sửa cùng một dòng, Bình phải tự giải quyết xung đột ở bước này rồi mới push được.'});
+      add({rep:{main:['A', B, 'C'], an:['A', B], binh:['A', B, 'C']}, on:['binh'], act:['main'], fl:['binh', 'main', 'C'], err:bad, ok:!bad, cmd:[['$ git push origin main', 'c'], ['   d4e5f6a..c7d8e9f  main -> main', '']], title:bad ? 'Main vẫn đang lỗi cho tới khi có người sửa' : 'Hoàn tất: quy trình ngắn, nhưng phải tin nhau',
+        body:bad ? 'Mô hình không có lớp bảo vệ nào: một lần push nhầm ảnh hưởng tới cả nhóm.' : 'Phù hợp với nhóm nhỏ, dự án nội bộ và các thành viên tin tưởng nhau.',
+        note:bad ? 'Thử chuyển sang Integration-Manager với cùng commit lỗi.' : 'Thử chọn "Có lỗi" để thấy nhược điểm của mô hình này.'});
+      return S;
+    }
+    add({rep:{bl:['A'], fork:['A'], an:[], mg:['A']}, on:['bf'], act:['fork'], fl:['bl', 'fork', 'A'], cmd:[['# Bấm nút Fork trên GitHub', 'm']], title:'An tạo Fork: bản sao kho chính, thuộc về An',
+      body:'An không có quyền ghi vào kho chính, nhưng Fork thì hoàn toàn của An. Ai cũng có thể làm việc này.'});
+    add({rep:{bl:['A'], fork:['A'], an:['A'], mg:['A']}, on:['fa'], act:['an'], fl:['fork', 'an', 'A'], cmd:[['$ git clone git@github.com:an/app.git', 'c']], title:'Clone Fork về máy', body:'An làm việc với Fork của mình, không phải với kho chính.'});
+    add({rep:{bl:['A'], fork:['A', B], an:['A', B], mg:['A']}, on:['fa'], act:['fork'], fl:['an', 'fork', B], warn:bad, cmd:[['$ git commit -m "Thêm giỏ hàng"', 'c'], ['$ git push origin main', 'c']], title:'Commit rồi push lên Fork',
+      body:bad ? 'Commit có lỗi nằm trên Fork của An. Kho chính vẫn hoàn toàn nguyên vẹn.' : 'Commit B đã lên GitHub, nhưng chỉ nằm trên Fork. Kho chính chưa thay đổi.'});
+    add({rep:{bl:['A'], fork:['A', B], an:['A', B], mg:['A']}, no:['ab'], act:['an'], fl:['an', 'bl', B, true], warn:true, cmd:[['$ git push git@github.com:team/app.git main', 'c'], ['ERROR: Permission to team/app.git denied to an.', 'e'], ['fatal: Could not read from remote repository.', 'e']], title:'Nếu An thử push thẳng vào kho chính: bị từ chối',
+      body:'Nhà phát triển chỉ có quyền Read trên kho chính. Đây là lớp bảo vệ mà Centralized không có.'});
+    add({rep:{bl:['A'], fork:['A', B], an:['A', B], mg:['A']}, on:['pr'], act:['mg'], fl:['fork', 'mg', B], cmd:[['# Mở Pull Request: an/app → team/app', 'm']], title:'An gửi Pull Request tới Integration Manager', body:'Pull Request là lời đề nghị: "Hãy xem và kéo commit này về kho chính".'});
+    if (bad) {
+      add({rep:{bl:['A'], fork:['A', B], an:['A', B], mg:['A']}, on:['pr'], act:['mg', 'bl'], ok:true, cmd:[['# Review: Request changes', 'e']], title:'Manager phát hiện lỗi và yêu cầu sửa',
+        body:'Lỗi bị chặn lại trước cửa. Kho chính vẫn sạch, những người khác không bị ảnh hưởng.',
+        note:'Cái giá là thêm bước và thêm công sức kiểm duyệt của Manager.'});
+      add({rep:{bl:['A'], fork:['A', B, 'F'], an:['A', B, 'F'], mg:['A']}, on:['fa'], act:['fork'], fl:['an', 'fork', 'F'], cmd:[['$ git commit -m "Sửa lỗi giỏ hàng"', 'c'], ['$ git push origin main', 'c']], title:'An sửa lỗi, Pull Request tự cập nhật', body:'An thêm commit F và push lên Fork. Pull Request cũ tự nhận commit mới, không cần mở lại.'});
+    }
+    var got = bad ? ['A', 'B', 'F'] : ['A', B], tag = bad ? 'F' : B;
+    add({rep:{bl:['A'], fork:got, an:got, mg:got}, on:['pr'], act:['mg'], fl:['fork', 'mg', tag], cmd:[['# Review: Approve', 'm'], ['$ git pull git@github.com:an/app.git main', 'c']], title:'Manager duyệt và kéo commit về', body:'Mã đã đạt yêu cầu, Manager kéo thay đổi từ Fork của An về.'});
+    add({rep:{bl:got, fork:got, an:got, mg:got}, on:['mb'], act:['bl'], fl:['mg', 'bl', tag], ok:true, cmd:[['$ git push origin main', 'c']], title:'Hoàn tất: chỉ Manager ghi vào kho chính',
+      body:'Thay đổi vào kho chính chỉ sau khi đã qua kiểm duyệt. An không cần quyền ghi mà vẫn đóng góp được, nên mô hình này phổ biến ở dự án mã nguồn mở.',
+      note:bad ? 'So sánh: ở Centralized, cùng commit lỗi này đã vào thẳng main.' : 'Thử chọn "Có lỗi" để thấy Manager chặn lỗi thế nào.'});
+    return S;
+  }
+
+  var m = 'cen', bad = false, S = build(m, bad), step = 0, timer = null;
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function chips(list, n){
+    return list.map(function(c, i){
+      var x = c.slice(-1) === '!', t = c.replace('!', '');
+      return '<g class="cm' + (x ? ' x' : '') + '"><circle cx="' + (n.x - W / 2 + 22 + i * 28) + '" cy="' + (n.y + 14) + '" r="11"/><text x="' + (n.x - W / 2 + 22 + i * 28) + '" y="' + (n.y + 18) + '">' + t + '</text></g>';
+    }).join('');
+  }
+  function draw(sn){
+    var M = MODEL[m], out = '';
+    Object.keys(M.edges).forEach(function(k){
+      var e = M.edges[k], a = M.nodes[e[0]], b = M.nodes[e[1]];
+      var cls = 'eg' + (e[5] ? ' deny' : '') + (sn && sn.on && sn.on.indexOf(k) >= 0 ? ' on' : '') + (sn && sn.no && sn.no.indexOf(k) >= 0 ? ' no' : '');
+      out += '<path class="' + cls + '" d="M' + a.x + ' ' + a.y + 'L' + b.x + ' ' + b.y + '"/>';
+    });
+    Object.keys(M.edges).forEach(function(k){ var e = M.edges[k]; out += '<text class="el" x="' + e[3] + '" y="' + e[4] + '">' + e[2] + '</text>'; });
+    Object.keys(M.nodes).forEach(function(k){
+      var n = M.nodes[k], list = sn ? sn.rep[k] : (m === 'cen' ? ['A'] : (k === 'bl' || k === 'mg' ? ['A'] : []));
+      var isMain = k === 'main' || k === 'bl', cls = 'rp' + (sn && sn.act && sn.act.indexOf(k) >= 0 ? ' act' : '') + (isMain && list.some(function(c){ return c.slice(-1) === '!'; }) ? ' bad' : '');
+      out += '<g class="' + cls + '" id="n_' + k + '"><rect x="' + (n.x - W / 2) + '" y="' + (n.y - H / 2) + '" width="' + W + '" height="' + H + '" rx="9"/><text class="t" x="' + (n.x - W / 2 + 11) + '" y="' + (n.y - 14) + '">' + n.t + '</text>' +
+        (n.p ? '<text class="perm" x="' + (n.x + W / 2 - 9) + '" y="' + (n.y + 30) + '">' + n.p + '</text>' : '') + chips(list, n) + '</g>';
+    });
+    return out + '<g id="tok" style="display:none"><circle r="12"/><text y="4"></text></g>';
+  }
+  function fly(f){
+    var M = MODEL[m], a = M.nodes[f[0]], b = M.nodes[f[1]], t = $('tok');
+    if (calm || !t.animate) return;
+    var x = f[2].slice(-1) === '!';
+    t.setAttribute('class', x ? 'x' : ''); t.style.display = '';
+    t.querySelector('text').textContent = f[2].replace('!', '');
+    var from = 'translate(' + a.x + 'px,' + a.y + 'px)', to = 'translate(' + b.x + 'px,' + b.y + 'px)';
+    var mid = 'translate(' + (a.x + (b.x - a.x) * .55) + 'px,' + (a.y + (b.y - a.y) * .55) + 'px)';
+    var kf = f[3] ? [{transform:from}, {transform:mid, offset:.5}, {transform:from}] : [{transform:from}, {transform:to}];
+    t.animate(kf, {duration:f[3] ? 1000 : 750, easing:'ease-in-out'}).onfinish = function(){ t.style.display = 'none'; };
+  }
+  function render(forward){
+    var sn = step ? S[step - 1] : null, run = timer !== null, dis = run ? ' disabled' : '';
+    $('optM').innerHTML = '<b>Mô hình:</b>' + Object.keys(MODEL).map(function(k){ return '<button type="button" data-m="' + k + '" aria-pressed="' + (k === m) + '"' + dis + '>' + MODEL[k].label + '</button>'; }).join('');
+    $('optQ').innerHTML = '<b>Commit của An:</b><button type="button" data-q="0" aria-pressed="' + !bad + '"' + dis + '>Tốt</button><button type="button" data-q="1" aria-pressed="' + bad + '"' + dis + '>Có lỗi</button>';
+    $('status').className = 'status' + (sn ? (sn.err ? ' err' : sn.warn ? ' warn' : sn.ok ? ' ok' : '') : '');
+    $('status').innerHTML = sn ? '<b>Bước ' + step + '/' + S.length + ' · ' + esc(sn.title) + '</b>' + esc(sn.body) + (sn.note ? '<span class="note">' + esc(sn.note) + '</span>' : '')
+      : '<b>Sẵn sàng · ' + S.length + ' bước</b>' + (m === 'cen' ? 'Mọi người dùng chung một kho và đều được ghi vào đó.' : 'Có kho chính, Fork riêng của An và người quản lý tích hợp.') + ' Vòng tròn là commit: A đã có sẵn, B là commit của An. Bấm "Bước tiếp".';
+    $('dg').innerHTML = draw(sn);
+    $('term').innerHTML = sn ? sn.cmd.map(function(x){ return '<span class="' + x[1] + '">' + esc(x[0]) + '</span>'; }).join('\n') : '<span class="m">Lệnh sẽ hiện ở đây.</span>';
+    if (forward && sn && sn.fl) fly(sn.fl);
+    $('prev').disabled = run || step === 0;
+    $('next').disabled = run || step >= S.length;
+    $('all').disabled = run; $('reset').disabled = run;
+  }
+  function reload(){ S = build(m, bad); step = 0; render(); }
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  $('optM').addEventListener('click', function(e){ var b = e.target.closest('button[data-m]'); if (!b || timer) return; m = b.dataset.m; reload(); });
+  $('optQ').addEventListener('click', function(e){ var b = e.target.closest('button[data-q]'); if (!b || timer) return; bad = b.dataset.q === '1'; reload(); });
+  $('next').addEventListener('click', function(){ if (step < S.length) { step++; render(true); } });
+  $('prev').addEventListener('click', function(){ if (step > 0) { step--; render(); } });
+  $('reset').addEventListener('click', function(){ stop(); step = 0; render(); });
+  $('all').addEventListener('click', function(){
+    if (step >= S.length) step = 0;
+    step++;
+    timer = setInterval(function(){ step++; if (step >= S.length) { step = S.length; stop(); } render(true); }, 2200);
+    render(true);
+  });
+  render();
+})();
+</script>
+<script>
+  try{ if(window.self!==window.top) document.getElementById('full').hidden=false; }catch(e){ document.getElementById('full').hidden=false; }
+  document.getElementById('full').onclick = ()=>{
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    const fail = ()=>{ const n=document.getElementById('fullnote'); n.hidden=false; setTimeout(()=>n.hidden=true,6000); };
+    if(document.fullscreenElement || document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+    if(!fn){ fail(); return; }
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(fail); }catch(e){ fail(); }
+  };
+</script>
+</body>
+</html>
