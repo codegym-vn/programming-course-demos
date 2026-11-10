@@ -1,0 +1,30 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{border:2px solid;border-radius:16px;padding:16px 18px}
+.b{border-color:#dc2626;background:#fef2f2}.c{border-color:#2563eb;background:#eff6ff}
+.card h4{margin:0 0 2px;font-size:22px}.b h4{color:#b91c1c}.c h4{color:#1d4ed8}
+.card .say{font-size:15px;color:#475569;margin-bottom:12px}
+.track{display:flex;gap:6px;margin:8px 0 6px}
+.t{width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font:700 17px ui-monospace,Menlo,monospace;border:2px solid #cbd5e1;background:#fff}
+.t.ok{background:#dcfce7;border-color:#16a34a}.t.stop{background:#fee2e2;border-color:#dc2626;color:#b91c1c}.t.dim{opacity:.35}.t.skip{background:#e2e8f0;border-color:#94a3b8;color:#64748b}
+.lbl{font-size:14px;color:#334155;margin:2px 0 10px}
+.row{margin-top:12px;font-size:15px}.row b{display:block;color:#475569;font-size:14px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style></head><body><div id="art">
+<h3>break và continue: hai cách đổi hướng khác nhau</h3><p class="sub">Cùng đường chạy các số, nhưng mỗi từ khóa làm một việc</p>
+<div class="cols">
+<div class="card b"><h4>break</h4><div class="say">"Dừng hẳn, ra khỏi vòng lặp."</div>
+<div class="track"><div class="t ok">1</div><div class="t ok">2</div><div class="t ok">3</div><div class="t stop">4</div><div class="t dim">5</div><div class="t dim">6</div></div>
+<div class="lbl">i = 4 gặp break: các lượt 5, 6... không chạy nữa</div>
+<div class="row"><b>Đi đến</b>lệnh đứng sau vòng lặp</div>
+<div class="row"><b>Giống như</b>đang chạy bộ, mưa to nên về nhà luôn</div>
+<div class="row"><b>Hay dùng khi</b>tìm được kết quả rồi; nút thoát menu</div></div>
+<div class="card c"><h4>continue</h4><div class="say">"Bỏ lượt này, sang lượt kế tiếp."</div>
+<div class="track"><div class="t ok">1</div><div class="t skip">2</div><div class="t ok">3</div><div class="t skip">4</div><div class="t ok">5</div><div class="t skip">6</div></div>
+<div class="lbl">số chẵn gặp continue: chỉ lượt đó bị cắt, vòng lặp vẫn chạy</div>
+<div class="row"><b>Đi đến</b>bước cập nhật (for) hoặc kiểm tra điều kiện (while)</div>
+<div class="row"><b>Giống như</b>gặp vũng nước, nhảy qua rồi chạy tiếp</div>
+<div class="row"><b>Hay dùng khi</b>lọc bỏ dữ liệu không cần xử lý</div></div>
+</div>
+<p class="tip">Cả hai chỉ tác động tới <b>vòng lặp gần nhất</b> chứa nó. Muốn thoát cả hai vòng lồng nhau, hãy dùng biến cờ (<span class="mono">found</span>).</p>
+</div></body></html>

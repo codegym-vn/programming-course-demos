@@ -1,0 +1,14 @@
+{
+ "course_name": "C# Ứng dụng",
+ "modules": [
+  "Cấu trúc dữ liệu nâng cao: Collections",
+  "Xử lý lỗi và Ngoại lệ (Exception Handling) Cơ bản",
+  "Xử lý lỗi và Ngoại lệ (Exception Handling) Nâng cao",
+  "Đọc và Ghi File Văn bản",
+  "Làm việc với Dữ liệu có Cấu trúc (CSV)",
+  "Lưu trữ Đối tượng với Serialization"
+ ],
+ "excel": "phan-tich-mo-phong-c-sharp-ung-dung.xlsx",
+ "code_title": "Mã nguồn C#",
+ "language": "C#"
+}

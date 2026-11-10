@@ -1,0 +1,26 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.lane{display:grid;grid-template-columns:200px 1fr 200px;align-items:center;gap:0;margin:14px 0;border-radius:16px;padding:18px 20px}
+.out{background:#eef4ff}.inn{background:#ecfdf3}
+.box{border:2px solid #c9ced8;border-radius:12px;background:#fff;padding:12px;text-align:center}
+.box b{display:block;font-size:17px}.box span{font-size:13px;color:#5d6676}
+.pipe{position:relative;height:56px;display:flex;align-items:center;justify-content:center}
+.pipe:before{content:"";position:absolute;left:8px;right:8px;top:50%;height:6px;border-radius:3px;transform:translateY(-50%)}
+.out .pipe:before{background:#2563eb}.inn .pipe:before{background:#15803d}
+.pipe:after{content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);border:12px solid transparent;border-left:16px solid}
+.out .pipe:after{border-left-color:#2563eb}.inn .pipe:after{border-left-color:#15803d}
+.op{position:relative;z-index:1;background:#fff;border:3px solid;border-radius:999px;padding:4px 18px;font:800 22px ui-monospace,Menlo,Consolas,monospace}
+.out .op{border-color:#2563eb;color:#2563eb}.inn .op{border-color:#15803d;color:#15803d}
+.ex{grid-column:1/-1;margin-top:10px;font:15px ui-monospace,Menlo,Consolas,monospace;color:#334155}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Hướng đi của dữ liệu: cout &lt;&lt; và cin &gt;&gt;</h3><p class="sub">Mũi tên của toán tử chỉ đúng hướng dữ liệu chảy</p>
+<div class="lane out"><div class="box"><b>Dữ liệu trong chương trình</b><span>chuỗi, số, biến</span></div>
+<div class="pipe"><span class="op">cout &lt;&lt;</span></div>
+<div class="box"><b>Màn hình</b><span>máy "nói"</span></div>
+<div class="ex">cout &lt;&lt; "Tong: " &lt;&lt; soA + soB &lt;&lt; endl;</div></div>
+<div class="lane inn"><div class="box"><b>Bàn phím</b><span>người dùng gõ rồi Enter</span></div>
+<div class="pipe"><span class="op">cin &gt;&gt;</span></div>
+<div class="box"><b>Biến</b><span>máy "nghe" và cất vào hộp</span></div>
+<div class="ex">int soA;  cin &gt;&gt; soA;   // gõ 10 → soA = 10</div></div>
+<p class="tip">Mẹo nhớ: cout đưa dữ liệu <b>ra</b> màn hình, cin đưa dữ liệu <b>vào</b> biến. Viết ngược (cout &gt;&gt; hay cin &lt;&lt;) sẽ bị lỗi biên dịch.</p>
+</div></body></html>

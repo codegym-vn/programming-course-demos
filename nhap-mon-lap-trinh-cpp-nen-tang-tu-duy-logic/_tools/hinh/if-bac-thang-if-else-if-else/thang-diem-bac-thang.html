@@ -1,0 +1,22 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.bar{display:flex;height:74px;border-radius:12px;overflow:hidden;border:2px solid #c9ced8}
+.seg{display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+.seg small{font:500 13.5px ui-monospace,Menlo,monospace}
+.s1{background:#fde2e0;color:#8a1c12}.s2{background:#fdebd0;color:#8a4b08}.s3{background:#dbeafe;color:#1e40af}.s4{background:#d4f1de;color:#14532d}
+.ticks{position:relative;height:28px;margin-top:6px;font:600 15px ui-monospace,Menlo,monospace;color:#334155}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.gates{display:flex;margin-top:8px}.g{text-align:center;font-size:14.5px;color:#334155;padding:0 4px}
+.g b{display:block;border-top:3px solid;padding-top:6px;font-size:15px}
+.t1{border-color:#15803d}.t2{border-color:#2563eb}.t3{border-color:#c2410c}.t4{border-color:#b42318}
+.tip{margin-top:18px;background:#f6f7f9;border-radius:12px;padding:12px 16px;font-size:15px;color:#334155}
+</style></head><body><div id="art">
+<h3>Mỗi bậc thang là một khoảng điểm</h3><p class="sub">Thang điểm 0 đến 10 chia thành 4 khoảng; máy xét từ khoảng cao nhất xuống</p>
+<div class="bar">
+<div class="seg s1" style="width:410px">Yeu<small>else</small></div>
+<div class="seg s2" style="width:123px">Trung binh<small>&gt;= 5.0</small></div>
+<div class="seg s3" style="width:123px">Kha<small>&gt;= 6.5</small></div>
+<div class="seg s4" style="width:164px">Gioi<small>&gt;= 8.0</small></div></div>
+<div class="ticks"><span style="left:0">0</span><span style="left:410px">5.0</span><span style="left:533px">6.5</span><span style="left:656px">8.0</span><span style="left:820px">10</span></div>
+<div class="gates"><div class="g" style="width:410px"><b class="t4">Cửa 4: else</b>Chỉ chạy khi cả 3 cửa trên đều sai</div><div class="g" style="width:123px"><b class="t3">Cửa 3</b></div><div class="g" style="width:123px"><b class="t2">Cửa 2</b></div><div class="g" style="width:164px"><b class="t1">Cửa 1</b></div></div>
+<div class="tip">Điểm 7.5 nằm trong khoảng Kha: máy thử cửa 1 (7.5 &gt;= 8.0, sai), thử cửa 2 (7.5 &gt;= 6.5, đúng) rồi dừng. Mốc 8.0 và 6.5 thuộc về khoảng phía trên vì dùng dấu &gt;=.</div>
+</div></body></html>

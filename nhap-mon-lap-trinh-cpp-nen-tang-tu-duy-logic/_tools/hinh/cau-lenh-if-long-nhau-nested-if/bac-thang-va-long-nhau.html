@@ -1,0 +1,21 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.w{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.p{border:2px solid #e2e5ec;border-radius:16px;padding:16px 18px}
+.p h4{margin:0 0 2px;font-size:18px}.p .s{font-size:14px;color:#5d6676;margin:0 0 12px;line-height:1.4}
+.d{border:2px solid #b45309;background:#fef3c7;border-radius:999px;padding:6px 14px;text-align:center;font:600 14px ui-monospace,Menlo,Consolas,monospace;margin:0 auto;width:fit-content;max-width:100%}
+.o{border:2px solid #15803d;background:#ecfdf3;border-radius:10px;padding:6px 10px;text-align:center;font:600 14px ui-monospace,Menlo,Consolas,monospace}
+.x{border:2px solid #be123c;background:#fff1f2;border-radius:10px;padding:6px 10px;text-align:center;font:600 14px ui-monospace,Menlo,Consolas,monospace}
+.ar{text-align:center;color:#64748b;font-size:13.5px;line-height:1.3;margin:3px 0}
+.step{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.in{border:2px dashed #94a3b8;border-radius:12px;padding:10px;margin-top:4px;background:#f8fafc}
+.foot{margin-top:12px;font-size:14px;color:#334155;line-height:1.45;border-top:1px solid #e2e5ec;padding-top:10px}
+</style></head><body><div id="art">
+<h3>If bậc thang và if lồng nhau</h3><p class="sub">Hai cách đặt điều kiện cho hai loại bài toán khác nhau</p>
+<div class="w">
+<div class="p"><h4>If bậc thang (else if)</h4><p class="s">Phân một giá trị vào các khoảng. Dừng ở điều kiện đúng đầu tiên.</p>
+<div class="d">diem &gt;= 8 ?</div><div class="step"><div><div class="ar">Đúng ↓</div><div class="o">Gioi</div></div><div><div class="ar">Sai ↓</div><div class="d" style="width:auto">diem &gt;= 6.5 ?</div><div class="ar">Đúng ↓</div><div class="o">Kha</div><div class="ar">Sai ↓</div><div class="x">Trung binh</div></div></div>
+<div class="foot">Các điều kiện cùng nói về <b>một giá trị</b> (điểm). Chỉ một nhánh được chạy.</div></div>
+<div class="p"><h4>If lồng nhau (nested if)</h4><p class="s">Điều kiện bên trong chỉ có ý nghĩa khi điều kiện bên ngoài đã đúng.</p>
+<div class="d">tuoi &gt;= 12 ?</div><div class="step"><div><div class="ar">Đúng ↓</div><div class="in"><div class="d" style="width:auto">chieuCao &gt;= 140 ?</div><div class="ar">Đúng: <b>Duoc choi</b><br>Sai: <b>Chua du chieu cao</b></div></div></div><div><div class="ar">Sai ↓</div><div class="x">Chua du tuoi</div><div class="ar" style="color:#be123c">Chiều cao không được kiểm tra</div></div></div>
+<div class="foot">Các điều kiện nói về <b>hai thứ khác nhau</b> (tuổi, chiều cao), kiểm tra thứ hai chỉ sau thứ nhất.</div></div>
+</div></div></body></html>

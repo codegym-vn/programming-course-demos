@@ -1,0 +1,27 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+.s{border:2px solid #cbd5e1;border-radius:14px;padding:14px;background:#f8fafc}
+.s .n{display:inline-flex;width:30px;height:30px;border-radius:50%;background:#2563eb;color:#fff;font-weight:800;align-items:center;justify-content:center}
+.s h4{margin:6px 0 4px;font-size:18px}.s p{margin:0;font-size:15px;color:#475569}
+.s.k{border-color:#2563eb;background:#eff6ff}
+.code{background:#f1f5f9;border-radius:12px;padding:14px 18px;font:16px/1.7 ui-monospace,Menlo,Consolas,monospace}
+.code .tag{float:right;font:700 13px system-ui,sans-serif;border-radius:999px;padding:1px 10px}
+.t1{background:#dbeafe;color:#1d4ed8}.t2{background:#fef3c7;color:#92400e}.t3{background:#dcfce7;color:#15803d}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.cmp div{border-radius:12px;padding:12px 16px;font-size:15px}
+.f{background:#eff6ff}.w{background:#fefce8}.cmp b{display:block;font-size:17px;margin-bottom:2px}
+</style></head><body><div id="art">
+<h3>Cách while làm việc: 3 bước lặp đi lặp lại</h3><p class="sub">Người gác cổng luôn kiểm tra trước, rồi mới cho vào</p>
+<div class="steps">
+<div class="s k"><span class="n">1</span><h4>Kiểm tra điều kiện</h4><p>Gác cổng hỏi: điều kiện còn đúng không?</p></div>
+<div class="s"><span class="n">2</span><h4>Đúng: chạy thân</h4><p>Chạy hết khối lệnh, rồi quay lại bước 1.</p></div>
+<div class="s"><span class="n">3</span><h4>Sai: dừng</h4><p>Bỏ qua thân, chạy tiếp lệnh sau vòng lặp.</p></div>
+</div>
+<div class="code"><div>int i = 1; <span class="tag t1">khởi tạo, ở ngoài</span></div>
+<div>while (i &lt;= 5) { <span class="tag t2">điều kiện</span></div>
+<div>&nbsp;&nbsp;cout &lt;&lt; i &lt;&lt; " ";</div>
+<div>&nbsp;&nbsp;i++; <span class="tag t3">cập nhật, trong thân</span></div>
+<div>}</div></div>
+<div class="cmp"><div class="f"><b>for: biết trước số lần</b>Ba phần việc gom trên một dòng. Ví dụ: chạy đúng 5 vòng sân.</div><div class="w"><b>while: chưa biết số lần</b>Ba phần việc nằm ba chỗ. Ví dụ: chạy cho tới khi mệt thì nghỉ.</div></div>
+<p class="tip">Vì cập nhật nằm trong thân, while dễ bị quên <span class="mono">i++</span> hơn for.</p>
+</div></body></html>

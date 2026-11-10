@@ -1,0 +1,24 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.col{border-radius:16px;padding:16px 18px;border:2px solid #c9ced8}.col h4{margin:0 0 12px;font-size:18px}
+.q{display:flex;align-items:center;gap:10px;margin:7px 0;font:15px ui-monospace,Menlo,monospace}
+.dot{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font:700 14px system-ui;color:#fff}
+.no{background:#94a3b8}.yes{background:#15803d}
+.row{padding:7px 12px;border:2px solid #c9ced8;border-radius:10px;margin:7px 0;font:15px ui-monospace,Menlo,monospace;position:relative}
+.row.hit{background:#fff1b8;border-color:#e0a800;font-weight:700}.row.skip{opacity:.5}
+.arrow{color:#2563eb;font:700 15px system-ui;margin:2px 0 6px}
+.note{margin-top:10px;font-size:14.5px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Hai cách hình dung với choice = 3</h3><p class="sub">if...else if hỏi lần lượt từng câu; switch đi thẳng tới nhãn khớp</p>
+<div class="two">
+<div class="col"><h4>if...else if</h4>
+<div class="q"><span class="dot no">&#10007;</span>choice == 1 ?</div>
+<div class="q"><span class="dot no">&#10007;</span>choice == 2 ?</div>
+<div class="q"><span class="dot yes">&#10003;</span>choice == 3 ?</div>
+<div class="q" style="opacity:.5"><span class="dot no">&ndash;</span>else (không xét)</div>
+<p class="note">Hỏi từng câu, mỗi câu đều viết lại cả điều kiện.</p></div>
+<div class="col"><h4>switch (choice)</h4>
+<div class="arrow">choice = 3 &darr; nhảy thẳng tới nhãn khớp</div>
+<div class="row skip">case 1:</div><div class="row skip">case 2:</div><div class="row hit">case 3: ... break;</div><div class="row skip">default:</div>
+<p class="note">Chỉ so khớp bằng với từng giá trị cụ thể; viết gọn hơn khi có nhiều nhánh.</p></div>
+</div></div></body></html>

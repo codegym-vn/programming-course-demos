@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1600px; height: 1600px; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    background: #061320;
+    color: #fff;
+    position: relative;
+  }
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(900px 700px at 10% 8%, rgba(20, 184, 166, .42), transparent 60%),
+      radial-gradient(800px 700px at 92% 92%, rgba(139, 92, 246, .45), transparent 60%),
+      radial-gradient(700px 600px at 90% 10%, rgba(56, 189, 248, .25), transparent 60%),
+      linear-gradient(160deg, #0b2235 0%, #081626 55%, #050b18 100%);
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 75%);
+  }
+
+  /* Faint UML class diagrams */
+  .uml { position: absolute; opacity: .5; }
+  .uml text { font-family: "SF Mono", Menlo, monospace; }
+  .u1 { top: 60px; left: 60px; width: 470px; transform: rotate(-5deg); }
+  .u2 { bottom: 115px; right: 50px; width: 400px; transform: rotate(4deg); }
+
+  .center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .glow {
+    position: absolute; left: 50%; top: 47%;
+    width: 1100px; height: 700px; transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(45, 212, 191, .18), transparent);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 16px 34px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    border: 1.5px solid rgba(255,255,255,.18);
+    font-size: 30px; font-weight: 600; letter-spacing: 6px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.9);
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: #2dd4bf; box-shadow: 0 0 16px #2dd4bf; }
+  .cs {
+    margin-top: 64px;
+    display: inline-block;
+    padding: 6px 34px 12px;
+    border-radius: 30px;
+    font-size: 120px; font-weight: 900; letter-spacing: -2px; line-height: 1;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    box-shadow: 0 18px 50px rgba(124, 58, 237, .5), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .title {
+    margin-top: 34px;
+    font-size: 226px; font-weight: 900; letter-spacing: -8px; line-height: 1.02;
+    padding: 0 20px;
+    background: linear-gradient(115deg, #5eead4 0%, #38bdf8 40%, #818cf8 70%, #c084fc 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 20px 60px rgba(56, 189, 248, .4));
+    white-space: nowrap;
+  }
+  .title .plus { color: transparent; }
+  .sub {
+    margin-top: 28px;
+    font-size: 50px; font-weight: 700;
+    color: #fff;
+    letter-spacing: -.5px;
+  }
+  .sub2 {
+    margin-top: 14px;
+    font-size: 36px; font-weight: 500;
+    color: rgba(255,255,255,.72);
+  }
+  .chips {
+    margin-top: 58px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 18px;
+    max-width: 1300px;
+  }
+  .chip {
+    padding: 14px 30px;
+    border-radius: 18px;
+    font-size: 32px; font-weight: 600;
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    border: 1.5px solid rgba(255,255,255,.16);
+    color: rgba(255,255,255,.92);
+  }
+  .chip span { color: #5eead4; margin-right: 8px; font-family: "SF Mono", Menlo, monospace; }
+  .footer {
+    position: absolute; left: 0; right: 0; bottom: 64px;
+    display: flex; justify-content: center; gap: 22px;
+    font-size: 28px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+  }
+  .footer i { font-style: normal; color: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+
+  <!-- UML: inheritance -->
+  <svg class="uml u1" viewBox="0 0 470 330" xmlns="http://www.w3.org/2000/svg">
+    <g fill="rgba(255,255,255,.04)" stroke="rgba(94,234,212,.7)" stroke-width="2">
+      <rect x="150" y="10" width="170" height="110" rx="6"/>
+      <line x1="150" y1="44" x2="320" y2="44"/>
+      <line x1="150" y1="80" x2="320" y2="80"/>
+      <rect x="20" y="210" width="170" height="100" rx="6"/>
+      <line x1="20" y1="244" x2="190" y2="244"/>
+      <rect x="280" y="210" width="170" height="100" rx="6"/>
+      <line x1="280" y1="244" x2="450" y2="244"/>
+    </g>
+    <g fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2">
+      <path d="M105 210 V170 H365 V210"/>
+      <line x1="235" y1="170" x2="235" y2="134"/>
+    </g>
+    <polygon points="235,120 222,136 248,136" fill="#0b2235" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+    <g font-size="17" fill="rgba(255,255,255,.85)" text-anchor="middle">
+      <text x="235" y="33" font-style="italic">Animal</text>
+      <text x="105" y="233">Dog</text>
+      <text x="365" y="233">Cat</text>
+    </g>
+    <g font-size="14" fill="rgba(94,234,212,.85)">
+      <text x="162" y="67">- name: string</text>
+      <text x="162" y="103">+ Speak(): void</text>
+      <text x="32" y="275">+ Speak()</text>
+      <text x="292" y="275">+ Speak()</text>
+    </g>
+  </svg>
+
+  <!-- UML: interface + composition -->
+  <svg class="uml u2" viewBox="0 0 470 330" xmlns="http://www.w3.org/2000/svg">
+    <g fill="rgba(255,255,255,.04)" stroke="rgba(167,139,250,.75)" stroke-width="2">
+      <rect x="20" y="20" width="190" height="110" rx="6"/>
+      <line x1="20" y1="72" x2="210" y2="72"/>
+      <rect x="20" y="210" width="190" height="100" rx="6"/>
+      <line x1="20" y1="244" x2="210" y2="244"/>
+      <rect x="290" y="210" width="160" height="100" rx="6"/>
+      <line x1="290" y1="244" x2="450" y2="244"/>
+    </g>
+    <line x1="115" y1="210" x2="115" y2="146" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="8 6"/>
+    <polygon points="115,132 102,148 128,148" fill="#081626" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+    <line x1="232" y1="260" x2="290" y2="260" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+    <polygon points="210,260 221,252 232,260 221,268" fill="rgba(255,255,255,.7)"/>
+    <g font-size="17" fill="rgba(255,255,255,.85)" text-anchor="middle">
+      <text x="115" y="44" font-size="13" fill="rgba(167,139,250,.9)">«interface»</text>
+      <text x="115" y="64" font-style="italic">IPayment</text>
+      <text x="115" y="233">Order</text>
+      <text x="370" y="233">OrderItem</text>
+    </g>
+    <g font-size="14" fill="rgba(167,139,250,.9)">
+      <text x="32" y="103">+ Pay(amount)</text>
+      <text x="32" y="275">+ Checkout()</text>
+      <text x="302" y="275">- qty: int</text>
+    </g>
+  </svg>
+
+  <div class="glow"></div>
+
+  <div class="center">
+    <div class="pill"><span class="dot"></span>Khóa học lập trình</div>
+    <div class="cs">C#</div>
+    <div class="title">OOP + OOAD</div>
+    <div class="sub">Lập trình &amp; Thiết kế hướng đối tượng</div>
+    <div class="sub2">Từ class đầu tiên đến dự án thực tế</div>
+    <div class="chips">
+      <div class="chip"><span>01</span>Đóng gói</div>
+      <div class="chip"><span>02</span>Kế thừa</div>
+      <div class="chip"><span>03</span>Đa hình</div>
+      <div class="chip"><span>04</span>Trừu tượng</div>
+      <div class="chip"><span>05</span>UML Class Diagram</div>
+      <div class="chip"><span>06</span>SOLID</div>
+    </div>
+  </div>
+
+  <div class="footer">9 module <i>•</i> Dự án thực tế cuối khóa</div>
+</body>
+</html>

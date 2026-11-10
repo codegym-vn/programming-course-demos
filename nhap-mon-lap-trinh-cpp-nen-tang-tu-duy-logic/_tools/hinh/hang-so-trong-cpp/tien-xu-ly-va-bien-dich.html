@@ -1,0 +1,21 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;align-items:stretch;margin:6px 0}
+.st{border:2px solid #c9ced8;border-radius:14px;padding:14px 12px;text-align:center;background:#fff}
+.st b{display:block;font-size:17px;margin-bottom:4px}.st span{font-size:13.5px;color:#5d6676}
+.ar{display:flex;align-items:center;justify-content:center;font:700 26px system-ui;color:#94a3b8}
+.s2{border-color:#c2410c;background:#fff7ed}.s3{border-color:#2563eb;background:#eff6ff}.s4{border-color:#15803d;background:#ecfdf3}
+.under{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;margin-top:14px}
+.tag{border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45}
+.t2{grid-column:2/5;background:#fff7ed;border-left:6px solid #c2410c}
+.t3{grid-column:5/8;background:#eff6ff;border-left:6px solid #2563eb;margin-left:10px}
+.t2{margin-right:10px;grid-column:1/4}.tag b{display:block;font:700 16px ui-monospace,Menlo,Consolas,monospace;margin-bottom:4px}
+.ex{font:15px ui-monospace,Menlo,Consolas,monospace;background:#fff;border-radius:6px;padding:3px 8px;display:inline-block;margin-top:5px}
+</style></head><body><div id="art">
+<h3>Ai xử lý #define, ai xử lý const?</h3><p class="sub">Hai cách khai báo hằng số được xử lý ở hai giai đoạn khác nhau, trước khi chương trình chạy</p>
+<div class="row"><div class="st"><b>Mã nguồn</b><span>file .cpp bạn viết</span></div><div class="ar">→</div>
+<div class="st s2"><b>1. Tiền xử lý</b><span>chỉ thay văn bản</span></div><div class="ar">→</div>
+<div class="st s3"><b>2. Biên dịch (g++)</b><span>kiểm tra kiểu, báo lỗi</span></div><div class="ar">→</div>
+<div class="st s4"><b>3. Chạy</b><span>chương trình làm việc</span></div></div>
+<div class="under"><div class="tag t2"><b>#define PI 3.14</b>Làm việc ở bước 1: tìm chữ PI rồi dán đè 3.14. Sang bước 2 thì tên PI đã biến mất, g++ không biết nó từng tồn tại.<br><span class="ex">2 * PI * r → 2 * 3.14 * r</span></div>
+<div class="tag t3"><b>const double PI = 3.14;</b>Làm việc ở bước 2: PI là biến có kiểu double, g++ kiểm tra từng chỗ dùng và báo lỗi nêu đích danh PI nếu bị gán lại.<br><span class="ex">PI = 3.2;  → lỗi: read-only variable 'PI'</span></div></div>
+</div></body></html>

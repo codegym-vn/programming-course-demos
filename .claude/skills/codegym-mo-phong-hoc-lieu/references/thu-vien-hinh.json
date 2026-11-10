@@ -1,0 +1,146 @@
+[
+ {
+  "code": "H01",
+  "name": "Dãy ô List<T>",
+  "fn": "vCells",
+  "desc": "Hàng ô có chỉ số bên dưới; ô đã dùng nền đặc, ô dự phòng (Capacity) viền nét đứt; nhãn Count và Capacity. Khi Insert/Remove, các ô phía sau trượt sang phải/trái (mũi tên dịch chỉ số), ô mới nền vàng, ô bị xóa mờ dần."
+ },
+ {
+  "code": "H02",
+  "name": "Tủ ngăn khóa – giá trị",
+  "fn": "vDrawers",
+  "desc": "Mỗi phần tử Dictionary là một ngăn kéo có nhãn khóa ở mặt trước và giá trị bên trong. Tra cứu: mũi tên đi thẳng tới ngăn; ngăn mới trượt vào (xanh), ngăn cập nhật nháy vàng, ngăn bị xóa mờ đỏ."
+ },
+ {
+  "code": "H03",
+  "name": "Thẻ Exception",
+  "fn": "vCard",
+  "desc": "Thẻ viền đỏ: biểu tượng cảnh báo, tên loại (FormatException...), thông điệp thật của .NET, dòng code gây lỗi, một dòng 'Cách phòng tránh'. Dùng thống nhất cho mọi bài về lỗi."
+ },
+ {
+  "code": "H04",
+  "name": "Sơ đồ luồng try / catch / finally",
+  "fn": "vFlow",
+  "desc": "Các khối chữ nhật try, catch, finally, 'sau khối' nối bằng mũi tên. Đường đi thực tế được tô (xanh: bình thường, đỏ: nhánh lỗi). Dòng code bị bỏ qua trong try hiện mờ kèm nhãn 'không chạy'."
+ },
+ {
+  "code": "H05",
+  "name": "Bộ lọc catch xếp dọc",
+  "fn": "vGates",
+  "desc": "Các catch xếp chồng như những cửa lọc. Exception (viên đỏ) rơi từ trên xuống: cửa không khớp hiện ✗ xám, cửa khớp hiện ✓ xanh và mở ra; các cửa phía dưới không được xét."
+ },
+ {
+  "code": "H06",
+  "name": "Cây phân cấp lớp",
+  "fn": "vTree",
+  "desc": "Cây thụt lề hoặc sơ đồ nút: Exception → SystemException → ... Khi so khớp, tô đường đi từ lớp con lên lớp cha để thấy quan hệ 'là một'. Nút mới (exception tự tạo) được vẽ thêm dần."
+ },
+ {
+  "code": "H07",
+  "name": "Ngăn xếp lời gọi (call stack)",
+  "fn": "vStack",
+  "desc": "Các khung hàm chồng lên nhau (Main ở đáy). Exception là quả bóng đỏ đi lên từng khung; khung không có catch phù hợp bị đóng lại (mờ), khung có catch bắt lấy (viền xanh)."
+ },
+ {
+  "code": "H08",
+  "name": "Tài nguyên có trạng thái + bộ đếm",
+  "fn": "vLamps + vScore",
+  "desc": "Biểu tượng tệp/kết nối với đèn trạng thái (Đóng xám, Đang mở xanh, Rò rỉ đỏ) và bộ đếm 'Đang mở: n'. Dùng để thấy tài nguyên có được giải phóng hay không."
+ },
+ {
+  "code": "H09",
+  "name": "Đèn kiểm tra / băng chuyền",
+  "fn": "vLamps / vFlow",
+  "desc": "Dải trạm kiểm tra nằm ngang; mỗi trạm là một đèn: xanh khi đạt, đỏ khi trượt, các trạm sau tắt. Biến thể băng chuyền: 'kiện hàng' dữ liệu đi qua từng trạm xử lý."
+ },
+ {
+  "code": "H10",
+  "name": "RAM và Ổ đĩa",
+  "fn": "vPair",
+  "desc": "Hai khung hình: 'Bộ nhớ chương trình (RAM)' và 'Ổ đĩa' có biểu tượng tệp. Nút trạng thái chương trình: Đang chạy → Đã tắt (RAM xóa trắng) → Chạy lại."
+ },
+ {
+  "code": "H11",
+  "name": "Ống dẫn Stream",
+  "fn": "vCells(ptr) / vFlow",
+  "desc": "Ống nằm ngang nối Tệp và Chương trình; từng byte (ô nhỏ ghi ký tự + mã số) chảy qua ống; con trỏ Position chạy trên dải byte của tệp; nhãn Length."
+ },
+ {
+  "code": "H12",
+  "name": "Trình xem tệp",
+  "fn": "vText",
+  "desc": "Khung giống Notepad: số dòng, nội dung, ký hiệu ↵ cho xuống dòng; con trỏ đọc ▶ hoặc con trỏ ghi |; chế độ 'trước / sau' đặt cạnh nhau, dòng mới tô xanh, dòng bị ghi đè gạch ngang."
+ },
+ {
+  "code": "H13",
+  "name": "Bộ đệm (buffer)",
+  "fn": "vBuf",
+  "desc": "Ba khối Chương trình → Bộ đệm → Tệp trên đĩa. Bộ đệm là hộp có vạch đầy dần; khi Flush/Close, nội dung 'đổ' xuống tệp và kích thước tệp tăng."
+ },
+ {
+  "code": "H14",
+  "name": "Chip đường dẫn",
+  "fn": "vChips",
+  "desc": "Đường dẫn tách thành các chip: ổ đĩa | thư mục | thư mục | tên tệp | phần mở rộng. Mỗi phương thức của Path tô sáng các chip mà nó trả về."
+ },
+ {
+  "code": "H15",
+  "name": "Cây thư mục",
+  "fn": "vTree",
+  "desc": "Cây có biểu tượng thư mục/tệp và thụt lề; nút mới tạo tô xanh, nút bị xóa mờ đỏ, nút được liệt kê viền vàng, vị trí gây lỗi gắn biểu tượng ổ khóa hoặc dấu chấm than."
+ },
+ {
+  "code": "H16",
+  "name": "Bảng tính ↔ văn bản CSV",
+  "fn": "vPair + vGrid + vText",
+  "desc": "Trái: lưới ô kiểu Excel (hàng tiêu đề đậm). Phải: văn bản CSV thô. Mỗi bước tô cùng màu một hàng ở hai bên; dấu phẩy được tô như đường kẻ ô."
+ },
+ {
+  "code": "H17",
+  "name": "Dây chuyền dòng ↔ đối tượng",
+  "fn": "vFlow (item)",
+  "desc": "Dây chuyền ngang: dòng văn bản → Split/Join → mảng ô → chuyển kiểu → thẻ đối tượng → List. Mỗi bản ghi lần lượt đi qua từng trạm."
+ },
+ {
+  "code": "H18",
+  "name": "Bộ phân tích theo trạng thái",
+  "fn": "vCells + vCard",
+  "desc": "Con trỏ chạy trên từng ký tự của một dòng; huy hiệu trạng thái 'Trong nháy: Có/Không'; ký tự bị bỏ qua tô xám; trường hoàn tất được thả vào ô kết quả."
+ },
+ {
+  "code": "H19",
+  "name": "Thẻ đối tượng ↔ JSON/XML",
+  "fn": "vPair + vText(seg)",
+  "desc": "Thẻ đối tượng bên trái, văn bản JSON/XML bên phải; đường nối màu từ mỗi thuộc tính tới phần tương ứng. JSON tô màu theo kiểu: chuỗi xanh lá, số cam, bool tím, null xám."
+ },
+ {
+  "code": "H20",
+  "name": "Dải byte nhị phân",
+  "fn": "vCells(small, f1..f4)",
+  "desc": "Các ô hex (16 ô/hàng) đầy dần khi ghi; mỗi trường một màu; chú thích 'Id: 4 byte', 'Name: 1 byte độ dài + 4 byte'..."
+ },
+ {
+  "code": "H21",
+  "name": "Hai thùng phân loại",
+  "fn": "vBins",
+  "desc": "Hai thùng 'Hợp lệ' (thẻ xanh) và 'Lỗi' (thẻ đỏ ghi số dòng + lý do); mỗi bản ghi sau khi kiểm tra được thả vào đúng thùng."
+ },
+ {
+  "code": "H22",
+  "name": "Bảng điểm so sánh 2 cột",
+  "fn": "vScore",
+  "desc": "Thanh đếm 'số bước / số lần so sánh / số chỗ phải sửa' dưới mỗi cột, cập nhật mỗi bước; bước cuối gắn cờ 'phù hợp hơn' cho cột thắng."
+ },
+ {
+  "code": "H23",
+  "name": "Đối tượng trong heap",
+  "fn": "snap.objs: O('Car#1', [[trường, giá trị, cờ]])",
+  "desc": "Khung Bộ nhớ: biến tham chiếu dạng → Car#1 và hộp đối tượng có tên lớp + các trường; đối tượng không còn tham chiếu thì mờ, viền nét đứt. Dùng cho bài OOP (new, tham chiếu, null, kế thừa...)."
+ },
+ {
+  "code": "H24",
+  "name": "Sơ đồ lớp UML",
+  "fn": "snap.uml: {boxes, links}",
+  "desc": "Hộp lớp 3 ngăn (tên, thuộc tính, phương thức) và mũi tên quan hệ: kế thừa, thực thi interface, kết hợp, tập hợp, hợp thành, phụ thuộc; tối đa 2 cột hộp để vừa điện thoại."
+ }
+]

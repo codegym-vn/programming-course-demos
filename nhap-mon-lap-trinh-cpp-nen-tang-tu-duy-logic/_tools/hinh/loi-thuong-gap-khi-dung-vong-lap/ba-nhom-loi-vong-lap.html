@@ -1,0 +1,25 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../cau-truc-co-ban-cua-mot-chuong-trinh-cpp/_style.css"><style>
+.g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.k{border:2px solid;border-radius:16px;padding:14px 16px}
+.k1{border-color:#dc2626;background:#fef2f2}.k2{border-color:#ca8a04;background:#fefce8}.k3{border-color:#2563eb;background:#eff6ff}
+.k h4{margin:0 0 2px;font-size:20px}.k .sub2{font-size:14px;color:#475569;margin-bottom:10px}
+.k dl{margin:0;font-size:14.5px}.k dt{font-weight:800;margin-top:8px}.k dd{margin:0;color:#334155}
+.k code{font:14px ui-monospace,Menlo,monospace;background:#fff;border-radius:6px;padding:1px 5px}
+</style></head><body><div id="art">
+<h3>Ba nhóm lỗi thường gặp ở vòng lặp</h3><p class="sub">Cả ba đều biên dịch được, chỉ sai khi chạy</p>
+<div class="g">
+<div class="k k1"><h4>Lặp vô hạn</h4><div class="sub2">Chạy mãi không dừng</div><dl>
+<dt>Nguyên nhân</dt><dd>Điều kiện luôn đúng</dd>
+<dt>Hay gặp</dt><dd>Quên <code>i++</code>; cập nhật sai chiều; <code>x &gt; 0 || x &lt; 20</code></dd>
+<dt>Cách kiểm tra</dt><dd>Biến điều khiển có tiến tới điểm dừng không?</dd></dl></div>
+<div class="k k2"><h4>Chết yểu</h4><div class="sub2">Không chạy lần nào</div><dl>
+<dt>Nguyên nhân</dt><dd>Điều kiện sai ngay từ đầu</dd>
+<dt>Hay gặp</dt><dd><code>i = 10; while (i &lt; 5)</code>; dấu so sánh ngược</dd>
+<dt>Cách kiểm tra</dt><dd>Khởi tạo, dấu so sánh, chiều tăng giảm có nhất quán không?</dd></dl></div>
+<div class="k k3"><h4>Rườm rà</h4><div class="sub2">Chạy đúng nhưng code dài</div><dl>
+<dt>Nguyên nhân</dt><dd>Chọn sai loại vòng lặp</dd>
+<dt>Hay gặp</dt><dd>Dùng <code>while</code> khi biết trước số lần</dd>
+<dt>Cách kiểm tra</dt><dd>Biết số lần thì for; chưa biết thì while; cần chạy 1 lần trước thì do...while</dd></dl></div>
+</div>
+<p class="tip">Dừng một chương trình bị treo trong terminal bằng <b>Ctrl + C</b>.</p>
+</div></body></html>

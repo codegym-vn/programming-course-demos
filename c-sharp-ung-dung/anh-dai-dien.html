@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1600px; height: 1600px; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    background: #140b12;
+    color: #fff;
+    position: relative;
+  }
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(900px 700px at 10% 8%, rgba(245, 158, 11, .32), transparent 60%),
+      radial-gradient(800px 700px at 92% 92%, rgba(236, 72, 153, .32), transparent 60%),
+      radial-gradient(700px 600px at 90% 10%, rgba(124, 58, 237, .30), transparent 60%),
+      linear-gradient(160deg, #2a1420 0%, #170c18 55%, #0b0710 100%);
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 75%);
+  }
+  .code {
+    position: absolute;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 25px; line-height: 1.6;
+    color: rgba(255,255,255,.17);
+    white-space: pre;
+  }
+  .kw { color: rgba(251, 191, 36, .5); }
+  .ty { color: rgba(244, 114, 182, .55); }
+  .st { color: rgba(134, 239, 172, .45); }
+  .c1 { top: 80px; left: 80px; transform: rotate(-6deg); }
+  .c2 { bottom: 140px; left: 90px; transform: rotate(-3deg); }
+
+  /* File cards, top-right */
+  .files { position: absolute; top: 70px; right: 90px; width: 420px; height: 300px; }
+  .file {
+    position: absolute; width: 170px; height: 210px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+    border: 1.5px solid rgba(255,255,255,.18);
+    opacity: .75;
+  }
+  .file::before {
+    content: ""; position: absolute; top: -1.5px; right: -1.5px;
+    width: 44px; height: 44px;
+    background: linear-gradient(225deg, #170c18 50%, rgba(255,255,255,.22) 50%);
+    border-bottom-left-radius: 8px;
+  }
+  .file .ext {
+    position: absolute; left: 18px; bottom: 18px;
+    font-family: "SF Mono", Menlo, monospace; font-size: 30px; font-weight: 700;
+  }
+  .file .ln { position: absolute; left: 18px; right: 30px; height: 7px; border-radius: 4px; background: rgba(255,255,255,.14); }
+  .f1 { left: 0; top: 60px; transform: rotate(-8deg); }
+  .f2 { left: 125px; top: 20px; transform: rotate(0deg); }
+  .f3 { left: 250px; top: 70px; transform: rotate(8deg); }
+
+  /* CSV table, bottom-right */
+  .csv { position: absolute; bottom: 120px; right: 70px; transform: rotate(4deg); opacity: .5;
+         border-collapse: collapse; font-family: "SF Mono", Menlo, monospace; font-size: 22px; }
+  .csv td { border: 1.5px solid rgba(255,255,255,.25); padding: 8px 18px; color: rgba(255,255,255,.75); }
+  .csv tr:first-child td { color: #fbbf24; background: rgba(251,191,36,.08); }
+
+  .center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .glow {
+    position: absolute; left: 50%; top: 46%;
+    width: 1100px; height: 700px; transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(251, 146, 60, .16), transparent);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 16px 34px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    border: 1.5px solid rgba(255,255,255,.18);
+    font-size: 30px; font-weight: 600; letter-spacing: 6px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.9);
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: #fbbf24; box-shadow: 0 0 16px #fbbf24; }
+  .cs {
+    margin-top: 64px;
+    display: inline-block;
+    padding: 6px 34px 12px;
+    border-radius: 30px;
+    font-size: 120px; font-weight: 900; letter-spacing: -2px; line-height: 1;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    box-shadow: 0 18px 50px rgba(124, 58, 237, .5), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .title {
+    margin-top: 10px;
+    font-size: 250px; font-weight: 900; letter-spacing: -8px; line-height: 1.25;
+    padding: 0 30px;
+    background: linear-gradient(115deg, #fde68a 0%, #fbbf24 25%, #fb923c 55%, #f472b6 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 20px 60px rgba(251, 146, 60, .4));
+    white-space: nowrap;
+  }
+  .sub {
+    margin-top: 6px;
+    font-size: 48px; font-weight: 700;
+    color: #fff;
+    letter-spacing: -.5px;
+  }
+  .sub2 {
+    margin-top: 14px;
+    font-size: 36px; font-weight: 500;
+    color: rgba(255,255,255,.72);
+  }
+  .sub2 code { font-family: "SF Mono", Menlo, monospace; font-size: 33px; color: #fcd34d; }
+  .chips {
+    margin-top: 56px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 18px;
+    max-width: 1250px;
+  }
+  .chip {
+    padding: 14px 30px;
+    border-radius: 18px;
+    font-size: 32px; font-weight: 600;
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    border: 1.5px solid rgba(255,255,255,.16);
+    color: rgba(255,255,255,.92);
+  }
+  .chip span { color: #fcd34d; margin-right: 8px; font-family: "SF Mono", Menlo, monospace; }
+  .footer {
+    position: absolute; left: 0; right: 0; bottom: 64px;
+    display: flex; justify-content: center; gap: 22px;
+    font-size: 28px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+  }
+  .footer i { font-style: normal; color: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+
+  <div class="code c1"><span class="kw">try</span> {
+  <span class="kw">var</span> text = <span class="ty">File</span>.ReadAllText(path);
+}
+<span class="kw">catch</span> (<span class="ty">FileNotFoundException</span> ex) {
+  Console.WriteLine(ex.Message);
+}
+<span class="kw">finally</span> { ... }</div>
+
+  <div class="code c2"><span class="kw">var</span> json = <span class="ty">JsonSerializer</span>
+    .Serialize(students);
+<span class="kw">var</span> map = <span class="kw">new</span> <span class="ty">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();</div>
+
+  <div class="files">
+    <div class="file f1">
+      <div class="ln" style="top:40px"></div><div class="ln" style="top:62px;right:60px"></div><div class="ln" style="top:84px"></div>
+      <div class="ext" style="color:#93c5fd">.txt</div>
+    </div>
+    <div class="file f3">
+      <div class="ln" style="top:40px"></div><div class="ln" style="top:62px;right:50px"></div><div class="ln" style="top:84px;right:70px"></div>
+      <div class="ext" style="color:#f9a8d4">.json</div>
+    </div>
+    <div class="file f2">
+      <div class="ln" style="top:40px"></div><div class="ln" style="top:62px"></div><div class="ln" style="top:84px;right:60px"></div>
+      <div class="ext" style="color:#fcd34d">.csv</div>
+    </div>
+  </div>
+
+  <table class="csv">
+    <tr><td>Id</td><td>Name</td><td>Score</td></tr>
+    <tr><td>1</td><td>An</td><td>8.5</td></tr>
+    <tr><td>2</td><td>Bình</td><td>9.0</td></tr>
+  </table>
+
+  <div class="glow"></div>
+
+  <div class="center">
+    <div class="pill"><span class="dot"></span>Khóa học lập trình</div>
+    <div class="cs">C#</div>
+    <div class="title">Ứng dụng</div>
+    <div class="sub">Xử lý dữ liệu, ngoại lệ và file trong C#</div>
+    <div class="sub2">Từ <code>List&lt;T&gt;</code> đến lưu trữ đối tượng bằng JSON</div>
+    <div class="chips">
+      <div class="chip"><span>01</span>Collections</div>
+      <div class="chip"><span>02</span>Exception cơ bản</div>
+      <div class="chip"><span>03</span>Exception nâng cao</div>
+      <div class="chip"><span>04</span>Đọc/Ghi File</div>
+      <div class="chip"><span>05</span>CSV</div>
+      <div class="chip"><span>06</span>Serialization</div>
+    </div>
+  </div>
+
+  <div class="footer">6 module <i>•</i> 167 hoạt động</div>
+</body>
+</html>

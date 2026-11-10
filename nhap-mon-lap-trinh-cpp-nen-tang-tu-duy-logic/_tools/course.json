@@ -1,0 +1,14 @@
+{
+ "course_name": "Nhập môn Lập trình C++: Nền tảng & Tư duy Logic",
+ "modules": [
+  "Module 1. Làm quen với C++ và tư duy thuật toán",
+  "Module 2. Biến, kiểu dữ liệu và toán tử",
+  "Module 3. Cấu trúc điều kiện",
+  "Module 4. Vòng lặp",
+  "Module 5. Bài tập cuối khoá và dự án thực tế"
+ ],
+ "excel": "phan-tich-mo-phong-nhap-mon-cpp.xlsx",
+ "code_title": "Mã nguồn C++",
+ "language": "C++",
+ "excel_source": "/Users/tuananhcan/Downloads/phan-tich-mo-phong-nhap-mon-cpp.xlsx"
+}
