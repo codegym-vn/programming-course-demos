@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Lần vết hai câu lệnh if</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .in{color:#93c5fd}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @media (max-width:600px){.code{max-height:270px !important}}
+
+  .conds{display:flex;flex-direction:column;gap:6px}
+  .cond{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--code-bg);border-radius:8px;padding:5px 10px;border:2px solid transparent;font:13px ui-monospace,Menlo,Consolas,monospace}
+  .cond.on{border-color:var(--cur-bar);background:var(--cur)}
+  .cond .calc{color:var(--muted);font-size:12px}
+  #code{max-height:430px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Nhập một số nguyên rồi bấm <b>Bước tiếp</b> (hoặc phím <kbd>→</kbd>) để xem Java kiểm tra lần lượt hai câu lệnh <code>if</code>.</p>
+  <div class="controls">
+    <div class="field"><label for="num">number =</label><input type="text" id="num" value="30" inputmode="numeric" aria-describedby="err">
+      <button class="chip" data-v="4">4</button><button class="chip" data-v="15">15</button><button class="chip" data-v="30">30</button><button class="chip" data-v="7">7</button></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Chương trình SimpleIfDemo</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Hai điều kiện (kiểm tra độc lập)</p><div class="conds" id="conds"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|class|static|void|int|double|char|boolean|String|if|else|switch|case|break|default|return|for|while|new|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: array of strings; o: {cur: number | [from,to], cls: {idx: 'run'|'skip'}, tags: {idx: text}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function tagBool(v){ return v === undefined || v === null ? '<span class="tag n">chưa xét</span>' : '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset};
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+//SIM-START
+var LINES = [
+'import java.util.Scanner;',
+'',
+'public class SimpleIfDemo {',
+'  public static void main(String[] args) {',
+'    Scanner input =',
+'        new Scanner(System.in);',
+'    System.out.print(',
+'        "Enter an integer: ");',
+'    int number = input.nextInt();',
+'',
+'    if (number % 5 == 0) {',
+'      System.out.println("HiFive");',
+'    }',
+'',
+'    if (number % 2 == 0) {',
+'      System.out.println("HiEven");',
+'    }',
+'  }',
+'}'];
+function jmod(a, b){ var r = a % b; return r === 0 ? 0 : r; } // Java: dấu theo số bị chia
+function simIf(n){
+  var S = [], out = ['Enter an integer: ' + n], cls = {}, c5 = null, c2 = null;
+  function snap(ln, title, body, active){ S.push({ln: ln, title: title, body: body, out: out.slice(), cls: Object.assign({}, cls), c5: c5, c2: c2, active: active || 0}); }
+  snap([6, 8], 'Đọc số', 'Chương trình in lời nhắc, người dùng gõ <b>' + n + '</b>, giá trị này được lưu vào biến <code>number</code>.');
+  var r5 = jmod(n, 5); c5 = r5 === 0;
+  snap(10, 'Câu lệnh if thứ nhất', 'Tính điều kiện: <code>number % 5</code> = <code>' + n + ' % 5</code> = ' + r5 + ', nên <code>' + r5 + ' == 0</code> là <b>' + c5 + '</b>.', 1);
+  if (c5) { out.push('HiFive'); cls[11] = 'run'; snap(11, 'Điều kiện đúng', 'Khối lệnh của <code>if</code> thứ nhất được chạy: in <code>HiFive</code>.', 1); }
+  else { cls[11] = 'skip'; snap(12, 'Điều kiện sai', 'Java <b>bỏ qua</b> cả khối lệnh của <code>if</code> thứ nhất (dòng làm mờ) và đi tiếp xuống dưới.', 1); }
+  var r2 = jmod(n, 2); c2 = r2 === 0;
+  snap(14, 'Câu lệnh if thứ hai', 'Dù <code>if</code> thứ nhất đúng hay sai, Java vẫn kiểm tra <code>if</code> thứ hai: <code>' + n + ' % 2</code> = ' + r2 + ', nên <code>' + r2 + ' == 0</code> là <b>' + c2 + '</b>.', 2);
+  if (c2) { out.push('HiEven'); cls[15] = 'run'; snap(15, 'Điều kiện đúng', 'Khối lệnh của <code>if</code> thứ hai được chạy: in <code>HiEven</code>.', 2); }
+  else { cls[15] = 'skip'; snap(16, 'Điều kiện sai', 'Java bỏ qua khối lệnh của <code>if</code> thứ hai.', 2); }
+  var k = (c5 ? 1 : 0) + (c2 ? 1 : 0);
+  var sum = k === 2 ? 'Cả hai điều kiện đều đúng nên in hai dòng.' : k === 1 ? 'Chỉ một điều kiện đúng nên in một dòng.' : 'Không điều kiện nào đúng nên không in gì thêm.';
+  snap(17, 'Kết thúc', sum + ' Hai câu lệnh <code>if</code> được kiểm tra độc lập: kết quả của câu này không ảnh hưởng tới câu kia.');
+  return S;
+}
+//SIM-END
+var n = 30;
+var st = Stepper({
+  build: function(){ return simIf(n); },
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.ln, cls: sn.cls}); scrollToCur($('code'));
+    $('vars').innerHTML = '<div class="var"><small>number</small><strong>' + n + '</strong></div>';
+    $('conds').innerHTML =
+      '<div class="cond' + (sn.active === 1 ? ' on' : '') + '"><span>number % 5 == 0</span>' + tagBool(sn.c5) + '</div>' +
+      '<div class="cond' + (sn.active === 2 ? ' on' : '') + '"><span>number % 2 == 0</span>' + tagBool(sn.c2) + '</div>';
+    $('con').innerHTML = sn.out.map(function(l, i){ return i === 0 ? esc(l.replace(/\S+$/, '')) + '<span class="in">' + esc(l.match(/\S+$/)[0]) + '</span>' : esc(l); }).join('\n');
+  }
+});
+function apply(){
+  var v = parseIntIn($('num').value, -100000, 100000);
+  if (v === null) { $('num').classList.add('bad'); $('err').textContent = 'Hãy nhập một số nguyên từ -100000 đến 100000.'; return; }
+  $('num').classList.remove('bad'); $('err').textContent = ''; n = v; st.reset();
+}
+$('num').addEventListener('input', apply);
+document.querySelectorAll('.chip').forEach(function(b){ b.addEventListener('click', function(){ $('num').value = b.dataset.v; apply(); }); });
+st.reset();
+})();
+</script>
+</body>
+</html>

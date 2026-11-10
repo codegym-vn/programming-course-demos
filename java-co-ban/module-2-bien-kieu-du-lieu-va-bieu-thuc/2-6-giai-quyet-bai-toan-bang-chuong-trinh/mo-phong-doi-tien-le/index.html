@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng đổi tiền lẻ</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cm:#6b7280;
+  --warn:#b45309; --warn-soft:#fdf0d5;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cm:#8b93a1;
+    --warn:#fbbf24; --warn-soft:#3a2a0c;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.hint{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.field label{font-weight:600;font-size:13.5px}
+input.txt{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+input.txt.bad{border-color:var(--false);background:var(--false-soft)}
+.chip{border:1px dashed var(--muted);background:transparent;color:var(--text);padding:3px 9px;border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.chip:hover,.chip.on{border-color:var(--accent);color:var(--accent);border-style:solid}
+.err{color:var(--false);font-size:13px;min-height:0}
+.err:empty{display:none}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 12px;margin-bottom:8px;min-height:58px;font-size:14px}
+.status b{display:block;font-size:12.5px;color:var(--accent)}
+.status .note{display:block;margin-top:3px;font-size:13px;color:var(--muted)}
+.status.ok{border-left-color:var(--true)}
+.status.bad{border-left-color:var(--false)}
+.panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+.ln .no{width:30px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.dim{opacity:.55}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:44px;white-space:pre-wrap;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+.console .e{color:#fca5a5}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ok-t{color:var(--true);font-weight:700}.bad-t{color:var(--false);font-weight:700}
+@keyframes flash{0%{background:var(--cur);box-shadow:0 0 0 3px var(--cur-bar)}100%{}}
+.flash{animation:flash 1.1s ease-out}
+.status{overflow-wrap:anywhere}
+@media (max-width:560px){
+  .btns{margin-left:0}
+  .btn{padding:6px 10px}
+}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px}
+.grid>*{min-width:0}
+@media (max-width:660px){.grid{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.inrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.inrow input.txt{width:86px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--muted);padding:5px 9px;cursor:pointer;font:inherit;font-size:13px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:700}
+.vars{display:flex;gap:8px}
+.var{flex:1;background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 8px;text-align:center;min-width:0}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{display:block;font:700 17px/1.35 ui-monospace,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.var.chg{border-color:var(--cur-bar)}
+.bar{height:16px;background:var(--code-bg);border-radius:999px;overflow:hidden;margin:8px 0 2px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .45s}
+.barcap{font-size:12px;color:var(--muted)}
+.coins{display:flex;flex-direction:column;gap:3px}
+.crow{display:grid;grid-template-columns:92px 26px minmax(0,1fr);align-items:center;gap:6px;padding:2px 4px;border-radius:6px;font-size:13px}
+.crow.cur{background:var(--cur)}
+.crow .nm{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+.crow .ct{font:700 15px ui-monospace,Menlo,Consolas,monospace;text-align:right}
+.crow.na .ct,.crow.na .nm{color:var(--muted)}
+.ic{display:flex;gap:2px;flex-wrap:wrap;align-items:center;min-height:20px}
+.bill{width:22px;height:13px;border-radius:3px;background:#3f9e5a;border:1px solid #2c7a43}
+.coin{width:16px;height:16px;border-radius:50%;background:#c9ccd2;border:1px solid #9aa0aa;font:700 8px/14px system-ui,sans-serif;color:#333;text-align:center}
+.coin.p{background:#d08b52;border-color:#a8693a}
+.more{font-size:11.5px;color:var(--muted);margin-left:3px}
+.warn{color:var(--warn);font-weight:600}
+.changed{text-decoration:underline;text-decoration-color:var(--warn);text-underline-offset:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="hint">Bấm <b>Bước tiếp</b>: mỗi cặp <span class="mono">/</span> và <span class="mono">%</span> nhả ra một loại tiền, phần còn lại ngắn dần. Thử nhập <span class="mono">10.03</span>.</p>
+  <div class="controls">
+    <div class="inrow">
+      <div class="seg" id="mode"><button data-m="d" title="Nhập số tiền đô la dạng số thực, như chương trình gốc">Đô la (double)</button><button data-m="c" title="Nhập số cent dạng số nguyên">Cent (int)</button></div>
+      <input class="txt" id="amt" aria-label="Số tiền" maxlength="9" autocomplete="off"><button class="btn ghost" id="bUse">Đổi</button>
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="bPrev">Lùi lại</button>
+      <button class="btn" id="bNext">Bước tiếp</button>
+      <button class="btn ghost" id="bAll">Chạy hết</button>
+      <button class="btn ghost" id="bReset">Làm lại</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">ComputeChange.java (trích main)</p><div class="code" id="code"></div></div>
+    <div class="side">
+      <div class="card"><div class="vars" id="vars"></div><div class="bar"><i id="bar"></i></div><div class="barcap" id="barcap"></div></div>
+      <div class="card"><p class="panel-title">Tiền được đổi ra</p><div class="coins" id="coins"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+/* JCORE: Java number semantics + expression stepper */
+var JC = (function(){
+  function jfmt(v){ // v: {v,t}
+    if (v.t === 'int') return String(v.v);
+    var d = v.v;
+    if (isNaN(d)) return 'NaN';
+    if (d === Infinity) return 'Infinity';
+    if (d === -Infinity) return '-Infinity';
+    if (d === 0) return (1/d < 0) ? '-0.0' : '0.0';
+    var a = Math.abs(d);
+    if (a >= 1e-3 && a < 1e7){ var s = String(d); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var e = d.toExponential(), p = e.split('e'), m = p[0], x = parseInt(p[1], 10);
+    if (m.indexOf('.') < 0) m += '.0';
+    return m + 'E' + x;
+  }
+  function I(n){ return {v:n|0, t:'int'}; }
+  function D(n){ return {v:n, t:'double'}; }
+  // apply binary op with Java semantics; returns {val} or {err}
+  function apply(op, a, b){
+    if (a.t === 'int' && b.t === 'int'){
+      var x = a.v, y = b.v, r, info = '';
+      switch(op){
+        case '+': r = (x + y) | 0; if (r !== x + y) info = 'overflow'; break;
+        case '-': r = (x - y) | 0; if (r !== x - y) info = 'overflow'; break;
+        case '*': r = Math.imul(x, y); if (r !== x * y) info = 'overflow'; break;
+        case '/': if (y === 0) return {err:'ArithmeticException: / by zero'}; r = (x / y) | 0; if (x % y !== 0) info = 'intdiv'; if (x === -2147483648 && y === -1) r = x; break;
+        case '%': if (y === 0) return {err:'ArithmeticException: / by zero'}; r = (x % y) | 0; if (r === 0 && (x % y) !== 0) r = 0; break;
+      }
+      return {val:I(r), info:info};
+    }
+    var p = a.v, q = b.v, s;
+    switch(op){ case '+': s = p + q; break; case '-': s = p - q; break; case '*': s = p * q; break; case '/': s = p / q; break; case '%': s = p % q; break; }
+    return {val:D(s), info:(a.t !== b.t ? 'promote' : '')};
+  }
+  // literal parse: returns {v,t} or null
+  function lit(s){
+    s = s.trim();
+    if (/^-?\d+$/.test(s)){ var n = Number(s); if (n > 2147483647 || n < -2147483648) return null; return I(n); }
+    if (/^-?(\d+\.\d*|\.\d+)$/.test(s)) return D(Number(s));
+    return null;
+  }
+  // tokenize: tokens {k:'n',val,src} | {k:'op',o} | {k:'(' } | {k:')'}
+  function tokenize(src){
+    var toks = [], i = 0, prev = null;
+    while (i < src.length){
+      var c = src[i];
+      if (c === ' ' || c === '\t'){ i++; continue; }
+      var unary = (c === '-') && (prev === null || prev.k === 'op' || prev.k === '(') && /[\d.]/.test(src[i+1] || '');
+      if (/[\d.]/.test(c) || unary){
+        var j = i + (unary ? 1 : 0);
+        while (j < src.length && /[\d.]/.test(src[j])) j++;
+        var t = src.slice(i, j), v = lit(t);
+        if (!v) return {err: /^-?\d+$/.test(t) ? 'Số nguyên ' + t + ' vượt quá giới hạn của int.' : 'Không hiểu số "' + t + '".'};
+        prev = {k:'n', val:v, src:t}; toks.push(prev); i = j; continue;
+      }
+      if ('+-*/%'.indexOf(c) >= 0){ prev = {k:'op', o:c}; toks.push(prev); i++; continue; }
+      if (c === '(' || c === ')'){ prev = {k:c}; toks.push(prev); i++; continue; }
+      return {err:'Ký tự "' + c + '" không được dùng. Chỉ dùng số, + - * / % và ( ).'};
+    }
+    // validate grammar
+    var depth = 0, expectN = true;
+    for (var k = 0; k < toks.length; k++){
+      var tk = toks[k];
+      if (expectN){
+        if (tk.k === 'n') expectN = false;
+        else if (tk.k === '(') depth++;
+        else return {err:'Biểu thức chưa đúng: thiếu số trước "' + (tk.o || tk.k) + '".'};
+      } else {
+        if (tk.k === 'op') expectN = true;
+        else if (tk.k === ')'){ depth--; if (depth < 0) return {err:'Thừa dấu ")".'}; }
+        else return {err:'Biểu thức chưa đúng: thiếu phép tính giữa hai số.'};
+      }
+    }
+    if (!toks.length) return {err:'Hãy nhập một biểu thức.'};
+    if (expectN) return {err:'Biểu thức chưa đúng: kết thúc bằng phép tính.'};
+    if (depth > 0) return {err:'Thiếu dấu ")".'};
+    return {toks:toks};
+  }
+  function tokStr(t){ return t.k === 'n' ? (t.src !== undefined ? t.src : jfmt(t.val)) : (t.k === 'op' ? t.o : t.k); }
+  function render(toks){ // returns array of strings w/ spacing
+    var out = [];
+    for (var i = 0; i < toks.length; i++){
+      var t = toks[i], s = tokStr(t);
+      out.push(s);
+    }
+    return out;
+  }
+  function joinToks(toks, from, to){ // display string with spacing
+    var s = '';
+    for (var i = from; i < to; i++){
+      var t = toks[i];
+      if (i > from){
+        var p = toks[i-1];
+        if (!(p.k === '(' || t.k === ')')) s += ' ';
+      }
+      s += tokStr(t);
+    }
+    return s;
+  }
+  // Steps: [{toks (before), at:[i,j] range of the 3 tokens (plus parens removed), res, rule, info}]
+  function steps(toks){
+    toks = toks.slice();
+    var list = [];
+    var guard = 0;
+    while (toks.length > 1 && guard++ < 500){
+      // drop paren around single number
+      // find leftmost innermost group
+      var lo = 0, hi = toks.length, inParen = false;
+      for (var i = 0; i < toks.length; i++){
+        if (toks[i].k === ')'){ hi = i; for (var j = i - 1; j >= 0; j--) if (toks[j].k === '('){ lo = j + 1; break; } inParen = true; break; }
+      }
+      if (inParen && hi - lo === 1){ // (n) -> n
+        toks.splice(hi, 1); toks.splice(lo - 1, 1); continue;
+      }
+      var opi = -1, hasAdd = false, k;
+      for (k = lo; k < hi; k++) if (toks[k].k === 'op' && '*/%'.indexOf(toks[k].o) >= 0){ opi = k; break; }
+      for (k = lo; k < hi; k++) if (toks[k].k === 'op' && '+-'.indexOf(toks[k].o) >= 0) hasAdd = true;
+      var mulFirst = opi >= 0;
+      if (opi < 0) for (k = lo; k < hi; k++) if (toks[k].k === 'op'){ opi = k; break; }
+      var op = toks[opi].o, a = toks[opi-1], b = toks[opi+1];
+      var sameLater = false, sameBefore = false;
+      var grp = function(o){ return '*/%'.indexOf(o) >= 0 ? 1 : 0; };
+      for (k = opi + 2; k < hi; k++) if (toks[k].k === 'op' && grp(toks[k].o) === grp(op)) sameLater = true;
+      var r = apply(op, a.val, b.val);
+      var rule;
+      if (inParen) rule = 'Trong ngoặc tính trước.';
+      else if (mulFirst && hasAdd) rule = 'Nhân, chia, chia dư tính trước cộng trừ.';
+      else if (sameLater) rule = 'Cùng mức ưu tiên: tính từ trái sang phải.';
+      else rule = 'Phép tính cuối cùng.';
+      if (inParen && mulFirst && hasAdd) rule = 'Trong ngoặc tính trước; trong ngoặc, nhân chia tính trước cộng trừ.';
+      else if (inParen && sameLater) rule = 'Trong ngoặc tính trước; cùng mức thì từ trái sang phải.';
+      var st = {toks:toks.slice(), at:[opi-1, opi+1], a:a.val, b:b.val, op:op, rule:rule, info:r.info || ''};
+      if (r.err){ st.err = r.err; list.push(st); return list; }
+      st.res = r.val;
+      list.push(st);
+      var nt = {k:'n', val:r.val};
+      toks.splice(opi - 1, 3, nt);
+      // unwrap parens if now single
+      var idx = opi - 1;
+      if (idx > 0 && toks[idx-1].k === '(' && toks[idx+1] && toks[idx+1].k === ')'){ toks.splice(idx+1, 1); toks.splice(idx-1, 1); st.unwrap = true; }
+      st.after = toks.slice();
+    }
+    return list;
+  }
+  return {jfmt:jfmt, apply:apply, lit:lit, tokenize:tokenize, steps:steps, joinToks:joinToks, tokStr:tokStr, I:I, D:D};
+})();
+
+/* UI helpers */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlJava(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(public|class|static|void|int|double|long|final|new|import|return|if|else|while|for)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))){
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur, startNo){
+  startNo = startNo || 1; cur = cur || [];
+  return lines.map(function(l, i){
+    return '<div class="ln' + (cur.indexOf(i) >= 0 ? ' cur' : '') + '"><span class="no">' + (i + startNo) + '</span><span>' + hlJava(l) + '</span></div>';
+  }).join('');
+}
+function qparam(name){
+  try { var m = new RegExp('[?&]' + name + '=([^&#]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; } catch(e){ return null; }
+}
+/* Stepper: opts {count():n, render(step), onBlockNext?():bool} */
+function Stepper(opts){
+  var self = {step:0};
+  self.go = function(s){ var n = opts.count(); self.step = Math.max(0, Math.min(n, s)); opts.render(self.step); upd(); };
+  self.next = function(){ if (opts.beforeNext && opts.beforeNext(self.step) === false) return; self.go(self.step + 1); };
+  self.prev = function(){ self.go(self.step - 1); };
+  self.all = function(){ self.go(opts.count()); };
+  self.reset = function(){ self.go(0); };
+  function upd(){
+    var n = opts.count();
+    $('bNext').disabled = self.step >= n; $('bAll').disabled = self.step >= n;
+    $('bPrev').disabled = self.step <= 0; $('bReset').disabled = self.step <= 0;
+  }
+  $('bNext').onclick = function(){ self.next(); }; $('bPrev').onclick = function(){ self.prev(); }; $('bAll').onclick = function(){ self.all(); }; $('bReset').onclick = function(){ self.reset(); };
+  self.upd = upd;
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight'){ e.preventDefault(); self.next(); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); self.prev(); }
+  });
+  return self;
+}
+
+(function(){
+  var mode = 'd', raw = '11.56', snaps = [];
+  var DEN = [['numberOfOneDollars','dollars',100,'bill'],['numberOfQuarters','quarters',25,'25'],['numberOfDimes','dimes',10,'10'],['numberOfNickels','nickels',5,'5'],['numberOfPennies','pennies',1,'1']];
+  function lines(){
+    return [
+      [9, mode === 'd' ? 'double amount = input.nextDouble();' : 'int amount = input.nextInt();'],
+      [12, 'int remainingAmount ='], [13, mode === 'd' ? '    (int)(amount * 100);' : '    amount;'],
+      [16, 'int numberOfOneDollars ='], [17, '    remainingAmount / 100;'],
+      [18, 'remainingAmount = remainingAmount % 100;'],
+      [21, 'int numberOfQuarters ='], [22, '    remainingAmount / 25;'],
+      [23, 'remainingAmount = remainingAmount % 25;'],
+      [26, 'int numberOfDimes = remainingAmount / 10;'],
+      [27, 'remainingAmount = remainingAmount % 10;'],
+      [30, 'int numberOfNickels = remainingAmount / 5;'],
+      [31, 'remainingAmount = remainingAmount % 5;'],
+      [34, 'int numberOfPennies = remainingAmount;']];
+  }
+  function build(){
+    snaps = [];
+    var amount = mode === 'd' ? JC.D(Number(raw)) : JC.I(parseInt(raw, 10));
+    var st = {amount:JC.jfmt(amount), rem:null, cnt:{}, init:null};
+    function snap(ln, msg, o){ o = o || {}; var c = {}; for (var k in st.cnt) c[k] = st.cnt[k]; snaps.push({ln:ln, msg:msg, amount:st.amount, rem:st.rem, init:st.init, cnt:c, chg:o.chg, cur:o.cur, warn:o.warn}); }
+    snap([0], mode === 'd' ? 'Người dùng nhập ' + raw + '. Biến amount giữ nguyên giá trị này đến cuối để in ra.' : 'Người dùng nhập số cent ' + raw + ' (số nguyên).', {chg:'amount'});
+    var rem, warn = false;
+    if (mode === 'd'){
+      var prod = JC.apply('*', amount, JC.I(100)).val; rem = Math.trunc(prod.v); warn = prod.v !== rem && Math.abs(prod.v - Math.round(prod.v)) < 1e-6;
+      st.rem = rem; st.init = rem;
+      snap([1,2], 'amount * 100 = ' + JC.jfmt(prod) + ', rồi (int) cắt bỏ phần thập phân → ' + rem + ' cent.' + (warn ? ' Máy không lưu được chính xác ' + raw + ' nên tích hơi nhỏ hơn ' + Math.round(prod.v) + ', và mất 1 cent!' : ''), {chg:'rem', warn:warn});
+    } else {
+      rem = amount.v; st.rem = rem; st.init = rem;
+      snap([1,2], 'Số cent đã là số nguyên nên gán thẳng, không có phép nhân số thực nào: ' + rem + ' cent.', {chg:'rem'});
+    }
+    var map = [[3,4,5],[6,7,8],[9,10],[11,12]];
+    DEN.slice(0,4).forEach(function(d, i){
+      var q = Math.trunc(rem / d[2]), r = rem % d[2], L = map[i];
+      st.cnt[d[0]] = q;
+      snap(L.length === 3 ? [L[0], L[1]] : [L[0]], rem + ' / ' + d[2] + ' = ' + q + ' → ' + q + ' ' + d[1] + '.', {cur:d[0]});
+      st.rem = r;
+      snap([L[L.length-1]], rem + ' % ' + d[2] + ' = ' + r + ' → còn lại ' + r + ' cent.', {chg:'rem'});
+      rem = r;
+    });
+    st.cnt.numberOfPennies = rem;
+    snap([13], 'Còn ' + rem + ' cent, mỗi penny là 1 cent nên có ' + rem + ' pennies. Xong!', {cur:'numberOfPennies'});
+  }
+  function render(k){
+    var sn = k > 0 ? snaps[k-1] : null, L = lines(), cur = sn ? sn.ln : [];
+    $('code').innerHTML = L.map(function(l, i){
+      var ch = mode === 'c' && (i === 0 || i === 2);
+      return '<div class="ln' + (cur.indexOf(i) >= 0 ? ' cur' : '') + '"><span class="no">' + l[0] + '</span><span' + (ch ? ' class="changed" title="Bản sửa: tính bằng cent nguyên"' : '') + '>' + hlJava(l[1]) + '</span></div>';
+    }).join('');
+    var amount = sn ? sn.amount : '?', rem = sn && sn.rem !== null ? sn.rem : null;
+    $('vars').innerHTML = '<div class="var' + (sn && sn.chg === 'amount' ? ' chg flash' : '') + '"><small>' + (mode === 'd' ? 'double' : 'int') + ' amount</small><strong>' + esc(amount) + '</strong></div>' +
+      '<div class="var' + (sn && sn.chg === 'rem' ? ' chg flash' : '') + '"><small>int remainingAmount</small><strong' + (sn && sn.warn ? ' class="warn"' : '') + '>' + (rem === null ? '?' : rem) + '</strong></div>';
+    var w = rem === null || !sn.init ? (rem === null ? 0 : 100) : rem / sn.init * 100;
+    $('bar').style.width = (rem === null ? 0 : Math.max(w, rem > 0 ? 1.5 : 0)) + '%';
+    $('barcap').textContent = rem === null ? 'Phần tiền còn lại (cent) sẽ hiện ở đây.' : 'Còn lại ' + rem + ' / ' + sn.init + ' cent';
+    $('coins').innerHTML = DEN.map(function(d){
+      var has = sn && sn.cnt[d[0]] !== undefined, n = has ? sn.cnt[d[0]] : null, ic = '';
+      if (has){ var m = Math.min(n, 12); for (var i = 0; i < m; i++) ic += d[3] === 'bill' ? '<span class="bill"></span>' : '<span class="coin' + (d[2] === 1 ? ' p' : '') + '">' + d[3] + '</span>'; if (n > m) ic += '<span class="more">+' + (n - m) + '</span>'; }
+      return '<div class="crow' + (has ? '' : ' na') + (sn && sn.cur === d[0] ? ' cur' : '') + '"><span class="nm">' + d[1] + '</span><span class="ct">' + (has ? n : '–') + '</span><span class="ic">' + ic + '</span></div>';
+    }).join('');
+    var stt = $('status');
+    stt.className = 'status' + (sn && sn.warn ? ' bad' : '');
+    stt.innerHTML = !sn ? '<b>Sẵn sàng</b>Số tiền: ' + esc(mode === 'd' ? raw + ' đô la' : raw + ' cent') + '. Bấm <b style="display:inline;color:inherit">Bước tiếp</b> để chạy câu lệnh đầu tiên.'
+      : '<b>Bước ' + k + ' / ' + snaps.length + ' · dòng ' + sn.ln.map(function(i){ return L[i][0]; }).join(', ') + '</b>' + esc(sn.msg) +
+        (k === snaps.length ? '<span class="note">Kết quả: ' + DEN.map(function(d){ return sn.cnt[d[0]] + ' ' + d[1]; }).join(', ') + '.</span>' : '');
+  }
+  var S = Stepper({count:function(){ return snaps.length; }, render:render});
+  function syncMode(){ [].forEach.call($('mode').children, function(b){ b.setAttribute('aria-pressed', String(b.dataset.m === mode)); }); }
+  function use(){
+    var s = $('amt').value.trim(), e = null;
+    if (mode === 'd'){ if (!/^\d{1,4}(\.\d{1,2})?$/.test(s) || Number(s) > 1000) e = 'Nhập số tiền từ 0 đến 1000 đô la, tối đa 2 chữ số thập phân (dùng dấu chấm), ví dụ 11.56.'; }
+    else if (!/^\d{1,6}$/.test(s) || Number(s) > 100000) e = 'Nhập số cent là số nguyên từ 0 đến 100000, ví dụ 1003.';
+    $('err').textContent = e || ''; $('amt').classList.toggle('bad', !!e);
+    if (e) return;
+    raw = s; build(); S.go(0);
+  }
+  [].forEach.call($('mode').children, function(b){ b.onclick = function(){
+    if (b.dataset.m === mode) return;
+    var old = mode; mode = b.dataset.m; syncMode();
+    var s = raw;
+    if (mode === 'c') $('amt').value = String(Math.round(Number(s) * 100));
+    else { var v = Number(s) / 100; $('amt').value = Number(v.toFixed(2)) > 1000 ? '11.56' : String(Number(v.toFixed(2))); }
+    use();
+  }; });
+  $('bUse').onclick = use;
+  $('amt').addEventListener('keydown', function(e){ if (e.key === 'Enter') use(); });
+  var q = qparam('vd'); if (q === 'cent'){ mode = 'c'; raw = '1003'; } else if (q && /^\d{1,4}(\.\d{1,2})?$/.test(q)) raw = q;
+  $('amt').value = raw; syncMode(); build();
+  var b0 = parseInt(qparam('buoc'), 10); S.go(b0 > 0 ? b0 : 0);
+})();
+</script>
+</body>
+</html>

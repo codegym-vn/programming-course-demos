@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="500">
+<title>Bảng mã ASCII</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1; --p4:#15803d; --p4s:#dcf3e3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16; --p4:#4ade80; --p4s:#13301f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:12px 14px 14px}
+  .lead{color:var(--muted);margin:0 0 10px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input[type=text],.field input[type=number],.field select{padding:5px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chips>span{font-size:13px;color:var(--muted)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:3px 9px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-right:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 11px;
+    cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:0}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:7px 12px;min-height:52px;font-size:14px}
+  .status b{display:block;font-size:12.5px;color:var(--accent)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 12px;
+    font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .console .ex{color:#fca5a5}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:4px 12px;min-width:70px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{background:var(--cur);outline:2px solid var(--cur-bar)}
+  @media (max-width:560px){.wrap{padding:10px 10px 12px}}
+
+  #chIn{width:54px;text-align:center}
+  #codeIn{width:84px}
+  .info{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-bottom:10px;align-items:stretch}
+  .big{width:78px;height:78px;border:2px solid var(--cur-bar);background:var(--cur);border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font:700 34px ui-monospace,Menlo,Consolas,monospace;flex-direction:column;line-height:1.1}
+  .big small{font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .right{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .right .vars .var{text-align:left}
+  .code{padding:4px 0}
+  .grid{display:grid;grid-template-columns:repeat(16,1fr);gap:3px}
+  .c{border:1px solid var(--line);border-radius:6px;background:var(--node);color:var(--text);cursor:pointer;padding:2px 0 1px;
+    display:flex;flex-direction:column;align-items:center;font:600 15px/1.15 ui-monospace,Menlo,Consolas,monospace;min-width:0}
+  .c small{font:10px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);font-weight:400}
+  .c.dg{background:var(--p4s);border-color:var(--p4)}
+  .c.up{background:var(--p1s);border-color:var(--p1)}
+  .c.lo{background:var(--p2s);border-color:var(--p2)}
+  .c.sel{background:var(--cur);border-color:var(--cur-bar);outline:2px solid var(--cur-bar);position:relative;z-index:1}
+  .c.ctl{color:var(--muted);font-size:10px;justify-content:center}
+  .legend{display:flex;gap:6px 12px;flex-wrap:wrap;font-size:12.5px;margin:0 0 6px;align-items:center}
+  .legend span{padding:0 8px;border-radius:999px;border:1px solid}
+  .l4{color:var(--p4);border-color:var(--p4);background:var(--p4s)}
+  .l1{color:var(--p1);border-color:var(--p1);background:var(--p1s)}
+  .l2{color:var(--p2);border-color:var(--p2);background:var(--p2s)}
+  .legend em{color:var(--muted);font-style:normal}
+  @media (max-width:560px){.grid{grid-template-columns:repeat(8,1fr)}.info{grid-template-columns:1fr}.big{width:100%;height:56px;flex-direction:row;gap:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm một ô, gõ một ký tự hoặc nhập mã số. Nút <code>++ch</code> / <code>--ch</code> (phím → ←) dịch sang ký tự kế tiếp hoặc liền trước.</p>
+  <div class="controls">
+    <div class="field"><label for="chIn">Ký tự</label><input id="chIn" type="text" value="a" autocomplete="off"></div>
+    <div class="field"><label for="codeIn">Mã</label><input id="codeIn" type="text" inputmode="numeric" value="97"></div>
+    <div class="btns"><button class="btn ghost" id="dec">--ch</button><button class="btn" id="inc">++ch</button></div>
+    <span class="err" id="err"></span>
+  </div>
+  <div class="info">
+    <div class="big" id="big"></div>
+    <div class="right">
+      <div class="vars" id="vars"></div>
+      <div class="code" id="code"></div>
+    </div>
+  </div>
+  <div class="legend"><span class="l4">'0'–'9': 48–57</span><span class="l1">'A'–'Z': 65–90</span><span class="l2">'a'–'z': 97–122</span><em id="note">Mã 0–31 là ký tự điều khiển, không có ô trong bảng.</em></div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+/*LOGIC*/
+function hex4(c){ return ('000' + c.toString(16).toUpperCase()).slice(-4); }
+function literal(c){ // cách viết hằng char trong Java
+  var esc = {8:"'\\b'", 9:"'\\t'", 10:"'\\n'", 12:"'\\f'", 13:"'\\r'", 39:"'\\''", 92:"'\\\\'"};
+  if (esc[c]) return esc[c];
+  if (c < 32 || c === 127 || (c >= 128 && c < 160)) return "'\\u" + hex4(c) + "'";
+  return "'" + String.fromCharCode(c) + "'";
+}
+function group(c){
+  if (c >= 48 && c <= 57) return 'chữ số';
+  if (c >= 65 && c <= 90) return 'chữ hoa';
+  if (c >= 97 && c <= 122) return 'chữ thường';
+  if (c === 32) return 'dấu cách';
+  if (c < 32 || c === 127) return 'ký tự điều khiển';
+  if (c < 128) return 'dấu, ký hiệu';
+  return 'ngoài bảng ASCII';
+}
+/*END*/
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var code = 97, start = 97, ops = [];
+  var names = {0:'NUL', 7:'BEL', 8:'BS', 9:'TAB', 10:'LF', 13:'CR', 27:'ESC', 32:'SP', 127:'DEL'};
+  function shown(c){ return (c < 32 || c === 127) ? (names[c] || 'ctl') : (c === 32 ? '␣' : String.fromCharCode(c)); }
+  function hl(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/^(\s*)(char)\b/, '$1<span class="kw">char</span>').replace(/('(?:\\u[0-9A-F]{4}|\\.|[^'])')/g, '<span class="str">$1</span>').replace(/(\/\/.*)$/, '<span class="cm">$1</span>'); }
+  function buildGrid(){
+    var h = '';
+    for (var c = 32; c <= 127; c++) {
+      var cls = 'c' + (c >= 48 && c <= 57 ? ' dg' : c >= 65 && c <= 90 ? ' up' : c >= 97 && c <= 122 ? ' lo' : '') + (c === 127 || c === 32 ? ' ctl' : '');
+      h += '<button class="' + cls + '" data-c="' + c + '" title="' + group(c) + '">' + shown(c) + '<small>' + c + '</small></button>';
+    }
+    $('grid').innerHTML = h;
+    $('grid').addEventListener('click', function(e){ var b = e.target.closest('.c'); if (b) select(+b.dataset.c); });
+  }
+  function render(fromInput){
+    $('big').innerHTML = (code < 32 || code === 127 ? '<span style="font-size:18px">' + (names[code] || 'ctl') + '</span>' : code === 32 ? '␣' : String.fromCharCode(code).replace('<','&lt;')) + '<small>' + group(code) + '</small>';
+    $('vars').innerHTML =
+      '<div class="var"><small>mã thập phân</small><strong>' + code + '</strong></div>' +
+      '<div class="var"><small>viết bằng Unicode</small><strong>\'\\u' + hex4(code) + '\'</strong></div>' +
+      '<div class="var"><small>(char) ' + code + '</small><strong>' + literal(code).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</strong></div>';
+    var lines = ['char ch = ' + literal(start) + ';' + '   // mã ' + start];
+    var shownOps = ops.length > 3 ? ops.slice(-3) : ops;
+    if (ops.length > 3) lines.push('// ... ' + (ops.length - 3) + ' lệnh trước đó');
+    shownOps.forEach(function(o){ lines.push(o); });
+    $('code').innerHTML = lines.map(function(l, i){ return '<div class="ln' + (i === lines.length - 1 && ops.length ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>'; }).join('');
+    if (fromInput !== 'ch') $('chIn').value = (code >= 32 && code !== 127) ? String.fromCharCode(code) : '';
+    if (fromInput !== 'code') $('codeIn').value = code;
+    $('chIn').classList.remove('bad'); $('codeIn').classList.remove('bad'); $('err').textContent = '';
+    document.querySelectorAll('.c.sel').forEach(function(b){ b.classList.remove('sel'); });
+    var cell = document.querySelector('.c[data-c="' + code + '"]');
+    if (cell) cell.classList.add('sel');
+    $('note').textContent = code > 127 ? 'Mã ' + code + ' nằm ngoài 128 mã ASCII nên không có ô trong bảng (Java vẫn lưu được vì dùng Unicode).'
+      : code < 32 ? 'Mã ' + code + ' là ký tự điều khiển (không in ra được), nên không có ô trong bảng.'
+      : 'Mã 0–31 là ký tự điều khiển, không có ô trong bảng.';
+    $('dec').disabled = code <= 0; $('inc').disabled = code >= 65535;
+  }
+  function select(c, from){ code = start = c; ops = []; render(from); }
+  function step(d){
+    var old = code; code += d;
+    ops.push((d > 0 ? '++ch;' : '--ch;') + '   // ' + literal(old) + ' (' + old + ') → ' + literal(code) + ' (' + code + ')');
+    render();
+  }
+  $('inc').onclick = function(){ step(1); };
+  $('dec').onclick = function(){ step(-1); };
+  $('chIn').addEventListener('input', function(){
+    var v = this.value;
+    if (v.length === 0) return;
+    if (v.length > 1 && !(v.length === 2 && v.codePointAt(0) > 65535)) { v = v.slice(-1); this.value = v; }
+    var cp = v.codePointAt(0);
+    if (cp > 65535) { this.classList.add('bad'); $('err').textContent = 'Ký tự này có mã lớn hơn 65535, không vừa một biến char.'; return; }
+    select(cp, 'ch');
+  });
+  $('codeIn').addEventListener('input', function(){
+    var v = this.value.trim();
+    if (!/^\d{1,5}$/.test(v) || +v > 65535) { this.classList.add('bad'); $('err').textContent = 'Nhập mã là số nguyên từ 0 đến 65535.'; return; }
+    select(+v, 'code');
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' && code < 65535) { step(1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' && code > 0) { step(-1); e.preventDefault(); }
+  });
+  buildGrid();
+  select(97);
+  if (location.hash === '#demo') step(1);
+})();
+</script>
+</body>
+</html>

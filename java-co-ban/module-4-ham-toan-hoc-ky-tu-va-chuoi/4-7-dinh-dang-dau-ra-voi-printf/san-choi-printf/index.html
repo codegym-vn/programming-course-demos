@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Sân chơi printf</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1; --p4:#15803d; --p4s:#dcf3e3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16; --p4:#4ade80; --p4s:#13301f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:12px 14px 14px}
+  .lead{color:var(--muted);margin:0 0 10px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input[type=text],.field input[type=number],.field select{padding:5px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chips>span{font-size:13px;color:var(--muted)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:3px 9px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-right:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 11px;
+    cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:0}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:7px 12px;min-height:52px;font-size:14px}
+  .status b{display:block;font-size:12.5px;color:var(--accent)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 12px;
+    font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .console .ex{color:#fca5a5}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:4px 12px;min-width:70px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{background:var(--cur);outline:2px solid var(--cur-bar)}
+  @media (max-width:560px){.wrap{padding:10px 10px 12px}}
+
+  .stmt{display:flex;flex-wrap:wrap;align-items:center;gap:4px;background:var(--code-bg);border-radius:8px;padding:8px 10px;
+    font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-bottom:8px}
+  .stmt .str{white-space:pre}
+  .stmt input{padding:4px 7px;border:1.5px solid var(--accent);border-radius:6px;background:var(--card);color:var(--text);
+    font:600 14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .stmt input.bad{border-color:var(--false);background:var(--false-soft)}
+  #spec{width:82px;color:var(--str)}#val{width:120px}
+  .gridwrap{overflow-x:auto;padding:4px 0}
+  .out{display:flex;width:max-content;align-items:flex-start}
+  .br{font:700 22px/40px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding:0 4px}
+  .oc{display:flex;flex-direction:column;align-items:center;width:28px}
+  .ocell{width:28px;height:40px;border:1.5px solid var(--node-line);margin-left:-1.5px;display:flex;align-items:center;justify-content:center;
+    font:700 18px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .oc:first-of-type .ocell{margin-left:0}
+  .ocell.pad{background:var(--p3s);border-color:var(--p3);color:var(--p3);font-weight:400}
+  .ocell.val{background:var(--p1s);border-color:var(--p1)}
+  .ocol{font:10.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:2px}
+  .empty{font-size:13px;color:var(--muted);padding:10px 0}
+  .facts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .fact{background:var(--code-bg);border-radius:8px;padding:3px 10px;font-size:13px}
+  .fact b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+  .fact.p{background:var(--p3s);color:var(--p3)}.fact.v{background:var(--p1s);color:var(--p1)}
+  .console{margin-bottom:8px;white-space:pre}
+  @media (max-width:560px){.oc,.ocell{width:22px}.ocell{height:34px;font-size:15px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Sửa đặc tả và giá trị (hoặc bấm một ví dụ) để xem <code>printf</code> đặt từng ký tự vào ô nào. Ô cam là dấu cách được thêm vào.</p>
+  <div class="stmt">
+    <span>System.out.printf(</span><span class="str">"[</span><input id="spec" type="text" value="%8.2f" spellcheck="false" autocomplete="off" aria-label="Đặc tả định dạng"><span class="str">]\n"</span><span>,</span>
+    <input id="val" type="text" value="3.14159" spellcheck="false" autocomplete="off" aria-label="Giá trị"><span>);</span>
+  </div>
+  <div class="chips" style="margin-bottom:8px" id="chips"><span>Ví dụ:</span></div>
+  <div class="card">
+    <p class="panel-title">Kết quả trên từng ô (số dưới ô là vị trí cột)</p>
+    <div class="gridwrap"><div class="out" id="out"></div></div>
+    <div class="facts" id="facts"></div>
+    <div class="console" id="con"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+/*LOGIC*/
+function parseValue(src){
+  var v = src.trim();
+  if (/^-?\d+$/.test(v)) {
+    var n = Number(v);
+    if (n > 2147483647 || n < -2147483648) return {err:'Số nguyên này vượt quá phạm vi của int.'};
+    return {type:'Integer', v:n, src:v};
+  }
+  if (/^-?(\d+\.\d*|\.\d+)$/.test(v)) {
+    var d = Number(v);
+    if (Math.abs(d) >= 1e15) return {err:'Hãy nhập số thực nhỏ hơn 10^15 để dễ quan sát.'};
+    return {type:'Double', v:d, src:v};
+  }
+  if (/^'(\\.|[^'\\])'$/.test(v)) {
+    var c = v.slice(1, -1);
+    if (c.length === 2) { var m = {n:'\n', t:'\t', '\\':'\\', "'":"'", '"':'"'}; if (!(c[1] in m)) return {err:'Ký tự thoát chưa hỗ trợ.'}; c = m[c[1]]; }
+    return {type:'Character', v:c, src:v};
+  }
+  if (/^"([^"\\]|\\.)*"$/.test(v)) {
+    var s = v.slice(1, -1).replace(/\\(.)/g, function(_, x){ return x === 'n' ? '\n' : x === 't' ? '\t' : x; });
+    return {type:'String', v:s, src:v};
+  }
+  if (v === 'true' || v === 'false') return {type:'Boolean', v:v === 'true', src:v};
+  return {err:'Giá trị chưa đúng cách viết của Java: chuỗi đặt trong nháy kép "Java", ký tự trong nháy đơn \'A\', số thực có dấu chấm 3.5.'};
+}
+function parseSpec(spec){
+  var m = /^%(-)?([1-9]\d*)?(?:\.(\d+))?([a-zA-Z%])?$/.exec(spec.trim());
+  if (!m || !m[4]) return {err:'Đặc tả phải có dạng %[-][độ rộng][.độ chính xác]kiểu, ví dụ %5d, %8.2f, %-10s.'};
+  if ('dfscb'.indexOf(m[4]) < 0) return {err:'Trang này chỉ mô phỏng các kiểu d, f, s, c, b.'};
+  var w = m[2] ? parseInt(m[2], 10) : null, p = m[3] !== undefined ? parseInt(m[3], 10) : null;
+  if (w !== null && w > 40) return {err:'Hãy chọn độ rộng không quá 40 để dễ quan sát.'};
+  if (p !== null && p > 12) return {err:'Hãy chọn độ chính xác không quá 12.'};
+  return {left:!!m[1], width:w, prec:p, conv:m[4], text:spec.trim()};
+}
+// Các chữ số ngắn nhất của số thực (giống Double.toString), dạng {neg, digits, e}: giá trị = 0.digits * 10^e
+function shortest(x){
+  var neg = x < 0 || Object.is(x, -0), s = Math.abs(x).toExponential(), parts = s.split('e');
+  var digits = parts[0].replace('.', ''), exp = parseInt(parts[1], 10) + 1;
+  digits = digits.replace(/0+$/, ''); if (digits === '') { digits = '0'; exp = 1; }
+  return {neg:neg, digits:digits, e:exp};
+}
+function fixedHalfUp(x, p){
+  var sh = shortest(x), d = sh.digits, e = sh.e;
+  // dịch về dạng nguyên.thập phân
+  var intPart, frac;
+  if (e <= 0) { intPart = '0'; frac = '0'.repeat(-e) + d; }
+  else if (e >= d.length) { intPart = d + '0'.repeat(e - d.length); frac = ''; }
+  else { intPart = d.slice(0, e); frac = d.slice(e); }
+  if (frac.length > p) {
+    var up = frac.charCodeAt(p) >= 53; // '5'
+    var keep = (intPart + frac.slice(0, p)).split('');
+    if (up) {
+      var i = keep.length - 1;
+      while (i >= 0) { if (keep[i] === '9') { keep[i] = '0'; i--; } else { keep[i] = String.fromCharCode(keep[i].charCodeAt(0) + 1); break; } }
+      if (i < 0) keep.unshift('1');
+    }
+    var all = keep.join('');
+    intPart = all.slice(0, all.length - p); frac = all.slice(all.length - p);
+  } else frac = frac + '0'.repeat(p - frac.length);
+  intPart = intPart.replace(/^0+(?=\d)/, '');
+  var out = intPart + (p > 0 ? '.' + frac : '');
+  if (sh.neg && /[1-9]/.test(out)) out = '-' + out;
+  else if (sh.neg) out = '-' + out; // Java in -0.00 cho số âm rất nhỏ
+  return out;
+}
+function javaDoubleToString(x){
+  if (x === 0) return Object.is(x, -0) ? '-0.0' : '0.0';
+  var a = Math.abs(x), sh = shortest(x), sign = sh.neg ? '-' : '';
+  if (a >= 1e-3 && a < 1e7) {
+    var d = sh.digits, e = sh.e, s;
+    if (e <= 0) s = '0.' + '0'.repeat(-e) + d;
+    else if (e >= d.length) s = d + '0'.repeat(e - d.length) + '.0';
+    else s = d.slice(0, e) + '.' + d.slice(e);
+    return sign + s;
+  }
+  var dd = sh.digits;
+  return sign + dd[0] + '.' + (dd.length > 1 ? dd.slice(1) : '0') + 'E' + (sh.e - 1);
+}
+function formatOne(spec, val){
+  var S = parseSpec(spec); if (S.err) return {specErr:S.err};
+  var V = parseValue(val); if (V.err) return {valErr:V.err};
+  var ex = null, body;
+  if (S.left && S.width === null) ex = 'java.util.MissingFormatWidthException: ' + S.text;
+  else if (S.prec !== null && (S.conv === 'd' || S.conv === 'c')) ex = 'java.util.IllegalFormatPrecisionException: ' + S.prec;
+  else if (S.conv === 'd' && V.type !== 'Integer') ex = 'java.util.IllegalFormatConversionException: d != java.lang.' + V.type;
+  else if (S.conv === 'f' && V.type !== 'Double') ex = 'java.util.IllegalFormatConversionException: f != java.lang.' + V.type;
+  else if (S.conv === 'c' && V.type !== 'Character' && V.type !== 'Integer') ex = 'java.util.IllegalFormatConversionException: c != java.lang.' + V.type;
+  else if (S.conv === 'c' && V.type === 'Integer' && (V.v < 0 || V.v > 0x10FFFF)) ex = 'java.util.IllegalFormatCodePointException: Code point = 0x' + (V.v >>> 0).toString(16);
+  if (ex) return {S:S, V:V, ex:ex};
+  if (S.conv === 'd') body = String(V.v);
+  else if (S.conv === 'f') body = fixedHalfUp(V.v, S.prec === null ? 6 : S.prec);
+  else if (S.conv === 'c') body = V.type === 'Integer' ? String.fromCodePoint(V.v) : V.v;
+  else if (S.conv === 'b') body = V.type === 'Boolean' ? String(V.v) : 'true';
+  else body = V.type === 'Double' ? javaDoubleToString(V.v) : String(V.v);
+  if ((S.conv === 's' || S.conv === 'b') && S.prec !== null) body = body.slice(0, S.prec);
+  var pad = S.width !== null ? Math.max(0, S.width - body.length) : 0;
+  var out = S.left ? body + ' '.repeat(pad) : ' '.repeat(pad) + body;
+  return {S:S, V:V, body:body, pad:pad, out:out};
+}
+/*END*/
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var EX = [['%5d','42'],['%8.2f','3.14159'],['%8s','"Java"'],['%3d','12345'],['%10.2f','1234.5'],['%5c',"'A'"],['%6b','false'],['%-8s','"Java"'],['%d','3.5']];
+  EX.forEach(function(e){ var b = document.createElement('button'); b.className = 'chip'; b.textContent = e[0] + ", " + e[1];
+    b.onclick = function(){ $('spec').value = e[0]; $('val').value = e[1]; render(); }; $('chips').appendChild(b); });
+  function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var KIND = {d:'số nguyên', f:'số thực', s:'chuỗi', c:'ký tự', b:'boolean'};
+  function render(){
+    var r = formatOne($('spec').value, $('val').value);
+    $('spec').classList.toggle('bad', !!r.specErr); $('val').classList.toggle('bad', !!r.valErr);
+    var st = $('status');
+    if (r.specErr || r.valErr) {
+      $('out').innerHTML = '<div class="empty">Chưa có kết quả.</div>'; $('facts').innerHTML = ''; $('con').innerHTML = '';
+      st.className = 'status bad'; st.innerHTML = '<b>' + (r.specErr ? 'Đặc tả chưa đúng' : 'Giá trị chưa đúng') + '</b>' + esc(r.specErr || r.valErr);
+      return;
+    }
+    var S = r.S, V = r.V;
+    var facts = '<span class="fact">độ rộng: <b>' + (S.width === null ? 'không có' : S.width) + '</b></span>'
+      + '<span class="fact">độ chính xác: <b>' + (S.prec === null ? 'không có' : S.prec) + '</b></span>'
+      + '<span class="fact">kiểu: <b>' + S.conv + '</b> (' + KIND[S.conv] + ')</span>'
+      + (S.left ? '<span class="fact">cờ <b>-</b>: căn trái</span>' : '')
+      + '<span class="fact">giá trị: <b>' + esc(V.src) + '</b> (' + V.type.replace('Integer','int').replace('Double','double').replace('Character','char').replace('Boolean','boolean') + ')</span>';
+    if (r.ex) {
+      $('out').innerHTML = '<div class="empty">Không in được gì: chương trình dừng với lỗi.</div>';
+      $('facts').innerHTML = facts;
+      $('con').innerHTML = 'Exception in thread "main"\n<span class="ex">' + esc(r.ex) + '</span>';
+      var why = /Conversion/.test(r.ex) ? 'Kiểu <code>%' + S.conv + '</code> cần ' + (S.conv === 'd' ? 'số nguyên' : S.conv === 'f' ? 'số thực' : 'ký tự') + ', nhưng giá trị là ' + V.type.replace('Integer','int').replace('Double','double').replace('Character','char').replace('Boolean','boolean').replace('String','String (chuỗi)') + '. Java không tự đổi kiểu cho bạn.'
+        : /Precision/.test(r.ex) ? 'Kiểu <code>%' + S.conv + '</code> không dùng độ chính xác. Chỉ số thực (<code>%f</code>) mới có chữ số thập phân.'
+        : /MissingFormatWidth/.test(r.ex) ? 'Cờ <code>-</code> (căn trái) cần đi kèm độ rộng, ví dụ <code>%-5d</code>.' : 'Mã ký tự không hợp lệ.';
+      st.className = 'status bad'; st.innerHTML = '<b>Lỗi khi chạy</b>' + why;
+      return;
+    }
+    var h = '<span class="br">[</span>', chars = Array.from(r.out), n = chars.length, padSet = {};
+    for (var i = 0; i < n; i++) {
+      var isPad = S.left ? i >= n - r.pad : i < r.pad, c = chars[i];
+      h += '<div class="oc"><div class="ocell ' + (isPad ? 'pad' : 'val') + '">' + (isPad ? '·' : c === ' ' ? '␣' : esc(c)) + '</div><span class="ocol">' + (i + 1) + '</span></div>';
+    }
+    if (n === 0) h += '<div class="empty">(rỗng)</div>';
+    h += '<span class="br">]</span>';
+    $('out').innerHTML = h;
+    var bl = Array.from(r.body).length;
+    facts += '<span class="fact v">phần giá trị: <b>' + bl + '</b> ký tự</span>' + (r.pad ? '<span class="fact p">thêm <b>' + r.pad + '</b> dấu cách ' + (S.left ? 'bên phải' : 'bên trái') + '</span>' : '');
+    $('facts').innerHTML = facts;
+    $('con').innerHTML = esc('[' + r.out + ']');
+    var msg;
+    if (S.width === null) msg = '<b>Không có độ rộng</b>Giá trị chiếm đúng số ký tự nó cần (' + bl + ' ký tự).';
+    else if (S.width < bl) msg = '<b>Độ rộng tự giãn</b>Đặc tả chỉ xin ' + S.width + ' ô nhưng giá trị cần ' + bl + ' ô. Java không cắt bớt, mà dùng đủ ' + bl + ' ô.';
+    else if (S.width === bl) msg = '<b>Vừa khít</b>Giá trị dài đúng ' + bl + ' ký tự bằng độ rộng, không cần thêm dấu cách.';
+    else msg = '<b>Thêm dấu cách ' + (S.left ? 'bên phải (căn trái)' : 'bên trái (căn phải)') + '</b>Độ rộng ' + S.width + ' − ' + bl + ' ký tự của giá trị = ' + r.pad + ' dấu cách.';
+    if (S.conv === 'f') msg += ' Phần số in ra là <code>' + esc(r.body) + '</code>: ' + (S.prec === null ? 'mặc định 6 chữ số thập phân' : S.prec + ' chữ số thập phân, đã làm tròn') + '; dấu chấm cũng tính là một ký tự.';
+    if ((S.conv === 's' || S.conv === 'b') && S.prec !== null) msg += ' Với <code>%' + S.conv + '</code>, độ chính xác ' + S.prec + ' nghĩa là chỉ lấy ' + S.prec + ' ký tự đầu.';
+    if (S.conv === 'c' && V.type === 'Integer') msg += ' Số ' + V.v + ' được hiểu là mã ký tự.';
+    if (S.conv === 'b' && V.type !== 'Boolean') msg += ' <code>%b</code> với giá trị không phải boolean (và khác null) luôn in <code>true</code>.';
+    st.className = 'status'; st.innerHTML = msg;
+  }
+  $('spec').addEventListener('input', render);
+  $('val').addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>

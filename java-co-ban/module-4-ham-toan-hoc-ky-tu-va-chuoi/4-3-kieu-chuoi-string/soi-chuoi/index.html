@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Soi chuỗi</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1; --p4:#15803d; --p4s:#dcf3e3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16; --p4:#4ade80; --p4s:#13301f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:12px 14px 14px}
+  .lead{color:var(--muted);margin:0 0 10px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input[type=text],.field input[type=number],.field select{padding:5px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chips>span{font-size:13px;color:var(--muted)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:3px 9px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-right:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 11px;
+    cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:0}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:7px 12px;min-height:52px;font-size:14px}
+  .status b{display:block;font-size:12.5px;color:var(--accent)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 12px;
+    font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .console .ex{color:#fca5a5}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:4px 12px;min-width:70px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{background:var(--cur);outline:2px solid var(--cur-bar)}
+  @media (max-width:560px){.wrap{padding:10px 10px 12px}}
+
+  .srow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px;font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .srow .kw2{color:var(--kw);font-weight:600}
+  #sIn{width:230px;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .len{background:var(--code-bg);border-radius:8px;padding:4px 10px}
+  .len b{font-size:16px}
+  .strip{overflow-x:auto;padding:4px 0 2px;margin-bottom:6px}
+  .cols{display:flex;gap:0;width:max-content;margin:0 auto}
+  .col{display:flex;flex-direction:column;align-items:center;width:31px;flex:none}
+  .cell{width:31px;height:38px;border:2px solid var(--node-line);margin-left:-2px;display:flex;align-items:center;justify-content:center;
+    font:700 17px ui-monospace,Menlo,Consolas,monospace;background:var(--node);color:var(--text);position:relative}
+  .col:first-child .cell{margin-left:0}
+  .cell.sp::after{content:"␣";color:var(--muted);font-weight:400}
+  .cell.ghost{border-style:dashed;background:transparent;color:var(--muted);font-size:11px;font-weight:400;border-color:var(--node-line)}
+  .cell.ghost.hidden{visibility:hidden}
+  .cell.sel{background:var(--p1s);border-color:var(--p1);z-index:1}
+  .cell.cur{background:var(--cur);border-color:var(--cur-bar);z-index:2}
+  .cell.bad{background:var(--false-soft);border-color:var(--false);border-style:solid;z-index:2}
+  .cell.hit{background:var(--true-soft);border-color:var(--true);z-index:2}
+  .cell.seen{opacity:.45}
+  .ix{font:11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:3px;height:16px}
+  .ix.on{color:var(--text);font-weight:700}
+  .mk{height:30px;font:600 11.5px ui-monospace,Menlo,Consolas,monospace;text-align:center;line-height:1.05;white-space:nowrap}
+  .mk .a{display:block;font-size:13px}
+  .mk.m1{color:var(--p1)}.mk.m2{color:var(--p3)}.mk.m3{color:var(--false)}
+  .tabbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .pane{display:none}.pane.on{display:block}
+  .prow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .slider{display:flex;align-items:center;gap:6px;font:600 14px ui-monospace,Menlo,Consolas,monospace}
+  .slider input[type=range]{width:180px;accent-color:var(--accent)}
+  .slider output{min-width:26px;text-align:right}
+  .call{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--code-bg);border-radius:8px;padding:7px 12px;
+    font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-bottom:8px;min-height:40px}
+  .call .arrow{color:var(--muted)}
+  .call .res{font-weight:700;color:var(--str)}
+  .call .res.e{color:var(--false)}
+  .call .meta{color:var(--muted);font-size:13px;font-family:system-ui,sans-serif}
+  .console{min-height:0;margin-bottom:8px}
+  .console:empty{display:none}
+  #tIn{width:110px}#fIn{width:56px}
+  .bottom{display:grid;grid-template-columns:1fr;gap:8px}
+  @media (max-width:560px){.col,.cell{width:19px}.cell{height:32px;font-size:13.5px}.ix{font-size:9.5px}.mk{font-size:10px}#sIn{width:100%}.slider input[type=range]{width:140px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Đổi chuỗi <code>s</code> nếu muốn, rồi kéo thanh trượt để xem chỉ số làm việc thế nào.</p>
+  <div class="srow">
+    <label for="sIn"><span class="kw2">String</span> s =</label>
+    <input id="sIn" type="text" maxlength="20" value="Welcome to Java" autocomplete="off" spellcheck="false">
+    <span class="len">s.length() = <b id="lenV">15</b></span>
+    <span class="err" id="err"></span>
+  </div>
+  <div class="tabbar">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-t="charat" aria-selected="true">charAt</button>
+      <button class="tab" role="tab" data-t="substring" aria-selected="false">substring</button>
+      <button class="tab" role="tab" data-t="indexof" aria-selected="false">indexOf</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="strip"><div class="cols" id="cols"></div></div>
+
+    <div class="pane" id="p-charat">
+      <div class="prow">
+        <div class="slider"><label for="iR">i</label><button class="btn ghost" id="iDec" aria-label="Giảm i">◀</button><input id="iR" type="range" min="-1" max="15" value="8"><button class="btn ghost" id="iInc" aria-label="Tăng i">▶</button><output id="iV">8</output></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p-substring">
+      <div class="prow">
+        <div class="seg" role="group" aria-label="Số đối số"><button id="a2" aria-pressed="true">substring(begin, end)</button><button id="a1" aria-pressed="false">substring(begin)</button></div>
+      </div>
+      <div class="prow">
+        <div class="slider"><label for="bR" style="color:var(--p1)">begin</label><input id="bR" type="range" min="-1" max="16" value="0"><output id="bV">0</output></div>
+        <div class="slider" id="endBox"><label for="eR" style="color:var(--p3)">end</label><input id="eR" type="range" min="-1" max="16" value="7"><output id="eV">7</output></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p-indexof">
+      <div class="prow">
+        <div class="seg" role="group" aria-label="Phương thức"><button id="mFirst" aria-pressed="true">indexOf</button><button id="mLast" aria-pressed="false">lastIndexOf</button></div>
+        <div class="field"><label for="tIn">tìm</label><input id="tIn" type="text" maxlength="10" value="o" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="fIn">từ chỉ số</label><input id="fIn" type="text" inputmode="numeric" value="" placeholder="(bỏ)"></div>
+      </div>
+      <div class="prow btns">
+        <button class="btn" id="next">Bước tiếp</button>
+        <button class="btn ghost" id="prev">Lùi lại</button>
+        <button class="btn ghost" id="all">Chạy hết</button>
+        <button class="btn ghost" id="reset">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="call" id="call"></div>
+    <div class="console" id="con"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+/*LOGIC*/
+function charAtResult(s, i){
+  if (i < 0 || i >= s.length) return {err:'Index ' + i + ' out of bounds for length ' + s.length};
+  return {ch:s.charAt(i)};
+}
+function substringResult(s, b, e){ // e === null: dạng một đối số
+  var end = (e === null) ? s.length : e;
+  if (b < 0 || b > end || end > s.length) return {err:'Range [' + b + ', ' + end + ') out of bounds for length ' + s.length};
+  return {str:s.substring(b, end)};
+}
+// Sinh các bước so sánh của indexOf / lastIndexOf. from === null: không có đối số thứ hai.
+function searchSteps(s, t, from, last){
+  var n = s.length, m = t.length, steps = [], i, start, res = -1;
+  if (!last) {
+    start = (from === null) ? 0 : Math.max(from, 0);
+    for (i = start; i <= n - m; i++) {
+      var ok = s.substr(i, m) === t;
+      steps.push({i:i, ok:ok});
+      if (ok) { res = i; break; }
+    }
+  } else {
+    start = n - m;
+    if (from !== null) start = Math.min(from, n - m);
+    for (i = start; i >= 0; i--) {
+      var ok2 = s.substr(i, m) === t;
+      steps.push({i:i, ok:ok2});
+      if (ok2) { res = i; break; }
+    }
+  }
+  return {start:start, steps:steps, result:res};
+}
+function jchar(c){ return c === "'" ? "'\\''" : c === '\\' ? "'\\\\'" : "'" + c + "'"; }
+function jstr(x){ return '"' + x.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"'; }
+/*END*/
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var Q = new URLSearchParams(location.search);
+  var s = 'Welcome to Java', tab = 'charat';
+  var ci = 8, sb = 0, se = 7, oneArg = false;
+  var last = false, target = 'o', from = null, run = null, pos = 0;
+  if (Q.get('s') && Q.get('s').length <= 20) s = Q.get('s');
+  $('sIn').value = s;
+  var vd = (Q.get('vd') || '').toLowerCase();
+  if (vd === 'substring' || vd === 'indexof' || vd === 'charat') tab = vd;
+  function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function exc(msg){ return 'Exception in thread "main"\n<span class="ex">java.lang.StringIndexOutOfBoundsException:\n' + esc(msg) + '</span>'; }
+
+  // Vẽ dãy ô: cols -1 .. n
+  function drawCells(cls, marks, ghosts){
+    var n = s.length, h = '';
+    for (var k = -1; k <= n; k++) {
+      var g = (k === -1 || k === n), c = cls[k] || '';
+      var txt = g ? '' : esc(s.charAt(k));
+      var cl = 'cell' + (g ? ' ghost' + (ghosts ? '' : ' hidden') : '') + (s.charAt(k) === ' ' && !g ? ' sp' : '') + (c ? ' ' + c : '');
+      var mk = marks[k] || '';
+      h += '<div class="col"><div class="' + cl + '">' + (s.charAt(k) === ' ' && !g ? '' : txt) + '</div>'
+        + '<div class="ix' + (c && !g ? ' on' : '') + '"' + (g && !ghosts ? ' style="visibility:hidden"' : '') + '>' + k + '</div>'
+        + '<div class="mk">' + mk + '</div></div>';
+    }
+    $('cols').innerHTML = h;
+  }
+  function mark(cls, label){ return '<span class="' + cls + '" style="display:block"><span class="a">▲</span>' + label + '</span>'; }
+  function status(cls, title, body){ var st = $('status'); st.className = 'status' + (cls ? ' ' + cls : ''); st.innerHTML = '<b>' + title + '</b>' + body; }
+
+  function renderCharAt(){
+    var r = charAtResult(s, ci), cls = {}, marks = {};
+    cls[ci] = r.err ? 'bad' : 'cur';
+    marks[ci] = '<span class="mk ' + (r.err ? 'm3' : 'm1') + '" style="display:block"><span class="a">▲</span>i</span>';
+    drawCells(cls, marks, true);
+    $('call').innerHTML = '<span>s.charAt(' + ci + ')</span><span class="arrow">→</span>' + (r.err ? '<span class="res e">lỗi khi chạy</span>' : '<span class="res">' + esc(jchar(r.ch)) + '</span>');
+    $('con').innerHTML = r.err ? exc(r.err) : '';
+    var n = s.length;
+    if (n === 0) status('bad', 'Chuỗi rỗng', 'Chuỗi rỗng không có ký tự nào, nên mọi chỉ số đều không hợp lệ.');
+    else if (r.err) status('bad', ci < 0 ? 'Chỉ số âm' : 'Vượt quá chỉ số cuối', 'Chỉ số hợp lệ chỉ từ 0 đến <code>s.length() - 1</code> = ' + (n - 1) + '. ' + (ci === n ? 'Chỉ số ' + n + ' bằng đúng độ dài chuỗi, đã ra ngoài chuỗi.' : '') + ' Chương trình vẫn biên dịch được nhưng dừng lại khi chạy.');
+    else status('', ci === 0 ? 'Ký tự đầu tiên' : ci === n - 1 ? 'Ký tự cuối cùng' : 'Chỉ số ' + ci, 'Ô thứ ' + (ci + 1) + ' tính từ trái có chỉ số ' + ci + ' (vì chỉ số bắt đầu từ 0).' + (ci === n - 1 ? ' Đây là <code>s.charAt(s.length() - 1)</code>.' : '') + (r.ch === ' ' ? ' Ký tự ở đây là dấu cách.' : ''));
+  }
+  function renderSub(){
+    var e = oneArg ? null : se, r = substringResult(s, sb, e), end = oneArg ? s.length : se, cls = {}, marks = {}, k;
+    if (!r.err) for (k = sb; k < end; k++) cls[k] = 'sel';
+    else { cls[sb] = 'bad'; if (!oneArg) cls[se] = (cls[se] ? cls[se] : 'bad'); }
+    if (!r.err && !oneArg && se < s.length) cls[se] = '';
+    marks[sb] = mark('mk m1', 'begin');
+    if (!oneArg) marks[se] = (se === sb ? '<span class="mk m1" style="display:block"><span class="a">▲</span>b=e</span>' : mark('mk m2', 'end'));
+    drawCells(cls, marks, true);
+    var call = oneArg ? 's.substring(' + sb + ')' : 's.substring(' + sb + ', ' + se + ')';
+    $('call').innerHTML = '<span>' + call + '</span><span class="arrow">→</span>' + (r.err ? '<span class="res e">lỗi khi chạy</span>'
+      : '<span class="res">' + esc(jstr(r.str)) + '</span><span class="meta">độ dài ' + (oneArg ? 's.length() - begin = ' + s.length + ' - ' + sb : 'end - begin = ' + se + ' - ' + sb) + ' = ' + r.str.length + '</span>');
+    $('con').innerHTML = r.err ? exc(r.err) : '';
+    if (r.err) {
+      var why = sb < 0 ? '<code>begin</code> âm.' : (!oneArg && se > s.length) ? '<code>end</code> lớn hơn độ dài chuỗi (' + s.length + ').' : (oneArg ? '<code>begin</code> lớn hơn độ dài chuỗi (' + s.length + ').' : '<code>begin</code> lớn hơn <code>end</code>.');
+      status('bad', 'Chỉ số không hợp lệ', why + ' Chương trình dừng với lỗi runtime.');
+    } else if (r.str.length === 0) status('', 'Chuỗi rỗng', (oneArg ? '<code>begin</code> bằng độ dài chuỗi' : '<code>begin</code> bằng <code>end</code>') + ' nên kết quả là chuỗi rỗng <code>""</code>, không phải lỗi.');
+    else if (oneArg) status('', 'Lấy đến hết chuỗi', 'Từ chỉ số ' + sb + ' đến chỉ số cuối ' + (s.length - 1) + '.');
+    else status('', 'Ký tự tại end không được lấy', 'Lấy các chỉ số ' + sb + ' đến ' + (se - 1) + ' (tức <code>end - 1</code>). Ô có chỉ số ' + se + ' nằm ngoài kết quả.');
+  }
+  function lit(t){ return t.length === 1 ? jchar(t) : jstr(t); }
+  function callText(){
+    return 's.' + (last ? 'lastIndexOf' : 'indexOf') + '(' + lit(target) + (from === null ? '' : ', ' + from) + ')';
+  }
+  function renderIdx(){
+    var cls = {}, marks = {}, k, m = target.length;
+    var done = pos >= run.steps.length;
+    for (k = 0; k < pos - 1; k++) { var st0 = run.steps[k]; for (var j = st0.i; j < st0.i + m; j++) if (!cls[j]) cls[j] = 'seen'; }
+    var curStep = pos > 0 ? run.steps[pos - 1] : null;
+    if (curStep) for (k = curStep.i; k < curStep.i + m; k++) cls[k] = curStep.ok ? 'hit' : 'cur';
+    if (from !== null && run.start >= 0 && run.start < s.length) marks[run.start] = mark('mk m2', 'từ ' + from);
+    if (curStep) marks[curStep.i] = mark('mk ' + (curStep.ok ? 'm1' : 'm1'), 'i=' + curStep.i);
+    drawCells(cls, marks, false);
+    var finished = done && (pos > 0 || run.steps.length === 0);
+    $('call').innerHTML = '<span>' + esc(callText()) + '</span><span class="arrow">→</span>' + (finished ? '<span class="res">' + run.result + '</span>' : '<span class="meta">đang tìm…</span>');
+    $('con').innerHTML = '';
+    $('next').disabled = $('all').disabled = finished && pos >= run.steps.length && (run.steps.length > 0 ? true : pos > 0 || true);
+    $('next').disabled = $('all').disabled = pos >= run.steps.length && pos > 0 || (run.steps.length === 0 && pos > 0);
+    $('prev').disabled = pos === 0;
+    var dir = last ? 'từ phải sang trái' : 'từ trái sang phải';
+    if (pos === 0) {
+      if (run.steps.length === 0) { $('next').disabled = false; status('', 'Sẵn sàng', 'Bấm <b style="display:inline;color:inherit">Bước tiếp</b>.'); }
+      else status('', 'Sẵn sàng', 'Java sẽ dò ' + dir + ', bắt đầu ở chỉ số ' + run.start + '. Bấm <b style="display:inline;color:inherit">Bước tiếp</b> để xem từng lần so sánh.');
+      $('call').innerHTML = '<span>' + esc(callText()) + '</span><span class="arrow">→</span><span class="meta">?</span>';
+      return;
+    }
+    if (run.steps.length === 0) {
+      status('bad', 'Không có chỗ để tìm', 'Bắt đầu ở chỉ số ' + run.start + ' thì không còn đủ ký tự để so sánh, nên kết quả là -1.');
+      $('call').innerHTML = '<span>' + esc(callText()) + '</span><span class="arrow">→</span><span class="res">-1</span>';
+      return;
+    }
+    var what = m === 1 ? '<code>s.charAt(' + curStep.i + ')</code> là ' + esc(jchar(s.charAt(curStep.i)))
+      : '<code>s.substring(' + curStep.i + ', ' + (curStep.i + m) + ')</code> là ' + esc(jstr(s.substr(curStep.i, m)));
+    if (curStep.ok) status('ok', 'Lần so sánh ' + pos + ': khớp', what + '. Dừng ngay và trả về chỉ số ' + curStep.i + (m > 1 ? ' (chỉ số của ký tự đầu của chuỗi con)' : '') + '.');
+    else if (done) status('bad', 'Lần so sánh ' + pos + ': không khớp', what + '. Đã dò hết mà không thấy ' + esc(lit(target)) + ', nên trả về <b style="display:inline;color:inherit">-1</b>.');
+    else status('', 'Lần so sánh ' + pos + ': không khớp', what + ', khác ' + esc(lit(target)) + '. Dò tiếp ' + (last ? 'sang trái' : 'sang phải') + '.');
+  }
+  function newRun(){ run = searchSteps(s, target, from, last); pos = 0; }
+  function render(){
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.t === tab ? 'true' : 'false'); });
+    document.querySelectorAll('.pane').forEach(function(p){ p.classList.toggle('on', p.id === 'p-' + tab); });
+    $('lenV').textContent = s.length;
+    $('lead').innerHTML = tab === 'charat' ? 'Kéo thanh trượt (hoặc phím ← →) để đổi chỉ số <code>i</code>. Thử cả <code>-1</code> và <code>s.length()</code>.'
+      : tab === 'substring' ? 'Kéo <code>begin</code> và <code>end</code> (phím ← → dịch ' + (oneArg ? '<code>begin</code>' : '<code>end</code>') + ') để xem phần chuỗi được cắt ra.'
+      : 'Nhập ký tự hoặc chuỗi cần tìm, rồi bấm <b>Bước tiếp</b> (phím →) để xem Java dò từng vị trí.';
+    if (tab === 'charat') renderCharAt(); else if (tab === 'substring') renderSub(); else renderIdx();
+  }
+  function setRanges(){
+    var n = s.length;
+    $('iR').min = -1; $('iR').max = n; ci = Math.max(-1, Math.min(ci, n)); $('iR').value = ci; $('iV').textContent = ci;
+    $('bR').max = n + 1; $('eR').max = n + 1;
+    sb = Math.min(sb, n + 1); se = Math.min(se, n + 1);
+    $('bR').value = sb; $('eR').value = se; $('bV').textContent = sb; $('eV').textContent = se;
+  }
+  $('sIn').addEventListener('input', function(){
+    s = this.value; setRanges(); newRun(); render();
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.onclick = function(){ tab = b.dataset.t; render(); }; });
+  function setI(v){ ci = Math.max(-1, Math.min(s.length, v)); $('iR').value = ci; $('iV').textContent = ci; render(); }
+  $('iR').addEventListener('input', function(){ setI(+this.value); });
+  $('iDec').onclick = function(){ setI(ci - 1); };
+  $('iInc').onclick = function(){ setI(ci + 1); };
+  $('bR').addEventListener('input', function(){ sb = +this.value; $('bV').textContent = sb; render(); });
+  $('eR').addEventListener('input', function(){ se = +this.value; $('eV').textContent = se; render(); });
+  function setArgs(one){ oneArg = one; $('a1').setAttribute('aria-pressed', one); $('a2').setAttribute('aria-pressed', !one); $('endBox').style.display = one ? 'none' : ''; render(); }
+  $('a1').onclick = function(){ setArgs(true); };
+  $('a2').onclick = function(){ setArgs(false); };
+  function setMode(l){ last = l; $('mLast').setAttribute('aria-pressed', l); $('mFirst').setAttribute('aria-pressed', !l); newRun(); render(); }
+  $('mFirst').onclick = function(){ setMode(false); };
+  $('mLast').onclick = function(){ setMode(true); };
+  $('tIn').addEventListener('input', function(){
+    if (this.value.length === 0) { this.classList.add('bad'); $('err').textContent = 'Hãy nhập ký tự hoặc chuỗi cần tìm.'; return; }
+    this.classList.remove('bad'); $('err').textContent = ''; target = this.value; newRun(); render();
+  });
+  $('fIn').addEventListener('input', function(){
+    var v = this.value.trim();
+    if (v === '') { from = null; }
+    else if (!/^-?\d{1,2}$/.test(v)) { this.classList.add('bad'); $('err').textContent = 'Chỉ số bắt đầu là số nguyên (để trống nếu không dùng).'; return; }
+    else from = parseInt(v, 10);
+    this.classList.remove('bad'); $('err').textContent = ''; newRun(); render();
+  });
+  function next(){ if (run.steps.length === 0) { pos = 1; } else if (pos < run.steps.length) pos++; render(); }
+  function prev(){ if (pos > 0) pos--; if (run.steps.length === 0) pos = 0; render(); }
+  $('next').onclick = next; $('prev').onclick = prev;
+  $('all').onclick = function(){ pos = Math.max(1, run.steps.length); render(); };
+  $('reset').onclick = function(){ pos = 0; render(); };
+  document.addEventListener('keydown', function(e){
+    if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+    if (e.target.type === 'range') return;
+    var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    if (tab === 'charat') setI(ci + d);
+    else if (tab === 'substring') {
+      if (oneArg) { sb = Math.max(-1, Math.min(s.length + 1, sb + d)); $('bR').value = sb; $('bV').textContent = sb; }
+      else { se = Math.max(-1, Math.min(s.length + 1, se + d)); $('eR').value = se; $('eV').textContent = se; }
+      render();
+    } else { if (d > 0) next(); else prev(); }
+  });
+  setRanges(); newRun(); setArgs(false);
+  if (location.hash === '#demo') { if (tab === 'indexof') { pos = 2; } else if (tab === 'charat') { ci = 15; setRanges(); } render(); }
+})();
+</script>
+</body>
+</html>

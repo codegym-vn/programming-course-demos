@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Call stack của TestMax</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .in{color:#93c5fd}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @media (max-width:600px){.code{max-height:270px !important}}
+
+  .stackwrap{display:flex;flex-direction:column;gap:6px}
+  .stack{display:flex;flex-direction:column-reverse;gap:6px;min-height:150px;justify-content:flex-start;padding:6px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px}
+  .stack .empty{color:var(--muted);font-size:13px;text-align:center;margin:auto}
+  .frame{border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:4px 8px;transition:all .3s}
+  .frame.fresh{animation:push .35s ease-out}
+  @keyframes push{from{transform:translateY(-16px);opacity:0}to{transform:none;opacity:1}}
+  .frame.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .frame.popping{opacity:.35;border-style:dashed}
+  .frame .fh{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:3px}
+  .frame .fh small{font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .frame.active .fh small{color:var(--accent)}
+  .frame .fv{display:flex;flex-wrap:wrap;gap:5px}
+  .frame .cell{background:var(--code-bg);border:2px solid transparent;border-radius:6px;padding:1px 8px;font:13px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .frame .cell b{font-weight:700}
+  .frame .cell.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .frame .cell.blank b{color:var(--muted);font-weight:400}
+  .flow{font:600 12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);min-height:18px}
+  .stlabel{font-size:11.5px;color:var(--muted);text-align:center}
+
+  #code{max-height:400px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem bản ghi hoạt động được đặt vào và gỡ khỏi call stack khi chương trình TestMax chạy.</p>
+  <div class="controls">
+    <div class="field"><label for="ii">i =</label><input type="text" id="ii" value="5" inputmode="numeric"><label for="ij">j =</label><input type="text" id="ij" value="2" inputmode="numeric"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Chương trình TestMax</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Call stack</p><div class="stackwrap"><div class="flow" id="flow"></div><div class="stack" id="stack"></div><div class="stlabel">đáy stack</div></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|class|static|void|int|double|char|boolean|String|if|else|switch|case|break|default|return|for|while|new|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: array of strings; o: {cur: number | [from,to], cls: {idx: 'run'|'skip'}, tags: {idx: text}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function tagBool(v){ return v === undefined || v === null ? '<span class="tag n">chưa xét</span>' : '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset};
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+  // frames: [{name, vars:[[n, v]], state, note, chg:[names]}] từ dưới lên
+  function stackHtml(frames){
+    if (!frames.length) return '<div class="empty">Stack trống</div>';
+    return frames.map(function(f){
+      var st = f.state === 'active' ? 'đang chạy' : f.state === 'popping' ? 'đang bị gỡ' : 'tạm dừng';
+      var cells = f.vars.length ? f.vars.map(function(v){
+        var blank = v[1] === null || v[1] === undefined;
+        return '<span class="cell' + (blank ? ' blank' : '') + ((f.chg || []).indexOf(v[0]) >= 0 ? ' chg' : '') + '">' + esc(v[0]) + ': <b>' + (blank ? '?' : esc(v[1])) + '</b></span>';
+      }).join('') : '<span class="cell blank"><b>chưa có biến</b></span>';
+      return '<div class="frame ' + f.state + (f.fresh ? ' fresh' : '') + '" data-k="' + esc(f.name) + '"><div class="fh"><span>' + esc(f.name) + '</span><small>' + st + (f.note ? ' · ' + esc(f.note) : '') + '</small></div><div class="fv">' + cells + '</div></div>';
+    }).join('');
+  }
+
+//SIM-START
+function linesFor(i, j){ return [
+'public class TestMax {',
+'  public static void main(String[] args) {',
+'    int i = ' + i + ';',
+'    int j = ' + j + ';',
+'    int k = max(i, j);',
+'    System.out.println(',
+'        "The maximum of " + i',
+'        + " and " + j + " is " + k);',
+'  }',
+'',
+'  /** Tra ve so lon hon */',
+'  public static int max(int num1, int num2) {',
+'    int result;',
+'',
+'    if (num1 > num2)',
+'      result = num1;',
+'    else',
+'      result = num2;',
+'',
+'    return result;',
+'  }',
+'}']; }
+function simMax(i, j){
+  var S = [], out = [];
+  function snap(ln, title, body, frames, flow){ S.push({ln: ln, title: title, body: body, frames: frames, flow: flow || '', out: out.slice()}); }
+  function main(vars, state, chg, fresh){ return {name: 'main', vars: vars, state: state || 'active', chg: chg || [], fresh: fresh}; }
+  function mx(vars, state, chg, fresh){ return {name: 'max', vars: vars, state: state || 'active', chg: chg || [], fresh: fresh}; }
+  var mv = [['i', i], ['j', j], ['k', null]];
+  snap(1, 'main được gọi', 'Máy ảo Java gọi <code>main</code>. Một bản ghi hoạt động của <code>main</code> được đặt vào stack.', [main([], 'active', [], true)]);
+  snap(2, 'int i = ' + i, 'Biến <code>i</code> được tạo trong bản ghi của <code>main</code>.', [main([['i', i]], 'active', ['i'])]);
+  snap(3, 'int j = ' + j, 'Biến <code>j</code> được tạo trong bản ghi của <code>main</code>.', [main([['i', i], ['j', j]], 'active', ['j'])]);
+  snap(4, 'Gọi max(i, j)', '<code>main</code> tạm dừng, <code>k</code> chưa có giá trị. Bản ghi mới của <code>max</code> được đặt <b>lên trên</b>; giá trị của <code>i</code>, <code>j</code> được chép vào <code>num1</code>, <code>num2</code>.',
+    [main(mv, 'paused'), mx([['num1', i], ['num2', j]], 'active', ['num1', 'num2'], true)], 'i (' + i + ') → num1,  j (' + j + ') → num2');
+  snap(12, 'int result;', 'Biến <code>result</code> được tạo trong bản ghi của <code>max</code>, chưa có giá trị.', [main(mv, 'paused'), mx([['num1', i], ['num2', j], ['result', null]], 'active', ['result'])]);
+  var c = i > j, r = c ? i : j;
+  snap(14, 'Kiểm tra num1 > num2', '<code>' + i + ' &gt; ' + j + '</code> là <b>' + c + '</b>' + (c ? ', nên chạy <code>result = num1;</code>' : ', nên chạy nhánh <code>else</code>') + '.', [main(mv, 'paused'), mx([['num1', i], ['num2', j], ['result', null]])]);
+  var mres = [['num1', i], ['num2', j], ['result', r]];
+  snap(c ? 15 : 17, 'result = ' + r, '<code>result</code> nhận giá trị ' + r + '. Stack vẫn có hai bản ghi: <code>max</code> ở trên, <code>main</code> ở dưới.', [main(mv, 'paused'), mx(mres, 'active', ['result'])]);
+  snap(19, 'return result', '<code>max</code> trả giá trị ' + r + ' về cho <code>main</code> và kết thúc. Bản ghi của <code>max</code> bị gỡ khỏi stack: <code>num1</code>, <code>num2</code>, <code>result</code> không còn tồn tại.', [main(mv, 'paused'), mx(mres, 'popping')], r + ' → trả về main');
+  var mk = [['i', i], ['j', j], ['k', r]];
+  snap(4, 'k = ' + r, 'Quay lại <code>main</code>: giá trị trả về ' + r + ' được gán cho <code>k</code>. Stack chỉ còn bản ghi của <code>main</code>.', [main(mk, 'active', ['k'])]);
+  out.push('The maximum of ' + i + ' and ' + j + ' is ' + r);
+  snap([5, 7], 'In kết quả', '<code>main</code> in kết quả ra màn hình.', [main(mk)]);
+  snap(8, 'main kết thúc', '<code>main</code> chạy tới dấu <code>}</code> đóng. Bản ghi của <code>main</code> bị gỡ.', [main(mk, 'popping')]);
+  snap(null, 'Stack trống', 'Không còn bản ghi nào, chương trình kết thúc. Các biến của <code>max</code> chỉ tồn tại trong lúc <code>max</code> đang chạy.', []);
+  return S;
+}
+//SIM-END
+var I = 5, J = 2;
+var st = Stepper({
+  build: function(){ return simMax(I, J); },
+  render: function(sn){
+    $('code').innerHTML = codeHtml(linesFor(I, J), {cur: sn.ln}); scrollToCur($('code'));
+    $('stack').innerHTML = stackHtml(sn.frames);
+    $('flow').textContent = sn.flow;
+    $('con').innerHTML = sn.out.length ? sn.out.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+  }
+});
+function apply(){
+  var a = parseIntIn($('ii').value, -999, 999), b = parseIntIn($('ij').value, -999, 999);
+  $('ii').classList.toggle('bad', a === null); $('ij').classList.toggle('bad', b === null);
+  if (a === null || b === null) { $('err').textContent = 'Hãy nhập số nguyên từ -999 đến 999.'; return; }
+  $('err').textContent = ''; I = a; J = b; st.reset();
+}
+$('ii').addEventListener('input', apply); $('ij').addEventListener('input', apply);
+st.reset();
+})();
+</script>
+</body>
+</html>

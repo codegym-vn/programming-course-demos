@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>continue trong for và while</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800; --part:#ffd65c;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --warn:#b45309; --warn-soft:#fdf0d5;
+    --node:#ffffff; --node-line:#c9ced8; --p1:#2563eb; --p1s:#dbe7ff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400; --part:#6b5410;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --warn:#fbbf24; --warn-soft:#3a2a0c;
+      --node:#1d222c; --node-line:#3a4250; --p1:#6ea0ff; --p1s:#1f3358; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .hint{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:6px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .inputs{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+  .fld{display:flex;align-items:center;gap:5px;font-size:13px}
+  .fld label{font-weight:600}
+  .fld input,.fld select{padding:4px 7px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);
+    font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .fld input.bad{border-color:var(--false);background:var(--false-soft)}
+  .btns{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;margin:0 0 4px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .grid{display:grid;grid-template-columns:var(--cols,1.25fr 1fr);gap:10px}
+  .grid>*{min-width:0}
+  .side{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+  .ptitle{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 5px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;font:var(--codefs,13px)/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding-right:10px;border-left:3px solid transparent;position:relative}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.65;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.jump::after{content:"\21A9  nhảy tới đây";font:600 11px system-ui,sans-serif;color:var(--warn);margin-left:10px;align-self:center}
+  .ln mark{background:var(--part);color:inherit;border-radius:3px;outline:2px solid var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .vars{display:flex;gap:6px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:1px solid transparent;border-radius:8px;padding:2px 10px;min-width:62px;text-align:center}
+  .var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .var.st small{font-family:system-ui,sans-serif}
+  .cond{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--code-bg);border-radius:8px;padding:5px 10px;font:13px ui-monospace,Menlo,Consolas,monospace}
+  .cond .lbl{font:600 11.5px system-ui,sans-serif;color:var(--muted)}
+  .cond.dim{opacity:.45}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:46px;max-height:var(--conh,130px);overflow-y:auto;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+  .mini{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:6px;padding:4px 8px;font-size:12.5px;min-height:44px}
+  .mini b{display:block;font-size:11.5px;color:var(--accent)}
+  .mini.warn{border-left-color:var(--warn);background:var(--warn-soft)}.mini.warn b{color:var(--warn)}
+  .dual{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .dual>.card{display:flex;flex-direction:column;gap:7px}
+  @media (max-width:640px){.dual{grid-template-columns:1fr}}
+  .viz:empty{display:none}
+  /* ô dữ liệu dùng chung */
+  .cells{display:flex;flex-wrap:wrap;gap:4px}
+  .cell{min-width:30px;height:32px;padding:0 5px;border:2px solid var(--node-line);border-radius:6px;display:flex;align-items:center;justify-content:center;
+    font:700 14px ui-monospace,Menlo,Consolas,monospace;background:var(--node);position:relative}
+  .cell.hi{background:var(--cur);border-color:var(--cur-bar)}
+  .cell.ok{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+  .cell.bad{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+  .cell.used{opacity:.5}
+  .cell.empty{border-style:dashed;background:transparent;color:var(--muted)}
+  .cell.x::after{content:"";position:absolute;left:3px;right:3px;top:50%;border-top:2px solid var(--false);transform:rotate(-30deg)}
+  .vcap{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12px}
+  .fst{border:1px solid var(--node-line);border-radius:999px;padding:1px 8px;background:var(--node);white-space:nowrap}
+  .fst.fa{background:var(--cur);border-color:var(--cur-bar);font-weight:700}
+  .fst.fx{background:var(--false-soft);border-color:var(--false);color:var(--false);font-weight:700}
+  .farr{color:var(--muted)}
+  .floop{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .dual .console{display:none}
+  .dual .var{min-width:0;padding:1px 8px}
+  .dual .var strong{font-size:15px}
+  .dual .mini{min-height:62px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="hint" id="hint"></p>
+  <div class="toolbar">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="inputs" id="inputs"></div>
+    <div class="btns">
+      <button class="btn ghost" id="prev" type="button" title="Phím mũi tên trái">Lùi lại</button>
+      <button class="btn" id="next" type="button" title="Phím mũi tên phải">Bước tiếp</button>
+      <button class="btn ghost" id="all" type="button">Chạy hết</button>
+      <button class="btn ghost" id="reset" type="button">Làm lại</button>
+    </div>
+  </div>
+  <p class="err" id="err" aria-live="polite"></p>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div id="vizTop" class="viz"></div>
+  <div id="stage"></div>
+</div>
+<script>
+/* ===== Bộ ghi các bước ===== */
+function Rec(){ this.snaps=[]; this.buf=''; this.vars={}; this.order=[]; this.iter=0; }
+Rec.prototype.set=function(k,v){ if(!(k in this.vars)) this.order.push(k); this.vars[k]=v; };
+Rec.prototype.del=function(k){ delete this.vars[k]; this.order=this.order.filter(function(x){return x!==k;}); };
+Rec.prototype.print=function(t){ this.buf+=String(t); };
+Rec.prototype.println=function(t){ this.buf+=(t===undefined?'':String(t))+'\n'; };
+Rec.prototype.snap=function(o){
+  var self=this; o.vars=this.order.map(function(k){return [k,self.vars[k]];}); o.out=this.buf; o.iter=this.iter; this.snaps.push(o); return o;
+};
+function FLOW(items,act,exitIdx){
+  // items: mảng nhãn; act: chỉ số đang chạy; exitIdx: chỉ số ô "thoát" (vẽ tách ra)
+  var h='<div class="flow">';
+  items.forEach(function(it,i){
+    if(i===exitIdx) h+='<span class="farr">|</span>';
+    else if(i>0) h+='<span class="farr">&rarr;</span>';
+    h+='<span class="fst'+(i===act?(i===exitIdx?' fx':' fa'):'')+'">'+it+'</span>';
+  });
+  return h+'</div><div class="floop">&#8634; hết thân vòng lặp thì quay lại kiểm tra điều kiện</div>';
+}
+/* ===== Trang cụ thể ===== */
+function CONT_FOR(){
+  var c=new Rec(), lines=['int sum = 0;','for (int i = 0; i < 4; i++) {','  if (i % 3 == 0) continue;','  sum += i;','}'];
+  var sum=0, i=0;
+  c.set('sum',sum); c.snap({ln:0,title:'Khởi tạo',body:'sum = 0.'});
+  c.set('i',i); c.snap({ln:1,part:'int i = 0',title:'Khởi tạo i',body:'i = 0 (chạy một lần).'});
+  while(true){
+    if(!(i<4)) break;
+    c.snap({ln:1,part:'i < 4',title:'Kiểm tra '+i+' < 4',body:'true, vào thân vòng lặp.',cond:{expr:'i < 4',sub:i+' < 4',val:true},stats:[['lần lặp',c.iter+1]]});
+    var sk=i%3===0;
+    if(sk){
+      c.snap({ln:2,jump:1,title:'continue',body:i+' % 3 == 0 là true nên gặp continue: bỏ qua sum += i, nhảy tới phần cập nhật i++.',stats:[['lần lặp',c.iter+1]]});
+    } else {
+      c.snap({ln:2,title:'Kiểm tra if',body:i+' % 3 == 0 là false, không continue.',stats:[['lần lặp',c.iter+1]]});
+      sum+=i; c.set('sum',sum);
+      c.snap({ln:3,title:'Cộng vào sum',body:'sum += '+i+' nên sum = '+sum+'.',stats:[['lần lặp',c.iter+1]]});
+    }
+    c.iter++; i++; c.set('i',i);
+    c.snap({ln:1,part:'i++',title:'Cập nhật i++',body:(sk?'Dù vừa continue, for vẫn chạy i++. ':'')+'i = '+i+'.',stats:[['lần lặp',c.iter]]});
+  }
+  c.snap({ln:1,part:'i < 4',title:'Kiểm tra 4 < 4',body:'false, vòng lặp kết thúc.',cond:{expr:'i < 4',sub:'4 < 4',val:false},stats:[['lần lặp',c.iter]]});
+  c.del('i'); c.snap({ln:4,title:'Kết thúc',body:'sum = '+sum+' (chỉ cộng 1 và 2; bỏ qua 0 và 3).',stats:[['lần lặp',c.iter]]});
+  return {title:'Vòng lặp for',lines:lines,snaps:c.snaps,condExpr:'i < 4'};
+}
+function CONT_WHILE(fixed){
+  var c=new Rec(), sum=0, i=0;
+  var lines=fixed?['int i = 0, sum = 0;','while (i < 4) {','  if (i % 3 == 0) {','    i++;','    continue;','  }','  sum += i;','  i++;','}']
+                 :['int i = 0, sum = 0;','while (i < 4) {','  if (i % 3 == 0) continue;','  sum += i;','  i++;','}'];
+  var L=fixed?{ifc:2,inc1:3,cont:4,add:6,inc:7,end:8}:{ifc:2,cont:2,add:3,inc:4,end:5};
+  c.set('i',i); c.set('sum',sum); c.snap({ln:0,title:'Khởi tạo',body:'i = 0, sum = 0.'});
+  var stuck=0;
+  while(true){
+    if(!(i<4)) break;
+    c.snap({ln:1,title:'Kiểm tra '+i+' < 4',body:'true, vào thân vòng lặp.'+(stuck>0?' i vẫn bằng '+i+'!':''),cond:{expr:'i < 4',sub:i+' < 4',val:true},stats:[['lần lặp',c.iter+1]],warn:stuck>0});
+    if(i%3===0){
+      if(fixed){
+        c.snap({ln:L.ifc,title:'Kiểm tra if',body:i+' % 3 == 0 là true, vào khối if.',stats:[['lần lặp',c.iter+1]]});
+        i++; c.set('i',i);
+        c.snap({ln:L.inc1,title:'Tăng i trước',body:'i = '+i+'. Biến điều khiển được thay đổi TRƯỚC khi gặp continue.',stats:[['lần lặp',c.iter+1]]});
+        c.iter++;
+        c.snap({ln:L.cont,jump:1,title:'continue',body:'Bỏ qua phần còn lại, nhảy thẳng tới kiểm tra điều kiện.',stats:[['lần lặp',c.iter]]});
+      } else {
+        c.iter++; stuck++;
+        if(stuck>=4){
+          c.snap({ln:L.cont,jump:1,warn:true,title:'Lặp vô hạn!',body:'Lần thứ '+stuck+' gặp continue với i = 0. Lệnh i++ ở cuối thân luôn bị bỏ qua nên i mãi bằng 0 và vòng lặp không bao giờ dừng.',stats:[['lần lặp',c.iter+'…']]});
+          return {title:'Vòng lặp while (lỗi)',lines:lines,snaps:c.snaps,condExpr:'i < 4'};
+        }
+        c.snap({ln:L.cont,jump:1,warn:stuck>1,title:'continue',body:'0 % 3 == 0 là true nên continue: bỏ qua sum += i VÀ i++, nhảy thẳng tới kiểm tra điều kiện.',stats:[['lần lặp',c.iter]]});
+      }
+    } else {
+      c.snap({ln:L.ifc,title:'Kiểm tra if',body:i+' % 3 == 0 là false, không continue.',stats:[['lần lặp',c.iter+1]]});
+      sum+=i; c.set('sum',sum);
+      c.snap({ln:L.add,title:'Cộng vào sum',body:'sum = '+sum+'.',stats:[['lần lặp',c.iter+1]]});
+      i++; c.set('i',i); c.iter++;
+      c.snap({ln:L.inc,title:'Tăng i',body:'i = '+i+'.',stats:[['lần lặp',c.iter]]});
+    }
+  }
+  c.snap({ln:1,title:'Kiểm tra 4 < 4',body:'false, vòng lặp kết thúc.',cond:{expr:'i < 4',sub:'4 < 4',val:false},stats:[['lần lặp',c.iter]]});
+  c.snap({ln:L.end,title:'Kết thúc',body:'sum = '+sum+', giống hệt vòng lặp for.',stats:[['lần lặp',c.iter]]});
+  return {title:'Vòng lặp while (đã sửa)',lines:lines,snaps:c.snaps,condExpr:'i < 4'};
+}
+var PAGE={
+  hint:'Hai vòng lặp trông giống nhau. Bấm <b>Bước tiếp</b> (phím &rarr;) và để ý <code>continue</code> nhảy tới đâu ở mỗi bên.',
+  conh:'0px',
+  examples:[
+    {id:'loi',label:'for và while (lỗi)',build:function(){ return {intro:'Bên trái: for. Bên phải: while viết lại "tương đương". Cùng bấm Bước tiếp để xem continue đưa mỗi vòng lặp tới đâu.',done:'Với for, sau continue Java vẫn chạy i++ nên vòng lặp tiến lên và cho sum = 3. Với while, i++ nằm sau continue nên bị bỏ qua: i mãi bằng 0, vòng lặp chạy vô hạn. Mở tab "Bản sửa" để xem cách chữa.',cols:[CONT_FOR(),CONT_WHILE(false)]}; }},
+    {id:'sua',label:'Bản sửa: tăng i trước continue',build:function(){ return {intro:'Bản while đã sửa: tăng i ngay trong khối if, trước khi continue.',done:'Cả hai đều cho sum = 3. Trong while, hãy bảo đảm biến điều khiển được thay đổi trước khi gặp continue.',cols:[CONT_FOR(),CONT_WHILE(true)]}; }}
+  ]
+};
+
+/* ===== Bộ máy hiển thị ===== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  window.esc=esc;
+  function hl(src){
+    var re=/("(?:[^"\\]|\\.)*")|('(?:[^'\\]|\\.)')|(\/\/.*$)|\b(public|class|static|void|int|boolean|char|while|for|if|else|break|continue|return|new|String|true|false|do)\b|(\b\d+\b)/g,out='',last=0,m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index));
+      if(m[1]||m[2]) out+='<span class="str">'+esc(m[1]||m[2])+'</span>';
+      else if(m[3]) out+='<span class="cm">'+esc(m[3])+'</span>';
+      else if(m[4]) out+='<span class="kw">'+m[4]+'</span>';
+      else out+='<span class="num">'+m[5]+'</span>';
+      last=re.lastIndex;
+    }
+    return out+esc(src.slice(last));
+  }
+  var ex=null, vals={}, built=null, step=0;
+  var qs=(location.search.match(/[?&]vd=([^&]+)/)||[])[1];
+  if(PAGE.cols) document.documentElement.style.setProperty('--cols',PAGE.cols);
+  if(PAGE.codefs) document.documentElement.style.setProperty('--codefs',PAGE.codefs);
+  if(PAGE.conh) document.documentElement.style.setProperty('--conh',PAGE.conh);
+  $('hint').innerHTML=PAGE.hint;
+  function lnSet(sn){ if(!sn) return []; return Array.isArray(sn.ln)?sn.ln:(sn.ln===undefined||sn.ln===null?[]:[sn.ln]); }
+  function codeHtml(lines,sn){
+    var cur=lnSet(sn);
+    return lines.map(function(l,i){
+      var body;
+      if(sn&&sn.part&&cur[0]===i){
+        var p=l.indexOf(sn.part);
+        body=p<0?hl(l):hl(l.slice(0,p))+'<mark>'+hl(sn.part)+'</mark>'+hl(l.slice(p+sn.part.length));
+      } else body=hl(l);
+      var cls='ln'+(cur.indexOf(i)>=0?' cur':'')+(sn&&sn.jump===i?' jump':'');
+      return '<div class="'+cls+'"><span class="no">'+(i+1)+'</span><span>'+body+'</span></div>';
+    }).join('');
+  }
+  function varsHtml(sn,prev){
+    if(!sn) return '';
+    var pv={}; if(prev) prev.vars.forEach(function(v){pv[v[0]]=v[1];});
+    var h=sn.vars.map(function(v){
+      var chg=prev&&(!(v[0] in pv)||String(pv[v[0]])!==String(v[1]));
+      return '<div class="var'+(chg?' chg':'')+'"><small>'+esc(v[0])+'</small><strong>'+esc(v[1])+'</strong></div>';
+    }).join('');
+    (sn.stats||[]).forEach(function(s){ h+='<div class="var st"><small>'+esc(s[0])+'</small><strong>'+esc(s[1])+'</strong></div>'; });
+    return h?'<div class="vars">'+h+'</div>':'';
+  }
+  function condHtml(sn,col){
+    var c=sn&&sn.cond, old=false;
+    if(!c&&sn){ var L=col.snaps, j=L.indexOf(sn); for(var q=j-1;q>=0;q--){ if(L[q].cond){ c=L[q].cond; old=true; break; } } }
+    if(!c){ return col.condExpr?'<div class="cond dim"><span class="lbl">Điều kiện</span><span>'+esc(col.condExpr)+'</span><span>chưa kiểm tra</span></div>':''; }
+    return '<div class="cond'+(old?' dim':'')+'"><span class="lbl">'+(old?'Lần trước':'Điều kiện')+'</span><span>'+esc(c.expr)+'</span>'+(c.sub?'<span>&rarr; '+esc(c.sub)+'</span>':'')+
+      '<span class="tag '+(c.val?'t':'f')+'">'+(c.val?'true':'false')+'</span></div>';
+  }
+  function conHtml(sn){ return sn&&sn.out?esc(sn.out):'<span class="ph">Output sẽ hiện ở đây.</span>'; }
+  function total(){ return Math.max.apply(null,built.cols.map(function(c){return c.snaps.length;})); }
+  function cur(col){ var j=Math.min(step,col.snaps.length); return j>0?col.snaps[j-1]:null; }
+  function prevOf(col){ var j=Math.min(step,col.snaps.length); return j>1?col.snaps[j-2]:null; }
+  function layout(){
+    var n=built.cols.length, h='';
+    if(n===1){
+      h='<div class="grid"><div class="card"><p class="ptitle" id="t0"></p><div class="code" id="code0"></div></div>'+
+        '<div class="side"><div id="vars0"></div><div id="cond0"></div><div id="viz0" class="viz"></div>'+
+        '<div><p class="ptitle">Output</p><div class="console" id="con0"></div></div></div></div>';
+    } else {
+      h='<div class="dual">';
+      for(var k=0;k<n;k++) h+='<div class="card"><p class="ptitle" id="t'+k+'"></p><div class="code" id="code'+k+'"></div><div class="mini" id="msg'+k+'"></div>'+
+        '<div id="vars'+k+'"></div><div id="cond'+k+'"></div><div id="viz'+k+'" class="viz"></div><div class="console" id="con'+k+'"></div></div>';
+      h+='</div>';
+    }
+    $('stage').innerHTML=h;
+  }
+  function render(){
+    var T=total(), n=built.cols.length;
+    built.cols.forEach(function(col,k){
+      var sn=cur(col), pv=prevOf(col);
+      $('t'+k).textContent=col.title||'Code';
+      $('code'+k).innerHTML=codeHtml(col.lines,sn);
+      $('vars'+k).innerHTML=varsHtml(sn,pv);
+      $('cond'+k).innerHTML=condHtml(sn,col);
+      $('viz'+k).innerHTML=sn&&sn.viz!==undefined?sn.viz:(col.viz0||'');
+      var con=$('con'+k); con.innerHTML=conHtml(sn); con.scrollTop=con.scrollHeight;
+      if(n>1){
+        var m=$('msg'+k);
+        m.className='mini'+(sn&&sn.warn?' warn':'');
+        m.innerHTML=sn?'<b>'+esc(sn.title)+'</b>'+esc(sn.body):'<b>Chưa chạy</b>'+esc(col.sub||'Bấm "Bước tiếp" để bắt đầu.');
+      }
+    });
+    var st=$('status'), s0=n===1?cur(built.cols[0]):null;
+    st.className='status'+(s0&&s0.warn?' warn':'');
+    if(step===0) st.innerHTML='<b>Sẵn sàng</b>'+built.intro;
+    else if(n===1) st.innerHTML='<b>Bước '+step+'/'+T+' · '+esc(s0.title)+'</b>'+esc(s0.body)+(step>=T&&built.done?' '+built.done:'');
+    else st.innerHTML=step>=T?'<b>Hoàn tất · bước '+step+'/'+T+'</b>'+(built.done||''):'<b>Bước '+step+'/'+T+'</b>'+(built.during||'Hai bên cùng chạy một bước. Đọc lời giải thích ở mỗi cột.');
+    var top=$('vizTop'); var tv=built.cols[0]; var sv=cur(tv);
+    top.innerHTML=sv&&sv.top!==undefined?sv.top:(tv.top0||'');
+    $('prev').disabled=step===0; $('next').disabled=step>=T; $('all').disabled=step>=T;
+  }
+  function readInputs(){
+    var ok=true, errs=[], p={};
+    (ex.inputs||[]).forEach(function(inp){
+      var el=$('in_'+inp.id), raw=el.value, r;
+      if(inp.type==='num'){
+        var v=Number(raw.trim());
+        if(raw.trim()===''||!Number.isInteger(v)||v<inp.min||v>inp.max) r={ok:false,msg:inp.label.replace(/:$/,'')+' phải là số nguyên từ '+inp.min+' đến '+inp.max+'.'};
+        else r={ok:true,val:v};
+      } else if(inp.type==='text'){ r=inp.parse(raw); }
+      else r={ok:true,val:raw};
+      el.classList.toggle('bad',!r.ok);
+      if(r.ok){ p[inp.id]=r.val; vals[ex.id+'.'+inp.id]=raw; } else { ok=false; errs.push(r.msg); }
+    });
+    $('err').textContent=errs.join(' ');
+    return ok?p:null;
+  }
+  function rebuild(){
+    var p=readInputs(); if(!p) return;
+    built=ex.build(p); step=0; layout(); render();
+  }
+  function inputsHtml(){
+    return (ex.inputs||[]).map(function(inp){
+      var v=vals[ex.id+'.'+inp.id]; if(v===undefined) v=String(inp.value);
+      var ctl;
+      if(inp.type==='sel') ctl='<select id="in_'+inp.id+'">'+inp.options.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+      else ctl='<input id="in_'+inp.id+'" value="'+esc(v)+'" style="width:'+(inp.width||52)+'px" '+(inp.type==='num'?'inputmode="numeric"':'')+' autocomplete="off" spellcheck="false">';
+      return '<span class="fld"><label for="in_'+inp.id+'">'+esc(inp.label)+'</label>'+ctl+'</span>';
+    }).join('');
+  }
+  function load(id){
+    ex=PAGE.examples.filter(function(e){return e.id===id;})[0]||PAGE.examples[0];
+    var tabs=$('tabs');
+    if(PAGE.examples.length>1){
+      tabs.innerHTML=PAGE.examples.map(function(e){return '<button class="tab" role="tab" type="button" data-ex="'+e.id+'" aria-selected="'+(e===ex)+'">'+esc(e.label)+'</button>';}).join('');
+      tabs.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){load(b.dataset.ex);};});
+    } else tabs.style.display='none';
+    $('inputs').innerHTML=inputsHtml();
+    (ex.inputs||[]).forEach(function(inp){ var el=$('in_'+inp.id); el.addEventListener(inp.type==='sel'?'change':'input',rebuild); });
+    rebuild();
+  }
+  function go(d){ if(!built) return; var T=total(); step=Math.max(0,Math.min(T,step+d)); render(); }
+  $('next').onclick=function(){go(1);};
+  $('prev').onclick=function(){go(-1);};
+  $('all').onclick=function(){ if(built){ step=total(); render(); } };
+  $('reset').onclick=function(){ if(built){ step=0; render(); } };
+  document.addEventListener('keydown',function(e){
+    var t=e.target&&e.target.tagName; if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA') return;
+    if(e.key==='ArrowRight'){ go(1); e.preventDefault(); } else if(e.key==='ArrowLeft'){ go(-1); e.preventDefault(); }
+  });
+  load(qs);
+  var qstep=(location.search.match(/[?&]buoc=(\d+)/)||[])[1]; if(qstep) go(+qstep);
+})();
+</script>
+</body>
+</html>

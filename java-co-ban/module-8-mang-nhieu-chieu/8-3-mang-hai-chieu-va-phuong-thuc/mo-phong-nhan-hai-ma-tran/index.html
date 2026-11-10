@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng nhân hai ma trận</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#dcf2e3; --false:#b42318; --false-soft:#fbe4e1;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cm:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cm:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-size:13px}
+  .field input,.field select{width:58px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field select{width:auto}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-size:13.5px;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status b{display:block;font-size:12.5px;color:var(--accent)}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+  .vars{display:flex;gap:6px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:3px 10px;min-width:58px;text-align:center}
+  .var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 16px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{outline:2px solid var(--cur-bar)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow-x:auto}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .stepno{font-size:12px;color:var(--muted);margin-left:auto}
+
+  .mats{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+  .mat{display:flex;flex-direction:column;align-items:center}
+  .mat .nm{font:700 13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:2px}
+  .op{font:700 18px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  table.m{border-collapse:separate;border-spacing:2px;font:700 14px ui-monospace,Menlo,Consolas,monospace}
+  table.m td{width:40px;height:32px;text-align:center;background:var(--node);border:2px solid var(--node-line);border-radius:6px;transition:background .15s}
+  table.m th{font:600 10.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding:0 2px}
+  table.m td.ra{background:var(--p1s);border-color:var(--p1)}
+  table.m td.cb{background:var(--p2s);border-color:var(--p2)}
+  table.m td.kk{box-shadow:0 0 0 2px var(--cur-bar);background:var(--cur)}
+  table.m td.cur{background:var(--cur);border-color:var(--cur-bar)}
+  table.m td.fin{color:var(--text)}
+  table.m td.pend{color:var(--muted);font-weight:400}
+  #mc td{cursor:pointer} #mc td:hover{border-color:var(--accent)}
+  .formula{text-align:center;font:13.5px/1.7 ui-monospace,Menlo,Consolas,monospace;margin-top:6px;min-height:24px}
+  .formula .t{padding:0 3px;border-radius:4px}
+  .formula .t.done{background:var(--accent-soft)} .formula .t.now{background:var(--cur);outline:1px solid var(--cur-bar)}
+  .formula .t.todo{color:var(--muted);opacity:.6}
+  .formula .a{color:var(--p1);font-weight:700}.formula .b{color:var(--p2);font-weight:700}
+  .row2{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-top:8px}
+  .row2>*{min-width:0}
+  @media (max-width:620px){.row2{grid-template-columns:1fr}}
+  .hint{font-size:12px;color:var(--muted);text-align:center;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> để xem từng tích được cộng dồn vào <span class="mono">c[i][j]</span>; bấm một ô của <b>c</b> để nhảy tới lúc ô đó tính xong.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="btns" style="margin-left:auto">
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="mats"><div class="mat" id="ma"></div><div class="op">×</div><div class="mat" id="mb"></div><div class="op">=</div><div class="mat" id="mc"></div></div>
+    <div class="formula" id="formula"></div>
+  </div>
+  <div class="row2">
+    <div class="card"><div class="code" id="code"></div></div>
+    <div class="card"><div class="vars" id="vars"></div><p class="panel-title" style="margin-top:8px">Output</p><div class="console" id="con"></div></div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)')|(\/\/.*$)|\b(int|double|char|boolean|new|for|if|else|while|return|public|static|void|true|false|null)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function codeHtml(lines, cur){
+    var curs = Array.isArray(cur) ? cur : [cur];
+    return lines.map(function(l, i){ return '<div class="ln' + (curs.indexOf(i) >= 0 ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>'; }).join('');
+  }
+  function varsHtml(vs){
+    return vs.map(function(v){ return '<div class="var' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+  }
+  // Bộ điều khiển bước: snaps[0] là trạng thái ban đầu.
+  function Stepper(render){
+    var S = {snaps: [], i: 0, timer: null};
+    function upd(){
+      var n = S.snaps.length;
+      $('prev').disabled = S.i <= 0;
+      $('next').disabled = S.i >= n - 1;
+      $('all').textContent = S.timer ? 'Tạm dừng' : 'Chạy hết';
+      $('all').disabled = !S.timer && S.i >= n - 1;
+      render(S.snaps[S.i], S.i, n);
+    }
+    function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+    var first = true;
+    S.load = function(snaps, at){ stop(); S.snaps = snaps; S.i = at || 0;
+      if (first) { first = false; var b = parseInt(qs('buoc'), 10); if (b > 0) S.i = Math.min(b, snaps.length - 1); }
+      upd(); };
+    S.go = function(k){ stop(); S.i = Math.max(0, Math.min(S.snaps.length - 1, k)); upd(); };
+    S.next = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+    S.prev = function(){ stop(); if (S.i > 0) { S.i--; upd(); } };
+    S.refresh = upd;
+    $('next').addEventListener('click', function(){ stop(); S.next(); });
+    $('prev').addEventListener('click', S.prev);
+    $('reset').addEventListener('click', function(){ S.go(0); });
+    $('all').addEventListener('click', function(){
+      if (S.timer) { stop(); upd(); return; }
+      S.timer = setInterval(function(){ if (S.i >= S.snaps.length - 1) { stop(); upd(); } else S.next(); }, S.speed || 380);
+      upd();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); stop(); S.next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); S.prev(); }
+    });
+    return S;
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+  var LINES = [
+    'int[][] c = new int[a.length][b[0].length];',
+    'for (int i = 0; i < a.length; i++) {',
+    '  for (int j = 0; j < b[0].length; j++) {',
+    '    for (int k = 0; k < b.length; k++) {',
+    '      c[i][j] += a[i][k] * b[k][j];',
+    '    }',
+    '  }',
+    '}',
+    'return c;'
+  ];
+  var EX = {
+    'de-bai': {name:'Đề bài', a:[[1,2,3],[4,5,6]], b:[[7,8],[9,10],[11,12]]},
+    'hang-cot': {name:'1x3·3x1', a:[[1,2,3]], b:[[4],[5],[6]]},
+    'cot-hang': {name:'3x1·1x3', a:[[1],[2],[3]], b:[[1,0,-1]]},
+    'ngau-nhien': {name:'Ngẫu nhiên'}
+  };
+  function rnd(lo, hi){ return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+  function randomEx(){
+    var m = rnd(1, 3), n = rnd(1, 3), p = rnd(1, 3), a = [], b = [], i, j;
+    for (i = 0; i < m; i++) { a.push([]); for (j = 0; j < n; j++) a[i].push(rnd(-3, 9)); }
+    for (i = 0; i < n; i++) { b.push([]); for (j = 0; j < p; j++) b[i].push(rnd(-3, 9)); }
+    return {a:a, b:b};
+  }
+  function P(v){ return v < 0 ? '(' + v + ')' : String(v); }
+  function fmtOut(c){ return c.map(function(r){ return r.join(' '); }).join('\n') + '\n'; }
+  // Sinh các bước, đúng thứ tự ba vòng lặp lồng nhau trong lời giải.
+  function trace(a, b){
+    var m = a.length, n = b.length, p = b[0].length, c = null, S = [];
+    function cp(){ return c ? c.map(function(r){ return r.slice(); }) : null; }
+    function snap(o){ o.c = cp(); S.push(o); }
+    snap({ln:-1, title:'Sẵn sàng', body:'a có ' + m + ' hàng, ' + n + ' cột; b có ' + n + ' hàng, ' + p + ' cột. Tích c sẽ có ' + m + ' hàng, ' + p + ' cột.'});
+    c = []; for (var x = 0; x < m; x++) { c.push([]); for (var y = 0; y < p; y++) c[x].push(0); }
+    snap({ln:0, title:'Tạo ma trận c', body:'c = new int[' + m + '][' + p + ']: số hàng của a, số cột của b. Mọi ô ban đầu bằng 0.'});
+    for (var i = 0; i < m; i++) for (var j = 0; j < p; j++) {
+      snap({ln:2, i:i, j:j, title:'Tính c[' + i + '][' + j + ']', body:'Hàng ' + i + ' của a nhân với cột ' + j + ' của b. Vòng trong cùng cho k chạy từ 0 đến ' + (n - 1) + '.'});
+      for (var k = 0; k < n; k++) {
+        var old = c[i][j], prod = a[i][k] * b[k][j];
+        c[i][j] += prod;
+        snap({ln:4, i:i, j:j, k:k, title:'k = ' + k, body:'c[' + i + '][' + j + '] += a[' + i + '][' + k + '] * b[' + k + '][' + j + '] = ' + a[i][k] + ' * ' + P(b[k][j]) + ' = ' + prod + ', nên c[' + i + '][' + j + '] = ' + old + ' + ' + P(prod) + ' = ' + c[i][j] + '.' + (k === n - 1 ? ' Ô này đã tính xong.' : ''), done:k === n - 1});
+      }
+    }
+    snap({ln:8, title:'Trả về c', body:'Đã tính xong cả ' + (m * p) + ' ô. Mỗi ô cần ' + n + ' phép nhân, tổng cộng ' + (m * p * n) + ' phép nhân.', out:fmtOut(c), end:true});
+    return S;
+  }
+  var key, A, B, snaps;
+  $('tabs').innerHTML = Object.keys(EX).map(function(k){ return '<button class="tab" role="tab" data-k="' + k + '">' + EX[k].name + '</button>'; }).join('');
+  function matHtml(name, M, cls, id){
+    var h = '<div class="nm">' + name + '</div><table class="m"><tr><th></th>';
+    for (var j = 0; j < M[0].length; j++) h += '<th>' + j + '</th>';
+    h += '</tr>';
+    for (var i = 0; i < M.length; i++) {
+      h += '<tr><th>' + i + '</th>';
+      for (var j2 = 0; j2 < M[i].length; j2++) { var c = cls(i, j2); h += '<td class="' + c[0] + '" data-i="' + i + '" data-j="' + j2 + '">' + c[1] + '</td>'; }
+      h += '</tr>';
+    }
+    return h + '</table>';
+  }
+  function render(s, idx, n){
+    $('status').innerHTML = '<b>' + (idx ? 'Bước ' + idx + '/' + (n - 1) + ' · ' : '') + esc(s.title) + '</b>' + esc(s.body);
+    $('code').innerHTML = codeHtml(LINES, s.ln);
+    var act = s.i !== undefined;
+    $('ma').innerHTML = matHtml('a', A, function(i, k){ return [(act && i === s.i ? 'ra' : '') + (act && i === s.i && k === s.k ? ' kk' : ''), A[i][k]]; });
+    $('mb').innerHTML = matHtml('b', B, function(k, j){ return [(act && j === s.j ? 'cb' : '') + (act && j === s.j && k === s.k ? ' kk' : ''), B[k][j]]; });
+    var C = s.c || A.map(function(){ return B[0].map(function(){ return null; }); });
+    $('mc').innerHTML = matHtml('c', C, function(i, j){
+      if (C[i][j] === null) return ['pend', '?'];
+      var before = !act ? s.end : (i < s.i || (i === s.i && j < s.j) || (i === s.i && j === s.j && s.done));
+      return [(act && i === s.i && j === s.j ? 'cur' : '') + (before ? ' fin' : ' pend'), C[i][j]];
+    });
+    // Công thức của ô đang tính
+    if (act) {
+      var nn = B.length, parts = [], sum = 0;
+      for (var k = 0; k < nn; k++) {
+        var st = s.k === undefined || k > s.k ? 'todo' : (k === s.k ? 'now' : 'done');
+        if (st !== 'todo') sum += A[s.i][k] * B[k][s.j];
+        parts.push('<span class="t ' + st + '"><span class="a">' + A[s.i][k] + '</span>*<span class="b">' + P(B[k][s.j]) + '</span></span>');
+      }
+      $('formula').innerHTML = 'c[' + s.i + '][' + s.j + '] = ' + parts.join(' + ') + ' = ' + (s.done ? '<b>' + sum + '</b>' : (s.k === undefined ? '0 …' : sum + ' …'));
+    } else $('formula').innerHTML = s.end ? 'Xong. c là ma trận ' + A.length + ' x ' + B[0].length + '.' : '<span class="hint">Hàng của <b style="color:var(--p1)">a</b> × cột của <b style="color:var(--p2)">b</b> → một ô của c.</span>';
+    $('vars').innerHTML = varsHtml([['i', act ? s.i : '—'], ['j', act ? s.j : '—'], ['k', s.k !== undefined ? s.k : '—'], ['b.length', B.length]]);
+    $('con').innerHTML = s.out ? esc(s.out) : '<span class="ph">Chưa in gì.</span>';
+    $('mc').querySelectorAll('td').forEach(function(td){ td.title = 'Nhảy tới lúc c[' + td.dataset.i + '][' + td.dataset.j + '] tính xong'; });
+  }
+  var S = Stepper(render);
+  function load(k){
+    key = k; var e = k === 'ngau-nhien' ? randomEx() : EX[k]; A = e.a; B = e.b; snaps = trace(A, B);
+    document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.k === k ? 'true' : 'false'); });
+    S.load(snaps);
+  }
+  $('mc').addEventListener('click', function(e){
+    var td = e.target.closest('td'); if (!td) return;
+    var i = +td.dataset.i, j = +td.dataset.j;
+    for (var x = 0; x < snaps.length; x++) if (snaps[x].i === i && snaps[x].j === j && snaps[x].done) { S.go(x); return; }
+  });
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ load(b.dataset.k); }); });
+  window.__trace = trace;
+  load(EX[qs('vd')] ? qs('vd') : 'de-bai');
+})();
+</script>
+</body>
+</html>

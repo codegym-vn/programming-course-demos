@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="470">
+<title>So sánh chuỗi bằng compareTo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node:#ffffff; --node-line:#c9ced8; --node-text:#3b4352;
+    --p1:#2563eb; --p1s:#dbe7ff; --p2:#9333ea; --p2s:#efdcff; --p3:#c2410c; --p3s:#ffe3d1; --p4:#15803d; --p4s:#dcf3e3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node:#1d222c; --node-line:#3a4250; --node-text:#c8cfdb;
+      --p1:#6ea0ff; --p1s:#1f3358; --p2:#c9a0ff; --p2s:#35244f; --p3:#fdba74; --p3s:#4a2c16; --p4:#4ade80; --p4s:#13301f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:12px 14px 14px}
+  .lead{color:var(--muted);margin:0 0 10px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;
+    border-radius:8px;cursor:pointer;font:inherit}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600}
+  .field input[type=text],.field input[type=number],.field select{padding:5px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chips>span{font-size:13px;color:var(--muted)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:3px 9px;
+    border-radius:999px;cursor:pointer;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-right:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 11px;
+    cursor:pointer;font:inherit;font-size:13.5px}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .err{color:var(--false);font-size:13px;min-height:0}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:7px 12px;min-height:52px;font-size:14px}
+  .status b{display:block;font-size:12.5px;color:var(--accent)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 12px;
+    font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .console .ex{color:#fca5a5}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:13px}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border-radius:8px;padding:4px 12px;min-width:70px;text-align:center}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{background:var(--cur);outline:2px solid var(--cur-bar)}
+  @media (max-width:560px){.wrap{padding:10px 10px 12px}}
+
+  .field input[type=text]{width:170px}
+  .board{overflow-x:auto;padding:2px 0 4px}
+  .rows{display:grid;width:max-content;margin:0 auto;gap:0}
+  .lab{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;padding-right:10px;justify-content:flex-end}
+  .cell{width:40px;height:44px;border:2px solid var(--node-line);margin-left:-2px;margin-top:-2px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--node);font:700 17px/1.1 ui-monospace,Menlo,Consolas,monospace}
+  .cell small{font:500 10.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .cell.none{border-style:dashed;background:transparent;color:var(--muted);font-size:11px;font-weight:400}
+  .cell.eq{background:var(--true-soft);border-color:var(--true);z-index:1}
+  .cell.cur{background:var(--cur);border-color:var(--cur-bar);z-index:2}
+  .cell.diff{background:var(--false-soft);border-color:var(--false);z-index:2}
+  .ix{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);text-align:center;padding-top:2px}
+  .call{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--code-bg);border-radius:8px;padding:7px 12px;
+    font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:8px 0;min-height:40px}
+  .call .res{font-weight:700;color:var(--num)}
+  .call .calc{color:var(--muted);font-size:14px}
+  .verdict{display:inline-block;padding:1px 9px;border-radius:999px;font:600 13px system-ui,sans-serif}
+  .verdict.n{background:var(--p1s);color:var(--p1)}.verdict.z{background:var(--true-soft);color:var(--true)}.verdict.p{background:var(--p3s);color:var(--p3)}
+  .top2{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+  @media (max-width:560px){.field input[type=text]{width:130px}.cell{width:30px;height:40px;font-size:15px}.cell small{font-size:9px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Nhập hai chuỗi rồi bấm <b>Bước tiếp</b> (phím →) để xem Java so từng cặp ký tự từ trái sang phải.</p>
+  <div class="controls">
+    <div class="field"><label for="s1">s1</label><input id="s1" type="text" maxlength="14" value="abc" spellcheck="false" autocomplete="off"></div>
+    <div class="field"><label for="s2">s2</label><input id="s2" type="text" maxlength="14" value="abg" spellcheck="false" autocomplete="off"></div>
+    <div class="seg" role="group" aria-label="Phương thức"><button id="mCase" aria-pressed="true">compareTo</button><button id="mIgn" aria-pressed="false">compareToIgnoreCase</button></div>
+  </div>
+  <div class="chips" style="margin-bottom:8px"><span>Ví dụ:</span>
+    <button class="chip" data-a="abc" data-b="abg">abc / abg</button>
+    <button class="chip" data-a="Banana" data-b="apple">Banana / apple</button>
+    <button class="chip" data-a="Hue" data-b="Ha Noi">Hue / Ha Noi</button>
+    <button class="chip" data-a="Java" data-b="JavaScript">Java / JavaScript</button>
+    <button class="chip" data-a="New York" data-b="Boston">New York / Boston</button>
+    <button class="chip" data-a="ha noi" data-b="Hue">ha noi / Hue</button>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="card">
+    <div class="top2">
+      <div class="btns">
+        <button class="btn" id="next">Bước tiếp</button>
+        <button class="btn ghost" id="prev">Lùi lại</button>
+        <button class="btn ghost" id="all">Chạy hết</button>
+        <button class="btn ghost" id="reset">Làm lại</button>
+      </div>
+    </div>
+    <div class="board"><div class="rows" id="rows"></div></div>
+    <div class="call" id="call"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+/*LOGIC*/
+function fold(c){ // giống compareToIgnoreCase: đổi sang hoa rồi sang thường
+  var u = c.toUpperCase(); if (u.length !== 1) u = c;
+  var l = u.toLowerCase(); if (l.length !== 1) l = u;
+  return l;
+}
+function compareSteps(a, b, ignore){
+  var n = Math.min(a.length, b.length), steps = [], k;
+  for (k = 0; k < n; k++) {
+    var x = a.charAt(k), y = b.charAt(k);
+    if (ignore) { x = fold(x); y = fold(y); }
+    var cx = x.charCodeAt(0), cy = y.charCodeAt(0);
+    steps.push({type:'pair', k:k, x:x, y:y, cx:cx, cy:cy, eq:cx === cy});
+    if (cx !== cy) return {steps:steps, result:cx - cy};
+  }
+  steps.push({type:'len', la:a.length, lb:b.length});
+  return {steps:steps, result:a.length - b.length};
+}
+/*END*/
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var a = 'abc', b = 'abg', ignore = false, run, pos = 0;
+  function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function jstr(x){ return '"' + esc(x.replace(/\\/g,'\\\\').replace(/"/g,'\\"')) + '"'; }
+  function jch(c){ return c === ' ' ? "' '" : "'" + esc(c) + "'"; }
+  function newRun(){ run = compareSteps(a, b, ignore); pos = 0; }
+  function render(){
+    var n = Math.max(a.length, b.length, 1), cols = n, h = '', k;
+    var cur = pos > 0 ? run.steps[pos - 1] : null;
+    $('rows').style.gridTemplateColumns = 'auto repeat(' + cols + ', 40px)';
+    if (window.innerWidth < 560) $('rows').style.gridTemplateColumns = 'auto repeat(' + cols + ', 30px)';
+    [[a, 's1'], [b, 's2']].forEach(function(r, ri){
+      h += '<div class="lab">' + r[1] + '</div>';
+      for (k = 0; k < cols; k++) {
+        var cls = 'cell';
+        if (k >= r[0].length) { h += '<div class="cell none' + (cur && cur.type === 'len' && k === Math.min(a.length, b.length) ? ' cur' : '') + '">—</div>'; continue; }
+        var st = run.steps[k];
+        if (st && st.type === 'pair' && k < pos) cls += (k === pos - 1) ? (st.eq ? ' cur' : ' diff') : ' eq';
+        var c = r[0].charAt(k), shown = ignore ? fold(c) : c;
+        h += '<div class="' + cls + '">' + (c === ' ' ? '␣' : esc(c)) + '<small>' + shown.charCodeAt(0) + '</small></div>';
+      }
+    });
+    h += '<div></div>';
+    for (k = 0; k < cols; k++) h += '<div class="ix">' + k + '</div>';
+    $('rows').innerHTML = h;
+    var m = ignore ? 'compareToIgnoreCase' : 'compareTo';
+    var call = '<span>' + jstr(a) + '.' + m + '(' + jstr(b) + ')</span><span>→</span>';
+    var done = pos >= run.steps.length;
+    var st = $('status');
+    $('next').disabled = $('all').disabled = done;
+    $('prev').disabled = pos === 0;
+    function verdict(r){
+      return r < 0 ? '<span class="verdict n">âm: ' + jstr(a) + ' đứng trước</span>' : r === 0 ? '<span class="verdict z">0: hai chuỗi bằng nhau</span>' : '<span class="verdict p">dương: ' + jstr(a) + ' đứng sau</span>';
+    }
+    if (!cur) {
+      $('call').innerHTML = call + '<span class="calc">?</span>';
+      st.className = 'status'; st.innerHTML = '<b>Sẵn sàng</b>Số nhỏ dưới mỗi ô là mã Unicode' + (ignore ? ' sau khi bỏ qua hoa thường (chữ hoa được đổi về chữ thường)' : '') + '. Bấm <b style="display:inline;color:inherit">Bước tiếp</b> để so cặp ký tự đầu tiên.';
+      return;
+    }
+    if (cur.type === 'pair' && cur.eq) {
+      $('call').innerHTML = call + '<span class="calc">đang so…</span>';
+      st.className = 'status'; st.innerHTML = '<b>Cặp chỉ số ' + cur.k + ': giống nhau</b>' + jch(cur.x) + ' (' + cur.cx + ') và ' + jch(cur.y) + ' (' + cur.cy + ') bằng nhau, chưa phân thắng thua. Xét cặp tiếp theo.';
+    } else if (cur.type === 'pair') {
+      $('call').innerHTML = call + '<span class="res">' + run.result + '</span><span class="calc">= ' + cur.cx + ' - ' + cur.cy + '</span>' + verdict(run.result);
+      st.className = 'status bad'; st.innerHTML = '<b>Cặp chỉ số ' + cur.k + ': khác nhau, dừng lại</b>Kết quả là hiệu hai mã: ' + jch(cur.x) + ' - ' + jch(cur.y) + ' = ' + cur.cx + ' - ' + cur.cy + ' = ' + run.result + '. Các ký tự phía sau không cần xét nữa.'
+        + (!ignore && ((cur.cx >= 65 && cur.cx <= 90 && cur.cy >= 97) || (cur.cy >= 65 && cur.cy <= 90 && cur.cx >= 97)) ? ' Chữ hoa có mã nhỏ hơn mọi chữ thường, nên luôn đứng trước.' : '');
+    } else {
+      $('call').innerHTML = call + '<span class="res">' + run.result + '</span><span class="calc">= ' + cur.la + ' - ' + cur.lb + '</span>' + verdict(run.result);
+      st.className = 'status ok';
+      st.innerHTML = run.result === 0 ? '<b>Mọi cặp đều giống nhau</b>Hai chuỗi dài bằng nhau và giống hệt nhau' + (ignore ? ' (khi bỏ qua hoa thường)' : '') + ', nên kết quả là 0.'
+        : '<b>Hết ký tự ở chuỗi ngắn hơn</b>Mọi cặp đã so đều giống nhau, nên Java lấy hiệu độ dài: <code>s1.length() - s2.length()</code> = ' + cur.la + ' - ' + cur.lb + ' = ' + run.result + '. Chuỗi ngắn hơn đứng trước.';
+    }
+  }
+  function readInputs(){
+    var A = $('s1').value, B = $('s2').value;
+    a = A; b = B; newRun(); render();
+  }
+  $('s1').addEventListener('input', readInputs);
+  $('s2').addEventListener('input', readInputs);
+  function setMode(ig){ ignore = ig; $('mIgn').setAttribute('aria-pressed', ig); $('mCase').setAttribute('aria-pressed', !ig); newRun(); render(); }
+  $('mCase').onclick = function(){ setMode(false); };
+  $('mIgn').onclick = function(){ setMode(true); };
+  document.querySelectorAll('.chip').forEach(function(c){ c.onclick = function(){ $('s1').value = c.dataset.a; $('s2').value = c.dataset.b; readInputs(); }; });
+  function next(){ if (pos < run.steps.length) { pos++; render(); } }
+  function prev(){ if (pos > 0) { pos--; render(); } }
+  $('next').onclick = next; $('prev').onclick = prev;
+  $('all').onclick = function(){ pos = run.steps.length; render(); };
+  $('reset').onclick = function(){ pos = 0; render(); };
+  document.addEventListener('keydown', function(e){
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  window.addEventListener('resize', render);
+  newRun(); render();
+  if (location.hash === '#demo') { $('s1').value = 'Hue'; $('s2').value = 'Ha Noi'; readInputs(); pos = 2; render(); }
+})();
+</script>
+</body>
+</html>
