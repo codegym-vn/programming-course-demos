@@ -38,3 +38,20 @@ Mỗi bài bạn nhận có: nội dung cũ (`old_content`, văn bản thô lấ
 - `<TOOLS>/content/out/<stt>.md`: Markdown thuần của bài. Không sửa file khác, không chạy git.
 - Tự kiểm tra: `python3 <SKILL>/scripts/check_content.py --config <CFG>` (xem các dòng có stt của mình).
 - Báo cáo ngắn: mỗi bài "stt | tiêu đề | số ký tự | đã lấy ý gì từ nội dung cũ, đã sửa lỗi gì, đã đổi ví dụ nào cho khớp mô phỏng". Cuối: điểm nghi ngờ.
+
+## Đánh dấu chỗ chèn (bắt buộc, theo yêu cầu người dùng 11/2026)
+Không để `![...](...)` hay khối iframe lẫn trong chữ. Mỗi chỗ chèn là một khung riêng, cách một dòng trống trước và sau:
+```
+==================== [CHÈN ẢNH 1] ====================
+Mô tả ảnh: <mô tả ngắn có dấu>
+Link ảnh: <image_base_url><ten-hinh>.png
+======================================================
+```
+```
+#################### [CHÈN MÔ PHỎNG] ####################
+Tên mô phỏng: <tiêu đề>
+Link mô phỏng: <iframe_url>
+Mã nhúng (iframe): <iframe src="<iframe_url>" title="<tiêu đề>" style="border:0;" allowfullscreen></iframe>
+########################################################
+```
+(Không bọc khung trong ```.) Excel kèm sheet "Huong dan chen" giải thích hai khung này.

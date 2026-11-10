@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.code{background:#0f172a;border-radius:16px;padding:30px 20px 22px;text-align:center;font:800 34px ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb}
+.t{display:inline-block;padding:2px 8px;border-radius:8px;margin:0 2px}
+.k{background:rgba(96,165,250,.25);color:#93c5fd}.r{background:rgba(110,231,183,.25);color:#6ee7b7}.e{color:#e5e7eb}
+.lbs{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-top:16px}
+.lb{border-top:5px solid;border-radius:6px;background:#f6f7f9;padding:10px 12px}.lb b{display:block;font-size:16px}.lb span{font-size:14px;color:#5d6676}
+.l1{border-color:#3b82f6}.l2{border-color:#15803d}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.bx{border-radius:12px;padding:10px 14px;font-size:15px}.ok{background:#e3f5e9;border-left:5px solid #15803d}.bad{background:#fdeaea;border-left:5px solid #b91c1c}
+.bx b{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style></head><body><div id="art">
+<h3>Giải phẫu vòng lặp đọc tệp</h3><p class="sub">Phép đọc nằm ngay trong điều kiện: đọc được thì lặp, đọc hụt thì dừng</p>
+<div class="code"><span class="t k">while</span> <span class="t e">(</span><span class="t r">getline(f, dong)</span><span class="t e">)</span> <span class="t e">{ ... }</span></div>
+<div class="lbs"><div class="lb l1"><b>while (...)</b><span>lặp khi điều kiện đúng</span></div><div class="lb l2"><b>getline(f, dong)</b><span>vừa đọc một dòng vào dong, vừa cho biết đọc có thành công không</span></div></div>
+<div class="two"><div class="bx ok"><b>Đọc được</b> một dòng: điều kiện đúng, vào thân vòng lặp.</div><div class="bx bad"><b>Đọc hụt</b> (hết tệp): điều kiện sai, vòng lặp dừng ngay.</div></div></div></body></html>

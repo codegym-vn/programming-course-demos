@@ -1,0 +1,18 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.top{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:18px}
+.box{border:3px solid #2563eb;background:#e7f0ff;border-radius:12px;padding:10px 20px;text-align:center;font:700 17px ui-monospace,Menlo,Consolas,monospace}
+.obj{border-color:#ea580c;background:#fff1e6}
+.ar{font:800 15px ui-monospace,monospace;color:#7c3aed}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.c{border-radius:14px;padding:16px 18px;border:2px solid}
+.a{background:#fde8e6;border-color:#b42318}.b{background:#e3f4e8;border-color:#166534}
+.c h4{margin:0 0 8px;font-size:18px}.c code{font:700 16px ui-monospace,Menlo,monospace}
+.c p{margin:8px 0 0;font-size:15.5px}
+.res{display:inline-block;margin-top:6px;padding:4px 10px;border-radius:8px;background:#fff;font-weight:800}
+</style></head><body><div id="art">
+<h3>Con trỏ lớp cha trỏ vào đối tượng Cho</h3><p class="sub">Biến p có kiểu DongVat*, nhưng đối tượng thật nó trỏ tới là Cho</p>
+<div class="top"><div class="box">p<br><small>kiểu DongVat*</small></div><div class="ar">trỏ tới &rarr;</div><div class="box obj">c<br><small>đối tượng thật: Cho</small></div></div>
+<div class="cols">
+<div class="c a"><h4>Không có virtual</h4><code>p-&gt;keu()</code><p>C++ nhìn <b>kiểu của con trỏ</b> (DongVat*).</p><span class="res">Dùng keu() của DongVat</span></div>
+<div class="c b"><h4>Có virtual</h4><code>p-&gt;keu()</code><p>C++ nhìn <b>đối tượng thật</b> (Cho).</p><span class="res">Dùng keu() của Cho</span></div></div>
+</div></body></html>

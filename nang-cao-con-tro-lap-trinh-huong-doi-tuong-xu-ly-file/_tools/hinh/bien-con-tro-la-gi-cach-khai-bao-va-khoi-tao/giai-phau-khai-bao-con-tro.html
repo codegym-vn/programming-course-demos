@@ -1,0 +1,18 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.code{background:#0f172a;border-radius:16px;padding:34px 20px 22px;text-align:center;font:800 40px ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb;letter-spacing:.02em}
+.t{display:inline-block;padding:2px 8px;border-radius:8px;position:relative;margin:0 3px}
+.k{background:rgba(96,165,250,.25);color:#93c5fd}.s{background:rgba(196,161,255,.28);color:#d8b4fe}.n{background:rgba(253,186,116,.25);color:#fdba74}.e{color:#e5e7eb}.a{background:rgba(110,231,183,.25);color:#6ee7b7}
+.labels{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.lb{border-top:5px solid;border-radius:6px;background:#f6f7f9;padding:10px 12px}.lb b{display:block;font-size:16px}.lb span{font-size:13.5px;color:#5d6676}
+.l1{border-color:#3b82f6}.l2{border-color:#9333ea}.l3{border-color:#ea580c}.l4{border-color:#15803d}
+.warn{margin-top:16px;border-left:5px solid #c2410c;background:#fff7ed;border-radius:8px;padding:10px 14px;font-size:15px}
+</style></head><body><div id="art">
+<h3>Giải phẫu một khai báo con trỏ</h3><p class="sub">Đọc từ trái sang phải: "p là con trỏ tới int, và đang giữ địa chỉ của tuoi"</p>
+<div class="code"><span class="t k">int</span> <span class="t s">*</span><span class="t n">p</span> <span class="t e">=</span> <span class="t a">&amp;tuoi</span>;</div>
+<div class="labels">
+<div class="lb l1"><b>int</b><span>Kiểu của biến mà con trỏ trỏ tới</span></div>
+<div class="lb l2"><b>*</b><span>Báo "đây là con trỏ" (không phải giải tham chiếu)</span></div>
+<div class="lb l3"><b>p</b><span>Tên con trỏ: một biến có hộp nhớ riêng</span></div>
+<div class="lb l4"><b>&amp;tuoi</b><span>Địa chỉ của tuoi, cất vào p</span></div></div>
+<div class="warn"><b>Chú ý:</b> <span class="mono">int* p, q;</span> chỉ có <b>p</b> là con trỏ, còn <b>q</b> là một biến int bình thường. Hãy viết mỗi con trỏ một dòng.</div>
+</div></body></html>

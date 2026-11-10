@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.flow{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;align-items:center;gap:0}
+.bx{border-radius:14px;padding:14px 16px;text-align:center;border:2px solid #94a3b8;background:#f6f7f9}
+.bx b{display:block;font:800 18px ui-monospace,Menlo,Consolas,monospace;margin-bottom:4px}.bx span{font-size:15px;color:#5d6676}
+.q{border-color:#ca8a04;background:#fef9c3}.ok{border-color:#15803d;background:#e3f5e9}.bad{border-color:#b91c1c;background:#fdeaea}
+.ar{text-align:center;font:800 26px system-ui;color:#5d6676}
+.br{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+.lab{text-align:center;font:800 15px system-ui;margin:10px 0 6px}.t{color:#15803d}.f{color:#b91c1c}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Trạm kiểm tra sau khi mở tệp</h3><p class="sub">Mở tệp không báo lỗi, nên ta phải tự đứng chốt kiểm tra ngay sau đó</p>
+<div class="flow"><div class="bx"><b>ifstream f(...)</b><span>mở tệp</span></div><div class="ar">→</div><div class="bx q"><b>f.is_open() ?</b><span>trạm kiểm tra</span></div><div class="ar">→</div><div class="bx"><b>chạy tiếp</b><span>chỉ khi đã qua trạm</span></div></div>
+<div class="br"><div><div class="lab t">is_open() = true: tệp mở được</div><div class="bx ok"><b>đọc / ghi bình thường</b><span>an toàn để xử lý tiếp</span></div></div>
+<div><div class="lab f">is_open() = false: tệp không mở được</div><div class="bx bad"><b>báo lỗi + return</b><span>dừng sớm, không làm gì thêm</span></div></div></div>
+<p class="tip"><b>!f</b> là cách viết ngắn của <b>!f.is_open()</b>: cả hai cùng hỏi "tệp có đang gặp lỗi không?".</p></div></body></html>

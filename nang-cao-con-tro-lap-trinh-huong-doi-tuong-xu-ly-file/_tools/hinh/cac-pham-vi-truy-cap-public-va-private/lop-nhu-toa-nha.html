@@ -1,0 +1,21 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1.5fr;gap:0 70px;align-items:stretch;position:relative}
+.out{border:2px dashed #94a3b8;border-radius:16px;padding:16px 18px;background:#f6f7f9}
+.bld{border:3px solid #1d2330;border-radius:16px;padding:12px;background:#fff}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:8px}
+.room{border-radius:12px;padding:12px 14px;margin-top:10px}
+.pub{background:#e3f4e8;border:2px solid #15803d}.pri{background:#fbe9e7;border:2px solid #b42318}
+.room b{font:800 17px ui-monospace,Menlo,Consolas,monospace}.room small{display:block;color:#5d6676;font-size:14px;margin:2px 0 8px}
+.chip{display:inline-block;background:#fff;border:1px solid #cbd2dc;border-radius:8px;padding:3px 10px;margin:2px 4px 2px 0;font:600 14.5px ui-monospace,Menlo,Consolas,monospace}
+.who{background:#fff;border:2px solid #1d2330;border-radius:12px;padding:10px 14px;font:800 20px ui-monospace,monospace;text-align:center}
+.go{margin-top:14px;font:700 15px system-ui;padding:8px 12px;border-radius:10px}
+.g1{background:#e3f4e8;color:#15803d}.g2{background:#fbe9e7;color:#b42318}
+.mid{position:absolute;left:calc(40% - 28px);top:50%;font:800 28px system-ui;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Lớp giống một tòa nhà có hai khu vực</h3><p class="sub">Người ở ngoài chỉ vào được sân trước. Phòng trong chỉ dành cho người của tòa nhà.</p>
+<div class="row"><div class="out"><div class="cap">Đứng bên ngoài</div><div class="who">main()</div>
+<div class="go g1">Vào sân trước (public): được</div><div class="go g2">Vào phòng trong (private): bị chặn</div></div>
+<div class="bld"><div class="cap">Tòa nhà: class HocSinh</div>
+<div class="room pub"><b>public: sân trước</b><small>Cửa mở, ai cũng vào được</small><span class="chip">ganTen()</span><span class="chip">ganTuoi()</span><span class="chip">inThongTin()</span></div>
+<div class="room pri"><b>private: phòng trong</b><small>Khóa cửa, chỉ người trong tòa nhà (phương thức của lớp) vào được</small><span class="chip">ten</span><span class="chip">tuoi</span></div></div></div>
+<p class="tip" style="margin-top:14px;font-size:15px;color:#5d6676">Muốn đưa đồ vào phòng trong, main() nhờ người ở sân trước (phương thức public) mang vào giúp.</p></div></body></html>

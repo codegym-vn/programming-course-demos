@@ -1,0 +1,19 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.col{border-radius:16px;padding:18px 20px;border:2px solid}
+.a{background:#eef4ff;border-color:#2563eb}.b{background:#f6ecff;border-color:#7c3aed}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:10px}
+.code{font:800 30px ui-monospace,Menlo,Consolas,monospace;background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.code i{font-style:normal;border-radius:6px;padding:0 6px}
+.a .code i{background:rgba(96,165,250,.35);color:#bfdbfe}.b .code i{background:rgba(196,161,255,.35);color:#e9d5ff}
+.d{font-size:16px;margin:6px 0}
+.ex{font:700 15px ui-monospace,Menlo,monospace;background:#fff;border-radius:8px;padding:6px 10px;border:1px dashed #94a3b8;margin-top:10px}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Hai dấu * có hai nghĩa khác nhau</h3><p class="sub">Nhìn xem dấu * đứng ở đâu: trong khai báo hay trong biểu thức</p>
+<div class="row">
+<div class="col a"><div class="cap">Trong khai báo</div><div class="code">int <i>*</i>p = &amp;tuoi;</div><div class="d"><b>Nghĩa:</b> "p là một con trỏ"</div><div class="ex">Đứng sau tên kiểu (int)</div></div>
+<div class="col b"><div class="cap">Trong biểu thức</div><div class="code"><i>*</i>p = 99;</div><div class="d"><b>Nghĩa:</b> "đi theo mũi tên tới ô p trỏ vào, rồi đọc hoặc ghi"</div><div class="ex">Đứng trước tên con trỏ, không có kiểu</div></div>
+</div>
+<p class="tip">Nhớ: <b>p</b> là đang trỏ đâu, <b>*p</b> là có gì ở đó.</p>
+</div></body></html>

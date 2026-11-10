@@ -1,0 +1,24 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.lane{border-radius:16px;padding:14px 16px;margin-bottom:14px;border:2px solid}.li{background:#eef4ff;border-color:#2563eb}.ld{background:#fff7ed;border-color:#ea580c}
+.cap{font:700 15px system-ui;margin-bottom:8px}
+.cells{display:flex;gap:6px}.c{flex:0 0 auto;border:3px solid #94a3b8;border-radius:8px;background:#fff;text-align:center;padding:6px 0 4px;position:relative}
+.ci{width:128px}.cd{width:256px}
+.c b{display:block;font:800 20px ui-monospace,Menlo,Consolas,monospace}
+.tk{display:flex;margin-top:4px;padding:0 3px}.tk i{flex:1;height:8px;border-left:2px solid #94a3b8}
+.c span{display:block;font:600 12px ui-monospace,monospace;color:#5d6676;margin-top:2px}
+.flag{height:56px;display:flex;align-items:flex-end;font:800 15px ui-monospace,monospace;color:#7c3aed}
+.fl{width:128px;text-align:center}.fd{width:256px;text-align:center}
+.jump{margin-top:8px;display:flex;align-items:center;gap:8px;font:800 17px ui-monospace,monospace}
+.pill{background:#7c3aed;color:#fff;border-radius:999px;padding:3px 14px}
+.ci.on,.cd.on{border-color:#7c3aed;background:#f6ecff}
+.rule{margin-top:6px;padding:12px 16px;border-left:5px solid #15803d;background:#f0fdf4;border-radius:8px;font-size:16px}
+</style></head><body><div id="art">
+<h3>p++ nhảy một ô, không phải một byte</h3><p class="sub">Mỗi ô nhỏ là 1 byte. Ô int rộng 4 byte, ô double rộng 8 byte, nên bước nhảy dài ngắn khác nhau.</p>
+<div class="lane li"><div class="cap">int *pInt: mỗi ô rộng 4 byte</div>
+<div class="cells"><div class="c ci"><b>1</b><div class="tk"><i></i><i></i><i></i><i></i></div><span>…7f84</span></div><div class="c ci on"><b>2</b><div class="tk"><i></i><i></i><i></i><i></i></div><span>…7f88</span></div><div class="c ci"><b>3</b><div class="tk"><i></i><i></i><i></i><i></i></div><span>…7f8c</span></div></div>
+<div class="jump"><span class="pill">pInt++</span> …7f84 → …7f88: tăng 4 byte</div></div>
+<div class="lane ld"><div class="cap">double *pDouble: mỗi ô rộng 8 byte</div>
+<div class="cells"><div class="c cd"><b>1.5</b><div class="tk"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>…7f90</span></div><div class="c cd on"><b>2.5</b><div class="tk"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>…7f98</span></div></div>
+<div class="jump"><span class="pill">pDouble++</span> …7f90 → …7f98: tăng 8 byte</div></div>
+<div class="rule"><b>Cùng là nhảy 1 phần tử.</b> Số byte nhảy bằng sizeof của kiểu, con trỏ tự tính giúp bạn.</div>
+</div></body></html>

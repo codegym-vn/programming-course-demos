@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.code{background:#f3f5f9;border-radius:14px;padding:18px 22px;font:700 24px/1.7 ui-monospace,Menlo,monospace}
+.k{color:#7c3aed}.n{border-bottom:4px solid #15803d}.r{border-bottom:4px dashed #dc2626}
+.notes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.c{border-radius:12px;padding:10px 14px;background:#f6f7f9;border-left:5px solid;font-size:15.5px}
+.c b{display:block;font-size:17px;margin-bottom:2px}
+.g{border-color:#15803d}.d{border-color:#dc2626}.n{border-bottom:4px solid #15803d}.b{border-color:#2563eb}
+.tip{margin-top:16px;font-size:16px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Giải phẫu một constructor</h3><p class="sub">Trông giống một hàm, nhưng có hai điểm khác</p>
+<div class="code"><span class="k">class</span> HocSinh {<br>&nbsp;&nbsp;<span class="n">HocSinh</span>(string t, int a) {<br>&nbsp;&nbsp;&nbsp;&nbsp;ten = t; tuoi = a;<br>&nbsp;&nbsp;}<br>};</div>
+<div class="notes"><div class="c g"><b>Tên = tên lớp</b>Giống từng chữ, kể cả hoa thường</div>
+<div class="c d"><b>Không kiểu trả về</b>Trước tên không có gì, kể cả void</div>
+<div class="c b"><b>Tự chạy</b>Chạy ngay khi đối tượng ra đời: HocSinh hs("An", 16);</div></div>
+<p class="tip">Không có dòng nào gọi tên constructor: C++ tự gọi.</p></div></body></html>

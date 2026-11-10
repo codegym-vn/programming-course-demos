@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.col{border-radius:16px;padding:18px 20px;border:2px solid}
+.ram{background:#eef4ff;border-color:#2563eb}.disk{background:#eaf7ef;border-color:#15803d}
+.cap{font:800 13px system-ui;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.ram .cap{color:#2563eb}.disk .cap{color:#15803d}
+.name{font-size:22px;font-weight:800;margin-bottom:10px}
+.board{height:90px;border-radius:10px;background:#fff;border:3px solid #94a3b8;display:flex;align-items:center;justify-content:center;font:800 30px ui-monospace,Menlo,monospace}
+.note{height:90px;border-radius:10px;background:#fffbe8;border:3px solid #ca8a04;display:flex;align-items:center;justify-content:center;font:800 30px ui-monospace,Menlo,monospace}
+.erase{display:block;margin:8px 0 0;color:#b91c1c;font-weight:700;font-size:15px}
+ul{margin:12px 0 0;padding-left:20px;font-size:16px}li{margin:4px 0}
+.tip{margin-top:18px;font-size:16px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>RAM giống bảng trắng, ổ đĩa giống cuốn sổ tay</h3><p class="sub">Bảng viết nhanh nhưng bị lau khi hết giờ; sổ tay viết chậm hơn nhưng giữ được lâu</p>
+<div class="row">
+<div class="col ram"><div class="cap">RAM</div><div class="name">Bảng trắng</div><div class="board">diem = 9</div><span class="erase">Tắt chương trình: bị lau sạch</span>
+<ul><li>Rất nhanh</li><li>Chỉ giữ tạm trong lúc chương trình chạy</li><li>Biến sống ở đây</li></ul></div>
+<div class="col disk"><div class="cap">Ổ cứng</div><div class="name">Sổ tay</div><div class="note">diem.txt: 9</div><span class="erase" style="color:#15803d">Tắt máy: vẫn còn nguyên</span>
+<ul><li>Chậm hơn RAM</li><li>Giữ lâu dài</li><li>File sống ở đây</li></ul></div></div>
+<p class="tip">Muốn giữ điểm sau khi tắt chương trình, hãy chép từ bảng trắng sang sổ tay: ghi ra file.</p></div></body></html>

@@ -142,5 +142,71 @@
   "name": "Sơ đồ lớp UML",
   "fn": "snap.uml: {boxes, links}",
   "desc": "Hộp lớp 3 ngăn (tên, thuộc tính, phương thức) và mũi tên quan hệ: kế thừa, thực thi interface, kết hợp, tập hợp, hợp thành, phụ thuộc; tối đa 2 cột hộp để vừa điện thoại."
+ },
+ {
+  "code": "H36",
+  "name": "Bộ nhớ có địa chỉ",
+  "fn": "vMem",
+  "desc": "Hộp biến có địa chỉ, kích thước; con trỏ là hộp tím; vùng ??? kẻ sọc cho rác."
+ },
+ {
+  "code": "H37",
+  "name": "Mũi tên con trỏ",
+  "fn": "vMem o.arrows",
+  "desc": "Mũi tên từ hộp con trỏ tới hộp đích; nét đứt cho con trỏ hoang; ⊘ cho nullptr."
+ },
+ {
+  "code": "H38",
+  "name": "Nhãn bí danh tham chiếu",
+  "fn": "vMem item.alias",
+  "desc": "Nhãn cam 'bí danh: r' dưới hộp; tham chiếu không có hộp riêng."
+ },
+ {
+  "code": "H39",
+  "name": "Thẻ lỗi g++",
+  "fn": "vErr",
+  "desc": "Thẻ lỗi biên dịch / khi chạy / cảnh báo kèm dòng code gạch đỏ và cách sửa."
+ },
+ {
+  "code": "H40",
+  "name": "Khuôn lớp → đối tượng",
+  "fn": "vBlueprint",
+  "desc": "Khuôn lớp nét đứt (thuộc tính, phương thức, ổ cắm constructor) và các thẻ đối tượng được tạo ra."
+ },
+ {
+  "code": "H41",
+  "name": "Phòng phạm vi truy cập",
+  "fn": "vZones",
+  "desc": "Ba phòng private/protected/public có ổ khóa; hàng thử truy cập từ main() hoặc lớp con: được phép / bị chặn."
+ },
+ {
+  "code": "H42",
+  "name": "Đối tượng xếp tầng kế thừa",
+  "fn": "vLayers",
+  "desc": "Tầng lớp cha ở đáy, lớp con ở trên; dựng từ dưới lên (constructor), gỡ từ trên xuống (destructor)."
+ },
+ {
+  "code": "H43",
+  "name": "Kính lúp tra phương thức",
+  "fn": "vLookup",
+  "desc": "Tìm phương thức từ lớp của đối tượng lên lớp cha; bản tìm thấy đầu tiên được dùng."
+ },
+ {
+  "code": "H44",
+  "name": "Dòng thời gian vòng đời",
+  "fn": "vTimeline",
+  "desc": "Các mốc thời gian và thanh sống của từng đối tượng; đối tượng new không delete hiện thanh đỏ rò rỉ."
+ },
+ {
+  "code": "H45",
+  "name": "Đèn trạng thái stream",
+  "fn": "vFlags",
+  "desc": "Đèn good()/eof()/fail() sáng tắt, ghi true/false."
+ },
+ {
+  "code": "H46",
+  "name": "Công tắc chế độ mở file",
+  "fn": "vModes",
+  "desc": "Công tắc ios::in / ios::out / ios::app; ghép vText để thấy nội dung tệp trước/sau."
  }
 ]

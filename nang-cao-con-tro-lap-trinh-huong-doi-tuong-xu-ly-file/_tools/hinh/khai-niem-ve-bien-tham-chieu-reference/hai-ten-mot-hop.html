@@ -1,0 +1,21 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.col{border-radius:16px;padding:16px 18px;border:2px solid}.p{background:#f6ecff;border-color:#7c3aed}.r{background:#fff7ed;border-color:#ea580c}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:10px}
+.stage{height:150px;display:flex;align-items:center;justify-content:center;gap:16px}
+.box{border:3px solid #2563eb;background:#eef4ff;border-radius:12px;padding:8px 18px;text-align:center}
+.box b{font:800 28px ui-monospace,monospace;display:block}.box span{font:600 13px ui-monospace,monospace;color:#5d6676}
+.pbox{border:3px solid #7c3aed;background:#fff;border-radius:12px;padding:8px 14px;text-align:center}
+.pbox b{font:800 17px ui-monospace,monospace;display:block;color:#7c3aed}.pbox span{font:600 13px ui-monospace,monospace;color:#5d6676}
+.ar{font:800 28px system-ui;color:#7c3aed}
+.tag{display:block;margin-top:8px;font:800 14px ui-monospace,monospace;color:#ea580c;border:2px dashed #ea580c;border-radius:999px;padding:2px 10px;background:#fff}
+.n{font-size:15px;color:#1d2330;margin-top:6px}
+.tip{margin-top:14px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Tham chiếu là tên thứ hai của cùng một hộp</h3><p class="sub">Con trỏ cần thêm một hộp riêng. Tham chiếu chỉ dán thêm một nhãn.</p>
+<div class="row">
+<div class="col p"><div class="cap">Con trỏ: có hộp riêng</div><div class="stage"><div class="pbox"><b>0x…1c2c</b><span>p (int*)</span></div><div class="ar">→</div><div class="box"><b>20</b><span>tuoi</span></div></div><div class="n"><b>Hai hộp</b>, hai địa chỉ khác nhau.</div></div>
+<div class="col r"><div class="cap">Tham chiếu: chỉ một hộp</div><div class="stage"><div class="box" style="border-color:#ea580c"><b>20</b><span>tuoi</span><i class="tag">bí danh: thamChieu</i></div></div><div class="n"><b>Một hộp</b>, hai cái tên, một địa chỉ.</div></div>
+</div>
+<p class="tip">Vì vậy <b>&amp;tuoi</b> và <b>&amp;thamChieu</b> luôn là cùng một số.</p>
+</div></body></html>

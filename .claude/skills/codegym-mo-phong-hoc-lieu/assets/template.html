@@ -183,6 +183,105 @@
   .v-rmk.s-bad{background:var(--false)!important}.v-rmk.s-ok{background:var(--true)!important}
   .v-rlim{display:flex;justify-content:space-between;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin-top:6px}
   .v-rnote{font-size:12.5px;color:var(--muted);margin-top:4px}
+  :root{--ptr:#7c3aed;--ptr-soft:#efdcff;--alias:#ea580c}
+  @media (prefers-color-scheme: dark){:root{--ptr:#c4a1ff;--ptr-soft:#35244f;--alias:#fdba74}}
+  svg.v-mem{width:100%;height:auto;display:block;margin:0 auto;overflow:visible}
+  .v-mem .mpb rect{fill:var(--node);stroke:var(--node-line);stroke-width:2;transition:all .25s}
+  .v-mem .mpb.var rect{fill:var(--accent-soft);stroke:var(--accent)}
+  .v-mem .mpb.ptr rect{fill:var(--ptr-soft);stroke:var(--ptr)}
+  .v-mem .mpb.s-hi rect{stroke:var(--cur-bar);stroke-width:3.4;fill:var(--cur)}
+  .v-mem .mpb.s-ok rect{stroke:var(--true);stroke-width:3;fill:var(--true-soft)}
+  .v-mem .mpb.s-bad rect{stroke:var(--false);stroke-width:3.2;fill:var(--false-soft)}
+  .v-mem .mpb.ptr.s-ok rect,.v-mem .mpb.ptr.s-hi rect{fill:var(--ptr-soft);stroke:var(--ptr)}.v-mem .mpb.ptr.s-hi rect{stroke-width:3.6}
+  .v-mem .mpb.s-new rect{animation:vpop .35s ease-out}
+  .v-mem .mpb.s-dim{opacity:.35}
+  .v-mem .mpb.junk rect{stroke:var(--node-line);stroke-dasharray:5 4;fill:none}
+  .v-mem .mphb{fill:var(--code-bg)}.v-mem .mphl{stroke:var(--node-line);stroke-width:3}
+  .v-mem .mpalias{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;fill:var(--alias)}
+  .v-mem .mpb.s-alias rect{stroke:var(--alias);stroke-width:3.2}
+  .v-bp{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+  .v-bpc{border:2px dashed var(--accent);border-radius:10px;background:var(--accent-soft);padding:0 0 8px;min-width:170px}
+  .v-bph{font:800 15px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);padding:6px 10px;border-bottom:2px dashed var(--accent)}.v-bph small{display:block;font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .v-bpf{font:13px ui-monospace,Menlo,Consolas,monospace;padding:2px 10px;transition:all .25s}.v-bpf.m{color:var(--kw)}.v-bpsep{border-top:1px dashed var(--accent);margin:4px 0}
+  .v-bpctor{margin:6px 8px 0;font:700 12.5px ui-monospace,Menlo,Consolas,monospace;border:2px solid var(--true);color:var(--true);border-radius:999px;padding:3px 10px;background:var(--card);transition:all .25s}
+  .v-bpctor.s-hi{background:var(--cur);border-color:var(--cur-bar);color:var(--text)}.v-bpctor.s-dim{opacity:.4}
+  .v-bpa{font:600 12px system-ui,sans-serif;color:var(--muted);text-align:center}.v-bpa i{display:block;width:44px;height:3px;background:var(--muted);margin:4px auto 0;position:relative}.v-bpa i:after{content:"";position:absolute;right:-2px;top:-5px;border:6.5px solid transparent;border-left:9px solid var(--muted);border-right:0}
+  @media (max-width:560px){.v-bp{flex-direction:column;align-items:stretch}.v-bpa i{width:3px;height:22px;margin:4px auto 6px}.v-bpa i:after{right:-5px;top:auto;bottom:-6px;border:6.5px solid transparent;border-top:9px solid var(--muted);border-bottom:0}}
+  .v-bpos{display:flex;flex-wrap:wrap;gap:10px;flex:1;min-width:150px}
+  .v-bpo{border:2px solid var(--node-line);border-radius:10px;background:var(--node);min-width:130px;overflow:hidden;transition:all .25s}
+  .v-bpoh{font:800 14px ui-monospace,Menlo,Consolas,monospace;padding:5px 10px;background:var(--code-bg);border-bottom:1px solid var(--line)}.v-bpoh small{font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .v-bpov{display:flex;justify-content:space-between;gap:12px;padding:3px 10px;font:13px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}.v-bpov span{color:var(--muted)}
+  .v-bpos-sub,.v-bpempty{font:12px system-ui,sans-serif;color:var(--muted);padding:4px 10px}
+  .v-zn{border:2px solid var(--node-line);border-radius:12px;background:var(--node);padding:8px}
+  .v-znh{font:800 14px ui-monospace,Menlo,Consolas,monospace;margin:0 4px 8px}
+  .v-zrooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  .v-zr{border:2px solid;border-radius:10px;padding:6px 8px;transition:all .25s}
+  .v-zr.k-private{border-color:var(--false);background:var(--false-soft)}.v-zr.k-protected{border-color:var(--alias);background:var(--p3s)}.v-zr.k-public{border-color:var(--true);background:var(--true-soft)}
+  .v-zr.s-hi{box-shadow:0 0 0 3px var(--cur-bar)}.v-zr.s-dim{opacity:.4}
+  .v-zrh{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.v-zrh b{font:800 13px ui-monospace,Menlo,Consolas,monospace}.v-zrh em{font:12px system-ui,sans-serif;color:var(--muted);font-style:normal;width:100%}
+  .v-zlock{width:12px;height:10px;border-radius:2px;background:var(--false);position:relative;margin-top:5px}.v-zlock:before{content:"";position:absolute;left:2px;top:-6px;width:4px;height:5px;border:2px solid var(--false);border-bottom:0;border-radius:5px 5px 0 0}
+  .v-zlock.protected{background:var(--alias)}.v-zlock.protected:before{border-color:var(--alias)}
+  .v-zlock.public{background:var(--true)}.v-zlock.public:before{border-color:var(--true);left:7px}
+  .v-zit{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.v-zit span{font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1px 7px;transition:all .25s}
+  .v-ztests{display:grid;gap:6px;margin-top:8px}
+  .v-zt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;border:2px solid var(--node-line);border-radius:10px;padding:5px 10px;background:var(--node);font:13px ui-monospace,Menlo,Consolas,monospace}
+  .v-zt.k-ok{border-color:var(--true);background:var(--true-soft)}.v-zt.k-bad{border-color:var(--false);background:var(--false-soft)}.v-zt.k-wait{border-color:var(--cur-bar);background:var(--cur)}
+  .v-zw,.v-ztg{font-weight:700}.v-za{color:var(--muted)}.v-zres{font:700 12px system-ui,sans-serif;margin-left:auto}.v-zt.k-ok .v-zres{color:var(--true)}.v-zt.k-bad .v-zres{color:var(--false)}
+  .v-zt em{width:100%;font:12px system-ui,sans-serif;font-style:normal;color:var(--muted)}
+  .v-ly{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:4px}
+  .v-lyn{font:700 13px ui-monospace,Menlo,Consolas,monospace;text-align:center;color:var(--muted)}
+  .v-lyl{border:2px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:6px 10px;transition:all .3s}
+  .v-lyl:nth-last-child(2){border-color:var(--p2);background:var(--p2s)}
+  .v-lyc{font:800 14px ui-monospace,Menlo,Consolas,monospace;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}.v-lyc em{font:12px system-ui,sans-serif;font-style:normal;color:var(--muted)}
+  .v-lyi{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.v-lyi span{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+  .v-lyl.s-wait{border-style:dashed;background:transparent!important;border-color:var(--node-line)!important;opacity:.55}
+  .v-lyl.s-del{border-color:var(--false)!important;background:var(--false-soft)!important;opacity:.75}
+  .v-lyl.s-new{animation:vpop .35s ease-out}
+  .v-lybase{text-align:center;font-size:11px;color:var(--muted);border-top:3px solid var(--node-line);padding-top:2px}
+  .v-lk{display:grid;gap:8px}
+  .v-lkc{font:800 15px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;gap:8px}
+  .v-lens{width:16px;height:16px;border:3px solid var(--accent);border-radius:50%;position:relative;flex:none}.v-lens:after{content:"";position:absolute;width:3px;height:9px;background:var(--accent);right:-5px;bottom:-8px;transform:rotate(-45deg);border-radius:2px}
+  .v-lkch{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .v-lka{font:600 12px system-ui,sans-serif;color:var(--muted)}
+  .v-lkb{border:2px solid var(--node-line);border-radius:10px;background:var(--node);padding:6px 12px;min-width:120px;transition:all .25s}
+  .v-lkb b{display:block;font:800 14px ui-monospace,Menlo,Consolas,monospace}.v-lkb span{font:12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}.v-lkb em{display:block;font:700 12px system-ui,sans-serif;font-style:normal;margin-top:2px}
+  .v-lkb.s-no em{color:var(--muted)}.v-lkb.s-ok em{color:var(--true)}
+  .v-tlw{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--node)}
+  .v-tlx{display:grid;gap:0;position:relative;margin-bottom:6px}
+  .v-tle{text-align:center;position:relative;padding:0 2px}.v-tle i{display:block;width:14px;height:14px;border-radius:50%;background:var(--accent);margin:0 auto 4px;position:relative;z-index:1;border:2px solid var(--card)}
+  .v-tle:before{content:"";position:absolute;top:7px;left:0;right:0;height:2px;background:var(--node-line)}
+  .v-tle span{font:11.5px system-ui,sans-serif;color:var(--muted);display:block;line-height:1.25;word-break:break-word}
+  .v-tle.now i{background:var(--cur-bar);box-shadow:0 0 0 3px var(--cur)}.v-tle.now span{color:var(--text);font-weight:700}.v-tle.fut i{background:var(--node-line)}.v-tle.fut span{opacity:.55}
+  .v-tlr{display:flex;align-items:center;gap:8px;margin-top:6px}.v-tln{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;min-width:44px}
+  .v-tlg{display:grid;flex:1}.v-tlb{border:2px solid var(--true);background:var(--true-soft);border-radius:999px;font:600 11.5px system-ui,sans-serif;padding:2px 8px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .3s}
+  .v-tlb.s-hi{border-color:var(--cur-bar);background:var(--cur)}.v-tlb.s-bad{border-color:var(--false);background:var(--false-soft);color:var(--false);border-style:dashed}.v-tlb.s-dim{opacity:.45}
+  .v-flg{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .v-flgs{font:800 14px ui-monospace,Menlo,Consolas,monospace;margin-right:4px}
+  .v-fl{display:flex;flex-direction:column;align-items:center;min-width:72px;border:2px solid var(--node-line);border-radius:10px;padding:6px 8px;background:var(--node);transition:all .25s}
+  .v-flb{width:20px;height:20px;border-radius:50%;background:var(--node-line);margin-bottom:4px;transition:all .25s}
+  .v-fl b{font:700 13px ui-monospace,Menlo,Consolas,monospace}.v-fl em{font:700 12px ui-monospace,Menlo,Consolas,monospace;font-style:normal;color:var(--muted)}
+  .v-fl.on.k-ok{border-color:var(--true);background:var(--true-soft)}.v-fl.on.k-ok .v-flb{background:var(--true);box-shadow:0 0 10px var(--true)}.v-fl.on.k-ok em{color:var(--true)}
+  .v-fl.on.k-hi{border-color:var(--cur-bar);background:var(--cur)}.v-fl.on.k-hi .v-flb{background:var(--cur-bar);box-shadow:0 0 10px var(--cur-bar)}.v-fl.on.k-hi em{color:var(--text)}
+  .v-fl.on.k-bad{border-color:var(--false);background:var(--false-soft)}.v-fl.on.k-bad .v-flb{background:var(--false);box-shadow:0 0 10px var(--false)}.v-fl.on.k-bad em{color:var(--false)}
+  .v-mds{display:flex;flex-wrap:wrap;gap:10px}
+  .v-md{display:flex;flex-direction:column;align-items:center;border:2px solid var(--node-line);border-radius:10px;padding:8px 10px;background:var(--node);min-width:96px;opacity:.6;transition:all .25s}
+  .v-md.on{opacity:1;border-color:var(--accent);background:var(--accent-soft)}
+  .v-mdt{width:38px;height:20px;border-radius:999px;background:var(--node-line);position:relative;margin-bottom:5px;transition:all .25s}.v-mdt i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--card);transition:all .25s}
+  .v-md.on .v-mdt{background:var(--accent)}.v-md.on .v-mdt i{left:20px}
+  .v-md b{font:700 13px ui-monospace,Menlo,Consolas,monospace}.v-md em{font:12px system-ui,sans-serif;font-style:normal;color:var(--muted)}
+  .v-mem .mpq{font:700 22px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted)}
+  .v-mem text{fill:var(--text)}
+  .v-mem .mpn{font:700 13px ui-monospace,Menlo,Consolas,monospace}.v-mem .mpt{font-weight:500;fill:var(--muted)}
+  .v-mem .mpv{font:700 17px ui-monospace,Menlo,Consolas,monospace}.v-mem .mpv.none{fill:var(--false)}
+  .v-mem .mpb.ptr .mpv{font-size:14px}
+  .v-mem .mpad{font:600 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted)}
+  .v-mem .mplock{font:700 11.5px system-ui,sans-serif;fill:var(--false)}
+  .v-mem .mpe{fill:none;stroke:var(--ptr);stroke-width:2.6}.v-mem .mpe.dash{stroke-dasharray:6 5}
+  .v-mem .mpe.s-hi{stroke:var(--cur-bar);stroke-width:3.4}.v-mem .mpe.s-bad{stroke:var(--false)}.v-mem .mpe.s-dim{opacity:.35}
+  .v-mem .mpah{fill:var(--ptr)}.v-mem .mpah.bad{fill:var(--false)}
+  .v-mem .mpnull{font:700 22px system-ui,sans-serif;fill:var(--ptr)}
+  .v-en{font:600 11.5px system-ui,sans-serif;font-style:normal;margin-left:auto;color:var(--muted)}
+  .v-ecode{margin-top:8px;font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:5px 8px;text-decoration:underline wavy var(--false);text-underline-offset:4px;word-break:break-word}
   .console .er{color:#f87171}
   .console .ok{color:#4ade80}
 </style>
@@ -236,12 +335,13 @@
     return out + esc(src.slice(last));
   }
   /* Console: out(t) in cả dòng; write(t) in tiếp trên dòng hiện tại (cout không endl); input(t) chữ người dùng gõ (xanh) rồi xuống dòng;
-     err(t) dòng lỗi đỏ; snap({wait:true}) hiện con trỏ nhấp nháy chờ nhập. */
+     err(t) dòng lỗi đỏ; clear() xóa sạch console (khi chuyển sang chương trình khác); snap({wait:true}) hiện con trỏ nhấp nháy chờ nhập. */
   function mk(){
     var snaps = [], outs = [], n = 0, open = false;
     function seg(t, k){ if (open) outs[outs.length - 1].segs.push({t:t, k:k}); else { outs.push({segs:[{t:t, k:k}]}); open = true; } }
     return {out:function(t){ if (open) { seg(t, 'o'); open = false; } else outs.push(t); },
       write:function(t){ seg(t, 'o'); },
+      clear:function(){ outs = []; open = false; },
       input:function(t){ seg(t, 'in'); open = false; },
       err:function(t){ open = false; outs.push('\u0001' + t); }, snaps:snaps,
       snap:function(o){ o.outs = outs.map(function(x){ return typeof x === 'string' ? x : {segs:x.segs.slice()}; }); o.title = 'Bước ' + (++n) + ' · ' + o.title; snaps.push(o); }};
@@ -518,7 +618,140 @@
   function vRange(o){
     return '<div class="v-row"><div class="v-rng"><div class="v-rbar"><i class="v-rmk' + vSt(o.s) + '" style="left:' + Math.max(0, Math.min(100, o.pos)) + '%"><em class="' + (o.pos > 70 ? 'r' : o.pos < 30 ? 'l' : '') + '">' + esc(o.v || '') + '</em></i></div><div class="v-rlim"><span>' + esc(o.min) + '</span><span>' + esc(o.max) + '</span></div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div></div>';
   }
-  function vizHtml(v){ return Array.isArray(v) ? v.join('') : (v || ''); }
+
+  /* vMem(items, o): bộ nhớ có địa chỉ + mũi tên con trỏ (H36/H37). Mỗi biến là một hộp, xếp theo lưới (col, row).
+     items: [{id, name, type, v, addr:'…1c2c', col, row, kind:'var'|'ptr'|'junk', s:'hi'|'ok'|'bad'|'new'|'dim'|'alias', size:'4 byte', lock:'nhãn ổ khóa', alias:['r'] (H38: nhãn cam "bí danh: r" dưới hộp — tham chiếu là tên thứ hai của cùng hộp, KHÔNG có hộp riêng)}]
+       v: giá trị hiện trong hộp (con trỏ: chuỗi địa chỉ, ví dụ '0x…1c2c'; null/undefined = '?'); kind 'junk' = vùng "???" kẻ sọc nằm ngoài chương trình.
+     o.arrows: [{from:id, to:id, kind:'solid'|'dashed', s:'hi'|'bad'|'dim'}] hoặc {from:id, kind:'null'} (mũi tên ngắn kết thúc bằng ⊘)
+     o.title: tiêu đề nhỏ; o.cols: số cột tối thiểu (mặc định theo dữ liệu); o.note: dòng chú thích dưới hình */
+  function vMem(items, o){
+    o = o || {}; var BW = 132, BH = 64, GX = 34, GY = 70, PX = 14, PT = 26, by = {}, maxC = (o.cols || 1) - 1, maxR = 0;
+    items.forEach(function(b){ by[b.id] = b; b.col = b.col || 0; b.row = b.row || 0; maxC = Math.max(maxC, b.col); maxR = Math.max(maxR, b.row); });
+    var VW = PX * 2 + (maxC + 1) * BW + maxC * GX, VH = PT + (maxR + 1) * BH + maxR * GY + 24;
+    function f(v){ return Math.round(v * 10) / 10; }
+    function X(b){ return PX + b.col * (BW + GX); } function Y(b){ return PT + b.row * (BH + GY); }
+    var s = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<svg class="v-mem" viewBox="0 0 ' + f(VW) + ' ' + f(VH) + '" style="max-width:' + f(VW) + 'px"><defs><marker id="mpa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mpah"/></marker><marker id="mpb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mpah bad"/></marker></defs>';
+    (o.arrows || []).forEach(function(a){
+      var A = by[a.from], B = a.to ? by[a.to] : null, cls = 'mpe' + (a.kind === 'dashed' ? ' dash' : '') + (a.s ? ' s-' + a.s : ''), d;
+      if (!A) return;
+      if (a.kind === 'null') {
+        var nx = X(A) + BW, ny = Y(A) + BH / 2;
+        s += '<path class="mpe" d="M' + f(nx) + ',' + f(ny) + ' H' + f(nx + 22) + '" marker-end="url(#mpa)"/><text class="mpnull" x="' + f(nx + 36) + '" y="' + f(ny + 7) + '" text-anchor="middle">⊘</text>'; return;
+      }
+      if (!B) return;
+      var ax = X(A) + BW / 2, bx = X(B) + BW / 2, ay, by2;
+      if (A.row > B.row) { ay = Y(A); by2 = Y(B) + BH; }
+      else if (A.row < B.row) { ay = Y(A) + BH; by2 = Y(B); }
+      else { ay = Y(A); by2 = Y(B); }
+      if (A.row === B.row) { var top = Math.min(ay, by2) - 22; d = 'M' + f(ax) + ',' + f(ay) + ' C' + f(ax) + ',' + f(top) + ' ' + f(bx) + ',' + f(top) + ' ' + f(bx) + ',' + f(by2 - 2); }
+      else { var my = (ay + by2) / 2; d = 'M' + f(ax) + ',' + f(ay) + ' C' + f(ax) + ',' + f(my) + ' ' + f(bx) + ',' + f(my) + ' ' + f(bx) + ',' + f(by2 + (A.row > B.row ? 2 : -2)); }
+      s += '<path class="' + cls + '" d="' + d + '" marker-end="url(#' + (a.s === 'bad' ? 'mpb' : 'mpa') + ')"/>';
+    });
+    items.forEach(function(b){
+      var x = X(b), y = Y(b), kind = b.kind || 'var', c = 'mpb ' + kind + (b.s ? ' s-' + b.s : '');
+      if (kind === 'junk') {
+        s += '<g class="' + c + '"><rect x="' + f(x) + '" y="' + f(y) + '" width="' + BW + '" height="' + BH + '" rx="8" fill="url(#mph)"/><text class="mpq" x="' + f(x + BW / 2) + '" y="' + f(y + BH / 2 + 8) + '" text-anchor="middle">???</text></g>';
+        if (b.name) s += '<text class="mpad" x="' + f(x + BW / 2) + '" y="' + f(y - 8) + '" text-anchor="middle">' + esc(b.name) + '</text>';
+        return;
+      }
+      s += '<text class="mpad" x="' + f(x + 2) + '" y="' + f(y - 7) + '">' + esc(b.addr || '') + '</text>' + (b.size ? '<text class="mpad r" x="' + f(x + BW - 2) + '" y="' + f(y - 7) + '" text-anchor="end">' + esc(b.size) + '</text>' : '') +
+        '<g class="' + c + '"><rect x="' + f(x) + '" y="' + f(y) + '" width="' + BW + '" height="' + BH + '" rx="8"/><text class="mpn" x="' + f(x + 8) + '" y="' + f(y + 17) + '">' + esc(b.name) + ' <tspan class="mpt">(' + esc(b.type) + ')</tspan></text>' +
+        '<text class="mpv' + ((b.v === null || b.v === undefined) ? ' none' : '') + '" x="' + f(x + BW / 2) + '" y="' + f(y + 47) + '" text-anchor="middle">' + esc((b.v === null || b.v === undefined) ? '?' : b.v) + '</text></g>' +
+        (b.alias ? '<text class="mpalias" x="' + f(x + BW / 2) + '" y="' + f(y + BH + 16) + '" text-anchor="middle">' + esc('bí danh: ' + [].concat(b.alias).join(', ')) + '</text>' : '') +
+        (b.lock ? '<text class="mplock" x="' + f(x + BW / 2) + '" y="' + f(y + BH + 15) + '" text-anchor="middle">' + esc(b.lock) + '</text>' : '');
+    });
+    s += '<defs><pattern id="mph" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" class="mphb"/><line x1="0" y1="0" x2="0" y2="8" class="mphl"/></pattern></defs>';
+    return s + '</svg>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vErr(o): thẻ lỗi g++ / lỗi khi chạy (H39). o: {kind:'compile'|'runtime'|'warn', msg:['error: ...', 'note: ...'], code:'dòng gây lỗi (gạch đỏ)', fix:'Cách sửa', note:'chú thích (ví dụ: Không sinh file .exe)'} */
+  function vErr(o){
+    var lab = {compile:'Lỗi biên dịch', runtime:'Lỗi khi chạy', warn:'Cảnh báo'}[o.kind || 'compile'];
+    var h = '<div class="v-card ' + (o.kind === 'warn' ? 'k-warn' : 'k-err') + '"><div class="v-ct"><span class="v-ic">' + (o.kind === 'runtime' ? '✕' : '!') + '</span>' + esc(lab) + (o.note ? '<em class="v-en">' + esc(o.note) + '</em>' : '') + '</div>';
+    (o.msg || []).forEach(function(m){ h += '<div class="v-cs">' + esc(m) + '</div>'; });
+    if (o.code) h += '<div class="v-ecode">' + esc(o.code) + '</div>';
+    if (o.fix) h += '<div class="v-tip"><b>Cách sửa:</b> ' + esc(o.fix) + '</div>';
+    return h + '</div>';
+  }
+  /* vBlueprint(o): khuôn lớp → các đối tượng (H40). o: {cls:'SinhVien', fields:['string ten','int tuoi'], methods:['gioiThieu()'], ctor:'SinhVien(string t, int a)' (hiện ổ cắm constructor), ctorS:'hi',
+       objs:[{name:'sv1', vals:[['ten','"An"'],['tuoi','20']], s:'new'|'hi'|'ok'|'dim'|'bad', sub:'chú thích nhỏ'}], arrow:'tạo ra', title, note} */
+  function vBlueprint(o){
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-bp"><div class="v-bpc"><div class="v-bph"><small>class (khuôn)</small>' + esc(o.cls) + '</div>';
+    (o.fields || []).forEach(function(f){ f = vO(typeof f === 'string' ? {v:f} : f); h += '<div class="v-bpf' + vSt(f.s) + '">' + esc(f.v) + '</div>'; });
+    if (o.methods && o.methods.length) h += '<div class="v-bpsep"></div>' + o.methods.map(function(m){ m = typeof m === 'string' ? {v:m} : m; return '<div class="v-bpf m' + vSt(m.s) + '">' + esc(m.v) + '</div>'; }).join('');
+    if (o.ctor) h += '<div class="v-bpctor' + vSt(o.ctorS) + '">' + esc(o.ctor) + '</div>';
+    h += '</div>';
+    var objs = o.objs || [];
+    h += '<div class="v-bpa">' + esc(o.arrow || 'tạo ra') + '<i></i></div><div class="v-bpos">';
+    h += objs.length ? objs.map(function(b){
+      return '<div class="v-bpo' + vSt(b.s) + '"><div class="v-bpoh">' + esc(b.name) + ' <small>' + esc(o.cls) + '</small></div>' + (b.vals || []).map(function(v){ return '<div class="v-bpov' + vSt(v[2]) + '"><span>' + esc(v[0]) + '</span><b>' + esc(v[1]) + '</b></div>'; }).join('') + (b.sub ? '<div class="v-bpos-sub">' + esc(b.sub) + '</div>' : '') + '</div>';
+    }).join('') : '<div class="v-bpempty">Chưa có đối tượng nào. Khuôn chưa chiếm chỗ cho dữ liệu.</div>';
+    return h + '</div></div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vZones(o): các phòng phạm vi truy cập trong một lớp (H41). o: {cls:'TaiKhoan', zones:[{kind:'private'|'protected'|'public', items:['soDu' | {v,s}], s}],
+       tests:[{who:'main()', target:'tk.soDu', ok:false, note:'bị chặn: soDu là private'}], title, note}
+       private: ổ khóa, chỉ code trong lớp; protected: khóa có ngoại lệ cho lớp con; public: cửa mở */
+  function vZones(o){
+    var lab = {'private':'chỉ code bên trong lớp', 'protected':'trong lớp và lớp con', 'public':'ai cũng dùng được'};
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-zn"><div class="v-znh">class ' + esc(o.cls) + '</div><div class="v-zrooms">';
+    (o.zones || []).forEach(function(z){
+      h += '<div class="v-zr k-' + z.kind + vSt(z.s) + '"><div class="v-zrh"><span class="v-zlock ' + z.kind + '"></span><b>' + esc(z.kind) + '</b><em>' + esc(lab[z.kind] || '') + '</em></div><div class="v-zit">' +
+        (z.items || []).map(function(it){ it = typeof it === 'string' ? {v:it} : it; return '<span class="' + vSt(it.s).trim() + '">' + esc(it.v) + '</span>'; }).join('') + '</div></div>';
+    });
+    h += '</div></div>';
+    if (o.tests && o.tests.length) h += '<div class="v-ztests">' + o.tests.map(function(t){
+      var st = t.ok === undefined ? 'wait' : (t.ok ? 'ok' : 'bad');
+      return '<div class="v-zt k-' + st + '"><span class="v-zw">' + esc(t.who) + '</span><span class="v-za">→</span><span class="v-ztg">' + esc(t.target) + '</span><span class="v-zres">' + (st === 'ok' ? '✓ được phép' : st === 'bad' ? '✗ bị chặn' : '… đang thử') + '</span>' + (t.note ? '<em>' + esc(t.note) + '</em>' : '') + '</div>';
+    }).join('') + '</div>';
+    return h + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vLayers(o): đối tượng lớp con xếp tầng (H42). layers liệt kê từ ĐÁY (lớp cha gốc) lên ĐỈNH (lớp con).
+       layers: [{cls:'DongVat', items:['string ten','an()'], s:'new'|'ok'|'hi'|'del'|'dim'|'wait', sub:'đã dựng xong'}]
+       s:'wait' = tầng chưa dựng (nét đứt, mờ); s:'del' = tầng đang bị gỡ (đỏ). o: {name:'Đối tượng c', title, note} */
+  function vLayers(o){
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-ly">' + (o.name ? '<div class="v-lyn">' + esc(o.name) + '</div>' : '');
+    (o.layers || []).slice().reverse().forEach(function(l){
+      h += '<div class="v-lyl' + vSt(l.s) + '"><div class="v-lyc">' + esc(l.cls) + (l.sub ? '<em>' + esc(l.sub) + '</em>' : '') + '</div><div class="v-lyi">' + (l.items || []).map(function(it){ it = typeof it === 'string' ? {v:it} : it; return '<span class="' + vSt(it.s).trim() + '">' + esc(it.v) + '</span>'; }).join('') + '</div></div>';
+    });
+    return h + '<div class="v-lybase">nền móng: lớp cha dựng trước</div></div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vLookup(o): kính lúp tra phương thức theo chuỗi kế thừa (H43). o: {call:'c.keu()', chain:[{cls:'Cho', m:'keu()', has:true, s:'hi'|'ok'|'no'|'dim'}], note, title}
+       chain đi từ lớp của đối tượng (trái) lên lớp cha (phải). s:'ok' = tìm thấy và dùng; 'no' = không có, đi tiếp; 'dim' = không cần xét. */
+  function vLookup(o){
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-lk"><div class="v-lkc"><span class="v-lens"></span>' + esc(o.call) + '</div><div class="v-lkch">';
+    (o.chain || []).forEach(function(c, i){
+      h += (i ? '<div class="v-lka">lên lớp cha →</div>' : '') + '<div class="v-lkb' + vSt(c.s) + '"><b>' + esc(c.cls) + '</b><span>' + (c.has ? 'có ' + esc(c.m) : 'không có ' + esc(c.m)) + '</span>' + (c.s === 'ok' ? '<em>✓ dùng bản này</em>' : c.s === 'no' ? '<em>✗ tìm tiếp</em>' : '') + '</div>';
+    });
+    return h + '</div></div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vTimeline(o): vòng đời đối tượng (H44). o: {events:['Bắt đầu main()', ...] (mốc thời gian, trái → phải), now: chỉ số mốc hiện tại,
+       bars:[{name:'sv1', from:0, to:3 (null = còn sống tới mốc hiện tại), s:'ok'|'hi'|'bad'|'dim', leak:true (nhãn rò rỉ), end:'~SinhVien()'}], title, note} */
+  function vTimeline(o){
+    var ev = o.events || [], n = ev.length, now = o.now === undefined ? n - 1 : o.now, cols = 'grid-template-columns:repeat(' + n + ',minmax(0,1fr))';
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-tlw"><div class="v-tlx" style="' + cols + '">';
+    ev.forEach(function(e, i){ h += '<div class="v-tle' + (i === now ? ' now' : i > now ? ' fut' : '') + '"><i></i><span>' + esc(e) + '</span></div>'; });
+    h += '</div>';
+    (o.bars || []).forEach(function(b){
+      var to = (b.to === null || b.to === undefined) ? now : Math.min(b.to, now);
+      if (b.from > now) return;
+      h += '<div class="v-tlr"><div class="v-tln">' + esc(b.name) + '</div><div class="v-tlg" style="' + cols + '"><div class="v-tlb' + vSt(b.leak ? 'bad' : b.s) + '" style="grid-column:' + (b.from + 1) + ' / ' + (to + 2) + '">' + (b.leak ? 'chưa giải phóng: rò rỉ' : esc(b.end && b.to !== null && b.to !== undefined && b.to <= now ? b.end : 'đang sống')) + '</div></div></div>';
+    });
+    return h + '</div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vFlags(o): bảng đèn trạng thái của stream (H45). o: {stream:'file', flags:[{n:'good()', v:true, k:'ok'|'hi'|'bad'}], title, note}
+       Đèn sáng (màu k) khi v true, tắt (xám) khi false; luôn ghi true/false bên dưới. Mặc định k: good→ok, eof→hi, fail/bad→bad. */
+  function vFlags(o){
+    var def = {'good()':'ok', 'eof()':'hi', 'fail()':'bad', 'bad()':'bad'};
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-flg">' + (o.stream ? '<div class="v-flgs">' + esc(o.stream) + '</div>' : '');
+    (o.flags || []).forEach(function(f){ var k = f.k || def[f.n] || 'ok'; h += '<div class="v-fl' + (f.v ? ' on k-' + k : '') + '"><span class="v-flb"></span><b>' + esc(f.n) + '</b><em>' + (f.v ? 'true' : 'false') + '</em></div>'; });
+    return h + '</div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  /* vModes(o): công tắc chế độ mở file (H46). o: {modes:[{n:'ios::in', sub:'đọc', on:true}], title, note}. Ghép thêm vText/vPair để hiện nội dung tệp trước/sau. */
+  function vModes(o){
+    var h = '<div class="v-row">' + (o.title ? '<div class="v-name">' + esc(o.title) + '</div>' : '') + '<div class="v-mds">';
+    (o.modes || []).forEach(function(m){ h += '<div class="v-md' + (m.on ? ' on' : '') + '"><span class="v-mdt"><i></i></span><b>' + esc(m.n) + '</b>' + (m.sub ? '<em>' + esc(m.sub) + '</em>' : '') + '</div>'; });
+    return h + '</div>' + (o.note ? '<div class="v-rnote">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  function vizHtml(v){ return Array.isArray(v) ? v.map(vizHtml).join('') : (v || ''); }
   function memHtml(sn){
     var arrs = sn && sn.arrs ? sn.arrs : [], vs = sn && sn.vars ? sn.vars : [], os = sn && sn.objs ? sn.objs : [], h = '';
     if (arrs.length) h += arrs.map(arrHtml).join('');

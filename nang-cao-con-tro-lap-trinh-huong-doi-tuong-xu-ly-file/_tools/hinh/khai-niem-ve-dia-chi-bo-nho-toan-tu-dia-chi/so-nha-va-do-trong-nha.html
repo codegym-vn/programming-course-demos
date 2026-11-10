@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.col{border-radius:16px;padding:18px 20px;border:2px solid}
+.a{background:#eef4ff;border-color:#2563eb}.b{background:#f6ecff;border-color:#7c3aed}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:10px}
+.code{font:800 30px ui-monospace,Menlo,Consolas,monospace;margin-bottom:8px}
+.a .code{color:#2563eb}.b .code{color:#7c3aed}
+.house{display:flex;align-items:center;gap:14px;margin:10px 0}
+.bx{border:3px solid #2563eb;background:#fff;border-radius:12px;padding:6px 16px;font:800 28px ui-monospace,Menlo,monospace}
+.num{border:3px dashed #7c3aed;background:#fff;border-radius:12px;padding:6px 14px;font:800 20px ui-monospace,Menlo,monospace;color:#7c3aed}
+.d{font-size:16px;color:#1d2330}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>tuoi và &amp;tuoi: đồ trong nhà và số nhà</h3><p class="sub">Cùng một biến, chỉ khác đúng một dấu &amp;</p>
+<div class="row">
+<div class="col a"><div class="cap">Không có &amp;</div><div class="code">tuoi</div><div class="house"><div class="bx">20</div></div><div class="d"><b>Giá trị</b> nằm trong hộp (đồ trong nhà)</div></div>
+<div class="col b"><div class="cap">Có &amp;</div><div class="code">&amp;tuoi</div><div class="house"><div class="num">0x7ffcda622164</div></div><div class="d"><b>Địa chỉ</b> của hộp, số hex bắt đầu bằng 0x (số nhà)</div></div>
+</div>
+<p class="tip">Số nhà đổi mỗi lần chạy chương trình, còn đồ trong nhà là do bạn gán.</p>
+</div></body></html>

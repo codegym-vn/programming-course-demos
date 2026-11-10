@@ -1,0 +1,14 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;align-items:start}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:8px}
+.obj{border:3px solid #1d2330;border-radius:16px;overflow:hidden;background:#fff}
+.top{background:#dbeafe;padding:12px 16px;border-bottom:2px dashed #2563eb}.bot{background:#e3f4e8;padding:12px 16px}
+.top b,.bot b{display:block;font:800 16px ui-monospace,Menlo,Consolas,monospace;margin-bottom:6px}
+.chip{display:inline-block;background:#fff;border:1px solid #cbd2dc;border-radius:8px;padding:3px 10px;margin:2px 4px 2px 0;font:600 14.5px ui-monospace,Menlo,Consolas,monospace}
+.card{border-radius:12px;padding:12px 16px;background:#f6f7f9;border-left:5px solid #2563eb;margin-bottom:12px;font-size:15.5px}
+.card.b{border-color:#15803d}.card b{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style></head><body><div id="art">
+<h3>Đối tượng lớp con gồm hai phần</h3><p class="sub">Lớp con không chép code của cha. Nó dùng chung phần của cha, rồi thêm phần riêng của mình.</p>
+<div class="row"><div><div class="cap">Đối tượng sv (lớp SinhVien)</div><div class="obj"><div class="top"><b>Phần của NguoiHoc (cha)</b><span class="chip">ten</span><span class="chip">tuoi</span><span class="chip">gioiThieu()</span></div><div class="bot"><b>Phần riêng của SinhVien</b><span class="chip">truongDaiHoc</span></div></div></div>
+<div><div class="card"><b>Phần cha</b><br>Viết một lần trong NguoiHoc. Sửa ở đây thì mọi lớp con đổi theo.</div><div class="card b"><b>Phần riêng</b><br>Chỉ viết trong SinhVien những gì cha không có.</div><div class="card"><b>Quan hệ "là một"</b><br>SinhVien là một NguoiHoc, nên mới nên kế thừa.</div></div></div>
+</div></body></html>

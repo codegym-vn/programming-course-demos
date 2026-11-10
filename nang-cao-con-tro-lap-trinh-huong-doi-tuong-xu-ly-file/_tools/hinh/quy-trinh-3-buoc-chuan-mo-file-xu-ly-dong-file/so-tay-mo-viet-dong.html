@@ -1,0 +1,16 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.s{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.c{border-radius:14px;padding:16px;border:2px solid;text-align:center}
+.c1{background:#eef4ff;border-color:#2563eb}.c2{background:#fff8e1;border-color:#ca8a04}.c3{background:#eaf7ef;border-color:#15803d}
+.num{font:800 14px system-ui;color:#5d6676;letter-spacing:.05em}
+.t{font-size:22px;font-weight:800;margin:4px 0}
+.code{font:700 15px ui-monospace,Menlo,monospace;background:#fff;border-radius:8px;padding:6px;margin:8px 0}
+.d{font-size:15px;color:#3b4252}
+.warn{margin-top:18px;border-radius:14px;padding:14px 18px;background:#fdeaea;border-left:6px solid #b91c1c;font-size:16px}
+</style></head><body><div id="art">
+<h3>Quy trình 3 bước giống dùng cuốn sổ tay</h3><p class="sub">Mở sổ, viết, rồi gấp sổ lại</p>
+<div class="s">
+<div class="c c1"><div class="num">BƯỚC 1</div><div class="t">Mở</div><div class="code">ofstream f("a.txt");</div><div class="d">Mở sổ ra</div></div>
+<div class="c c2"><div class="num">BƯỚC 2</div><div class="t">Xử lý</div><div class="code">f &lt;&lt; "..." ;</div><div class="d">Viết vào sổ (chữ nằm trong bộ đệm)</div></div>
+<div class="c c3"><div class="num">BƯỚC 3</div><div class="t">Đóng</div><div class="code">f.close();</div><div class="d">Gấp sổ: chữ xuống hẳn tệp</div></div></div>
+<div class="warn"><b>Quên bước 3:</b> chữ có thể còn nằm trong bộ đệm, chưa xuống đĩa. Ai mở tệp lúc đó có thể thấy tệp rỗng.</div></div></body></html>

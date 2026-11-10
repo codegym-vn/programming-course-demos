@@ -59,6 +59,7 @@ Người dùng dán bài đọc hiện có vào cột "Nội dung cũ" của Exc
 | `references/bai-mau-noi-dung.md` | Bài đọc mẫu đã được duyệt |
 | `references/csharp-facts.md` | Thông điệp lỗi, hành vi .NET cần giữ đúng |
 | `references/cpp-facts.md` | Sự thật C++ (khác C#: tràn số, chia 0, cout 6 chữ số, switch...) |
+| `scripts/ghi_excel_ngoai.py` | Ghi đường dẫn/link/trạng thái/nội dung mới/link hình vào Excel nằm ngoài repo (course.json: excel_source); tự ghi bản sao nếu Excel đang mở |
 | `scripts/render_image.js` | Vẽ hình minh họa cho bài đọc: HTML (#art) → PNG đặt cạnh trang mô phỏng |
 | `references/thu-vien-hinh.json` | Danh mục 24 thành phần hình minh họa (mã H01-H24) |
 | `assets/mau-phan-tich-mo-phong.xlsx` | File Excel mẫu (2 dòng ví dụ thật + sheet Huong dan) để giới thiệu cho người dùng mới |
@@ -74,3 +75,4 @@ Người dùng dán bài đọc hiện có vào cột "Nội dung cũ" của Exc
 - Excel có thể do người khác chuẩn bị, đường dẫn khác quy tắc slug: dùng META `"path"` (tương đối so với thư mục khóa) để giữ đúng cấu trúc thư mục của Excel, và sửa cột Đường dẫn/Link cho khớp thư mục thật.
 - Khung có thêm: console giả lập (`c.write`, `c.input`, `snap({wait:true})`), dòng không chạy (`snap({dim:[...]})`), bố cục `var LAYOUT='side'`, và các hình `vBoxes`, `vTrace`, `vFlowchart`, `vCycle`, `vSwitch`, `vBytes`, `vRange` (xem chú thích trong template).
 - "Nội dung mới" khi người dùng yêu cầu giữ khung bài cũ: giữ mục/giọng văn bài cũ, sửa lỗi, chèn hình `![mô tả](link GitHub Pages đầy đủ)` và một mục nhỏ mô phỏng (không kể lại ví dụ, chỉ nêu điều mô phỏng cho thấy thêm) + iframe. Có thể giao mỗi tác nhân làm trọn một bài (mô phỏng → hình → nội dung), xem mẫu `_tools/BRIEF-cpp.md` của khóa C++.
+- Khóa C++ Nâng cao (11/2026): thêm hình `vMem` (hộp biến có địa chỉ + mũi tên con trỏ), `vErr` (thẻ lỗi g++), `c.clear()` xóa console giữa hai chương trình. Excel của người dùng ở ~/Downloads: dùng `ghi_excel_ngoai.py` thay cho excel_tools khi Excel nằm ngoài thư mục khóa.

@@ -1,0 +1,18 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.c{border-radius:14px;padding:14px;border:2px solid;background:#f6f7f9}
+.c h4{margin:0 0 2px;font:800 20px ui-monospace,Menlo,Consolas,monospace}.c p{margin:0 0 10px;font-size:15px;color:#5d6676}
+.c1{border-color:#b91c1c}.c2{border-color:#15803d}.c3{border-color:#2563eb}
+.f{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font:600 13.5px ui-monospace,Menlo,Consolas,monospace;margin-bottom:8px}
+.f div{padding:2px 0}.old{color:#5d6676}.new{color:#15803d;font-weight:800}.gone{color:#b91c1c;text-decoration:line-through}
+.lb{font:700 12px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:3px}
+.r{font-size:15px;font-weight:700}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Ba chế độ mở tệp, cùng một tệp ban đầu</h3><p class="sub">Tệp nhatky.txt có sẵn 2 dòng. Xem mỗi chế độ để lại gì sau khi ghi một dòng mới</p>
+<div class="g">
+<div class="c c1"><h4>ios::out</h4><p>cục tẩy: xóa rồi ghi</p><div class="lb">Sau khi ghi</div><div class="f"><div class="gone">Dong 1: Hom nay troi dep.</div><div class="gone">Dong 2: Toi di hoc.</div><div class="new">Dong moi duy nhat.</div></div><div class="r" style="color:#b91c1c">Dòng cũ mất hết</div></div>
+<div class="c c2"><h4>ios::app</h4><p>nối đuôi: giữ rồi ghi thêm</p><div class="lb">Sau khi ghi</div><div class="f"><div class="old">Dong 1: Hom nay troi dep.</div><div class="old">Dong 2: Toi di hoc.</div><div class="new">Dong 3: Buoi toi ...</div></div><div class="r" style="color:#15803d">Dòng cũ còn, dòng mới ở cuối</div></div>
+<div class="c c3"><h4>ios::in</h4><p>chỉ đọc, không ghi</p><div class="lb">Sau khi đọc</div><div class="f"><div class="old">Dong 1: Hom nay troi dep.</div><div class="old">Dong 2: Toi di hoc.</div><div class="old">&nbsp;</div></div><div class="r" style="color:#2563eb">Tệp không đổi</div></div>
+</div>
+<p class="tip">Muốn vừa đọc vừa ghi thêm: ghép bằng dấu <b>|</b>, ví dụ <b>ios::in | ios::app</b>.</p></div></body></html>

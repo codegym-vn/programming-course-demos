@@ -1,0 +1,17 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.r{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;margin-bottom:12px;padding:14px 18px;border-radius:14px;background:#f6f7f9}
+.cls{font:800 22px ui-monospace,Menlo,monospace}.cls small{display:block;font:600 13px system-ui;color:#5d6676;margin-top:2px}
+.flow{display:flex;align-items:center;gap:10px;font:700 16px system-ui}
+.n{border-radius:10px;padding:8px 14px;border:2px solid;background:#fff}
+.p{border-color:#2563eb}.f{border-color:#15803d}
+.ar{flex:1;text-align:center;font:800 15px ui-monospace,Menlo,monospace;color:#7c3aed;position:relative;min-width:130px}
+.ar:after{content:"";display:block;height:4px;background:#7c3aed;border-radius:2px;margin-top:2px}
+.l .ar:after{background:#7c3aed}
+.op{font:600 14px system-ui;color:#5d6676;margin-top:4px}
+.tip{margin-top:14px;font-size:16px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Ba lớp, ba kiểu chiều chảy</h3><p class="sub">o = Output (ghi ra file), i = Input (đọc vào chương trình)</p>
+<div class="r"><div class="cls">ofstream<small>chuyên ghi</small></div><div><div class="flow"><span class="n p">Chương trình</span><span class="ar">&lt;&lt;  →</span><span class="n f">Tệp</span></div><div class="op">Chỉ có toán tử &lt;&lt;</div></div></div>
+<div class="r"><div class="cls">ifstream<small>chuyên đọc</small></div><div><div class="flow"><span class="n p">Chương trình</span><span class="ar">←  &gt;&gt;, getline</span><span class="n f">Tệp</span></div><div class="op">Chỉ có &gt;&gt; và getline</div></div></div>
+<div class="r"><div class="cls">fstream<small>cả hai, tùy chế độ</small></div><div><div class="flow"><span class="n p">Chương trình</span><span class="ar">⇄  ios::out / ios::in</span><span class="n f">Tệp</span></div><div class="op">Chế độ chọn lúc mở file</div></div></div>
+<p class="tip">Dùng sai chiều (ví dụ ghi vào ifstream) thì trình biên dịch báo lỗi ngay.</p></div></body></html>

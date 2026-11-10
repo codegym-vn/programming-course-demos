@@ -1,0 +1,19 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.col{border-radius:16px;padding:18px 20px;border:2px solid}
+.bad{background:#fff7ed;border-color:#c2410c}.ok{background:#ecfdf3;border-color:#15803d}
+.code{font:800 26px ui-monospace,Menlo,Consolas,monospace;background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.step{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:16px}
+.tag{font:800 15px ui-monospace,Menlo,monospace;border-radius:8px;padding:3px 10px;background:#fff;border:2px solid}
+.bad .tag{border-color:#c2410c;color:#c2410c}.ok .tag{border-color:#15803d;color:#15803d}
+.res{margin-top:10px;font:800 20px ui-monospace,Menlo,monospace}
+.small{font-size:14px;color:#5d6676;margin-top:8px}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Bẫy của cout với biến char</h3><p class="sub">cout nhìn vào kiểu của giá trị để quyết định in chữ hay in địa chỉ</p>
+<div class="row">
+<div class="col bad"><div class="code">cout &lt;&lt; &amp;c;</div><div class="step">Kiểu của &amp;c: <span class="tag">char*</span></div><div class="step">cout hiểu: "một chuỗi chữ"</div><div class="res">in: X</div><div class="small">Có thể kèm ký tự lạ vì chuỗi chỉ dừng khi gặp \0</div></div>
+<div class="col ok"><div class="code">cout &lt;&lt; (void*)&amp;c;</div><div class="step">Kiểu sau khi ép: <span class="tag">void*</span></div><div class="step">cout hiểu: "một địa chỉ"</div><div class="res">in: 0x7ffe0450a60b</div><div class="small">Địa chỉ khác nhau mỗi lần chạy</div></div>
+</div>
+<p class="tip">Muốn in địa chỉ của biến char, hãy ép sang <b>(void*)</b>.</p>
+</div></body></html>

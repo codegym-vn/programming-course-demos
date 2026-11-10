@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.col{border-radius:16px;padding:18px 20px;border:2px solid}
+.ok{background:#ecfdf3;border-color:#15803d}.bad{background:#fff1f1;border-color:#b91c1c}
+.code{font:800 26px ui-monospace,Menlo,Consolas,monospace;background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.vis{height:64px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.box{border:3px solid #7c3aed;background:#fff;border-radius:10px;padding:6px 14px;font:800 18px ui-monospace,Menlo,monospace;color:#7c3aed}
+.stop{font:800 28px system-ui;color:#15803d}
+.junk{border:3px dashed #94a3b8;border-radius:10px;padding:10px 16px;font:800 20px ui-monospace,monospace;color:#5d6676;background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 6px,#e2e8f0 6px,#e2e8f0 12px)}
+.dash{color:#b91c1c;font:800 26px system-ui}
+.li{font-size:16px;margin:5px 0}
+.tip{margin-top:16px;font-size:15px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>nullptr và con trỏ hoang</h3><p class="sub">Cả hai đều "chưa trỏ tới biến nào", nhưng chỉ nullptr kiểm tra được</p>
+<div class="row">
+<div class="col ok"><div class="code">int *p1 = nullptr;</div><div class="vis"><div class="box">p1 = 0</div><span class="stop">⊘</span></div><div class="li"><b>Rỗng có chủ đích</b></div><div class="li">Kiểm tra được: <span class="mono">if (p1 == nullptr)</span></div></div>
+<div class="col bad"><div class="code">int *p2;</div><div class="vis"><div class="box">p2 = rác</div><span class="dash">- - &gt;</span><div class="junk">???</div></div><div class="li"><b>Con trỏ hoang</b>: chứa số ngẫu nhiên</div><div class="li">Không có cách nào kiểm tra xem số đó có hợp lệ không</div></div>
+</div>
+<p class="tip">Chưa có địa chỉ để gán thì khởi tạo bằng <b>nullptr</b>.</p>
+</div></body></html>

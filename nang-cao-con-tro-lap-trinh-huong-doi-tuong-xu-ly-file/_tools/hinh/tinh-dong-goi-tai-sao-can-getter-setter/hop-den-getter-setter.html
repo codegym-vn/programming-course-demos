@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:0 18px;align-items:center}
+.col{border-radius:16px;padding:14px 16px}
+.main{background:#f6f7f9;border:2px dashed #94a3b8;text-align:center}
+.box{background:#1d2330;color:#fff;border-radius:16px;padding:14px 16px}
+.box h4{margin:0 0 10px;font:700 14px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#cbd2dc;text-align:center}
+.btn{border-radius:10px;padding:9px 12px;margin:8px 0;font:700 16px ui-monospace,Menlo,Consolas,monospace;text-align:center}
+.set{background:#fff3c4;color:#1d2330;border:2px solid #d9a400}.get{background:#dbeafe;color:#1d2330;border:2px solid #2563eb}
+.dat{background:#fbe9e7;color:#b42318;border:2px solid #b42318;border-radius:10px;padding:10px;margin-top:12px;text-align:center;font:800 18px ui-monospace,monospace}
+.note{font-size:14px;color:#cbd2dc;text-align:center;margin-top:4px}
+.ar{font:800 26px system-ui;color:#5d6676;text-align:center}
+.lbl{font:600 14px system-ui;color:#5d6676}
+.l1,.l2{border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14.5px;font-weight:600}
+.l1{background:#e3f4e8;color:#15803d}.l2{background:#fbe9e7;color:#b42318}
+</style></head><body><div id="art">
+<h3>Đối tượng là chiếc hộp đen có vài nút bấm</h3><p class="sub">Dữ liệu nằm kín bên trong. Bên ngoài chỉ chạm vào qua các nút do lớp thiết kế sẵn.</p>
+<div class="row"><div class="col main"><b class="mono">main()</b><div class="l1">setTuoi(16)<br>nhận</div><div class="l2">setTuoi(-5)<br>bị chặn</div></div>
+<div class="box"><h4>Hộp đen: HocSinh</h4><div class="btn set">setTuoi(t)</div><div class="note">cổng vào, có trạm kiểm tra</div><div class="btn get">getTuoi()</div><div class="note">cửa sổ chỉ để nhìn</div><div class="dat">private: tuoi</div></div>
+<div class="col main"><div class="lbl">Muốn đổi luật kiểm tra?</div><p style="margin:8px 0 0;font-weight:700">Chỉ sửa bên trong nút setTuoi. main() vẫn gọi như cũ.</p></div></div>
+</div></body></html>

@@ -1,0 +1,17 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.q{border-radius:16px;padding:14px 18px;background:#f6f7f9;border:2px solid #cbd5e1;font:700 18px system-ui;text-align:center;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.col{border-radius:16px;padding:16px 18px;border:2px solid}.r{background:#fff7ed;border-color:#ea580c}.p{background:#f6ecff;border-color:#7c3aed}
+.col h4{margin:0 0 4px;font:800 20px ui-monospace,monospace}.col .w{font:700 15px system-ui;color:#5d6676;margin-bottom:8px}
+ul{margin:0;padding-left:20px;font-size:16px;line-height:1.7}
+.ok{color:#15803d;font-weight:700}
+.tip{margin-top:14px;padding:12px 16px;border-left:5px solid #15803d;background:#f0fdf4;border-radius:8px;font-size:16px}
+</style></head><body><div id="art">
+<h3>Nên chọn con trỏ hay tham chiếu?</h3><p class="sub">Mặc định hãy ưu tiên tham chiếu. Chỉ chuyển sang con trỏ khi cần một trong hai khả năng đặc biệt.</p>
+<div class="q">Bạn có cần "không trỏ vào đâu cả" hoặc "đổi sang biến khác" không?</div>
+<div class="row">
+<div class="col r"><div class="w">Không cần</div><h4>Dùng tham chiếu &amp;</h4><ul><li>Gọi hàm tự nhiên: <span class="mono">swap(m, n)</span></li><li>Không có dấu <span class="mono">*</span> trong thân hàm</li><li class="ok">Luôn có biến thật, không sợ rỗng</li></ul></div>
+<div class="col p"><div class="w">Có cần</div><h4>Dùng con trỏ *</h4><ul><li>Có thể là <span class="mono">nullptr</span> (chưa có gì để trỏ)</li><li>Đổi mục tiêu: <span class="mono">p = &amp;b;</span></li><li class="ok">Linh hoạt hơn, nhưng phải tự kiểm tra</li></ul></div>
+</div>
+<div class="tip"><b>Ví dụ:</b> hàm tìm kiếm có thể không thấy kết quả thì trả về con trỏ <span class="mono">nullptr</span>. Hàm hoán đổi hai số thì dùng tham chiếu.</div>
+</div></body></html>

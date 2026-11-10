@@ -1,0 +1,18 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:8px}
+.st{display:flex;flex-direction:column-reverse;gap:6px}
+.p{border-radius:12px;padding:10px 16px;font:700 19px ui-monospace,Menlo,monospace;text-align:center}
+.on{background:#ecfdf3;border:2px solid #15803d}.off{background:#f3f4f6;border:2px solid #9aa3b2;color:#4b5563}
+.s{display:flex;flex-direction:column;gap:6px}
+.ar{text-align:center;font:800 26px system-ui;color:#5d6676}
+.num{display:inline-block;width:26px;height:26px;border-radius:50%;background:#1d2330;color:#fff;font:800 15px/26px system-ui;margin-right:8px}
+.tip{margin-top:16px;font-size:16px;color:#5d6676}
+</style></head><body><div id="art">
+<h3>Vào sau, ra trước</h3><p class="sub">Đối tượng tạo sau cùng sẽ bị hủy đầu tiên, giống một chồng đĩa</p>
+<div class="row"><div><div class="cap">Lúc tạo (từ dưới lên)</div><div class="st">
+<div class="p on"><span class="num">1</span>Den a</div><div class="p on"><span class="num">2</span>Den c</div></div></div>
+<div class="ar">&rarr;</div>
+<div><div class="cap">Lúc hủy (từ trên xuống)</div><div class="s">
+<div class="p off"><span class="num">1</span>Tat den Nha bep (c)</div><div class="p off"><span class="num">2</span>Tat den Phong khach (a)</div></div></div></div>
+<p class="tip">Đĩa đặt lên sau cùng được lấy ra đầu tiên: <b>c</b> tắt trước <b>a</b>.</p></div></body></html>

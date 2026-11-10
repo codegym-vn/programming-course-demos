@@ -1,0 +1,13 @@
+{
+ "course_name": "C++ Nâng cao: Con trỏ, Lập trình Hướng đối tượng & Xử lý File",
+ "modules": [
+  "Module 1. Con trỏ và tham chiếu",
+  "Module 2. OOP 1 – Lớp, đối tượng và tính đóng gói",
+  "Module 3. OOP 2 – Tính kế thừa",
+  "Module 4. Xử lý File (File I/O)"
+ ],
+ "excel": "phan-tich-mo-phong-cpp-nang-cao.xlsx",
+ "code_title": "Mã nguồn C++",
+ "language": "C++",
+ "excel_source": "~/Downloads/phan-tich-mo-phong-cpp-nang-cao.xlsx"
+}
