@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="720">
+<title>Kiểm mẫu cả dòng đã khớp</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#fdeee3; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#3a2614; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:14px}
+  .note{font-size:12px;color:var(--muted);margin:0 0 8px;font-style:italic}
+  .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:700px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .panel-title small{font-weight:500;color:var(--muted)}
+  .sum{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin:0 0 6px}
+  .sum b{color:var(--text);font-variant-numeric:tabular-nums}
+  .list{max-height:470px;overflow-y:auto;padding-right:2px}
+  .line{display:grid;grid-template-columns:24px 1fr auto;gap:2px 8px;align-items:center;width:100%;text-align:left;font:inherit;font-size:13.5px;color:inherit;
+    background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:5px 8px;margin-bottom:4px;cursor:pointer;min-height:44px}
+  .line .ic{grid-row:1 / span 2;font-weight:800;font-size:15px;text-align:center;border-radius:50%;width:22px;height:22px;line-height:22px}
+  .line.m .ic{color:#fff;background:var(--ok)}
+  .line.e .ic{color:#10151f;background:var(--warn)}
+  .line .who{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .line .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  .line .sub{grid-column:2 / span 2;font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+  .line .sub span:last-child{white-space:nowrap}
+  .line.e{border-style:dashed;border-color:var(--warn)}
+  .line[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);background:var(--accent-soft)}
+  .line.found{border-color:var(--bad);background:var(--bad-soft)}
+  .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:6px}
+  .count{font-size:13.5px;font-weight:600}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.pri{background:var(--accent);color:#fff}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .doc{border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin-bottom:8px;background:var(--bg)}
+  .doc h4{margin:0 0 4px;font-size:14px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:13.5px}
+  .kv span:nth-child(odd){color:var(--muted)}
+  .kv span{min-width:0;overflow-wrap:anywhere}
+  .kv .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;border-radius:10px;padding:0 7px;margin-left:4px}
+  .tag.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+  .tag.ex{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+  .judge{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+  .judge button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:6px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+  .tabs button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:16px;padding:4px 10px;min-height:34px;font:inherit;font-size:13px;cursor:pointer}
+  .tabs button[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .tabs .d{font-size:11px;margin-left:3px}
+  .empty{font-size:14px;color:var(--muted);padding:8px 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Phần mềm đã ghép sao kê tiền về tháng 9/2026 với hoá đơn bán hàng: 12 dòng tích xanh, 2 ngoại lệ. Chọn <b>3 dòng đã ghép</b> để kiểm mẫu, mở chứng từ từng dòng và tự kết luận ghép đúng hay nhầm. Chạm dòng ngoại lệ để xem vì sao bị báo.</p>
+  <p class="note">Giao diện minh hoạ, công cụ thật có thể khác. Mọi tên và số liệu đều giả lập.</p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Kết quả ghép tự động <small>tài khoản tiền gửi, sao kê tháng 9/2026</small></p>
+      <div class="sum" id="sum"></div>
+      <div class="list" id="list" role="list"></div>
+      <div class="bar">
+        <span class="count" id="count" aria-live="polite"></span>
+        <button class="btn pri" id="open" disabled>Mở chứng từ</button>
+      </div>
+    </div>
+    <div class="card" id="right">
+      <p class="panel-title">Chứng từ của dòng được chọn</p>
+      <div id="tabs" class="tabs"></div>
+      <div id="pane" aria-live="polite"><p class="empty">Chưa mở chứng từ nào. Chọn 3 dòng tích xanh ở danh sách rồi bấm “Mở chứng từ”.</p></div>
+      <div id="summary"></div>
+      <div class="bar"><span class="count" id="done"></span><button class="btn" id="reset">Chọn mẫu khác</button></div>
+    </div>
+  </div>
+</div>
+<script>
+// Số liệu giả lập, đã kiểm bằng Python: mỗi hoá đơn = tiền trước thuế cộng thuế GTGT; mỗi dòng ghép = tổng các hoá đơn được ghép.
+// Tổng tiền về 513.451.000; đã ghép 12 dòng 466.851.000; ngoại lệ 2 dòng 46.600.000. HĐ 0000921 còn 23.580.000.
+const KH = {TV:"CP Nội thất Tân Việt", HD:"TNHH Logistics Hải Đăng", KN:"CP Đầu tư Kim Ngân", MA:"TNHH Kiến trúc Mộc An", PG:"TNHH Xây dựng Phú Gia"};
+const HDON = {
+  "0000903":["21/08/2026","TV",58410000], "0000906":["24/08/2026","HD",12716000], "0000909":["27/08/2026","MA",7425000],
+  "0000911":["31/08/2026","KN",33880000], "0000913":["01/09/2026","PG",61050000], "0000915":["03/09/2026","PG",35200000],
+  "0000916":["04/09/2026","HD",18920000], "0000918":["07/09/2026","KN",4950000],  "0000919":["08/09/2026","PG",27390000],
+  "0000920":["08/09/2026","TV",142560000],"0000921":["09/09/2026","TV",63580000], "0000922":["09/09/2026","MA",27390000],
+  "0000924":["14/09/2026","PG",9130000],  "0000926":["17/09/2026","KN",33880000], "0000928":["21/09/2026","HD",21340000]
+};
+// d: ngày ghi có; a: số tiền; p: tên người chuyển trên sao kê; c: nội dung chuyển khoản; m: hoá đơn phần mềm đã ghép; ok: ghép đúng?
+const L = [
+  {d:"03/09",a:58410000, kh:"TV",p:"CONG TY CP NOI THAT TAN VIET",c:"TAN VIET TT HD 0000903",m:["0000903"],ok:true},
+  {d:"04/09",a:12716000, kh:"HD",p:"CONG TY TNHH LOGISTICS HAI DANG",c:"HAI DANG THANH TOAN HOA DON 906",m:["0000906"],ok:true},
+  {d:"07/09",a:33880000, kh:"KN",p:"CONG TY CP DAU TU KIM NGAN",c:"KIM NGAN CK HD0000911",m:["0000911"],ok:true},
+  {d:"08/09",a:7425000,  kh:"MA",p:"CONG TY TNHH KIEN TRUC MOC AN",c:"MOC AN TT HD 0000909",m:["0000909"],ok:true},
+  {d:"10/09",a:27390000, kh:"MA",p:"CONG TY TNHH KIEN TRUC MOC AN",c:"KT MOC AN TT HD 0000922",m:["0000919"],ok:false},
+  {d:"11/09",a:96250000, kh:"PG",p:"CONG TY TNHH XAY DUNG PHU GIA",c:"PHU GIA TT HD 0000913 VA 0000915",m:["0000913","0000915"],ok:true},
+  {d:"14/09",a:18920000, kh:"HD",p:"CONG TY TNHH LOGISTICS HAI DANG",c:"HAI DANG CK HD 0000916",m:["0000916"],ok:true},
+  {d:"16/09",a:4950000,  kh:"KN",p:"CONG TY CP DAU TU KIM NGAN",c:"KIM NGAN TT HD 918",m:["0000918"],ok:true},
+  {d:"17/09",a:40000000, kh:"TV",p:"CONG TY CP NOI THAT TAN VIET",c:"TAN VIET TT DOT 1 HD 0000921",m:[],ex:"Số tiền không khớp hoá đơn nào"},
+  {d:"18/09",a:142560000,kh:"TV",p:"CONG TY CP NOI THAT TAN VIET",c:"TAN VIET TT HD 0000920",m:["0000920"],ok:true},
+  {d:"22/09",a:9130000,  kh:"PG",p:"CONG TY TNHH XAY DUNG PHU GIA",c:"PHU GIA CK HD 924",m:["0000924"],ok:true},
+  {d:"24/09",a:33880000, kh:"KN",p:"CONG TY CP DAU TU KIM NGAN",c:"KIM NGAN CK HD0000926",m:["0000926"],ok:true},
+  {d:"25/09",a:6600000,  kh:"",  p:"(cá nhân, tên ẩn trong bản giả lập)",c:"CHUYEN TIEN",m:[],ex:"Không xác định được khách hàng"},
+  {d:"28/09",a:21340000, kh:"HD",p:"CONG TY TNHH LOGISTICS HAI DANG",c:"HAI DANG TT HOA DON 0000928",m:["0000928"],ok:true}
+];
+const $ = id => document.getElementById(id);
+const money = x => x.toLocaleString("vi-VN").replace(/,/g,".");
+const BAD = L.findIndex(x=>x.ok===false);
+let picked = [], opened = false, view = -1, judged = {}, showBad = false;
+
+function renderSum(){
+  const m = L.filter(x=>x.m.length), e = L.filter(x=>!x.m.length);
+  const s = a => a.reduce((t,x)=>t+x.a,0);
+  $("sum").innerHTML = "<span>Tiền về: <b>"+L.length+" dòng, "+money(s(L))+"</b></span><span>Đã ghép: <b>"+m.length+" dòng, "+money(s(m))+"</b></span><span>Ngoại lệ: <b>"+e.length+" dòng, "+money(s(e))+"</b></span>";
+}
+function renderList(){
+  $("list").innerHTML = L.map((x,i)=>{
+    const isM = x.m.length>0;
+    const right = isM ? "→ HĐ "+x.m.join(" + ") : x.ex;
+    const cls = "line "+(isM?"m":"e")+(showBad && i===BAD ? " found":"");
+    return '<button role="listitem" class="'+cls+'" data-i="'+i+'"'+(isM?' aria-pressed="'+picked.includes(i)+'"':'')+'>'+
+      '<span class="ic" aria-hidden="true">'+(isM?"✓":"!")+'</span>'+
+      '<span class="who">'+(x.kh?KH[x.kh]:"Chưa xác định")+'</span><span class="amt">'+money(x.a)+'</span>'+
+      '<span class="sub"><span>'+x.d+'</span><span>'+right+'</span></span></button>';
+  }).join("");
+  $("list").querySelectorAll(".line").forEach(b=>b.onclick=()=>clickLine(+b.dataset.i));
+  const n = picked.length;
+  $("count").textContent = opened ? "Mẫu đang kiểm: "+n+" dòng" : "Đã chọn "+n+"/3 dòng để kiểm mẫu";
+  $("open").disabled = opened || n!==3;
+}
+function clickLine(i){
+  const x = L[i];
+  if(!x.m.length){ view = i; renderPane(); return; }
+  if(opened){
+    if(picked.includes(i)){ view = i; renderPane(); }
+    else { $("count").textContent = "Mẫu đã chốt. Bấm “Chọn mẫu khác” nếu muốn chọn lại."; }
+    return;
+  }
+  if(picked.includes(i)) picked = picked.filter(j=>j!==i);
+  else if(picked.length<3) picked.push(i);
+  else { $("count").textContent = "Đã đủ 3 dòng. Bỏ chọn một dòng nếu muốn đổi."; return; }
+  renderList();
+}
+function invHtml(no){
+  const h = HDON[no];
+  return '<div class="kv"><span>Số hoá đơn</span><span>'+no+'</span><span>Ngày</span><span>'+h[0]+'</span><span>Khách hàng</span><span>'+KH[h[1]]+'</span><span>Tổng thanh toán</span><span><b>'+money(h[2])+'</b></span></div>';
+}
+function renderTabs(){
+  if(!opened){ $("tabs").innerHTML = ""; return; }
+  $("tabs").innerHTML = picked.map((i,k)=>'<button data-i="'+i+'" aria-current="'+(view===i)+'">Dòng '+L[i].d+'<span class="d">'+(judged[i]?(judged[i]==="dung"?"· đúng":"· nhầm"):"· chưa kết luận")+'</span></button>').join("");
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ view = +b.dataset.i; renderPane(); });
+}
+function feedback(i){
+  const x = L[i], j = judged[i];
+  if(!j) return "";
+  if(x.ok && j==="dung") return '<div class="msg ok">Đúng: tên người chuyển, số hoá đơn trong nội dung chuyển khoản, khách hàng và số tiền đều khớp với hoá đơn đã ghép.</div>';
+  if(x.ok && j==="nham") return '<div class="msg warn">Xem lại: tên người chuyển là '+KH[x.kh]+', nội dung chuyển khoản ghi đúng số hoá đơn đã ghép, số tiền khớp. Dòng này ghép đúng.</div>';
+  const real = "0000922";
+  const s = '<b>Dòng này ghép nhầm.</b> Tiền do '+KH.MA+' chuyển, nội dung ghi HĐ '+real+', nhưng phần mềm ghép vào HĐ 0000919 của '+KH.PG+' vì hai hoá đơn cùng 27.390.000 và cùng tuần. '+
+    'Nếu để nguyên: HĐ '+real+' của Mộc An vẫn hiện chưa thu và sẽ bị nhắc nợ nhầm, còn HĐ 0000919 của Phú Gia hiện đã thu dù Phú Gia chưa trả. Tổng tiền đã ghép vẫn là 466.851.000 nên số dư tổng không cho thấy lỗi.';
+  return j==="nham" ? '<div class="msg ok">'+s+'</div>' : '<div class="msg bad">Chưa đúng. '+s+'</div>';
+}
+function renderPane(){
+  renderTabs();
+  if(view<0){ return; }
+  const x = L[view];
+  let h = '<div class="doc"><h4>Dòng sao kê</h4><div class="kv"><span>Ngày ghi có</span><span>'+x.d+'/2026</span><span>Số tiền</span><span><b>'+money(x.a)+'</b></span><span>Người chuyển</span><span>'+x.p+'</span><span>Nội dung</span><span class="mono">'+x.c+'</span></div></div>';
+  if(x.m.length){
+    h += '<div class="doc"><h4>Hoá đơn phần mềm đã ghép <span class="tag ok">✓ đã ghép</span></h4>'+x.m.map(invHtml).join('<hr style="border:0;border-top:1px dashed var(--line);margin:5px 0">')+'</div>';
+    if(opened && picked.includes(view)){
+      h += '<div class="judge" role="group" aria-label="Kết luận"><button class="btn" data-j="dung" aria-pressed="'+(judged[view]==="dung")+'">Ghép đúng</button><button class="btn" data-j="nham" aria-pressed="'+(judged[view]==="nham")+'">Ghép nhầm</button></div>'+feedback(view);
+    } else if(!opened){
+      h += '<p class="empty">Đây là bản xem trước. Chọn đủ 3 dòng rồi bấm “Mở chứng từ” để kết luận.</p>';
+    }
+  } else {
+    h += '<div class="doc"><h4>Phần mềm báo <span class="tag ex">ngoại lệ</span></h4><p style="margin:0;font-size:13.5px">'+x.ex+'.</p></div>';
+    if(x.kh==="TV") h += '<div class="msg">Nội dung chuyển khoản ghi “đợt 1” của HĐ 0000921 ('+money(HDON["0000921"][2])+'). Người kiểm đối chiếu thoả thuận thanh toán với khách: nếu đúng là trả một phần thì ghi giảm phải thu HĐ 0000921, phần còn lại '+money(HDON["0000921"][2]-x.a)+' vẫn treo.</div>';
+    else h += '<div class="msg">Không có tên công ty và không có số hoá đơn. Ghi “chưa rõ”, chưa ghép vào khách nào; xin ngân hàng thông tin người chuyển hoặc hỏi phòng Kinh doanh xem khách nào báo đã chuyển 6.600.000.</div>';
+  }
+  $("pane").innerHTML = h;
+  $("pane").querySelectorAll(".judge button").forEach(b=>b.onclick=()=>{ judged[view] = b.dataset.j; renderPane(); renderSummary(); });
+}
+function renderSummary(){
+  const base = picked.slice(0,3);
+  const n = base.filter(i=>judged[i]).length;
+  $("done").textContent = opened ? "Đã kết luận "+n+"/3 dòng của mẫu" : "";
+  if(!opened || n<3){ $("summary").innerHTML = ""; return; }
+  if(showBad){ $("summary").innerHTML = judged[BAD] ? "" : '<div class="msg">Dòng tô đỏ (ngoài mẫu của bạn) đã được thêm vào để xem. Mở để kết luận.</div>'; return; }
+  const hit = base.includes(BAD);
+  let h = hit ? '<div class="msg ok"><b>Mẫu của bạn có dòng ghép nhầm.</b> Sửa ghép trong phần mềm và báo người theo dõi công nợ Mộc An, Phú Gia trước khi gửi thư nhắc nợ.</div>'
+              : '<div class="msg warn"><b>3 dòng trong mẫu đều ghép đúng, nhưng danh sách vẫn có một dòng ghép nhầm.</b> Mẫu nhỏ có thể bỏ sót; dòng nhầm ở đây là hai hoá đơn cùng số tiền của hai khách khác nhau.</div>';
+  if(!hit) h += '<div class="bar"><span></span><button class="btn" id="reveal">Cho xem dòng ghép nhầm</button></div>';
+  $("summary").innerHTML = h;
+  if(!hit) $("reveal").onclick = ()=>{ showBad = true; renderList(); view = BAD; picked.push(BAD); renderPane(); renderSummary(); };
+}
+$("open").onclick = ()=>{ opened = true; picked.sort((a,b)=>a-b); view = picked[0]; renderList(); renderPane(); renderSummary(); };
+$("reset").onclick = ()=>{ picked = []; opened = false; view = -1; judged = {}; showBad = false; renderList(); $("tabs").innerHTML=""; $("pane").innerHTML = '<p class="empty">Chưa mở chứng từ nào. Chọn 3 dòng tích xanh ở danh sách rồi bấm “Mở chứng từ”.</p>'; renderSummary(); };
+renderSum(); renderList();
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="700">
+<title>Công thức này đang cộng gì</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#c2410c; --warn-soft:#fdeee3; --bad:#b42318; --bad-soft:#fbe9e7;
+    --rng:#dbe6fb; --hatch:#e8eaee;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fdba74; --warn-soft:#3a2614; --bad:#f87171; --bad-soft:#3a1717;
+      --rng:#1c2740; --hatch:#232833;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:8px}
+  .fx{display:flex;gap:8px;align-items:center}
+  .fx .lbl{font-weight:700;font-style:italic;color:var(--muted);flex:0 0 auto}
+  select{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;color:var(--text);background:var(--card);border:1.5px solid var(--accent);border-radius:8px;padding:6px;min-height:42px;width:100%}
+  .opts{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:13.5px}
+  .opts label{display:flex;gap:6px;align-items:center;cursor:pointer;min-height:32px}
+  .opts input{width:18px;height:18px;accent-color:var(--accent)}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:8px}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;min-width:640px}
+  th,td{border:1px solid var(--line);padding:3px 6px;white-space:nowrap}
+  thead th{background:var(--bg);color:var(--muted);font-weight:600;text-align:center;font-size:12px}
+  thead tr:nth-child(2) th{color:var(--text);font-weight:700;font-size:12.5px}
+  td.rn,th.rn{background:var(--bg);color:var(--muted);text-align:center;width:30px;font-size:12px}
+  td.num{text-align:right}
+  td.txt{text-align:left;color:var(--warn);font-style:italic}
+  td.inr{background:var(--rng)}
+  td.crit{box-shadow:inset 0 0 0 2px var(--accent)}
+  td.hit{background:var(--ok-soft);font-weight:700}
+  td.skip{background:var(--warn-soft);box-shadow:inset 0 0 0 2px var(--warn)}
+  tr.out td:not(.rn){background:repeating-linear-gradient(45deg,var(--hatch) 0 5px,transparent 5px 10px);color:var(--muted)}
+  tr.match td.rn{background:var(--ok);color:#fff;font-weight:700}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
+  .res{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:14px;margin:0 0 6px}
+  .res b.big{font-size:18px;font-variant-numeric:tabular-nums}
+  .parts{margin:0;padding-left:18px;font-size:13.5px}
+  .parts li{margin:2px 0}
+  .parts code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 3px;overflow-wrap:anywhere}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:6px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .small{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .full{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;margin:6px 0 0;overflow-wrap:anywhere;color:var(--text)}
+  .swipe{display:none;font-size:12px;color:var(--muted);margin:0 0 4px}
+  @media (max-width:640px){ .swipe{display:block} td.sup{max-width:150px;overflow:hidden;text-overflow:ellipsis} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn một công thức AI có thể viết cho bảng dưới đây. Trang tô các ô công thức thật sự xét, ô được cộng hoặc đếm, ô bị bỏ qua, rồi giải thích từng phần. Bảng nhỏ, số liệu giả lập, khác bài thực hành.</p>
+  <div class="card">
+    <div class="fx"><span class="lbl">fx</span><select id="f" aria-label="Chọn công thức"></select></div>
+    <p class="full" id="full"></p>
+    <div class="opts">
+      <label><input type="checkbox" id="clean"> Đã sửa ô ngày dạng chữ ở dòng 7 thành ngày</label>
+    </div>
+  </div>
+  <div class="card">
+    <p class="swipe">Vuốt ngang bảng để xem đủ cột; bảng tự cuộn tới vùng công thức xét.</p>
+    <div class="tw" id="tw"><table id="t" aria-label="Sổ hoá đơn mua vào tháng 10/2026"></table></div>
+    <div class="legend">
+      <span><i style="background:var(--rng)"></i>trong vùng công thức xét</span>
+      <span><i style="box-shadow:inset 0 0 0 2px var(--accent)"></i>ô điều kiện</span>
+      <span><i style="background:var(--ok-soft)"></i>ô được cộng hoặc đếm</span>
+      <span><i style="background:var(--warn-soft);box-shadow:inset 0 0 0 2px var(--warn)"></i>ô là chữ, bị bỏ qua</span>
+      <span><i style="background:repeating-linear-gradient(45deg,var(--hatch) 0 3px,transparent 3px 6px)"></i>ngoài vùng</span>
+    </div>
+    <p class="small">Vùng Việt Nam: đối số ngăn bằng dấu chấm phẩy. Cột E là số tiền đã gồm thuế. Hạn thanh toán là 30 ngày kể từ ngày hoá đơn; ô “Ngày trả” trống là chưa trả.</p>
+  </div>
+  <div class="card" aria-live="polite">
+    <div class="res" id="res"></div>
+    <ol class="parts" id="parts"></ol>
+    <div id="msg"></div>
+  </div>
+</div>
+<script>
+// Số liệu giả lập, đã kiểm bằng Python: hạn = ngày hoá đơn + 30 ngày; Vận chuyển cả bảng 15.840.000, dòng 2-10: 13.068.000;
+// Phúc Khang 77.770.000; quá hạn tại thứ Sáu 13/11/2026 (hạn trước 13/11, chưa trả): 3 (ô ngày dòng 7 là chữ) hoặc 4 (đã sửa); dùng <= thì 4 hoặc 5.
+const ROWS = [
+ [2,"02/10/2026","1203","TNHH TB Văn phòng Phúc Khang","Hàng hoá",46530000,"01/11/2026","28/10/2026"],
+ [3,"05/10/2026","0417","Vận tải Bắc Thăng Long","Vận chuyển",3564000,"04/11/2026",""],
+ [4,"06/10/2026","0884","TNHH Nội thất Đức Thành","Hàng hoá",88220000,"05/11/2026",""],
+ [5,"08/10/2026","2290","TNHH VPP Hưng Thịnh","Văn phòng phẩm",2871000,"07/11/2026","06/11/2026"],
+ [6,"09/10/2026","0423","Vận tải Bắc Thăng Long","Vận chuyển",4158000,"08/11/2026",""],
+ [7,"12.10.2026","3361","Vật tư máy in Kim Long","Hàng hoá",19690000,"11.11.2026",""],
+ [8,"14/10/2026","5508","Mạng An Phát","Dịch vụ",1980000,"13/11/2026",""],
+ [9,"19/10/2026","1251","TNHH TB Văn phòng Phúc Khang","Hàng hoá",31240000,"18/11/2026",""],
+ [10,"21/10/2026","0436","Vận tải Bắc Thăng Long","Vận chuyển",5346000,"20/11/2026",""],
+ [11,"23/10/2026","0912","TNHH Nội thất Đức Thành","Hàng hoá",57090000,"22/11/2026",""],
+ [12,"27/10/2026","0448","Vận tải Bắc Thăng Long","Vận chuyển",2772000,"26/11/2026",""],
+ [13,"30/10/2026","2334","TNHH VPP Hưng Thịnh","Văn phòng phẩm",6270000,"29/11/2026",""]
+];
+const HEAD = ["Ngày HĐ","Số HĐ","Nhà cung cấp","Loại","Số tiền","Hạn TT","Ngày trả"];
+const COLS = "ABCDEFG";
+const D = s => { const m = s.match(/^(\d\d)\/(\d\d)\/(\d{4})$/); return m ? new Date(+m[3], +m[2]-1, +m[1]) : null; };
+const EVAL = new Date(2026,10,13);
+// Mỗi công thức: vùng (dòng đầu, dòng cuối), cột cộng (hoặc null nếu đếm), danh sách điều kiện [cột, hàm kiểm, kiểu], giải thích.
+const F = [
+ {f:'=SUMIFS($E$2:$E$13;$D$2:$D$13;"Vận chuyển")', r:[2,13], sum:4, c:[[3,v=>v==="Vận chuyển","text"]],
+  parts:['<code>$E$2:$E$13</code>: cộng cột E, từ dòng 2 đến dòng 13, tức đủ dữ liệu.','<code>$D$2:$D$13;"Vận chuyển"</code>: chỉ lấy dòng có cột D đúng bằng chữ “Vận chuyển”.','Dấu <code>$</code> cố định vùng, kéo hay chép công thức sang ô khác vùng không trượt.'],
+  msg:["ok","Công thức đúng. Kiểm độc lập: lọc cột D lấy “Vận chuyển” rồi xem tổng trên thanh trạng thái; phải ra cùng số."]},
+ {f:'=SUMIFS(E2:E10;D2:D10;"Vận chuyển")', r:[2,10], sum:4, c:[[3,v=>v==="Vận chuyển","text"]],
+  parts:['<code>E2:E10</code>, <code>D2:D10</code>: vùng dừng ở dòng 10, trong khi dữ liệu đến dòng 13.','Dòng 11-13 nằm ngoài vùng: khoản vận chuyển ở dòng 12 không được cộng.','Không có dấu <code>$</code>: kéo công thức xuống, vùng còn trượt thêm.'],
+  msg:["bad","Sai vùng tham chiếu. Công thức vẫn ra một con số trông hợp lý và không báo lỗi; chỉ lọc và cộng độc lập mới thấy thiếu."]},
+ {f:'=SUMIFS($E$2:$E$13;$C$2:$C$13;"Phúc Khang")', r:[2,13], sum:4, c:[[2,v=>v==="Phúc Khang","text"]],
+  parts:['<code>$C$2:$C$13;"Phúc Khang"</code>: điều kiện dạng chữ phải khớp <b>cả ô</b>.','Cột C ghi “TNHH TB Văn phòng Phúc Khang”, không ô nào đúng bằng “Phúc Khang”.'],
+  msg:["bad","Kết quả 0, không báo lỗi. Muốn lấy mọi ô có chứa chữ đó, dùng ký tự đại diện: \"*Phúc Khang*\"; hoặc tốt hơn là thống nhất tên nhà cung cấp theo danh mục."]},
+ {f:'=SUMIFS($E$2:$E$13;$C$2:$C$13;"*Phúc Khang*")', r:[2,13], sum:4, c:[[2,v=>v.includes("Phúc Khang"),"text"]],
+  parts:['<code>"*Phúc Khang*"</code>: dấu <code>*</code> thay cho chuỗi ký tự bất kỳ, nên lấy mọi ô có chứa “Phúc Khang”.','Cẩn thận: nếu danh mục có hai nhà cung cấp cùng chứa chữ này, cả hai sẽ bị cộng chung.'],
+  msg:["ok","Công thức đúng với bảng này. Kiểm độc lập: lọc cột C theo nhà cung cấp và xem tổng."]},
+ {f:'=COUNTIFS($F$2:$F$13;"<"&DATE(2026;11;13);$G$2:$G$13;"")', r:[2,13], sum:null, c:[[5,v=>{const d=D(v);return d&&d<EVAL;},"date"],[6,v=>v==="","text"]],
+  parts:['<code>"<"&DATE(2026;11;13)</code>: hạn thanh toán <b>trước</b> thứ Sáu 13/11/2026. Ngày tạo bằng hàm DATE nên không phụ thuộc cách máy hiểu chuỗi ngày.','<code>$G$2:$G$13;""</code>: ô ngày trả trống, tức chưa trả.','Hai điều kiện cùng đúng thì dòng mới được đếm.'],
+  msg:null},
+ {f:'=COUNTIFS($F$2:$F$13;"<="&DATE(2026;11;13);$G$2:$G$13;"")', r:[2,13], sum:null, c:[[5,v=>{const d=D(v);return d&&d<=EVAL;},"date"],[6,v=>v==="","text"]],
+  parts:['<code>"<="</code>: lấy cả khoản có hạn <b>đúng</b> ngày 13/11/2026.','Khoản đến hạn hôm nay chưa quá hạn: dòng 8 bị đếm thừa.'],
+  msg:["bad","Sai điều kiện ngày ở mốc biên. “Quá hạn tại 13/11” là hạn trước 13/11, dùng dấu <code>&lt;</code>."]},
+ {f:'=COUNTIFS($F$2:$F$13;"<13/11/2026";$G$2:$G$13;"")', r:[2,13], sum:null, c:[[5,v=>false,"date"],[6,v=>v==="","text"]], textDate:true,
+  parts:['<code>"<13/11/2026"</code>: ngày viết thẳng trong chuỗi điều kiện. Bảng tính phải tự đoán chuỗi này là ngày nào, theo kiểu ngày cài trên máy.','Kết quả hiển thị ở đây là trên máy đặt kiểu tháng/ngày/năm: “13/11” không phải ngày hợp lệ (không có tháng 13), điều kiện thành so chữ và không ô nào khớp.'],
+  msg:["bad","Điều kiện ngày dạng chữ. Trên máy đặt kiểu ngày/tháng/năm công thức có thể ra đúng, mở tệp ở máy khác lại ra 0 mà không báo lỗi. Dùng <code>\"<\"&amp;DATE(2026;11;13)</code>."]}
+];
+const $ = id => document.getElementById(id);
+const money = x => x.toLocaleString("vi-VN").replace(/,/g,".");
+$("f").innerHTML = F.map((x,i)=>'<option value="'+i+'">'+x.f.replace(/&/g,"&amp;").replace(/</g,"&lt;")+'</option>').join("");
+function cell(r,ci,clean){
+  let v = r[ci+1];
+  if(clean && r[0]===7 && (ci===0||ci===5)) v = v.replace(/\./g,"/");
+  return v;
+}
+function render(){
+  const k = +$("f").value, x = F[k], clean = $("clean").checked;
+  let total = 0, n = 0, skipped = [];
+  let h = '<thead><tr><th class="rn"></th>'+COLS.split("").map(c=>'<th>'+c+'</th>').join("")+'</tr><tr><th class="rn">1</th>'+HEAD.map(t=>'<th>'+t+'</th>').join("")+'</tr></thead><tbody>';
+  ROWS.forEach(r=>{
+    const inR = r[0]>=x.r[0] && r[0]<=x.r[1];
+    let ok = inR, sk = {};
+    if(inR) x.c.forEach(([ci,fn,kind])=>{
+      const v = cell(r,ci,clean);
+      if(kind==="date" && !D(v) && v){ sk[ci] = true; ok = false; return; }
+      if(!fn(v)) ok = false;
+    });
+    if(inR && Object.keys(sk).length) skipped.push(r[0]);
+    if(ok){ n++; if(x.sum!==null) total += r[x.sum+1]; }
+    h += '<tr class="'+(inR?"":"out")+(ok?" match":"")+'"><td class="rn">'+r[0]+'</td>';
+    for(let ci=0; ci<7; ci++){
+      const v = cell(r,ci,clean);
+      const isText = (ci===0||ci===5) && v && !D(v);
+      const cls = [];
+      if(ci===4) cls.push("num");
+      if(ci===2) cls.push("sup");
+      if(isText) cls.push("txt");
+      if(inR && (x.sum===ci || x.c.some(c=>c[0]===ci))) cls.push("inr");
+      if(inR && x.c.some(c=>c[0]===ci)) cls.push("crit");
+      if(ok && (x.sum===null ? ci===x.c[0][0] : ci===x.sum)) cls.push("hit");
+      if(sk[ci]) cls.push("skip");
+      h += '<td class="'+cls.join(" ")+'">'+(ci===4?money(v):v)+'</td>';
+    }
+    h += '</tr>';
+  });
+  $("t").innerHTML = h+'</tbody>';
+  $("full").textContent = x.f;
+  const tw = $("tw");
+  if(tw.scrollWidth > tw.clientWidth){
+    const c0 = Math.min(...x.c.map(c=>c[0]).concat(x.sum===null?[]:[x.sum]));
+    const tr = $("t").querySelector("tbody tr");
+    tw.scrollLeft = Math.max(0, tr.children[c0+1].offsetLeft - tr.children[0].offsetWidth);
+  }
+  const out = ROWS.filter(r=>r[0]<x.r[0]||r[0]>x.r[1]).map(r=>r[0]);
+  $("res").innerHTML = '<span>Kết quả:</span><b class="big">'+(x.sum===null ? n : money(total))+'</b><span>'+(x.sum===null ? "dòng được đếm" : "đồng, cộng từ "+n+" dòng")+'</span>';
+  $("parts").innerHTML = x.parts.map(p=>'<li>'+p+'</li>').join("");
+  const m = [];
+  if(x.msg) m.push(x.msg);
+  if(k===4){
+    if(skipped.length) m.push(["warn","Công thức đúng, nhưng dòng 7 có hạn thanh toán ghi “11.11.2026” là chữ: bảng tính bỏ qua dòng này mà không báo. Dòng 7 chưa trả và đã quá hạn, nên kết quả thiếu một khoản. Thử đánh dấu ô “Đã sửa ô ngày dạng chữ”."]);
+    else m.push(["ok","Công thức đúng và dữ liệu đã sạch. Kiểm độc lập: lọc cột G lấy ô trống, rồi đếm tay các dòng có hạn trước 13/11/2026."]);
+  } else if(skipped.length && k!==6){
+    m.push(["warn","Dòng "+skipped.join(", ")+" có ô ngày là chữ nên bị bỏ qua mà không báo lỗi."]);
+  }
+  if(out.length) m.push(["","Ngoài vùng công thức: dòng "+out.join(", ")+"."]);
+  $("msg").innerHTML = m.map(y=>'<div class="msg '+y[0]+'">'+y[1]+'</div>').join("");
+}
+$("f").onchange = render; $("clean").onchange = render;
+const q = new URLSearchParams(location.search);
+if(q.has("cong-thuc")){ const i = parseInt(q.get("cong-thuc"),10)-1; if(i>=0 && i<F.length) $("f").value = i; }
+render();
+</script>
+</body>
+</html>

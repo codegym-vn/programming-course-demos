@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="660">
+<title>Tra quy chế chi tiêu</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800; --paper:#fffdf8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#4a3d0e; --cur-bar:#e0b400; --paper:#1b1f27;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .search{display:flex;gap:6px;margin-bottom:8px}
+  .search input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:250px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .toc{display:flex;flex-direction:column;gap:3px;max-height:490px;overflow-y:auto}
+  .toc button{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);font:inherit;font-size:14px;padding:4px 8px;min-height:34px;border-radius:8px;cursor:pointer;line-height:1.3}
+  .toc button:hover{background:var(--accent-soft)}
+  .toc button[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+  .toc .lbl{flex:1;min-width:0}
+  .toc .n{font-size:12px;font-weight:700;background:var(--cur);border:1px solid var(--cur-bar);border-radius:10px;padding:0 6px;font-variant-numeric:tabular-nums}
+  .toc button.dim{opacity:.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .doc{height:490px;overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14.5px;line-height:1.55;position:relative}
+  .doc .hd{text-align:center;margin-bottom:10px}
+  .doc .hd p{margin:0;min-height:.6em}
+  .doc .hd p.big{font-weight:700}
+  .doc h4{margin:14px 0 4px;font-size:15px}
+  .doc h4:first-child{margin-top:0}
+  .doc p{margin:4px 0}
+  .doc ol{margin:0 0 4px;padding-left:22px}
+  .doc ol li{margin:3px 0}
+  .doc ul{margin:2px 0;padding-left:20px}
+  .doc .tw{overflow-x:auto;margin:6px 0}
+  .doc table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.4}
+  .doc th,.doc td{border:1px solid var(--line);padding:4px 6px;vertical-align:top;text-align:left}
+  .doc th{background:var(--bg)}
+  .doc .sign{margin-top:14px;text-align:right}
+  .doc .sign p{margin:0}
+  .doc .qt{margin-top:18px;padding-top:10px;border-top:2px solid var(--line)}
+  mark{background:var(--cur);color:inherit;border-radius:3px;box-shadow:0 0 0 1px var(--cur-bar)}
+  .status{margin-top:8px;font-size:13.5px;color:var(--muted);min-height:20px}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .toc{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:4px}
+    .toc button{width:auto;flex:0 0 auto;white-space:nowrap}
+    .toc .full{display:none}
+    .doc{height:430px;padding:8px 10px}
+    .doc table{min-width:460px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm một điều ở mục lục để đọc, hoặc gõ từ khoá (gõ có dấu hay không dấu đều được) để tô sáng chỗ khớp. Trang chỉ để tra quy chế và quy trình, không trả lời hộ câu nào.</p>
+  <div class="search">
+    <input id="q" type="search" placeholder="Tìm, ví dụ: bảng kê, vùng A" aria-label="Tìm trong quy chế" autocomplete="off">
+    <button class="btn" id="clr">Xoá</button>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="toc" id="toc" role="tablist"></div></div>
+    <div>
+      <div class="doc" id="doc" aria-live="polite"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+<script>
+// Nguyên văn Quy chế chi tiêu nội bộ 05/2026/QC-HL và Quy trình QT-KT-04 trong bài "Thực hành: Dựng trợ lý hỏi đáp quy chế chi tiêu".
+// Sinh tự động từ nội dung bài (html-work/gen_qc.py); đối chiếu lại bằng html-work/verify_qc.py.
+const DOC = {
+"head": [
+"CÔNG TY TNHH THƯƠNG MẠI HOÀ LÂM",
+"Số: 05/2026/QC-HL",
+"",
+"QUY CHẾ CHI TIÊU NỘI BỘ",
+"(Ban hành kèm theo Quyết định",
+"số 18/2026/QĐ-HL ngày 19/06/2026",
+"của Giám đốc Công ty)",
+"Hiệu lực: 01/07/2026. Lần sửa đổi: 02."
+],
+"dieu": [
+{
+"t": "Điều 1. Phạm vi và đối tượng áp dụng",
+"b": [
+{
+"ol": [
+{
+"t": "Quy chế này quy định mức chi, hồ sơ, thẩm quyền duyệt và thời hạn thanh toán đối với các khoản chi phục vụ hoạt động của Công ty: công tác phí trong nước, tạm ứng, tiếp khách, mua sắm văn phòng phẩm, công cụ dụng cụ, dịch vụ phục vụ văn phòng và các khoản chi khác ngoài hợp đồng mua hàng hoá để bán."
+},
+{
+"t": "Áp dụng cho toàn bộ người lao động có hợp đồng lao động với Công ty. Cộng tác viên, người thử việc chỉ được thanh toán khi có văn bản cử đi công tác hoặc giao việc do Trưởng bộ phận ký."
+},
+{
+"t": "Không áp dụng cho: tiền lương, thưởng, bảo hiểm; thanh toán cho nhà cung cấp theo hợp đồng mua hàng (thực hiện theo \"Quy trình thanh toán cho nhà cung cấp\"); công tác nước ngoài (Giám đốc duyệt riêng từng chuyến)."
+}
+]
+}
+]
+},
+{
+"t": "Điều 2. Nguyên tắc chung",
+"b": [
+{
+"ol": [
+{
+"t": "Mọi khoản chi phải đúng mục đích, trong dự toán hoặc kế hoạch đã duyệt, được duyệt trước khi chi theo Điều 3 và có chứng từ hợp lệ theo Điều 7."
+},
+{
+"t": "Hoá đơn phải ghi đúng tên, địa chỉ, mã số thuế của Công ty và đáp ứng các yêu cầu khác theo quy định của pháp luật về hoá đơn, chứng từ."
+},
+{
+"t": "Mức chi trong Quy chế là mức tối đa. Phần vượt mức người lao động tự chịu, trừ khi Giám đốc duyệt bằng văn bản trước khi chi."
+},
+{
+"t": "Không chia nhỏ một khoản chi thành nhiều lần để tránh mức duyệt hoặc mức báo giá."
+}
+]
+}
+]
+},
+{
+"t": "Điều 3. Thẩm quyền duyệt chi theo mức tiền",
+"b": [
+{
+"p": "Mức tiền tính trên tổng giá trị một đề nghị (đã gồm thuế GTGT)."
+},
+{
+"tbl": {
+"h": [
+"Giá trị một đề nghị",
+"Người duyệt"
+],
+"r": [
+[
+"Đến 5.000.000 đồng",
+"Trưởng bộ phận của người đề nghị"
+],
+[
+"Trên 5.000.000 đến 30.000.000 đồng",
+"Trưởng bộ phận, sau đó Kế toán trưởng"
+],
+[
+"Trên 30.000.000 đồng",
+"Trưởng bộ phận, Kế toán trưởng, sau đó Giám đốc"
+]
+]
+}
+},
+{
+"p": "Khi Trưởng bộ phận là người đề nghị, cấp duyệt chuyển lên một bậc. Kế toán trưởng kiểm soát hồ sơ trước khi chi đối với mọi khoản, kể cả khoản đến 5.000.000 đồng."
+}
+]
+},
+{
+"t": "Điều 4. Hình thức chi",
+"b": [
+{
+"ol": [
+{
+"t": "Khoản chi dưới 5.000.000 đồng được chi bằng tiền mặt hoặc chuyển khoản."
+},
+{
+"t": "Khoản chi từ 5.000.000 đồng trở lên chi bằng chuyển khoản vào tài khoản đứng tên người nhận (người lao động hoặc người bán). Trường hợp pháp luật về thuế có quy định khác về hình thức thanh toán thì thực hiện theo quy định của pháp luật."
+},
+{
+"t": "Phòng Kế toán chi theo đợt vào thứ Ba và thứ Sáu hằng tuần. Hồ sơ đủ và đã duyệt trước 15 giờ ngày làm việc liền trước được chi trong đợt gần nhất."
+}
+]
+}
+]
+},
+{
+"t": "Điều 5. Công tác phí trong nước",
+"b": [
+{
+"ol": [
+{
+"t": "Vùng công tác:",
+"sub": [
+"Vùng A: Thành phố Hồ Chí Minh, Đà Nẵng, Hải Phòng, Huế, Cần Thơ.",
+"Vùng B: các tỉnh, thành phố còn lại.",
+"Vùng C: các địa điểm ngoài nội thành Hà Nội, cách trụ sở Công ty dưới 100 km, đi và về trong ngày."
+]
+},
+{
+"t": "Mức chi: theo bảng ở cuối Điều này."
+},
+{
+"t": "Ngày công tác tính từ ngày đi đến ngày về theo giấy đi đường có xác nhận hoặc vé. Ngày đi hoặc ngày về mà thời gian công tác trong ngày dưới 4 giờ tính nửa ngày phụ cấp lưu trú."
+},
+{
+"t": "Hai người cùng giới đi cùng đợt bố trí ở chung phòng; mức tối đa phòng đôi là 1.800.000 đồng/đêm ở vùng A và 1.200.000 đồng/đêm ở vùng B."
+},
+{
+"t": "Phương tiện đi đến nơi công tác:",
+"sub": [
+"Máy bay hạng phổ thông cho chặng từ 300 km trở lên; vé do bộ phận Hành chính đặt, thanh toán theo thực tế.",
+"Tàu hoả, xe khách: theo thực tế, có vé.",
+"Xe cá nhân (khi được Trưởng bộ phận đồng ý trước): khoán 2.500 đồng/km theo khoảng cách ghi trên giấy đi đường; không thanh toán thêm xăng, phí cầu đường."
+]
+},
+{
+"t": "Không thanh toán phụ cấp lưu trú cho những ngày được bên mời hoặc đối tác bố trí ăn ở miễn phí."
+}
+]
+},
+{
+"p": "Bảng mức chi công tác phí (khoản 2 Điều 5):"
+},
+{
+"tbl": {
+"h": [
+"Khoản",
+"Vùng A",
+"Vùng B",
+"Vùng C"
+],
+"r": [
+[
+"Phụ cấp lưu trú (đồng/người/ngày)",
+"300.000",
+"250.000",
+"150.000"
+],
+[
+"Tiền phòng nghỉ, theo hoá đơn, tối đa (đồng/người/đêm)",
+"1.200.000",
+"800.000",
+"Không áp dụng"
+],
+[
+"Đi lại tại nơi công tác (taxi, xe công nghệ), theo thực tế, tối đa (đồng/người/ngày)",
+"200.000",
+"200.000",
+"Không áp dụng"
+]
+]
+}
+}
+]
+},
+{
+"t": "Điều 6. Tạm ứng và hoàn ứng",
+"b": [
+{
+"ol": [
+{
+"t": "Người lao động được tạm ứng cho công tác, tiếp khách, mua sắm đã được duyệt. Mức tạm ứng không vượt dự toán đã duyệt và không quá 20.000.000 đồng/người/lần; trên mức này phải có Giám đốc duyệt, không phụ thuộc giá trị theo Điều 3."
+},
+{
+"t": "Đề nghị tạm ứng được duyệt theo Điều 3 và chi theo Điều 4."
+},
+{
+"t": "Thời hạn hoàn ứng (nộp hồ sơ thanh toán và hoàn trả tiền thừa):",
+"sub": [
+"Tạm ứng công tác: trong 5 ngày làm việc kể từ ngày về.",
+"Tạm ứng khác: trong 10 ngày làm việc kể từ ngày nhận tiền tạm ứng."
+]
+},
+{
+"t": "Người còn khoản tạm ứng quá hạn chưa hoàn không được tạm ứng lần mới, trừ khi Giám đốc duyệt."
+},
+{
+"t": "Khoản tạm ứng quá hạn trên 30 ngày: Phòng Kế toán thông báo bằng văn bản cho người tạm ứng và Trưởng bộ phận; việc khấu trừ vào tiền lương (nếu có) thực hiện theo quy định của pháp luật và thoả thuận với người lao động."
+}
+]
+}
+]
+},
+{
+"t": "Điều 7. Hồ sơ, chứng từ theo loại chi",
+"b": [
+{
+"tbl": {
+"h": [
+"Loại chi",
+"Hồ sơ bắt buộc"
+],
+"r": [
+[
+"Công tác phí",
+"Giấy đề nghị thanh toán; giấy cử đi công tác có duyệt; giấy đi đường có xác nhận nơi đến hoặc vé tàu, xe; hoá đơn phòng nghỉ; vé máy bay kèm thẻ lên máy bay; hoá đơn hoặc biên nhận điện tử của ứng dụng gọi xe"
+],
+[
+"Tiếp khách",
+"Đề nghị tiếp khách đã duyệt trước; hoá đơn; danh sách khách và người của Công ty tham dự"
+],
+[
+"Mua sắm",
+"Đề nghị mua đã duyệt; báo giá theo Điều 9; hoá đơn; biên bản giao nhận hoặc phiếu nhập kho"
+],
+[
+"Chi khác",
+"Giấy đề nghị thanh toán; hoá đơn hoặc chứng từ của bên nhận tiền; tài liệu chứng minh nội dung chi"
+]
+]
+}
+},
+{
+"p": "Hồ sơ thiếu, Phòng Kế toán trả lại trong 1 ngày làm việc và ghi rõ phần còn thiếu."
+}
+]
+},
+{
+"t": "Điều 8. Tiếp khách",
+"b": [
+{
+"ol": [
+{
+"t": "Tiếp khách phải có đề nghị duyệt trước nêu khách, mục đích, số người, dự kiến chi phí."
+},
+{
+"t": "Mức chi tối đa 500.000 đồng/người/suất, tính cả người của Công ty tham dự; số người của Công ty không vượt số khách."
+},
+{
+"t": "Tổng mỗi lần tiếp khách không quá 5.000.000 đồng. Trên mức này phải có Giám đốc duyệt trước."
+},
+{
+"t": "Đồ uống có cồn không quá 30% giá trị hoá đơn; phần vượt người tổ chức tự chịu."
+}
+]
+}
+]
+},
+{
+"t": "Điều 9. Mua sắm văn phòng phẩm, công cụ dụng cụ, dịch vụ",
+"b": [
+{
+"tbl": {
+"h": [
+"Giá trị một lần mua",
+"Yêu cầu"
+],
+"r": [
+[
+"Dưới 10.000.000 đồng",
+"Mua trực tiếp, có hoá đơn; không cần báo giá"
+],
+[
+"Từ 10.000.000 đến dưới 50.000.000 đồng",
+"Ít nhất 2 báo giá"
+],
+[
+"Từ 50.000.000 đồng trở lên",
+"Ít nhất 3 báo giá; bộ phận Mua hàng lập bảng so sánh; Giám đốc duyệt"
+]
+]
+}
+},
+{
+"p": "Mua hàng hoá để bán thực hiện theo quy trình mua hàng, không theo Điều này."
+}
+]
+},
+{
+"t": "Điều 10. Chứng từ thiếu, mất hoặc sai",
+"b": [
+{
+"ol": [
+{
+"t": "Khoản chi không có hoá đơn (taxi truyền thống, xe ôm, gửi xe, phí bến bãi): được thanh toán khi mỗi lần không quá 200.000 đồng và tổng không quá 500.000 đồng/chuyến công tác; người đề nghị lập bảng kê chi phí không có hoá đơn, Trưởng bộ phận ký xác nhận."
+},
+{
+"t": "Mất hoá đơn: báo Phòng Kế toán trong 2 ngày làm việc kể từ khi phát hiện và đề nghị bên bán cung cấp bản thể hiện của hoá đơn điện tử hoặc bản sao theo quy định của pháp luật."
+},
+{
+"t": "Hoá đơn sai tên, mã số thuế hoặc nội dung: người đề nghị liên hệ bên bán để điều chỉnh hoặc thay thế theo quy định của pháp luật; Phòng Kế toán chưa thanh toán khoản đó cho đến khi có hoá đơn đúng."
+},
+{
+"t": "Khoản vượt mức tại khoản 1 mà không có chứng từ thì không được thanh toán."
+},
+{
+"t": "Việc khoản chi có được tính vào chi phí được trừ khi xác định thuế hay không do Phòng Kế toán xác định theo quy định của pháp luật, không phụ thuộc việc khoản chi đã được duyệt."
+}
+]
+}
+]
+},
+{
+"t": "Điều 11. Thời hạn nộp hồ sơ và thanh toán",
+"b": [
+{
+"ol": [
+{
+"t": "Hồ sơ thanh toán nộp trong 5 ngày làm việc kể từ khi phát sinh khoản chi (với công tác phí: kể từ ngày về)."
+},
+{
+"t": "Chứng từ phát sinh trong tháng phải nộp Phòng Kế toán chậm nhất ngày làm việc thứ 2 của tháng sau để kịp đóng sổ. Hồ sơ nộp sau thời hạn này được xử lý trong đợt chi kế tiếp sau khi đóng sổ."
+},
+{
+"t": "Phòng Kế toán kiểm tra hồ sơ trong 2 ngày làm việc kể từ khi nhận đủ và chi theo Điều 4 khoản 3."
+}
+]
+}
+]
+},
+{
+"t": "Điều 12. Tổ chức thực hiện",
+"b": [
+{
+"ol": [
+{
+"t": "Quy chế có hiệu lực từ ngày 01/07/2026, thay thế Quy chế chi tiêu nội bộ số 03/2023/QC-HL."
+},
+{
+"t": "Phòng Kế toán là đầu mối hướng dẫn; kế toán tổng hợp giải đáp thắc mắc hằng ngày. Trường hợp Quy chế chưa quy định, Kế toán trưởng báo cáo Giám đốc quyết định."
+},
+{
+"t": "Việc sửa đổi, bổ sung Quy chế do Giám đốc quyết định theo đề nghị của Kế toán trưởng."
+}
+]
+}
+]
+}
+],
+"sign": [
+"GIÁM ĐỐC",
+"(đã ký)",
+"Nguyễn Văn Hoà"
+],
+"qt": {
+"t": "Quy trình thanh toán cho nhà cung cấp (QT-KT-04, ban hành 19/06/2026, hiệu lực 01/07/2026)",
+"b": [
+{
+"p": "Áp dụng cho thanh toán theo hợp đồng hoặc đơn đặt hàng mua hàng hoá để bán và dịch vụ có hợp đồng."
+},
+{
+"tbl": {
+"h": [
+"Bước",
+"Người làm",
+"Việc",
+"Đầu ra"
+],
+"r": [
+[
+"1",
+"Bộ phận Mua hàng",
+"Lập đề nghị thanh toán kèm đơn đặt hàng hoặc hợp đồng, hoá đơn, phiếu nhập kho có chữ ký thủ kho",
+"Bộ hồ sơ thanh toán"
+],
+[
+"2",
+"Kế toán công nợ phải trả",
+"Đối chiếu ba chiều: đơn đặt hàng, phiếu nhập kho, hoá đơn (mặt hàng, số lượng, đơn giá). Kiểm hạn thanh toán theo hợp đồng, số dư công nợ, tài khoản nhận khớp danh mục nhà cung cấp",
+"Hồ sơ đạt, hoặc trả lại bước 1 kèm lý do trong 1 ngày làm việc"
+],
+[
+"3",
+"Kế toán trưởng",
+"Duyệt đề nghị đến 200.000.000 đồng",
+"Đề nghị đã duyệt"
+],
+[
+"3a",
+"Giám đốc",
+"Duyệt thêm khi đề nghị trên 200.000.000 đồng",
+"Đề nghị đã duyệt"
+],
+[
+"4",
+"Kế toán công nợ phải trả",
+"Lập lệnh chi trên ngân hàng điện tử (người lập không đồng thời là người duyệt)",
+"Lệnh chi chờ duyệt"
+],
+[
+"5",
+"Kế toán trưởng; Giám đốc (trên 200.000.000 đồng)",
+"Duyệt lệnh chi trên ngân hàng điện tử",
+"Lệnh chi đã chuyển"
+],
+[
+"6",
+"Kế toán công nợ phải trả",
+"Lưu chứng từ ngân hàng vào hồ sơ; gửi thông báo đã thanh toán cho nhà cung cấp; cập nhật sổ chi tiết công nợ",
+"Hồ sơ đóng"
+]
+]
+}
+},
+{
+"p": "Quy định kèm theo:"
+},
+{
+"ul": [
+"Đợt chi: thứ Ba và thứ Sáu hằng tuần. Khoản đến hạn vào ngày khác được chi ở đợt liền trước ngày đến hạn.",
+"Thanh toán trước hạn (kể cả để hưởng chiết khấu) phải có Kế toán trưởng đồng ý bằng văn bản.",
+"Chênh lệch giữa hoá đơn và phiếu nhập kho hoặc đơn đặt hàng: không thanh toán phần chênh cho tới khi Mua hàng giải trình và Kế toán trưởng duyệt.",
+"**Thay đổi số tài khoản nhận tiền của nhà cung cấp:** chỉ cập nhật khi có văn bản có dấu của nhà cung cấp và đã gọi xác nhận qua số điện thoại ghi trong hợp đồng (không dùng số điện thoại, email trong chính văn bản đề nghị đổi). Người gọi ghi biên bản xác nhận; Kế toán trưởng duyệt cập nhật danh mục. Khi chưa xác nhận xong, không lập lệnh chi tới tài khoản mới.",
+"Không thanh toán bằng tiền mặt cho nhà cung cấp."
+]
+}
+]
+}
+};
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Bỏ dấu từng ký tự, giữ nguyên độ dài để vị trí khớp trùng với chữ gốc.
+const fold = s => Array.from(s.normalize("NFC")).map(ch=>{
+  if(ch==="đ" || ch==="Đ") return "d";
+  const b = ch.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return (b.length===1 ? b : ch).toLowerCase();
+}).join("");
+let query = "", cur = -1; // -1 = toàn văn; 0-11 = Điều 1-12; 12 = quy trình
+const SECS = DOC.dieu.concat([DOC.qt]);
+function ranges(text){
+  if(!query) return [];
+  const f = fold(text), r = [];
+  let i = f.indexOf(query);
+  while(i>=0){ r.push([i, i+query.length]); i = f.indexOf(query, i+query.length); }
+  return r;
+}
+function hl(text){
+  const chars = Array.from(text.normalize("NFC"));
+  const rs = ranges(text);
+  if(!rs.length) return esc(text);
+  let out = "", p = 0;
+  rs.forEach(([a,b])=>{ out += esc(chars.slice(p,a).join("")) + "<mark>" + esc(chars.slice(a,b).join("")) + "</mark>"; p = b; });
+  return out + esc(chars.slice(p).join(""));
+}
+// Chữ đậm trong nguyên văn đánh dấu bằng **...**
+const rich = s => s.split("**").map((part,i)=> i%2 ? "<b>"+hl(part)+"</b>" : hl(part)).join("");
+const cnt = s => s.split("**").reduce((n,part)=>n+ranges(part).length,0);
+function texts(sec){
+  const a = [sec.t];
+  sec.b.forEach(b=>{
+    if(b.p) a.push(b.p);
+    if(b.ol) b.ol.forEach(it=>{ a.push(it.t); (it.sub||[]).forEach(s=>a.push(s)); });
+    if(b.ul) b.ul.forEach(s=>a.push(s));
+    if(b.tbl){ b.tbl.h.forEach(s=>a.push(s)); b.tbl.r.forEach(r=>r.forEach(s=>a.push(s))); }
+  });
+  return a;
+}
+const countIn = sec => texts(sec).reduce((n,s)=>n+cnt(s),0);
+function blockHtml(b){
+  if(b.p) return "<p>"+rich(b.p)+"</p>";
+  if(b.ol) return "<ol>"+b.ol.map(it=>"<li>"+rich(it.t)+(it.sub?"<ul>"+it.sub.map(s=>"<li>"+rich(s)+"</li>").join("")+"</ul>":"")+"</li>").join("")+"</ol>";
+  if(b.ul) return "<ul>"+b.ul.map(s=>"<li>"+rich(s)+"</li>").join("")+"</ul>";
+  if(b.tbl) return '<div class="tw"><table><thead><tr>'+b.tbl.h.map(s=>"<th>"+rich(s)+"</th>").join("")+"</tr></thead><tbody>"+
+    b.tbl.r.map(r=>"<tr>"+r.map(s=>"<td>"+rich(s)+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";
+  return "";
+}
+const secHtml = (sec, qt) => (qt?'<div class="qt">':'')+"<h4>"+rich(sec.t)+"</h4>"+sec.b.map(blockHtml).join("")+(qt?'</div>':'');
+function renderToc(){
+  const counts = SECS.map(countIn);
+  const headN = DOC.head.concat(DOC.sign).reduce((n,s)=>n+cnt(s),0);
+  let h = '<button role="tab" data-i="-1" aria-current="'+(cur===-1)+'"><span class="lbl">Toàn văn</span>'+(query?'<span class="n">'+(counts.reduce((a,b)=>a+b,0)+headN)+'</span>':'')+'</button>';
+  SECS.forEach((d,i)=>{
+    let lbl;
+    if(i<12){ const m = d.t.match(/^(Điều \d+)\. (.*)$/); lbl = '<b>'+m[1]+'</b><span class="full">. '+esc(m[2])+'</span>'; }
+    else lbl = '<b>QT-KT-04</b><span class="full"> Quy trình thanh toán cho nhà cung cấp</span>';
+    h += '<button role="tab" data-i="'+i+'" aria-current="'+(cur===i)+'"'+(query && !counts[i] ? ' class="dim"' : '')+'><span class="lbl">'+lbl+'</span>'+(query && counts[i]?'<span class="n">'+counts[i]+'</span>':'')+'</button>';
+  });
+  $("toc").innerHTML = h;
+  $("toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cur = +b.dataset.i; render(true); });
+  return [counts, headN];
+}
+function render(scrollTop){
+  const [counts, headN] = renderToc();
+  let h = "";
+  if(cur===-1){
+    h = '<div class="hd">'+DOC.head.map((s,i)=>'<p'+(i===0||/^QUY CHẾ/.test(s)?' class="big"':'')+'>'+rich(s)+'</p>').join("")+'</div>';
+    h += DOC.dieu.map(d=>secHtml(d,false)).join("");
+    h += '<div class="sign">'+DOC.sign.map((s,i)=>'<p>'+(i===0||i===2?'<b>'+rich(s)+'</b>':rich(s))+'</p>').join("")+'</div>';
+    h += secHtml(DOC.qt, true);
+  } else h = secHtml(SECS[cur], cur===12);
+  $("doc").innerHTML = h;
+  const all = counts.reduce((a,b)=>a+b,0) + headN;
+  const name = i => i===12 ? "Quy trình QT-KT-04" : SECS[i].t.split(".")[0];
+  if(!query) $("status").textContent = cur===-1 ? "Đang xem toàn văn: quy chế 12 điều và quy trình QT-KT-04." : "Đang xem "+name(cur)+".";
+  else {
+    const nd = counts.filter(Boolean).length;
+    $("status").textContent = all ? "Khớp “"+$("q").value.trim()+"”: "+all+" chỗ"+(nd?", trong "+nd+" mục có số ở mục lục":"")+". "+(cur===-1 ? "" : name(cur)+" có "+counts[cur]+" chỗ.")
+                                  : "Không có chỗ nào khớp “"+$("q").value.trim()+"”. Thử từ ngắn hơn.";
+  }
+  const first = $("doc").querySelector("mark"), doc = $("doc");
+  if(first){ const y = first.getBoundingClientRect().top - doc.getBoundingClientRect().top + doc.scrollTop; doc.scrollTop = Math.max(0, y-60); }
+  else if(scrollTop) doc.scrollTop = 0;
+}
+let timer = null;
+$("q").addEventListener("input", ()=>{
+  clearTimeout(timer);
+  timer = setTimeout(()=>{
+    const v = fold($("q").value.trim().replace(/\s+/g," "));
+    query = v.length >= 2 ? v : "";
+    if(query && cur>=0 && !countIn(SECS[cur])){ const c = SECS.map(countIn); const j = c.findIndex(Boolean); if(j>=0) cur = j; }
+    render(false);
+  }, 150);
+});
+$("clr").onclick = ()=>{ $("q").value = ""; query = ""; render(true); $("q").focus(); };
+const p = new URLSearchParams(location.search);
+if(p.has("dieu")){ const d = parseInt(p.get("dieu"),10); if(d>=1 && d<=13) cur = d-1; }
+if(p.has("tim")){ $("q").value = p.get("tim"); const v = fold(p.get("tim").trim()); query = v.length>=2 ? v : ""; }
+render(!query);
+</script>
+</body>
+</html>
