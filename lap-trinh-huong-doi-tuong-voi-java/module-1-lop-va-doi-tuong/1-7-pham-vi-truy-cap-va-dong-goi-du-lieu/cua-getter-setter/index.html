@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="480">
+<title>Hai cửa getter và setter</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --arrow:#64748b; --this:#7c3aed; --this-soft:#f0e9fe;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --arrow:#94a3b8; --this:#c4a1ff; --this-soft:#2a2144;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 12px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:6px}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.key:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.err{color:var(--false);font-size:12.5px}
+.err:empty{display:none}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:5px 12px;margin-bottom:6px;min-height:68px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 4px 0 0;border-left:3px solid transparent;width:max-content;min-width:100%}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln mark{background:var(--cur-bar);color:#1d2330;border-radius:3px;padding:0 1px}
+.ln mark span{color:inherit}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre-wrap;word-break:break-word;tab-size:8;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+input[type=text]{padding:4px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);
+  font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+input.bad{border-color:var(--false);background:var(--false-soft)}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<style>
+.scene{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 112px minmax(0,1fr);grid-template-rows:auto auto;margin-bottom:6px}
+.out{padding:6px 8px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:96px}
+.out + .wall{}
+.zone-t{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.callrow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+.callrow input{width:74px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:0 8px;border-radius:999px;cursor:pointer;font:12px ui-monospace,Menlo,Consolas,monospace}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.wall{background:repeating-linear-gradient(135deg,var(--node-line) 0 6px,var(--line) 6px 12px);display:flex;align-items:center;justify-content:center;padding:6px 0}
+.wall.top{border-radius:8px 8px 0 0}.wall.bot{border-radius:0 0 8px 8px}
+.door{background:var(--card);border:2px solid var(--accent);border-radius:6px;padding:2px 3px;text-align:center;font:600 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:var(--accent);width:100px;transition:box-shadow .2s}
+.door small{display:block;font:600 10.5px system-ui,sans-serif;color:var(--muted)}
+.door.open{box-shadow:0 0 0 3px var(--cur-bar)}
+.inside{grid-column:3;grid-row:1 / span 2;display:flex;align-items:center;padding:6px 0 6px 10px}
+.objbox{width:100%;border:1.5px solid var(--node-line);border-radius:8px;background:var(--node);padding:6px 8px}
+.objh{font:700 13px ui-monospace,Menlo,Consolas,monospace}
+.objh small{display:block;font:600 11px system-ui,sans-serif;color:var(--muted)}
+.rad{margin-top:6px;background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 6px;text-align:center;transition:background .2s,border-color .2s}
+.rad small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+.rad b{font:700 19px ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.rad.chg{border-color:var(--cur-bar);background:var(--cur)}
+.rad.read{border-color:var(--accent);background:var(--accent-soft)}
+.copy{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:1px 6px;min-height:22px}
+.copy em{font:italic 12px system-ui,sans-serif;color:var(--muted)}
+.token{position:absolute;left:0;top:0;z-index:3;background:var(--cur-bar);color:#1d2330;border-radius:999px;padding:0 9px;font:700 12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;opacity:0;pointer-events:none}
+.grid2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px}
+.grid2>*{min-width:0}
+.tbl{width:100%;border-collapse:collapse;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:1px 4px;border-bottom:1px solid var(--line)}
+.tbl td{padding:1px 4px;border-bottom:1px solid var(--line)}
+.tbl .none td{color:var(--muted);font-family:system-ui,sans-serif}
+.expr{font:12.5px/1.7 ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:600px){
+  .scene{grid-template-columns:minmax(0,1.5fr) 86px minmax(0,1fr)}
+  .door{width:80px;font-size:10px}
+  .inside{padding-left:6px}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+<div class="wrap">
+  <p class="lead">Bên ngoài lớp chỉ có hai cửa để làm việc với <code>radius</code>. Nhập giá trị rồi gọi thử.</p>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="scene" id="scene">
+      <div class="out">
+        <div class="zone-t">Bên ngoài lớp Circle</div>
+        <div class="callrow"><label for="val">myCircle.setRadius(</label><input type="text" id="val" value="8" inputmode="decimal"><span>)</span><button class="btn" id="set">Gọi</button></div>
+        <div class="chips"><button class="chip" data-v="12.5">12.5</button><button class="chip" data-v="0">0</button><button class="chip" data-v="-4">-4</button></div>
+      </div>
+      <div class="wall top"><div class="door" id="dset"><small>cửa public</small>setRadius(…)</div></div>
+      <div class="inside"><div class="objbox" id="obj"><div class="objh">myCircle<small>đối tượng Circle</small></div><div class="rad" id="rad"><small>private radius</small><b id="rv"></b></div></div></div>
+      <div class="out">
+        <div class="callrow"><button class="btn" id="get">Gọi getRadius()</button></div>
+        <div class="copy" id="copy"></div>
+      </div>
+      <div class="wall bot"><div class="door" id="dget"><small>cửa public</small>getRadius()</div></div>
+      <div class="token" id="token" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div class="err" id="err" role="alert" style="margin-top:4px"></div>
+  <div class="grid2" style="margin-top:6px">
+    <div class="card"><p class="panel-title">Biểu thức trong setRadius</p><div class="expr" id="expr"></div></div>
+    <div class="card"><p class="panel-title">Các lời gọi gần đây</p><table class="tbl"><thead><tr><th>Lời gọi</th><th>radius sau đó</th></tr></thead><tbody id="log"></tbody></table></div>
+  </div>
+  <div class="controls" style="margin:6px 0 0">
+    <div class="btns"><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="reset">Làm lại</button></div>
+  </div>
+</div>
+<script>
+// Logic setRadius của lớp Circle đóng gói, không đụng DOM để đối chiếu với Java.
+function fmtD(x){ if (Object.is(x, -0)) return '-0.0'; return Number.isInteger(x) ? x.toFixed(1) : String(x); }
+function setRadius(newRadius){ return (newRadius >= 0) ? newRadius : 0; }
+// Nhận chuỗi nhập; trả số trong [-1000, 1000], tối đa 3 chữ số thập phân, hoặc null
+function parseRadius(s){
+  s = String(s).trim();
+  if (!/^-?\d{1,4}(\.\d{1,3})?$/.test(s)) return null;
+  var v = parseFloat(s);
+  return v < -1000 || v > 1000 ? null : v;
+}
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  var START = 5, st, hist, busy = false, timers = [];
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var EXPR0 = '(newRadius &gt;= 0) ? newRadius : 0';
+  function init(){ st = {radius: START, copy: null, expr: null, log: [], msg: null, mark: ''}; hist = []; }
+  function clone(o){ return JSON.parse(JSON.stringify(o, function(k, v){ return Object.is(v, -0) ? '__-0' : v; }), function(k, v){ return v === '__-0' ? -0 : v; }); }
+  function draw(){
+    $('rv').textContent = fmtD(st.radius);
+    $('rad').className = 'rad' + (st.mark ? ' ' + st.mark : '');
+    $('copy').innerHTML = st.copy === null ? '<em>Chưa đọc giá trị nào.</em>' : 'double r = <b>' + fmtD(st.copy) + '</b>';
+    $('expr').innerHTML = st.expr || EXPR0;
+    $('log').innerHTML = st.log.length ? st.log.slice(-3).reverse().map(function(l){ return '<tr><td>' + l[0] + '</td><td>' + l[1] + '</td></tr>'; }).join('') : '<tr class="none"><td colspan="2">Chưa có lời gọi nào.</td></tr>';
+    $('status').innerHTML = st.msg || '<b>new Circle(5.0)</b><span>Trường <code>radius</code> là <code>private</code>, nên từ bên ngoài không có đường nào chạm thẳng vào ô này. Mọi việc đọc, sửa đều phải đi qua một trong hai cửa.</span>';
+    $('prev').disabled = busy || hist.length === 0;
+    $('reset').disabled = busy;
+    $('set').disabled = busy; $('get').disabled = busy;
+  }
+  function pos(el){ var s = $('scene').getBoundingClientRect(), r = el.getBoundingClientRect(); return {x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2}; }
+  function fly(text, from, via, to, done){
+    if (reduced) { done(); return; }
+    var t = $('token'); t.textContent = text;
+    var w = t.offsetWidth / 2, h = t.offsetHeight / 2;
+    function at(p, ms){ t.style.transition = ms ? 'transform ' + ms + 'ms ease-in-out' : 'none'; t.style.transform = 'translate(' + (p.x - w) + 'px,' + (p.y - h) + 'px)'; }
+    at(from, 0); t.style.opacity = 1; t.getBoundingClientRect();
+    at(via, 320);
+    timers.push(setTimeout(function(){ at(to, 320); timers.push(setTimeout(function(){ t.style.opacity = 0; done(); }, 330)); }, 330));
+  }
+  function doors(id, on){ $(id).classList.toggle('open', on); }
+  function finish(door){ doors(door, false); busy = false; draw(); }
+  function callSet(v){
+    hist.push(clone(st)); busy = true; draw();
+    var nr = fmtD(v), ok = v >= 0, res = setRadius(v);
+    doors('dset', true);
+    fly(nr, pos($('val')), pos($('dset')), pos($('rad')), function(){
+      st.radius = res; st.mark = 'chg';
+      st.expr = EXPR0 + '<br>(' + nr + ' &gt;= 0) ? ' + nr + ' : 0<br>' + '<b>' + ok + '</b> nên lấy ' + (ok ? nr : '0') + ', <code>radius</code> = <b>' + fmtD(res) + '</b>';
+      st.log.push(['setRadius(' + nr + ')', fmtD(res)]);
+      st.msg = '<b>myCircle.setRadius(' + nr + ')</b><span>' + (ok
+        ? 'Giá trị không âm nên được nhận: <code>radius</code> thành <b>' + fmtD(res) + '</b>.'
+        : 'Giá trị âm không lọt qua cửa: setter đổi thành 0, <code>radius</code> thành <b>' + fmtD(res) + '</b>. Đối tượng vẫn hợp lệ.') + '</span>';
+      finish('dset');
+    });
+  }
+  function callGet(){
+    hist.push(clone(st)); busy = true; draw();
+    var v = st.radius;
+    doors('dget', true);
+    fly(fmtD(v), pos($('rad')), pos($('dget')), pos($('copy')), function(){
+      st.copy = v; st.mark = 'read';
+      st.log.push(['getRadius()', fmtD(st.radius)]);
+      st.msg = '<b>myCircle.getRadius()</b><span>Cửa này chỉ trả ra một <b>bản sao</b> của giá trị. Đổi biến <code>r</code> ở bên ngoài cũng không làm ô <code>radius</code> thay đổi.</span>';
+      finish('dget');
+    });
+  }
+  function trySet(){
+    if (busy) return;
+    var v = parseRadius($('val').value);
+    $('val').classList.toggle('bad', v === null);
+    if (v === null) { $('err').textContent = 'Hãy nhập số từ -1000 đến 1000, dùng dấu chấm, tối đa 3 chữ số thập phân.'; return; }
+    $('err').textContent = ''; callSet(v);
+  }
+  $('set').addEventListener('click', trySet);
+  $('get').addEventListener('click', function(){ if (!busy) { $('err').textContent = ''; callGet(); } });
+  $('val').addEventListener('keydown', function(e){ if (e.key === 'Enter') trySet(); });
+  document.querySelectorAll('.chip').forEach(function(c){ c.addEventListener('click', function(){ $('val').value = c.dataset.v; trySet(); }); });
+  $('prev').addEventListener('click', function(){ if (busy || !hist.length) return; st = hist.pop(); draw(); });
+  $('reset').addEventListener('click', function(){ if (busy) return; init(); $('val').value = '8'; $('val').classList.remove('bad'); $('err').textContent = ''; draw(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'ArrowLeft' && e.target.tagName !== 'INPUT') { $('prev').click(); e.preventDefault(); } });
+  init(); draw();
+  // ?goi=-3 gọi sẵn setRadius(-3), tiện chụp kiểm tra
+  var pre = parseRadius(qs('goi'));
+  if (qs('goi') !== '' && pre !== null) { reduced = true; callSet(pre); }
+})();
+</script>
+
+</body>
+</html>

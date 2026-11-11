@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Constructor của Rational</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .in{color:#93c5fd}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @media (max-width:600px){.code{max-height:270px !important}}
+
+  .grid{grid-template-columns:1.15fr 1fr}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .code{font-size:12px;line-height:1.35}
+  .ln .no{width:24px;padding-right:8px}
+  .vars{gap:5px}
+  .var{min-width:52px;padding:1px 8px}
+  .var strong{font-size:15px;min-height:22px}
+  .var.off{opacity:.45}
+  .obj{border:2px solid var(--node-line);border-radius:8px;background:var(--node);overflow:hidden}
+  .obj .oh{font:700 13px ui-monospace,Menlo,Consolas,monospace;text-align:center;padding:3px;border-bottom:1px solid var(--line)}
+  .obj .of{display:flex;justify-content:space-between;padding:3px 10px;font:13px ui-monospace,Menlo,Consolas,monospace;transition:background .2s}
+  .obj .of.init b{color:var(--muted);font-weight:400}
+  .obj .of.chg{background:var(--cur)}
+  .tostr{font:13px ui-monospace,Menlo,Consolas,monospace;margin-top:6px;min-height:20px}
+  .frameh{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin:0 0 3px}
+  #code{max-height:376px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Nhập tử và mẫu, rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem constructor rút gọn và chuẩn hoá dấu.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="tn">tử</label><input type="text" id="tn" value="-2" inputmode="numeric">
+      <label for="td">mẫu</label><input type="text" id="td" value="6" inputmode="numeric">
+      <button class="chip" data-v="1,-2">1, -2</button><button class="chip" data-v="0,4">0, 4</button><button class="chip" data-v="120,84">120, 84</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Constructor và gcd</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Biến cục bộ</p><div id="locals"></div></div>
+      <div class="card"><p class="panel-title">Đối tượng trên heap</p><div id="obj"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|static|void|int|long|double|char|boolean|if|else|switch|case|break|default|return|for|while|new|true|false|throws|this|super|instanceof|extends|implements|abstract|interface)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: array of strings; o: {cur: number | [from,to], cls: {idx: 'run'|'skip'}, tags: {idx: text}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function tagBool(v){ return v === undefined || v === null ? '<span class="tag n">chưa xét</span>' : '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, redraw: draw};
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+//SIM-START
+var LINES = [
+'public Rational(long numerator,',
+'    long denominator) {',
+'  long gcd =',
+'      gcd(numerator, denominator);',
+'  this.numerator =',
+'      (denominator > 0 ? 1 : -1)',
+'      * numerator / gcd;',
+'  this.denominator =',
+'      Math.abs(denominator) / gcd;',
+'}',
+'',
+'private static long gcd(',
+'    long n, long d) {',
+'  long n1 = Math.abs(n);',
+'  long n2 = Math.abs(d);',
+'  int gcd = 1;',
+'',
+'  for (int k = 1;',
+'      k <= n1 && k <= n2; k++) {',
+'    if (n1 % k == 0 && n2 % k == 0)',
+'      gcd = k;',
+'  }',
+'',
+'  return gcd;',
+'}'];
+var FULL_LIMIT = 10; // min(|tử|, |mẫu|) lớn hơn thì chỉ dừng ở các ước chung
+function simRational(num, den){
+  var S = [], ctor = {numerator: num, denominator: den}, fr = null, obj = {numerator: 0, denominator: 1, init: ['numerator', 'denominator']};
+  function snap(ln, title, body, chg){
+    S.push({ln: ln, title: title, body: body, chg: chg || [],
+      ctor: JSON.parse(JSON.stringify(ctor)), fr: fr ? JSON.parse(JSON.stringify(fr)) : null, obj: JSON.parse(JSON.stringify(obj))});
+  }
+  snap([0, 1], 'new Rational(' + num + ', ' + den + ')', 'Đối tượng được cấp trên heap, hai trường có giá trị khởi tạo <code>0</code> và <code>1</code>. Constructor bắt đầu với hai tham số.', ['numerator', 'denominator']);
+  fr = {n: num, d: den};
+  snap([2, 3], 'Gọi gcd(' + num + ', ' + den + ')', 'Constructor gọi <code>gcd</code> để tìm ước chung lớn nhất.', ['n', 'd']);
+  var n1 = Math.abs(num), n2 = Math.abs(den), g = 1, k = 1;
+  fr.n1 = n1; snap(13, 'n1 = ' + n1, 'Lấy trị tuyệt đối của tử.', ['n1']);
+  fr.n2 = n2; snap(14, 'n2 = ' + n2, 'Lấy trị tuyệt đối của mẫu.', ['n2']);
+  fr.gcd = g; snap(15, 'int gcd = 1', 'Giá trị ban đầu của <code>gcd</code> là 1.', ['gcd']);
+  var full = Math.min(n1, n2) <= FULL_LIMIT, skipFrom = null;
+  for (k = 1; k <= n1 && k <= n2; k++) {
+    var common = n1 % k === 0 && n2 % k === 0;
+    if (!full && !common) { if (skipFrom === null) skipFrom = k; continue; }
+    fr.k = k;
+    var pre = skipFrom !== null ? 'Bỏ qua k từ ' + skipFrom + ' đến ' + (k - 1) + ': không phải ước chung. ' : '';
+    skipFrom = null;
+    snap(19, 'k = ' + k + ': ' + (common ? 'là ước chung' : 'không là ước chung'), pre + '<code>' + n1 + ' % ' + k + ' = ' + (n1 % k) + '</code>, <code>' + n2 + ' % ' + k + ' = ' + (n2 % k) + '</code>.', ['k']);
+    if (common) { g = k; fr.gcd = g; snap(20, 'gcd = ' + k, '<code>' + k + '</code> chia hết cả hai nên <code>gcd</code> được cập nhật.', ['gcd']); }
+  }
+  fr.k = k;
+  var endPre = skipFrom !== null ? 'Bỏ qua k từ ' + skipFrom + ' đến ' + (k - 1) + ': không phải ước chung. ' : '';
+  if (n1 === 0) snap(18, 'Vòng lặp không chạy', 'Tử bằng 0 nên <code>k &lt;= n1</code> sai ngay từ đầu; <code>gcd</code> giữ nguyên là 1.', ['k']);
+  else snap(18, 'Thoát vòng lặp, k = ' + k, endPre + '<code>' + k + ' &lt;= ' + n1 + ' &amp;&amp; ' + k + ' &lt;= ' + n2 + '</code> sai nên vòng lặp dừng.', ['k']);
+  snap(23, 'return ' + g, '<code>gcd</code> trả về ' + g + ' cho constructor.', ['gcd']);
+  fr = null; ctor.gcd = g;
+  snap([2, 3], 'long gcd = ' + g, 'Bản ghi của <code>gcd</code> được gỡ; biến <code>gcd</code> của constructor nhận giá trị ' + g + '.', ['gcd']);
+  var s = den > 0 ? 1 : -1;
+  ctor.sign = s;
+  snap(5, 'Xác định dấu: ' + s, 'Mẫu ' + (den > 0 ? 'dương nên hệ số là <code>1</code>, giữ nguyên dấu của tử.' : 'âm nên hệ số là <code>-1</code>, dấu được chuyển lên tử.'), ['sign']);
+  var rn = (s * num / g) + 0, rd = Math.abs(den) / g;
+  if (rn === 0) rn = 0;
+  obj.numerator = rn; obj.init = ['denominator'];
+  snap([4, 6], 'this.numerator = ' + rn, '<code>' + s + ' * ' + num + ' / ' + g + '</code> bằng <code>' + rn + '</code>.', ['f:numerator']);
+  obj.denominator = rd; obj.init = [];
+  snap([7, 8], 'this.denominator = ' + rd, '<code>Math.abs(' + den + ') / ' + g + '</code> bằng <code>' + rd + '</code>, luôn dương.', ['f:denominator']);
+  var str = rd === 1 ? String(rn) : rn + '/' + rd;
+  obj.str = str;
+  var extra = rn === 0 && rd !== 1 ? ' Tử bằng 0 nên phân số chưa được rút gọn, dù giá trị vẫn đúng.' : '';
+  snap(9, 'Constructor kết thúc', 'Đối tượng giữ tử <code>' + rn + '</code>, mẫu <code>' + rd + '</code>; <code>toString()</code> cho <code>' + str + '</code>.' + extra, []);
+  return S;
+}
+//SIM-END
+function cells(o, order, chg){
+  return '<div class="vars">' + order.filter(function(k){ return o[k] !== undefined; }).map(function(k){
+    var label = k === 'sign' ? 'dấu' : k;
+    return '<div class="var' + (chg.indexOf(k) >= 0 ? ' chg' : '') + '"><small>' + label + '</small><strong>' + esc(o[k]) + '</strong></div>';
+  }).join('') + '</div>';
+}
+var N = -2, Dn = 6;
+var st = Stepper({
+  build: function(){ return simRational(N, Dn); },
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.ln}); scrollToCur($('code'));
+    var h = '<p class="frameh">Rational(...)</p>' + cells(sn.ctor, ['numerator', 'denominator', 'gcd', 'sign'], sn.fr ? [] : sn.chg);
+    h += '<p class="frameh" style="margin-top:6px">gcd(n, d)</p>' + (sn.fr ? cells(sn.fr, ['n', 'd', 'n1', 'n2', 'gcd', 'k'], sn.chg) : '<span class="tag n">chưa chạy hoặc đã kết thúc</span>');
+    $('locals').innerHTML = h;
+    function field(k){ return '<div class="of' + (sn.obj.init.indexOf(k) >= 0 ? ' init' : '') + (sn.chg.indexOf('f:' + k) >= 0 ? ' chg' : '') + '"><span>' + k + '</span><b>' + esc(sn.obj[k]) + '</b></div>'; }
+    $('obj').innerHTML = '<div class="obj"><div class="oh">Rational</div>' + field('numerator') + field('denominator') + '</div>' +
+      '<div class="tostr">' + (sn.obj.str !== undefined ? 'toString() → <b>' + esc(sn.obj.str) + '</b>' : '') + '</div>';
+  }
+});
+function apply(){
+  var a = parseIntIn($('tn').value, -999, 999), b = parseIntIn($('td').value, -999, 999);
+  var bad2 = b === null || b === 0;
+  $('tn').classList.toggle('bad', a === null); $('td').classList.toggle('bad', bad2);
+  if (a === null || b === null) { $('err').textContent = 'Hãy nhập số nguyên từ -999 đến 999.'; return; }
+  if (b === 0) { $('err').textContent = 'Mẫu số phải khác 0.'; return; }
+  $('err').textContent = ''; N = a; Dn = b; st.reset();
+}
+$('tn').addEventListener('input', apply); $('td').addEventListener('input', apply);
+Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(c){
+  c.addEventListener('click', function(){ var v = c.getAttribute('data-v').split(','); $('tn').value = v[0]; $('td').value = v[1]; apply(); });
+});
+if (qs('tu') !== '') $('tn').value = qs('tu');
+if (qs('mau') !== '') $('td').value = qs('mau');
+var a0 = parseIntIn($('tn').value, -999, 999), b0 = parseIntIn($('td').value, -999, 999);
+if (a0 !== null && b0) { N = a0; Dn = b0; } else { $('tn').value = N; $('td').value = Dn; }
+st.reset();
+})();
+</script>
+</body>
+</html>

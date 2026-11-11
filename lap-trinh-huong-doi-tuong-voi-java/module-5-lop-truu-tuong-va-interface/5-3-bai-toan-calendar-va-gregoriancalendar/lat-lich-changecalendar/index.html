@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="620">
+<title>Lật lịch với Calendar</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .in{color:#93c5fd}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @media (max-width:600px){.code{max-height:270px !important}}
+
+  .grid{grid-template-columns:1.1fr 1fr}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .code{font-size:12px}
+  .ln .no{width:24px;padding-right:8px}
+  .calh{display:flex;justify-content:center;font:700 14px system-ui,sans-serif;margin-bottom:4px}
+  .calh span.flip{animation:flip .35s ease-out;display:inline-block}
+  @keyframes flip{from{transform:rotateX(80deg);opacity:.2}to{transform:none;opacity:1}}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal.flip{animation:flip .35s ease-out}
+  .cal div{text-align:center;font:12px/22px ui-monospace,Menlo,Consolas,monospace;border-radius:5px}
+  .cal .dw{font:600 11px/18px system-ui,sans-serif;color:var(--muted)}
+  .cal .d{background:var(--code-bg)}
+  .cal .d.on{background:var(--accent);color:#fff;font-weight:700}
+  .cal .d.max{outline:2px solid var(--cur-bar);outline-offset:-2px;background:var(--cur)}
+  .tbl td.direct{background:var(--cur);font-weight:700}
+  .tbl td.side{background:var(--false-soft);color:var(--false);font-weight:700}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:4px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .console{min-height:84px}
+  #code{max-height:300px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem lịch thay đổi sau từng lệnh của <code>ChangeCalendar</code>.</p>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card"><p class="panel-title">Trong main</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Lịch c</p><div class="calh" id="calh"></div><div class="cal" id="cal"></div></div>
+      <div class="card"><p class="panel-title">Các trường của c</p><div id="fields"></div>
+        <div class="legend"><span><i style="background:var(--cur)"></i>đổi theo lệnh</span><span><i style="background:var(--false-soft)"></i>tự đổi theo</span></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|static|void|int|long|double|char|boolean|if|else|switch|case|break|default|return|for|while|new|true|false|throws|this|super|instanceof|extends|implements|abstract|interface)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: array of strings; o: {cur: number | [from,to], cls: {idx: 'run'|'skip'}, tags: {idx: text}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function tagBool(v){ return v === undefined || v === null ? '<span class="tag n">chưa xét</span>' : '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, redraw: draw};
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+//SIM-START
+var LINES = [
+'Calendar c =',
+'    new GregorianCalendar(2024, 1, 10);',
+'System.out.println("Days in month: "',
+'    + c.getActualMaximum(',
+'        Calendar.DAY_OF_MONTH));',
+'',
+'c.set(Calendar.DAY_OF_MONTH, 1);',
+'print(c);',
+'',
+'c.add(Calendar.DAY_OF_MONTH, -5);',
+'print(c);',
+'',
+'c.add(Calendar.MONTH, 2);',
+'print(c);'];
+function daysIn(y, m){ return new Date(y, m + 1, 0).getDate(); }
+function firstDow(y, m){ return new Date(y, m, 1).getDay(); }
+function simCalendar(){
+  var S = [], out = [], d = {y: 2024, m: 1, day: 10};
+  function fmt(){ return d.day + '/' + (d.m + 1) + '/' + d.y; }
+  function snap(ln, title, body, o){ o = o || {}; o.ln = ln; o.title = title; o.body = body; o.y = d.y; o.m = d.m; o.day = d.day; o.out = out.slice(); S.push(o); }
+  function addDays(n){ var t = new Date(d.y, d.m, d.day + n); d = {y: t.getFullYear(), m: t.getMonth(), day: t.getDate()}; }
+  snap([0, 1], 'Tạo lịch 10/2/2024', 'Tham số tháng là <code>1</code> vì <code>MONTH</code> đếm từ 0, nên đây là tháng Hai.', {direct: ['DATE', 'MONTH', 'YEAR']});
+  var max = daysIn(d.y, d.m);
+  out.push('Days in month: ' + max);
+  snap([2, 4], 'getActualMaximum', 'Tháng đang xem của lịch có <b>' + max + '</b> ngày, ô cuối cùng được đánh dấu. Lệnh này chỉ hỏi, không đổi trường nào.', {max: max});
+  d.day = 1;
+  snap(6, 'set(DAY_OF_MONTH, 1)', 'Chỉ trường ngày được đặt lại, ô sáng nhảy về ngày 1.', {direct: ['DATE']});
+  out.push(fmt());
+  snap(7, 'print(c)', 'In ngày, <code>MONTH + 1</code>, năm.', {});
+  addDays(-5);
+  snap(9, 'add(DAY_OF_MONTH, -5)', 'Lùi 5 ngày từ ngày 1 nên phải sang tháng trước. Lệnh chỉ nhắc đến ngày, nhưng lịch <b>tự đổi</b> cả <code>MONTH</code>.', {direct: ['DATE'], side: ['MONTH'], flip: true});
+  out.push(fmt());
+  snap(10, 'print(c)', '<code>MONTH</code> đang là 0, cộng 1 khi in thành tháng 1.', {});
+  d.m += 2;
+  snap(12, 'add(MONTH, 2)', 'Tiến 2 tháng, ngày vẫn là 27 nên lịch lật sang tháng Ba.', {direct: ['MONTH'], flip: true});
+  out.push(fmt());
+  snap(13, 'print(c)', 'Dòng cuối cùng được in. Bạn không phải tự xử lý số ngày của từng tháng.', {});
+  return S;
+}
+//SIM-END
+var DW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+var st = Stepper({
+  build: simCalendar,
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.ln}); scrollToCur($('code'));
+    $('calh').innerHTML = '<span class="' + (sn.flip ? 'flip' : '') + '">Tháng ' + (sn.m + 1) + '/' + sn.y + '</span>';
+    var h = DW.map(function(x){ return '<div class="dw">' + x + '</div>'; }).join('');
+    for (var i = 0, f = firstDow(sn.y, sn.m); i < f; i++) h += '<div></div>';
+    for (var k = 1, n = daysIn(sn.y, sn.m); k <= n; k++) h += '<div class="d' + (k === sn.day ? ' on' : '') + (k === sn.max ? ' max' : '') + '">' + k + '</div>';
+    $('cal').className = 'cal' + (sn.flip ? ' flip' : ''); $('cal').innerHTML = h;
+    function row(name, v){ var c = (sn.direct || []).indexOf(name) >= 0 ? 'direct' : (sn.side || []).indexOf(name) >= 0 ? 'side' : ''; return '<tr><td>' + name + '</td><td class="' + c + '">' + v + '</td></tr>'; }
+    $('fields').innerHTML = '<table class="tbl">' + row('DATE', sn.day) + row('MONTH', sn.m) + row('YEAR', sn.y) + '</table>';
+    $('con').innerHTML = sn.out.length ? sn.out.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+  }
+});
+st.reset();
+})();
+</script>
+</body>
+</html>

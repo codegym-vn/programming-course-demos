@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Xét lần lượt các khối catch</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --run:#e3f4e8; --run-bar:#15803d;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --run:#13301f; --run-bar:#4ade80;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs:empty{display:none}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+  border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab:disabled{opacity:.45;cursor:not-allowed}
+.sw{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.sw input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:6px 12px;margin-bottom:8px;min-height:64px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s;width:max-content;min-width:100%}
+.ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+.ln.run{background:var(--run);border-left-color:var(--run-bar)}
+.ln.skip>span:nth-child(2){opacity:.38;text-decoration:line-through}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+.ln .tagln{position:sticky;right:4px;margin-left:auto;padding:0 6px;border-radius:5px;background:var(--card);border:1px solid var(--line);font:600 11px/1.3 system-ui,sans-serif;color:var(--muted);align-self:center;white-space:nowrap}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+.tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+.vars{display:flex;gap:6px;flex-wrap:wrap}
+.var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:62px;text-align:center;transition:all .25s}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{font:700 14.5px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:22px}
+.var.chg{border-color:var(--cur-bar);background:var(--cur)}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+.console .in{color:#93c5fd}
+.console .er{color:#fca5a5}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+@media (max-width:600px){.code{max-height:270px !important}}
+
+/* đối tượng ngoại lệ */
+.exnone{color:var(--muted);font-size:12.5px;text-align:center;padding:9px 4px;border:1px dashed var(--line);border-radius:8px}
+.exbox{border:2px solid var(--false);background:var(--false-soft);border-radius:8px;padding:3px 10px;animation:pop .3s ease-out;overflow-wrap:anywhere}
+.exbox small{display:block;font:600 11px system-ui,sans-serif;color:var(--false)}
+.exbox b{display:block;font:700 13px ui-monospace,Menlo,Consolas,monospace}
+.exbox span{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.exbox.caught{border-color:var(--true);background:var(--true-soft)}
+.exbox.caught small{color:var(--true)}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+
+/* ngăn xếp lời gọi */
+.stack{display:flex;flex-direction:column-reverse;gap:5px;min-height:60px;padding:5px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px}
+.stack .empty{color:var(--muted);font-size:13px;text-align:center;margin:auto}
+.frame{display:flex;justify-content:space-between;align-items:center;gap:6px;border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:2px 8px;font:700 13px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+.frame small{font:600 11px system-ui,sans-serif;color:var(--muted)}
+.frame.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.frame.active small{color:var(--accent)}
+.frame.popping{opacity:.55;border-style:dashed;border-color:var(--false)}
+.frame.popping small{color:var(--false)}
+.stlabel{font-size:11px;color:var(--muted);text-align:center}
+
+/* dải ký tự */
+.strip{display:flex;flex-wrap:wrap;row-gap:12px;padding:12px 2px 2px;font:13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.strip .brk{flex-basis:100%;height:0}
+.ch{position:relative;width:20px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:var(--code-bg);border:1px solid var(--line);margin-right:-1px;transition:background .2s,opacity .2s}
+.ch.sep{color:var(--muted)}
+.ch.done{opacity:.42}
+.ch.dim{opacity:.3;border-style:dashed}
+.ch.eof{background:transparent;border-style:dashed}
+.ch.tok{background:var(--cur);border-color:var(--cur-bar);opacity:1;z-index:1}
+.ch.bad{background:var(--false-soft);border-color:var(--false);color:var(--false);opacity:1;z-index:1}
+.ch.good{background:var(--true-soft);border-color:var(--true);color:var(--true);opacity:1;z-index:1}
+.ch.at{box-shadow:-3px 0 0 var(--accent);z-index:2}
+.ch.at::before{content:"";position:absolute;left:-7px;top:-10px;border:5px solid transparent;border-top:7px solid var(--accent);border-bottom:0}
+.stripnote{font-size:11.5px;color:var(--muted);margin-top:4px}
+.stripnote b{color:var(--accent)}
+
+.blk{border:2px solid var(--node-line);background:var(--node);border-radius:8px;padding:4px 9px;margin-bottom:6px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:all .2s;overflow-wrap:anywhere}
+.blk .res{display:block;font:600 11.5px system-ui,sans-serif;color:var(--muted);min-height:17px}
+.blk.test{border-color:var(--cur-bar);background:var(--cur)}
+.blk.no{opacity:.65}
+.blk.no .res{color:var(--false)}
+.blk.hit{border-color:var(--true);background:var(--true-soft)}
+.blk.hit .res{color:var(--true)}
+.blk.off{opacity:.38}
+.blk.dead{border-color:var(--false);border-style:dashed;background:var(--false-soft)}
+.blk.dead .res{color:var(--false)}
+.tree{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tn{display:inline-block;padding:1px 7px;border-radius:6px;border:1px solid var(--node-line);background:var(--node);margin:2px 0;overflow-wrap:anywhere}
+.tn.on{border:2px solid var(--false);background:var(--false-soft)}
+.tn.anc{border:2px solid var(--true);background:var(--true-soft)}
+.kids{margin-left:10px;padding-left:12px;border-left:2px solid var(--node-line)}
+.treenote{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn loại ngoại lệ được ném rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem Java xét từng khối <code>catch</code>.</p>
+  <div class="controls">
+    <div class="tabs" id="tabs"></div>
+    <label class="sw"><input type="checkbox" id="sw"> Đảo <code>RuntimeException</code> lên đầu</label>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+<div class="grid">
+    <div class="card"><p class="panel-title">Các khối catch, xét từ trên xuống</p><div id="blocks"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Ngoại lệ</p><div id="ex"></div></div>
+      <div class="card"><p class="panel-title">Cây lớp rút gọn</p><div class="tree" id="tree"></div><p class="treenote">Chỉ giữ các lớp trong ví dụ này.</p></div>
+      <div class="card"><p class="panel-title" id="ctitle">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(import|public|class|static|void|int|double|boolean|if|else|while|do|for|try|catch|finally|throw|throws|return|new|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+// o: {cur: số dòng hoặc [từ, đến] (đếm từ 1), cls: {dòng: 'run'|'skip'}, tags: {dòng: nhãn}}
+function codeHtml(lines, o){
+  o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+  var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+  var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    var n = i + 1, c = 'ln' + (cls[n] ? ' ' + cls[n] : '') + (n >= a && n <= b ? ' cur' : '');
+    return '<div class="' + c + '"><span class="no">' + n + '</span><span>' + (hl(l) || ' ') + '</span>' +
+      (tags[n] ? '<span class="tagln">' + esc(tags[n]) + '</span>' : '') + '</div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null;
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step];
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    var run = timer !== null;
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+  }
+  var jump = parseInt(qs('buoc'), 10);
+  function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'TEXTAREA' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset};
+}
+// opts: [{k, label}]; trả về khoá đang chọn (mở sẵn theo ?vd=).
+function setupTabs(opts, onChange){
+  var box = $('tabs'), sel = opts[0].k, want = qs('vd');
+  opts.forEach(function(o){ if (o.k === want) sel = o.k; });
+  box.setAttribute('role', 'tablist');
+  opts.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.textContent = o.label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', o.k === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      [].forEach.call(box.children, function(c){ c.setAttribute('aria-selected', 'false'); });
+      b.setAttribute('aria-selected', 'true'); onChange(o.k);
+    });
+    box.appendChild(b);
+  });
+  return sel;
+}
+function conHtml(out){
+  if (!out.length) return '<span class="ph">Chưa có kết quả.</span>';
+  return out.map(function(s){ return s[1] ? '<span class="' + s[1] + '">' + esc(s[0]) + '</span>' : esc(s[0]); }).join('');
+}
+function drawCon(box, out){ box.innerHTML = conHtml(out); box.scrollTop = box.scrollHeight; }
+function exHtml(ex){
+  if (!ex) return '<div class="exnone">Không có ngoại lệ nào đang được xử lý</div>';
+  return '<div class="exbox ' + (ex.state || '') + '"><small>' + esc(ex.note || 'đối tượng ngoại lệ') + '</small><b>' + esc(ex.cls) + '</b><span>message: ' + esc(ex.msg) + '</span></div>';
+}
+// frames từ dưới lên: [{name, state: 'active'|'paused'|'popping', note}]
+function framesHtml(frames){
+  if (!frames.length) return '<div class="empty">Chồng lời gọi trống</div>';
+  return frames.map(function(f){
+    var st = f.note || (f.state === 'active' ? 'đang chạy' : f.state === 'popping' ? 'bị gỡ' : 'tạm dừng');
+    return '<div class="frame ' + f.state + '"><span>' + esc(f.name) + '</span><small>' + esc(st) + '</small></div>';
+  }).join('');
+}
+// o: {pos, avail, nl, ranges: [{a, b, cls}]}
+function stripHtml(text, o){
+  o = o || {}; var h = '', n = text.length, ranges = o.ranges || [];
+  for (var i = 0; i <= n; i++) {
+    if (i === n && o.pos !== n) break;
+    var c = text.charAt(i), cl = 'ch', shown = c === ' ' ? '␣' : c === '\n' ? '⏎' : c;
+    if (i === n) { cl += ' eof'; shown = ''; }
+    else {
+      if (c === ' ' || c === '\n') cl += ' sep';
+      if (o.avail !== undefined && i >= o.avail) cl += ' dim';
+      else if (o.pos !== undefined && i < o.pos) cl += ' done';
+      ranges.forEach(function(r){ if (i >= r.a && i < r.b) cl += ' ' + r.cls; });
+    }
+    if (i === o.pos) cl += ' at';
+    h += '<span class="' + cl + '">' + esc(shown) + '</span>';
+    if (o.nl && c === '\n') h += '<span class="brk"></span>';
+  }
+  return '<div class="strip">' + h + '</div>';
+}
+function varsHtml(list){
+  return list.map(function(v){ return '<div class="var' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+}
+
+//SIM-START
+function clone(o){ return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+function outText(out){ return out.map(function(s){ return s[0]; }).join(''); }
+// Bộ ghi các bước: mỗi snap giữ dòng đang chạy, tô dòng, nhãn dòng, Output và phần trạng thái riêng của trang.
+function Rec(){
+  var r = {S: [], out: [], cls: {}, tags: {}};
+  r.snap = function(cur, title, body, extra){
+    var s = {cur: cur, title: title, body: body, out: clone(r.out), cls: clone(r.cls), tags: clone(r.tags)};
+    if (extra) for (var k in extra) s[k] = clone(extra[k]);
+    r.S.push(s);
+  };
+  r.print = function(t){ r.out.push([t + '\n', '']); };
+  r.write = function(t, kind){ r.out.push([t, kind || '']); };
+  r.run = function(a, b){ for (var i = a; i <= (b || a); i++) r.cls[i] = 'run'; };
+  r.skip = function(a, b, tag){ for (var i = a; i <= (b || a); i++) r.cls[i] = 'skip'; if (tag) r.tags[a] = tag; };
+  return r;
+}
+// Mô phỏng Scanner với dấu phân cách mặc định.
+function isWs(c){ return c === ' ' || c === '\n' || c === '\t'; }
+function tokenAt(t, p){ var a = p; while (a < t.length && isWs(t.charAt(a))) a++; var b = a; while (b < t.length && !isWs(t.charAt(b))) b++; return {a: a, b: b, s: t.slice(a, b)}; }
+function lineAt(t, p){ var e = t.indexOf('\n', p); return e < 0 ? {s: t.slice(p), end: t.length, next: t.length} : {s: t.slice(p, e), end: e, next: e + 1}; }
+
+var AE = 'ArithmeticException', AI = 'ArrayIndexOutOfBoundsException', NP = 'NullPointerException', RE = 'RuntimeException';
+var MSG = {}; MSG[AE] = 'Cannot divide by zero'; MSG[AI] = 'Index out of bounds'; MSG[RE] = 'Another runtime error';
+function isA(ex, c){ return ex === c || c === RE; }
+function sim(ex, swapped){
+  var r = Rec(), order = swapped ? [RE, AE, AI] : [AE, AI, RE];
+  var st = order.map(function(c){ return {c: c, cls: '', res: ''}; });
+  function s(t, b, o){ o = o || {}; r.snap(null, t, b, {blocks: st, ex: o.ex === undefined ? null : o.ex, tree: o.tree === undefined ? null : o.tree, done: !!o.done, tryOn: !!o.tryOn, compile: swapped}); }
+  if (swapped) {
+    s('Trước khi chạy: biên dịch', 'Thứ tự các khối được kiểm tra ngay lúc biên dịch, trước khi chương trình chạy.');
+    st[0].cls = 'hit'; st[0].res = 'bắt mọi lớp con của RuntimeException';
+    s('Khối đầu là lớp cha', 'Khối <code>RuntimeException</code> đứng đầu đón hết các lớp con của nó.', {tree: RE});
+    st[1].cls = 'dead'; st[1].res = 'không bao giờ chạm tới';
+    r.write('MultiCatchDemo.java: error: exception ArithmeticException has already been caught\n', 'er');
+    s('ArithmeticException không bao giờ chạm tới', 'Mọi <code>ArithmeticException</code> đều đã bị khối trên bắt, nên trình biên dịch báo lỗi.', {tree: AE});
+    st[2].cls = 'dead'; st[2].res = 'không bao giờ chạm tới';
+    r.write('MultiCatchDemo.java: error: exception ArrayIndexOutOfBoundsException has already been caught\n', 'er');
+    s('ArrayIndexOutOfBoundsException cũng vậy', 'Khối thứ ba cũng không bao giờ chạm tới, thêm một lỗi biên dịch nữa.', {tree: AI});
+    r.write('2 errors\n', 'er');
+    s('Biên dịch thất bại', 'Chương trình không chạy được. Muốn sửa, đặt khối của lớp con trước khối của lớp cha.', {});
+    return r.S;
+  }
+  var obj = {cls: ex, msg: ex === AE ? '/ by zero' : ex === AI ? 'Index 2 out of bounds for length 2' : '(tuỳ tình huống)', note: 'vừa được ném'};
+  s('Khối try ném ngoại lệ', 'Một đối tượng <code>' + ex + '</code> được ném ra. Phần còn lại của khối <code>try</code> bị bỏ qua.', {ex: obj, tree: ex, tryOn: true});
+  for (var i = 0; i < order.length; i++) {
+    var c = order[i], m = isA(ex, c);
+    st[i].cls = 'test'; st[i].res = 'đang xét: ex instanceof ' + c + ' ?';
+    s('Xét khối thứ ' + (i + 1), 'Đối tượng này có phải thể hiện của lớp <code>' + c + '</code> không?', {ex: obj, tree: ex});
+    if (m) {
+      st[i].cls = 'hit'; st[i].res = 'true, khối này chạy';
+      for (var j = i + 1; j < order.length; j++) { st[j].cls = 'off'; st[j].res = 'bị bỏ qua'; }
+      var caught = {cls: obj.cls, msg: obj.msg, note: 'đã được bắt', state: 'caught'};
+      r.print(MSG[c]);
+      s('Khối đầu tiên khớp', ex === c ? 'Đúng lớp ghi trong <code>catch</code>. Khối này chạy, các khối sau không được xét nữa.' : '<code>' + ex + '</code> là lớp con của <code>' + c + '</code> nên khớp. Khối này chạy.', {ex: caught, tree: ex});
+      break;
+    }
+    st[i].cls = 'no'; st[i].res = 'false, xét khối tiếp theo';
+    s('Không khớp', 'Không phải thể hiện của <code>' + c + '</code>, Java chuyển xuống khối kế tiếp.', {ex: obj, tree: ex});
+  }
+  r.print('Done');
+  s('Chạy tiếp sau try-catch', 'Chỉ một khối <code>catch</code> chạy, sau đó chương trình chạy tiếp câu lệnh sau cùng.', {done: true});
+  return r.S;
+}
+//SIM-END
+function blockHtml(b){
+  return '<div class="blk ' + b.cls + '">' + hl('catch (' + b.c + ' ex) {') + '<br>&nbsp;&nbsp;' + hl('println("' + MSG[b.c] + '");') + ' }<span class="res">' + esc(b.res) + '</span></div>';
+}
+function treeHtml(on){
+  function n(c){ var k = on && on === c ? ' on' : on && c === RE ? ' anc' : ''; return '<span class="tn' + k + '">' + c + '</span>'; }
+  return n(RE) + '<div class="kids">' + [AE, AI, NP].map(function(c){ return '<div>' + n(c) + '</div>'; }).join('') + '</div>';
+}
+var swapped = qs('dao') === '1';
+var cur = setupTabs([{k: AE, label: 'ArithmeticException'}, {k: AI, label: 'ArrayIndexOutOfBounds…'}, {k: NP, label: 'NullPointerException'}], function(k){ cur = k; st.reset(); });
+function syncTabs(){ [].forEach.call($('tabs').children, function(b){ b.disabled = swapped; }); }
+$('sw').checked = swapped; syncTabs();
+$('sw').addEventListener('change', function(){ swapped = this.checked; syncTabs(); st.reset(); });
+var st = Stepper({
+  build: function(){ return sim(cur, swapped); },
+  render: function(sn){
+    var head = '<div class="blk' + (sn.tryOn ? ' test' : '') + '">' + hl('try { ... }') + '<span class="res">' + (sn.compile ? 'chưa chạy, đang biên dịch' : sn.tryOn ? 'ném ngoại lệ tại đây' : '') + '</span></div>';
+    var tail = '<div class="blk' + (sn.done ? ' hit' : '') + '">' + hl('println("Done");') + '</div>';
+    $('blocks').innerHTML = head + sn.blocks.map(blockHtml).join('') + tail;
+    $('ex').innerHTML = sn.compile ? '<div class="exnone">Chưa chạy nên chưa có đối tượng nào</div>' : exHtml(sn.ex);
+    $('tree').innerHTML = treeHtml(sn.tree);
+    $('ctitle').textContent = sn.compile ? 'Báo lỗi biên dịch' : 'Output';
+    drawCon($('con'), sn.out);
+  }
+});
+st.reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="420">
+<title>Các bước của new</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --arrow:#64748b; --this:#7c3aed; --this-soft:#f0e9fe;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --arrow:#94a3b8; --this:#c4a1ff; --this-soft:#2a2144;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 12px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:6px}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.key:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.err{color:var(--false);font-size:12.5px}
+.err:empty{display:none}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:5px 12px;margin-bottom:6px;min-height:68px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 4px 0 0;border-left:3px solid transparent;width:max-content;min-width:100%}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln mark{background:var(--cur-bar);color:#1d2330;border-radius:3px;padding:0 1px}
+.ln mark span{color:inherit}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre-wrap;word-break:break-word;tab-size:8;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+input[type=text]{padding:4px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);
+  font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+input.bad{border-color:var(--false);background:var(--false-soft)}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.grid{display:grid;grid-template-columns:352px minmax(0,1fr);gap:8px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.blk+.blk{margin-top:6px}
+.blk-t{font:600 11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);margin:0;padding-bottom:3px;position:sticky;top:0;left:0;background:var(--card);z-index:1}
+#code{overflow:auto}
+.phases{list-style:none;display:flex;gap:4px;margin:0 0 6px;padding:0;font-size:12px}
+.phases li{flex:1;text-align:center;padding:2px 4px;border-radius:6px;background:var(--code-bg);color:var(--muted);border:1px solid transparent}
+.phases li.done{color:var(--true);background:var(--true-soft)}
+.phases li.now{background:var(--cur);border-color:var(--cur-bar);color:var(--text);font-weight:600}
+.mem{position:relative}
+.mem svg.arrows{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2}
+.a-line{fill:none;stroke:var(--arrow);stroke-width:1.6}
+.a-head{fill:var(--arrow)}
+.a-line.hot{stroke:var(--cur-bar);stroke-width:2.6}.a-head.hot{fill:var(--cur-bar)}
+.a-line.this{stroke:var(--this);stroke-width:2}.a-head.this{fill:var(--this)}
+.lane{border:1px dashed var(--node-line);border-radius:8px;padding:4px 6px;margin-bottom:6px}
+.lane-t{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.lane .cells{display:flex;gap:6px;flex-wrap:wrap}
+.lane .cell{min-width:90px}
+.memrow{display:flex;gap:30px;align-items:flex-start}
+.stackcol{flex:0 0 45%;min-width:0;display:flex;flex-direction:column-reverse;gap:5px;justify-content:flex-end}
+.heapcol{flex:1;min-width:0;display:flex;gap:26px;align-items:flex-start}
+.hcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.memhead{display:flex;gap:30px;margin-bottom:2px}
+.memhead>span{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.memhead>span:first-child{flex:0 0 45%}
+.frame,.obj,.cls{border:1.5px solid var(--node-line);border-radius:8px;background:var(--node);padding:3px 5px}
+.frame.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.frame.popping{opacity:.45;border-style:dashed}
+.frame.plain{border-color:var(--line);box-shadow:none}
+.frame.fresh,.obj.fresh{animation:appear .3s ease-out}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+.fh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 4px;font:700 12px ui-monospace,Menlo,Consolas,monospace;margin-bottom:2px}
+.fh small{font:600 10.5px system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+.frame.active .fh small{color:var(--accent)}
+.cell{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--code-bg);border:1.5px solid transparent;border-radius:5px;
+  padding:0 5px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:background .2s,border-color .2s}
+.cell+.cell{margin-top:2px}
+.lane .cell+.cell{margin-top:0}
+.cell .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell .vl b{font-weight:700}
+.cell .vl{white-space:nowrap}
+.cell em{font:italic 11.5px system-ui,sans-serif;color:var(--muted)}
+.cell.nul .vl b{color:var(--muted);font-weight:500}
+.cell.chg{border-color:var(--cur-bar);background:var(--cur);animation:flash .6s ease-out}
+.cell.hot{border-color:var(--accent);background:var(--accent-soft)}
+.cell.isthis .nm{color:var(--this);font-weight:700}
+@keyframes flash{0%{box-shadow:0 0 0 4px var(--cur-bar)}100%{box-shadow:0 0 0 0 transparent}}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--arrow);vertical-align:middle}
+.cell.hot .dot,.cell.chg .dot{background:var(--cur-bar)}
+.cell.isthis .dot{background:var(--this)}
+.obj.hot{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.obj.building{border-style:dashed;border-color:var(--cur-bar)}
+.obj.dim{opacity:.62}
+.obj .fh small.tag-b{color:var(--cur-bar)}
+.cls{background:var(--code-bg);border-style:dotted}
+.cls .cell{background:var(--node)}
+.meths{display:flex;flex-wrap:wrap;gap:3px}
+.meth{font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:0 5px;border-radius:5px;background:var(--node);border:1.5px solid transparent}
+.meth.hot{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.mem.two .stackcol,.mem.two .memhead>span:first-child{flex-basis:35%}
+.mem.two .memrow,.mem.two .memhead{gap:18px}
+.mem.two .heapcol{gap:18px}
+.mem.two .hcol:first-child{flex:0 0 73px}
+.mem.two .frame.plain{border:none;padding:0;background:none}
+.empty{color:var(--muted);font-size:12.5px;padding:2px}
+.watch{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:6px}
+.watch span{font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:0 7px;border:1.5px solid transparent}
+.watch span.chg{border-color:var(--cur-bar);background:var(--cur)}
+.watch b{font-weight:700}
+@media (max-width:600px){
+  .grid{grid-template-columns:1fr}
+  #code{max-height:200px !important}
+  .memrow,.memhead{gap:22px}
+  .heapcol{gap:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem cả quá trình tạo đối tượng của <code>new Circle(25)</code>.</p>
+  <div class="controls"><div class="btns">
+    <button class="btn" id="next">Bước tiếp</button>
+    <button class="btn ghost" id="prev">Lùi lại</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><div id="code"></div></div>
+    <div class="col">
+      <div class="card"><ol class="phases" id="phases"></ol><div class="mem" id="mem"></div><div class="watch" id="watch"></div></div>
+      
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+// Engine mô phỏng bộ nhớ dùng chung. Phần lõi (Mem, fmtD) không đụng DOM để kiểm bằng node.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+// Double.toString cho khoảng giá trị dùng trong các bài
+function fmtD(x){ if (Object.is(x, -0)) return '-0.0'; return Number.isInteger(x) ? x.toFixed(1) : String(x); }
+function R(id){ return {ref: id}; }
+var UNSET = {blank: 'chưa gán'};
+function norm(v){ return (v !== null && typeof v === 'object') ? v : {v: String(v)}; }
+
+function Mem(code){
+  var st = {frames: [], objs: [], cls: null, prim: null, out: [], watch: []}, S = [];
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  function top(){ return st.frames[st.frames.length - 1]; }
+  function obj(id){ for (var i = 0; i < st.objs.length; i++) if (st.objs[i].id === id) return st.objs[i]; throw new Error('no obj ' + id); }
+  function row(list, n){ for (var i = 0; i < list.length; i++) if (list[i].n === n) return list[i]; return null; }
+  function put(list, n, v){ var r = row(list, n); if (r) r.val = norm(v); else list.push({n: n, val: norm(v)}); }
+  function resolve(b, q){
+    if (typeof q === 'number') return q;
+    var L = code[b].lines, hits = [];
+    L.forEach(function(l, i){ if (l.indexOf(q) >= 0) hits.push(i + 1); });
+    if (hits.length !== 1) throw new Error('dòng "' + q + '": ' + hits.length + ' kết quả');
+    return hits[0];
+  }
+  return {
+    S: S, st: st,
+    frame: function(name, o){ st.frames.push({name: name, vars: [], plain: !!(o && o.plain), note: o && o.note}); },
+    pop: function(){ st.frames.pop(); },
+    set: function(n, v){ put(top().vars, n, v); },
+    drop: function(n){ var f = top(); f.vars = f.vars.filter(function(r){ return r.n !== n; }); },
+    get: function(n){ return row(top().vars, n).val; },
+    prim: function(title){ st.prim = {title: title, vars: []}; },
+    pset: function(n, v){ put(st.prim.vars, n, v); },
+    obj: function(id, label, fields, o){
+      o = o || {};
+      st.objs.push({id: id, label: label, arr: !!o.arr, col: o.col || 0, building: !!o.building,
+        fields: fields.map(function(f){ return {n: f[0], val: norm(f[1])}; })});
+    },
+    field: function(id, n, v){ put(obj(id).fields, n, v); },
+    done: function(id){ obj(id).building = false; },
+    cls: function(name, statics, methods){
+      st.cls = {name: name, statics: statics.map(function(f){ return {n: f[0], val: norm(f[1])}; }), methods: methods};
+    },
+    sfield: function(n, v){ put(st.cls.statics, n, v); },
+    print: function(s){ st.out.push(s); },
+    watch: function(list){ st.watch = list; },
+    snap: function(o){
+      var b = o.b || 0, ln = o.ln, cur = null;
+      if (ln !== undefined && ln !== null) {
+        cur = Array.isArray(ln) ? [resolve(b, ln[0]), resolve(b, ln[1])] : [resolve(b, ln), resolve(b, ln)];
+      }
+      if (o.sub && cur && code[b].lines[cur[0] - 1].indexOf(o.sub) < 0) throw new Error('sub "' + o.sub + '" không có trong dòng ' + cur[0]);
+      S.push({b: b, cur: cur, also: o.also || null, sub: o.sub || '', title: o.title, body: o.body, chg: o.chg || [], hot: o.hot || [], dim: o.dim || [],
+        fresh: o.fresh || [], popping: !!o.popping, phase: o.phase === undefined ? -1 : o.phase, state: clone(st)});
+    }
+  };
+}
+
+function startEngine(SCN){
+  var $ = function(id){ return document.getElementById(id); };
+  function has(a, k){ return a.indexOf(k) >= 0; }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(public|private|class|static|void|int|double|boolean|if|else|return|for|while|new|this|null|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function lineHtml(l, sub){
+    if (!sub) return hl(l);
+    var i = l.indexOf(sub);
+    return hl(l.slice(0, i)) + '<mark>' + hl(sub) + '</mark>' + hl(l.slice(i + sub.length));
+  }
+  function codeHtml(sn){
+    return SCN.code.map(function(blk, b){
+      var rows = blk.lines.map(function(l, i){
+        var main = sn.cur && sn.b === b && i + 1 >= sn.cur[0] && i + 1 <= sn.cur[1];
+        var also = sn.also && sn.also.b === b && sn.also.ln === i + 1;
+        var on = main || also;
+        var sub = main && i + 1 === sn.cur[0] ? sn.sub : also ? sn.also.sub : '';
+        return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + lineHtml(l, sub) + '</span></div>';
+      }).join('');
+      return '<div class="blk">' + (blk.title ? '<p class="blk-t">' + esc(blk.title) + '</p>' : '') + '<div class="code">' + rows + '</div></div>';
+    }).join('');
+  }
+  function scrollToCur(){
+    var box = $('code'), el = box.querySelector('.ln.cur');
+    if (!el || box.scrollHeight <= box.clientHeight + 2) return;
+    var br = box.getBoundingClientRect(), er = el.getBoundingClientRect();
+    box.scrollTop = Math.max(0, box.scrollTop + er.top - br.top - box.clientHeight / 2 + er.height / 2);
+  }
+  function cell(key, row, sn, extra){
+    var v = row.val, c = 'cell' + (has(sn.chg, key) ? ' chg' : '') + (has(sn.hot, key) ? ' hot' : '') + (v.v === 'null' ? ' nul' : '') + (extra || '');
+    var inner = v.ref ? '<i class="dot" data-from="' + esc(key) + '" data-to="' + esc(v.ref) + '" role="img" aria-label="tham chiếu"></i>'
+      : v.blank ? '<em>' + esc(v.blank) + '</em>' : '<b>' + esc(v.v) + '</b>';
+    return '<div class="' + c + '"><span class="nm">' + esc(row.n) + '</span><span class="vl">' + inner + '</span></div>';
+  }
+  function frameHtml(f, i, sn, n){
+    var isTop = i === n - 1;
+    var cls = 'frame ' + (f.plain ? 'plain' : isTop ? (sn.popping ? 'popping' : 'active') : 'paused') + (has(sn.fresh, 'frame:' + f.name) ? ' fresh' : '');
+    var st = isTop ? (sn.popping ? 'đang kết thúc' : 'đang chạy') : 'tạm dừng';
+    var head = f.plain ? '' : '<div class="fh"><span>' + esc(f.name) + '</span><small>' + st + '</small></div>';
+    var cells = f.vars.length ? f.vars.map(function(r){ return cell(f.name + '.' + r.n, r, sn, r.n === 'this' ? ' isthis' : ''); }).join('') : '<div class="empty">chưa có biến</div>';
+    return '<div class="' + cls + '">' + head + cells + (f.note ? '<div class="empty">' + esc(f.note) + '</div>' : '') + '</div>';
+  }
+  function objHtml(o, sn){
+    var c = 'obj' + (o.building ? ' building' : '') + (has(sn.dim, o.id) ? ' dim' : '') + (has(sn.hot, o.id) ? ' hot' : '') + (has(sn.fresh, o.id) ? ' fresh' : '');
+    var tag = o.building ? '<small class="tag-b">đang tạo</small>' : has(sn.dim, o.id) ? '<small>không còn biến trỏ tới</small>' : '';
+    return '<div class="' + c + '" data-obj="' + esc(o.id) + '"><div class="fh"><span>' + esc(o.label) + '</span>' + tag + '</div>' +
+      o.fields.map(function(r){ return cell(o.id + '.' + r.n, r, sn); }).join('') + '</div>';
+  }
+  function clsHtml(c, sn){
+    return '<div class="cls"><div class="fh"><span>' + esc(c.name) + '</span><small>' + esc(SCN.clsNote || 'lớp, dùng chung') + '</small></div>' +
+      c.statics.map(function(r){ return cell(c.name + '.' + r.n, r, sn); }).join('') +
+      '<div class="meths">' + c.methods.map(function(m){ return '<span class="meth' + (has(sn.hot, c.name + '.' + m) ? ' hot' : '') + '">' + esc(m) + '</span>'; }).join('') + '</div></div>';
+  }
+  function memHtml(sn){
+    var s = sn.state, h = '<svg class="arrows" aria-hidden="true"></svg>';
+    if (s.prim) {
+      h += '<div class="lane"><div class="lane-t">' + esc(s.prim.title) + '</div><div class="cells">' +
+        (s.prim.vars.length ? s.prim.vars.map(function(r){ return cell('prim.' + r.n, r, sn); }).join('') : '<div class="empty">chưa có biến</div>') + '</div></div>';
+    }
+    var body = '<div class="memhead"><span>' + esc(SCN.memTitles[0]) + '</span><span>' + esc(SCN.memTitles[1]) + '</span></div><div class="memrow"><div class="stackcol">' +
+      (s.frames.length ? s.frames.map(function(f, i){ return frameHtml(f, i, sn, s.frames.length); }).join('') : '<div class="empty">Không còn khung nào</div>') + '</div><div class="heapcol">';
+    var cols = [[], []];
+    s.objs.forEach(function(o){ cols[o.col].push(objHtml(o, sn)); });
+    var first = (s.cls ? clsHtml(s.cls, sn) : '') + cols[0].join('');
+    body += '<div class="hcol">' + (first || '<div class="empty">Chưa có đối tượng</div>') + '</div>';
+    if (SCN.twoCols) body += '<div class="hcol">' + cols[1].join('') + '</div>';
+    body += '</div></div>';
+    if (s.prim) body = '<div class="lane"><div class="lane-t">' + esc(SCN.refLane) + '</div>' + body + '</div>';
+    return h + body;
+  }
+  function drawArrows(sn){
+    var mem = $('mem'), svg = mem.querySelector('svg.arrows'); if (!svg) return;
+    var mr = mem.getBoundingClientRect(), count = {}, out = '';
+    mem.querySelectorAll('.dot').forEach(function(d){
+      var to = mem.querySelector('[data-obj="' + d.getAttribute('data-to') + '"]'); if (!to) return;
+      var from = d.getAttribute('data-from'), dr = d.getBoundingClientRect(), tr = to.getBoundingClientRect();
+      var id = d.getAttribute('data-to'), k = count[id] = (count[id] || 0) + 1;
+      var x1 = dr.left + dr.width / 2 - mr.left, y1 = dr.top + dr.height / 2 - mr.top;
+      var x2 = tr.left - mr.left - 1, y2 = tr.top - mr.top + Math.min(tr.height - 6, 6 + (k - 1) * 9);
+      var dx = Math.max(12, (x2 - x1) * .5);
+      var isThis = /\.this$/.test(from), hot = has(sn.hot, from) || has(sn.chg, from);
+      var c = hot ? ' hot' : isThis ? ' this' : '';
+      out += '<path class="a-line' + c + '" d="M' + x1 + ' ' + y1 + ' C' + (x1 + dx) + ' ' + y1 + ' ' + (x2 - dx) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2 + '"/>' +
+        '<path class="a-head' + c + '" d="M' + x2 + ' ' + y2 + ' l-7 -4 v8 z"/>';
+    });
+    svg.innerHTML = out;
+  }
+  var snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10);
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step], s = sn.state;
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+    $('code').innerHTML = codeHtml(sn); scrollToCur();
+    if (SCN.phases) $('phases').innerHTML = SCN.phases.map(function(p, i){ return '<li class="' + (i < sn.phase ? 'done' : i === sn.phase ? 'now' : '') + '">' + esc(p) + '</li>'; }).join('');
+    $('mem').innerHTML = memHtml(sn);
+    $('watch').innerHTML = s.watch.map(function(w){ return '<span class="' + (has(sn.chg, 'w:' + w[0]) ? 'chg' : '') + '">' + esc(w[0]) + ' = <b>' + esc(w[1]) + '</b></span>'; }).join('');
+    if ($('con')) { $('con').innerHTML = s.out.length ? s.out.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>'; $('con').scrollTop = $('con').scrollHeight; }
+    drawArrows(sn);
+    var run = timer !== null;
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+  }
+  function reset(){ stop(); snaps = SCN.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, SCN.speed || 600);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    if (timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  window.addEventListener('resize', function(){ if (snaps.length) drawArrows(snaps[step]); });
+  reset();
+}
+
+var SCN = {
+  docTitle: 'Các bước của new', height: 420, console: false,
+  lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem cả quá trình tạo đối tượng của <code>new Circle(25)</code>.',
+  memTitles: ['Biến', 'Vùng đối tượng'],
+  phases: ['Cấp vùng nhớ', 'Chạy constructor', 'Trả về tham chiếu'],
+  code: [
+    {title: 'Trong main', lines: ['Circle c = new Circle(25);']},
+    {title: 'Lớp Circle', lines: ['class Circle {', '  double radius;', '', '  Circle(double newRadius) {', '    radius = newRadius;', '  }', '}']}
+  ],
+  build: function(){
+    var m = Mem(this.code), K = 'Circle(double newRadius)';
+    m.frame('main');
+    m.set('c', UNSET);
+    m.snap({b: 0, ln: 1, title: 'Sắp chạy câu lệnh', body: 'Biến <code>c</code> chưa được gán, vùng đối tượng còn trống. Bốn bước tiếp theo là <b>một</b> quá trình: phép <code>new</code> tạo đối tượng.'});
+    m.obj('o1', 'Circle', [['radius', '0.0']], {building: true});
+    m.snap({b: 0, ln: 1, sub: 'new', title: 'new bắt đầu tạo đối tượng', body: '<code>new</code> cấp vùng nhớ cho đối tượng, trường <code>radius</code> nhận giá trị mặc định <code>0.0</code>. Việc tạo đối tượng mới bắt đầu, chưa hoàn tất.', chg: ['o1.radius'], fresh: ['o1'], phase: 0});
+    m.frame(K);
+    m.set('newRadius', '25.0');
+    m.snap({b: 1, ln: 'Circle(double newRadius) {', title: 'new gọi constructor', body: 'Vẫn trong phép <code>new</code>, constructor được gọi để khởi tạo đối tượng đang tạo. Đối số 25 được chép vào tham số <code>newRadius</code> kiểu <code>double</code>, nên thành <code>25.0</code>.', chg: [K + '.newRadius'], fresh: ['frame:' + K], phase: 1});
+    m.field('o1', 'radius', '25.0');
+    m.snap({b: 1, ln: 'radius = newRadius;', title: 'radius = newRadius', body: 'Constructor gán giá trị ban đầu: trường <code>radius</code> của đối tượng đang tạo đổi từ <code>0.0</code> thành <code>25.0</code>.', chg: ['o1.radius'], hot: [K + '.newRadius'], phase: 1});
+    m.pop();
+    m.done('o1');
+    m.set('c', R('o1'));
+    m.snap({b: 0, ln: 1, sub: 'Circle c =', title: 'Tạo xong, gán vào c', body: 'Constructor kết thúc, tham số <code>newRadius</code> biến mất. Việc tạo đối tượng hoàn tất: <code>new</code> trả về tham chiếu và tham chiếu được gán vào <code>c</code>.', chg: ['main.c'], phase: 2});
+    return m.S;
+  }
+};
+
+startEngine(SCN);
+})();
+</script>
+</body>
+</html>

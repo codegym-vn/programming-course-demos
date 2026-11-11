@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="530">
+<title>Sắp xếp bằng compareTo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .in{color:#93c5fd}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl tr.cur td{background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @media (max-width:600px){.code{max-height:270px !important}}
+
+  .grid{grid-template-columns:1.2fr 1fr}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .code{font-size:12px}
+  .ln .no{width:24px;padding-right:8px}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+  .cards.c3{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:520px){.cards,.cards.c3{grid-template-columns:repeat(2,1fr)}}
+  .tc{border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:3px 4px;text-align:center;min-width:0;transition:background .2s,border-color .2s}
+  .tc small{display:block;color:var(--muted);font:11px ui-monospace,Menlo,Consolas,monospace}
+  .tc b{font:700 13px ui-monospace,Menlo,Consolas,monospace;display:block;overflow-wrap:anywhere}
+  .tc.cmp{border-color:var(--cur-bar);background:var(--cur)}
+  .tc.swap{border-color:var(--accent);background:var(--accent-soft);animation:pop .3s ease-out}
+  .tc.done{border-color:var(--true);background:var(--true-soft)}
+  @keyframes pop{from{transform:translateY(-8px);opacity:.3}to{transform:none;opacity:1}}
+  .call{font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:6px;padding:5px 8px;min-height:62px;overflow-wrap:anywhere}
+  .call .ph{color:var(--muted);font-family:system-ui,sans-serif}
+  .count{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:13px}
+  .count strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .sees{border:2px dashed var(--accent);border-radius:8px;padding:5px 9px;font-size:13px}
+  .sees b{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .sees small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .note{color:var(--muted);font-size:12px;margin:6px 0 0}
+  #code{max-height:300px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem <code>sort</code> gọi <code>compareTo</code> của phần tử; đổi tab để thấy thuật toán giữ nguyên.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabS" role="tab">Mảng String</button>
+      <button class="tab" id="tabB" role="tab">Mảng BigInteger</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="cards" id="cards"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Mô phỏng sort (sắp xếp chèn)</p><div class="code" id="code"></div>
+      <p class="note">Mô phỏng đơn giản: thuật toán thật của thư viện khác, nhưng cũng dựa vào <code>compareTo</code>.</p></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Lời gọi hiện tại</p><div class="call" id="call"></div>
+        <div class="count"><span>Số lần gọi <code>compareTo</code></span><strong id="cnt">0</strong></div></div>
+      <div class="sees"><b>sort</b> chỉ nhìn thấy: <b>Comparable</b><small id="real"></small></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|static|void|int|long|double|char|boolean|if|else|switch|case|break|default|return|for|while|new|true|false|throws|this|super|instanceof|extends|implements|abstract|interface)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: array of strings; o: {cur: number | [from,to], cls: {idx: 'run'|'skip'}, tags: {idx: text}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function tagBool(v){ return v === undefined || v === null ? '<span class="tag n">chưa xét</span>' : '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, redraw: draw};
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+//SIM-START
+var LINES = [
+'static void sort(Object[] a) {',
+'  for (int i = 1; i < a.length; i++) {',
+'    int j = i;',
+'    while (j > 0 && ((Comparable)a[j])',
+'        .compareTo(a[j - 1]) < 0) {',
+'      Object t = a[j];',
+'      a[j] = a[j - 1];',
+'      a[j - 1] = t;',
+'      j--;',
+'    }',
+'  }',
+'}'];
+var DATA = {
+  string: {type: 'String', values: ['Savannah', 'Boston', 'Atlanta', 'Tampa'],
+    cmp: function(x, y){ return x < y ? -1 : x > y ? 1 : 0; },
+    show: function(v){ return '"' + v + '"'; }},
+  bigint: {type: 'BigInteger', values: ['2323231092923992', '432232323239292', '54623239292'],
+    cmp: function(x, y){ var a = BigInt(x), b = BigInt(y); return a < b ? -1 : a > b ? 1 : 0; },
+    show: function(v){ return v; }}
+};
+function simSort(kind){
+  var D = DATA[kind], a = D.values.slice(), S = [], calls = 0, n = a.length;
+  function snap(ln, title, body, o){ o = o || {}; o.ln = ln; o.title = title; o.body = body; o.a = a.slice(); o.calls = calls; S.push(o); }
+  snap(0, 'Bắt đầu sort', 'Mảng có ' + n + ' phần tử <code>' + D.type + '</code>. Phương thức <code>sort</code> chỉ nhận <code>Object[]</code>.', {});
+  for (var i = 1; i < n; i++) {
+    var j = i;
+    while (j > 0) {
+      var r = D.cmp(a[j], a[j - 1]); calls++;
+      var callText = D.show(a[j]) + '.compareTo(' + D.show(a[j - 1]) + ')';
+      var neg = r < 0;
+      snap([3, 4], 'Lần gọi thứ ' + calls + ' (i = ' + i + ', j = ' + j + ')',
+        'Kết quả ' + (neg ? '<b>âm</b>: <code>a[' + j + ']</code> phải đứng trước <code>a[' + (j - 1) + ']</code>, cần đổi chỗ.' : '<b>dương</b>: đã đúng thứ tự, không đổi chỗ, dừng vòng <code>while</code>.'),
+        {cmp: [j - 1, j], call: callText, sign: r});
+      if (!neg) break;
+      var t = a[j]; a[j] = a[j - 1]; a[j - 1] = t;
+      snap([5, 7], 'Đổi chỗ a[' + j + '] và a[' + (j - 1) + ']', 'Hai thẻ đổi chỗ, rồi <code>j</code> giảm 1. Việc đổi chỗ không cần biết đây là <code>' + D.type + '</code>.', {swap: [j - 1, j]});
+      j--;
+    }
+  }
+  snap(null, 'Xong', 'Mảng đã có thứ tự tăng dần sau <b>' + calls + '</b> lần gọi <code>compareTo</code>.', {done: true});
+  return S;
+}
+//SIM-END
+var kind = qs('vd') === 'bigint' ? 'bigint' : 'string';
+function inList(l, k){ return l && l.indexOf(k) >= 0; }
+var st = Stepper({
+  build: function(){ return simSort(kind); },
+  render: function(sn){
+    var D = DATA[kind];
+    $('tabS').setAttribute('aria-selected', kind === 'string'); $('tabB').setAttribute('aria-selected', kind === 'bigint');
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.ln}); scrollToCur($('code'));
+    $('cards').className = 'cards' + (sn.a.length === 3 ? ' c3' : '');
+    $('cards').innerHTML = sn.a.map(function(v, k){
+      var c = sn.done ? ' done' : inList(sn.cmp, k) ? ' cmp' : inList(sn.swap, k) ? ' swap' : '';
+      return '<div class="tc' + c + '"><small>a[' + k + '] · ' + D.type + '</small><b>' + esc(v) + '</b></div>';
+    }).join('');
+    $('call').innerHTML = sn.call ? esc(sn.call).replace('.compareTo(', '<wbr>.compareTo(') + '<br>→ ' + (sn.sign < 0 ? '<span class="tag f">số âm</span>' : '<span class="tag t">số dương</span>') : '<span class="ph">Chưa có lời gọi.</span>';
+    $('cnt').textContent = sn.calls;
+    $('real').innerHTML = 'Lúc chạy, Java gọi <code>' + D.type + '.compareTo</code>: ' + (kind === 'string' ? 'so theo thứ tự từ điển.' : 'so theo giá trị số.');
+  }
+});
+function setKind(k){ kind = k; st.reset(); }
+$('tabS').addEventListener('click', function(){ setKind('string'); });
+$('tabB').addEventListener('click', function(){ setKind('bigint'); });
+st.reset();
+})();
+</script>
+</body>
+</html>
