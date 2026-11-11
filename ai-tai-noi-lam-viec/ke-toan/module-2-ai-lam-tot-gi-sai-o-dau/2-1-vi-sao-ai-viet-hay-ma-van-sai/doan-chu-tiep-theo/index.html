@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="500">
+<title>Mô hình đoán chữ tiếp theo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --bar:#c9d6f5; --code-bg:#f3f5f8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --bar:#2d3b5c; --code-bg:#11151c;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:1.45fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:10px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:15px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .sentence{font-size:17px;line-height:1.6;min-height:84px}
+  .sentence .pre{color:var(--muted)}
+  .sentence .tok{background:var(--accent-soft);border-radius:5px;padding:1px 3px;margin-left:2px}
+  .sentence .tok.np{margin-left:0;padding-left:0}
+  .sentence .tok.last{background:var(--cur);box-shadow:inset 0 -2px 0 var(--cur-bar)}
+  .caret{display:inline-block;width:2px;height:1.1em;background:var(--accent);vertical-align:-2px;margin-left:3px;animation:bl 1s steps(2) infinite}
+  @keyframes bl{to{opacity:0}}
+  .cands{display:flex;flex-direction:column;gap:6px}
+  .cand{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:38px;display:flex;align-items:center;padding:6px 10px;font-size:15px}
+  .cand .fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar);transition:width .4s;z-index:0}
+  .cand span{position:relative;z-index:1}
+  .cand .txt{flex:1;min-width:0}
+  .cand .pct{font-weight:700;font-variant-numeric:tabular-nums;margin-left:10px}
+  .cand.picked{border-color:var(--cur-bar);box-shadow:0 0 0 2px var(--cur-bar)}
+  .cand.picked .fill{background:var(--cur)}
+  .note{font-size:13px;color:var(--muted);margin-top:6px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:14.5px;min-height:46px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  td:first-child{white-space:nowrap}
+  td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  th{font-size:13px;color:var(--muted);font-weight:600}
+  .tagx{display:inline-block;font-size:12.5px;padding:0 6px;border-radius:6px;background:var(--code-bg);color:var(--muted)}
+  .tagx.od{background:var(--bad-soft);color:var(--bad)}
+  .cmp{margin-top:8px;font-size:14px}
+  .cmp b{font-variant-numeric:tabular-nums}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Chọn chữ tiếp theo</b> để xem mô hình viết câu trả lời từng mẩu. Xác suất trên trang chỉ là số minh hoạ.</p>
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Câu trả lời đang được viết</p>
+        <div class="sentence" id="sentence"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title" id="candTitle">Ứng viên cho mẩu tiếp theo (xác suất minh hoạ)</p>
+        <div class="cands" id="cands"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Bảng công nợ bạn đã dán (giả lập)</p>
+        <table>
+          <tr><th>Hoá đơn</th><th class="num">Số tiền (đồng)</th><th>Tình trạng</th></tr>
+          <tr><td>HĐ 0512</td><td class="num">42.300.000</td><td><span class="tagx od">quá hạn</span></td></tr>
+          <tr><td>HĐ 0527</td><td class="num">36.200.000</td><td><span class="tagx od">quá hạn</span></td></tr>
+          <tr><td>HĐ 0540</td><td class="num">50.000.000</td><td><span class="tagx">chưa đến hạn</span></td></tr>
+        </table>
+        <p class="note">Mô hình không cộng bảng này ở bước nào. Bạn sẽ so sau khi câu viết xong.</p>
+        <div class="cmp hidden" id="cmp"></div>
+      </div>
+    </div>
+  </div>
+  <div class="btns">
+    <button class="btn" id="bNext">Chọn chữ tiếp theo</button>
+    <button class="btn ghost" id="bAll">Viết hết câu</button>
+    <button class="btn ghost" id="bReset">Làm lại</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+<script>
+const PREFIX = "Tổng số tiền quá hạn của Quý công ty là";
+const STEPS = [
+  {why:"Sau chữ “là”, mẩu hợp lý nhất là một con số. Mô hình chọn con số có dáng vẻ hợp lý, không cộng bảng.",
+   c:[["128.500.000",30],["78.500.000",28],["86.500.000",22],["92.300.000",20]]},
+  {why:"Sau một số tiền, văn bản kế toán gần như luôn có đơn vị.",
+   c:[["đồng",88],["VNĐ",12]]},
+  {why:"Mẩu tiếp theo theo khuôn mẫu email nhắc công nợ lịch sự.",
+   c:[[", kính đề nghị Quý công ty",46],[". Kính mong Quý công ty",38],[", đề nghị Quý công ty",16]]},
+  {why:"Câu đang đi theo khuôn quen: đề nghị rồi đến hành động.",
+   c:[["thanh toán",62],["sắp xếp thanh toán",30],["kiểm tra và thanh toán",8]]},
+  {why:"Mẩu cuối khép câu bằng một mốc thời gian nghe hợp lý.",
+   c:[["trước ngày 15/11/2026.",41],["trong tuần này.",33],["sớm nhất có thể.",26]]}
+];
+const TRUE_TOTAL = "78.500.000"; // 42.300.000 + 36.200.000
+const qs = new URLSearchParams(location.search);
+let seed = qs.has("seed") ? (parseInt(qs.get("seed"),10)||1) : null;
+function rnd(){
+  if(seed===null) return Math.random();
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+function sample(c){
+  const r = rnd()*100; let acc = 0;
+  for(let i=0;i<c.length;i++){ acc += c[i][1]; if(r < acc) return i; }
+  return c.length-1;
+}
+let picks = [];
+const $ = id => document.getElementById(id);
+function render(){
+  const k = picks.length;
+  let html = '<span class="pre">'+PREFIX+'</span>';
+  picks.forEach((p,i)=>{
+    const t = STEPS[i].c[p][0];
+    const glue = (t[0]===","||t[0]===".") ? "" : " ";
+    html += glue + '<span class="tok'+(glue?'':' np')+(i===k-1?' last':'')+'">'+t+'</span>';
+  });
+  if(k < STEPS.length) html += '<span class="caret"></span>';
+  $("sentence").innerHTML = html;
+  // candidates: show the step just chosen (with pick) or the next step
+  const showIdx = k < STEPS.length ? k : k-1;
+  const st = STEPS[showIdx];
+  const picked = k > showIdx ? picks[showIdx] : -1;
+  $("candTitle").textContent = (picked>=0 ? "Ứng viên vừa xét" : "Ứng viên cho mẩu tiếp theo") + " (xác suất minh hoạ)";
+  $("cands").innerHTML = st.c.map((c,i)=>
+    '<div class="cand'+(i===picked?' picked':'')+'"><span class="fill" style="width:'+c[1]+'%"></span>'+
+    '<span class="txt">'+c[0]+'</span><span class="pct">'+c[1]+'%</span></div>').join("");
+  $("bNext").disabled = $("bAll").disabled = k >= STEPS.length;
+  const s = $("status");
+  s.className = "status";
+  const cmp = $("cmp");
+  if(k===0){
+    s.innerHTML = "Mô hình đã có phần đầu câu. Ở mỗi bước, nó chọn một mẩu chữ theo xác suất, rồi lặp lại.";
+    cmp.classList.add("hidden");
+  } else if(k < STEPS.length){
+    s.innerHTML = "Đã chọn <b>“"+STEPS[k-1].c[picks[k-1]][0]+"”</b>. "+STEPS[k-1].why;
+    cmp.classList.add("hidden");
+  } else {
+    const num = STEPS[0].c[picks[0]][0];
+    const right = num === TRUE_TOTAL;
+    s.className = "status " + (right ? "ok" : "bad");
+    s.innerHTML = "<b>Câu đã xong:</b> trôi chảy và lịch sự vì mỗi mẩu đều được chọn hợp lý sau phần trước, không phải vì mô hình đã tính. " +
+      (right ? "Lần này con số trùng với bảng là do may. Bấm <b>Làm lại</b> để thấy câu khác."
+             : "Con số không khớp với bảng, nhưng câu vẫn đọc thuyết phục y như khi đúng.");
+    cmp.classList.remove("hidden");
+    cmp.innerHTML = "Con số trong câu: <b>"+num+"</b><br>Cộng hai hoá đơn quá hạn: <b>"+TRUE_TOTAL+"</b> " +
+      (right ? '<span class="tagx">khớp lần này</span>' : '<span class="tagx od">không khớp</span>');
+  }
+}
+function next(){ if(picks.length < STEPS.length){ picks.push(sample(STEPS[picks.length].c)); render(); } }
+$("bNext").onclick = next;
+$("bAll").onclick = ()=>{ while(picks.length < STEPS.length) picks.push(sample(STEPS[picks.length].c)); render(); };
+$("bReset").onclick = ()=>{ picks = []; render(); };
+const b = parseInt(qs.get("buoc")||"0",10);
+for(let i=0;i<Math.min(b,STEPS.length);i++) picks.push(sample(STEPS[i].c));
+render();
+</script>
+</body>
+</html>
