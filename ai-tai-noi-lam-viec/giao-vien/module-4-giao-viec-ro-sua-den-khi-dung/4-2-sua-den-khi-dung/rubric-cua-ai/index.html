@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Soát bản nháp rubric do AI soạn</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --bad:#b42318; --bad-soft:#fbe9e7; --ok:#15803d; --ok-soft:#e3f4e8; --head:#f0f2f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --bad:#f87171; --bad-soft:#3a1717; --ok:#4ade80; --ok-soft:#13301f; --head:#1f2430;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:14px}
+  .mock{font-size:12.5px;color:var(--muted);font-style:italic;margin:4px 0 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .rtitle{font-size:14px;font-weight:700;margin:0 0 6px}
+  .rtitle span{font-weight:400;color:var(--muted)}
+  .rub{display:grid;grid-template-columns:1fr 1.05fr 1.05fr 0.95fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13.5px;line-height:1.35}
+  .rub>div{padding:4px 7px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  .rub>.h{background:var(--head);font-weight:700;font-size:13px;color:var(--muted);border-top:0}
+  .rub>.c0{border-left:0;font-weight:600}
+  .rub .pt{display:block;font-size:12.5px;color:var(--muted);font-weight:400}
+  .rub .lv{display:none;font-size:12px;font-weight:700;color:var(--muted)}
+  .foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-size:14px}
+  .sum{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .sumbox{font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-height:42px;display:flex;align-items:center;background:var(--card)}
+  .sumbox.bad{border-color:var(--bad);background:var(--bad-soft)}
+  @media (max-width:600px){
+    .rub{grid-template-columns:1fr}
+    .rub>.h{display:none}
+    .rub>div{border-left:0}
+    .rub>.c0{background:var(--head);border-top:2px solid var(--line)}
+    .rub .lv{display:inline}
+  }
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 14px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:15px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .hot{display:inline;-webkit-box-decoration-break:clone;box-decoration-break:clone;background:none;border:0;border-bottom:2px dashed var(--cur-bar);color:inherit;font:inherit;padding:0 1px;cursor:pointer;text-align:left;border-radius:2px}
+  .hot:hover{background:var(--cur)}
+  .hot.found{border-bottom:2px solid var(--bad);background:var(--bad-soft)}
+  .hot.fine{border-bottom:2px solid var(--ok);background:var(--ok-soft)}
+  .hot.cur{outline:2px solid var(--accent)}
+  .tip{margin-top:6px;min-height:80px;font-size:14.5px;padding:6px 10px}
+  .tip .t{font-weight:700;margin:0 0 2px}
+  .tip p{margin:0}
+  .count{font-weight:700}
+  .done{border-left:4px solid var(--ok);background:var(--ok-soft);border-radius:8px;padding:6px 10px;font-size:14px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bản nháp do AI soạn (giả lập). Chạm vào chỗ gạch chân vàng, rồi bấm <b>Tự cộng</b>. Chỗ đáng ngờ đã tìm: <span class="count" id="cnt">0/5</span></p>
+  <div class="card">
+    <p class="rtitle">Rubric dự án “Tiết kiệm điện ở gia đình em” <span>· Khoa học tự nhiên 6 · điểm chung của nhóm · Giao diện minh hoạ</span></p>
+    <div class="rub" id="rub">
+      <div class="h c0">Tiêu chí</div><div class="h">Tốt</div><div class="h">Đạt</div><div class="h">Cần cố gắng</div>
+
+      <div class="c0">1. Bảng khảo sát thiết bị<span class="pt">tối đa 2 điểm</span></div>
+      <div><span class="lv">Tốt: </span>(2 điểm) Khảo sát <span class="hot" role="button" tabindex="0" data-h="overlap">từ 5 thiết bị trở lên</span>, đủ các cột</div>
+      <div><span class="lv">Đạt: </span>(1,5 điểm) Khảo sát <span class="hot" role="button" tabindex="0" data-h="overlap">3-5 thiết bị</span>, thiếu một cột</div>
+      <div><span class="lv">Cần cố gắng: </span>(1 điểm) Khảo sát dưới 3 thiết bị</div>
+
+      <div class="c0"><span class="hot" role="button" tabindex="0" data-h="fine">2. Ba cách tiết kiệm điện</span><span class="pt">tối đa 3 điểm</span></div>
+      <div><span class="lv">Tốt: </span>(3 điểm) Ba cách, mỗi cách gắn với một thiết bị trong bảng, có lý do</div>
+      <div><span class="lv">Đạt: </span>(2 điểm) Ba cách, có cách không gắn với thiết bị trong bảng hoặc thiếu lý do</div>
+      <div><span class="lv">Cần cố gắng: </span>(1 điểm) Nêu một hoặc hai cách</div>
+
+      <div class="c0">3. Poster và thuyết trình<span class="pt">tối đa 2,5 điểm</span></div>
+      <div><span class="lv">Tốt: </span>(2,5 điểm) <span class="hot" role="button" tabindex="0" data-h="vague">Poster sáng tạo, thu hút; nhóm thuyết trình tự tin, thể hiện tinh thần tích cực</span></div>
+      <div><span class="lv">Đạt: </span>(1,5 điểm) Poster khá đẹp; thuyết trình khá</div>
+      <div><span class="lv">Cần cố gắng: </span>(1 điểm) Poster chưa đẹp; thuyết trình chưa tự tin</div>
+
+      <div class="c0"><span class="hot" role="button" tabindex="0" data-h="task">4. Tính điện năng tiêu thụ (kWh)</span><span class="pt">tối đa 2 điểm</span></div>
+      <div><span class="lv">Tốt: </span>(2 điểm) Tính đúng số kWh mỗi thiết bị dùng mỗi ngày</div>
+      <div><span class="lv">Đạt: </span>(1 điểm) Tính đúng khoảng nửa số thiết bị</div>
+      <div><span class="lv">Cần cố gắng: </span>(0 điểm) Không tính</div>
+
+      <div class="c0"><span class="hot" role="button" tabindex="0" data-h="indiv">5. Đóng góp của từng thành viên</span><span class="pt">tối đa 2 điểm</span></div>
+      <div><span class="lv">Tốt: </span>(2 điểm) Mỗi thành viên đều tích cực đóng góp</div>
+      <div><span class="lv">Đạt: </span>(1 điểm) Có một hoặc hai bạn ít đóng góp</div>
+      <div><span class="lv">Cần cố gắng: </span>(0,5 điểm) Nhiều bạn không tham gia</div>
+    </div>
+    <div class="foot">
+      <span><b><span class="hot" role="button" tabindex="0" data-h="total">Tổng: 10 điểm</span></b></span>
+      <div class="sum"><button class="btn ghost" id="bSum">Tự cộng</button><div class="sumbox" id="sum" aria-live="polite">Điểm tối đa: ?</div></div>
+    </div>
+  </div>
+  <div class="card tip" id="tip" aria-live="polite">
+    <p class="t">Chưa chọn chỗ nào</p>
+    <p style="color:var(--muted)">Đối chiếu với nhiệm vụ của cô Lan và yêu cầu của tổ. Có năm chỗ đáng ngờ, và không phải chỗ gạch chân nào cũng sai.</p>
+  </div>
+</div>
+<script>
+const MAX = [2, 3, 2.5, 2, 2];
+const fmt = x => String(x).replace(".", ",");
+const TOTAL = MAX.reduce((a,b)=>a+b,0); // 11,5
+const H = {
+  overlap:{t:"Hai mức chồng lấn", d:"Nhóm khảo sát đúng 5 thiết bị vừa thuộc mức Tốt (từ 5 trở lên) vừa thuộc mức Đạt (3-5). Hai giáo viên có thể cho hai điểm khác nhau. Mức Đạt còn chấp nhận 3 thiết bị, trong khi nhiệm vụ yêu cầu ít nhất 5."},
+  vague:{t:"Không quan sát được", d:"“Sáng tạo”, “thu hút”, “tinh thần tích cực” mỗi người hiểu một kiểu. Hai mức dưới chỉ khác nhau chữ “khá”, “chưa”. Học sinh lớp 6 đọc xong không biết phải làm gì để lên mức Tốt."},
+  task:{t:"Lệch nhiệm vụ", d:"Nhiệm vụ chỉ yêu cầu ghi số oát, thời gian dùng và chỉ ra thiết bị dùng nhiều điện, không yêu cầu tính kWh. Một nhóm làm đủ bốn việc vẫn mất 2 điểm ở tiêu chí này."},
+  indiv:{t:"Chấm cá nhân trong điểm nhóm", d:"Theo nhiệm vụ, mọi thành viên nhận cùng điểm; đóng góp từng em được theo dõi bằng phiếu phân công riêng. Tiêu chí này làm cả nhóm mất điểm vì một bạn, và chữ “tích cực” cũng không quan sát được."},
+  total:{t:"Tổng điểm ghi sẵn", d:"Dòng cuối ghi 10 điểm, nhưng cộng điểm tối đa của năm tiêu chí thì không ra 10. Bấm Tự cộng để xem."},
+  fine:{t:"Tiêu chí này bám nhiệm vụ", d:"Tiêu chí 2 khớp Việc 3: mỗi mức nói rõ điều nhìn thấy được (số cách, có gắn với thiết bị trong bảng, có lý do). Không phải ô nào AI viết cũng sai, nên cần soát từng ô.", ok:true}
+};
+const TRAPS = Object.keys(H).filter(k=>!H[k].ok);
+const found = new Set();
+const $ = id => document.getElementById(id);
+let quiet = true, summed = false;
+function pick(k){
+  if(!H[k].ok) found.add(k);
+  document.querySelectorAll(".hot").forEach(b=>{
+    const kk = b.dataset.h;
+    b.classList.toggle("found", found.has(kk));
+    b.classList.toggle("fine", kk==="fine" && (k==="fine" || b.classList.contains("fine")));
+    b.classList.toggle("cur", kk===k);
+  });
+  $("cnt").textContent = found.size+"/"+TRAPS.length;
+  let d = H[k].d;
+  if(k==="total" && summed) d = "Dòng cuối ghi 10 điểm, nhưng cộng điểm tối đa của năm tiêu chí được "+fmt(TOTAL)+". Đừng tin dòng tổng AI ghi sẵn; luôn tự cộng.";
+  let h = '<p class="t">'+H[k].t+'</p><p>'+d+'</p>';
+  if(found.size===TRAPS.length) h += '<div class="done">Đủ năm chỗ đáng ngờ. Bản nháp vẫn trông gọn gàng, đủ cột, có điểm từng mức: chỉ đối chiếu với nhiệm vụ và tự cộng mới thấy lỗi.</div>';
+  $("tip").innerHTML = h;
+  if(!quiet && window.innerWidth <= 600) $("tip").scrollIntoView({block:"nearest"});
+}
+document.querySelectorAll(".hot").forEach(b=>{
+  b.onclick = ()=>pick(b.dataset.h);
+  b.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(b.dataset.h); } };
+});
+function doSum(){
+  summed = true;
+  const box = $("sum");
+  box.className = "sumbox bad";
+  box.innerHTML = "Điểm tối đa: "+MAX.map(fmt).join(" + ")+" = <b>&nbsp;"+fmt(TOTAL)+"</b>";
+  pick("total");
+}
+$("bSum").onclick = doSum;
+const q = new URLSearchParams(location.search);
+if(q.has("chon")) q.get("chon").split(",").forEach(k=>{ if(H[k]) pick(k); });
+if(q.get("cong")==="1") doSum();
+quiet = false;
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Lịch theo Kế hoạch kiểm tra giữa học kì I số 87/KH-THCSHB</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --t-gv:#7c3aed; --t-gv-soft:#efe7fd; --t-kt:#c2410c; --t-kt-soft:#fde9dc; --t-ph:#15803d; --t-ph-soft:#e3f4e8;
+    --head:#f0f2f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --t-gv:#c4a5ff; --t-gv-soft:#2a1f45; --t-kt:#fb923c; --t-kt-soft:#3a2312; --t-ph:#4ade80; --t-ph-soft:#13301f;
+      --head:#1f2430;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .tabs{display:flex;gap:6px;margin-bottom:8px}
+  .tab{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 10px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-size:15px;font-weight:600}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .dow{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);padding:2px 0}
+  .day{position:relative;min-height:46px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:15px;padding:3px 0 0;cursor:default;display:flex;flex-direction:column;align-items:center}
+  .day.blank{border:0;background:none}
+  .day.wk{color:var(--muted)}
+  .day.ev{cursor:pointer;font-weight:700}
+  .day.ev:hover{background:var(--cur)}
+  .day.sel{outline:3px solid var(--accent);outline-offset:-1px;background:var(--accent-soft)}
+  .dots{display:flex;gap:3px;margin-top:3px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .nb{background:var(--muted)} .gv{background:var(--t-gv)} .kt{background:var(--t-kt)} .ph{background:var(--t-ph)}
+  .day.kt-bg{background:var(--t-kt-soft)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted);margin-top:8px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .detail h3{margin:0 0 6px;font-size:16px}
+  .item{border-left:4px solid var(--line);border-radius:6px;padding:5px 9px;margin-bottom:7px;font-size:14.5px;background:var(--head)}
+  .item.gv{border-color:var(--t-gv);background:var(--t-gv-soft)}
+  .item.kt{border-color:var(--t-kt);background:var(--t-kt-soft)}
+  .item.ph{border-color:var(--t-ph);background:var(--t-ph-soft)}
+  .item .src{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .item p{margin:0}
+  .hint{color:var(--muted);font-size:14.5px;margin:0}
+  .note{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Lịch dưới đây vẽ lại các mốc của Kế hoạch số 87/KH-THCSHB. Chạm vào một ngày có chấm màu để xem mục tương ứng trong kế hoạch.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="m11" aria-selected="true">Tháng 11/2026</button>
+        <button class="tab" role="tab" id="m12" aria-selected="false">Tháng 12/2026</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="legend">
+        <span><i class="dot nb"></i>Ngày ban hành</span>
+        <span><i class="dot gv"></i>Hạn của giáo viên</span>
+        <span><i class="dot kt"></i>Kiểm tra</span>
+        <span><i class="dot ph"></i>Thông báo cha mẹ</span>
+      </div>
+    </div>
+    <div class="card detail" id="detail" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+// Mỗi mục chép đúng câu chữ của kế hoạch. Thứ trong tuần đã kiểm bằng mã (01/11/2026 là Chủ nhật).
+const TEST_DAYS = {16:"Thứ Hai, 16/11/2026 · Ngữ văn",17:"Thứ Ba, 17/11/2026 · Toán",18:"Thứ Tư, 18/11/2026 · Tiếng Anh",19:"Thứ Năm, 19/11/2026 · Khoa học tự nhiên"};
+const COMMON_TEST = [
+  {k:"kt", src:"Mục II, khoản 1", t:"Kiểm tra tập trung các khối 6, 7, 8, 9 vào buổi sáng. Học sinh có mặt tại phòng kiểm tra lúc 7 giờ 15, bắt đầu làm bài lúc 7 giờ 30."},
+  {k:"ph", src:"Mục VIII, khoản 2 và 3", t:"Học sinh có mặt trước giờ kiểm tra 15 phút; mang bút, thước kẻ; môn Toán và Khoa học tự nhiên được mang máy tính cầm tay không có chức năng soạn thảo văn bản. Học sinh không mang điện thoại và thiết bị có kết nối mạng vào phòng kiểm tra."},
+  {k:"gv", src:"Mục VI, khoản 2", t:"Giáo viên bộ môn chấm, trả và chữa bài cho học sinh chậm nhất 07 ngày sau buổi kiểm tra."}
+];
+const TKB = {k:"kt", src:"Mục II, khoản 2", t:"Các môn còn lại kiểm tra tại lớp theo thời khoá biểu, từ thứ Hai 23/11/2026 đến thứ Sáu 27/11/2026 (tuần 12)."};
+const EV = {
+  "2026-11-02":[{k:"nb", src:"Đầu văn bản", t:"Số: 87/KH-THCSHB. Hoà Bình, ngày 02 tháng 11 năm 2026. Kế hoạch kiểm tra, đánh giá giữa học kì I năm học 2026-2027."}],
+  "2026-11-09":[{k:"gv", src:"Mục V, khoản 2", t:"Giáo viên ra đề nộp đề, đáp án, hướng dẫn chấm, ma trận và bảng đặc tả cho tổ trưởng chậm nhất 16 giờ 30, thứ Hai ngày 09/11/2026."}],
+  "2026-11-10":[{k:"ph", src:"Mục VIII, khoản 1", t:"Giáo viên chủ nhiệm thông báo lịch kiểm tra, hình thức kiểm tra và quy định kiểm tra bù đến cha mẹ học sinh trước ngày 10/11/2026, qua sổ liên lạc điện tử hoặc nhóm liên lạc của lớp."}],
+  "2026-11-12":[{k:"gv", src:"Mục V, khoản 3", t:"Tổ trưởng duyệt và nộp đề cho Phó Hiệu trưởng phụ trách chuyên môn chậm nhất thứ Năm ngày 12/11/2026."}],
+  "2026-12-03":[
+    {k:"kt", src:"Mục VII, khoản 1", t:"Học sinh vắng buổi kiểm tra có lý do chính đáng (có giấy xin phép của cha mẹ học sinh hoặc người giám hộ) được kiểm tra bù."},
+    {k:"kt", src:"Mục VII, khoản 2", t:"Kiểm tra bù các môn kiểm tra tập trung lúc 14 giờ 00, thứ Năm ngày 03/12/2026, tại phòng học tầng 1, nhà A."},
+    {k:"kt", src:"Mục VII, khoản 3", t:"Đề kiểm tra bù có hình thức, thời gian làm bài và mức độ tương đương đề chính thức."}],
+  "2026-12-04":[
+    {k:"gv", src:"Mục VI, khoản 3", t:"Giáo viên nhập điểm vào hệ thống quản lý trường học chậm nhất thứ Sáu ngày 04/12/2026."},
+    {k:"kt", src:"Mục VII, khoản 2", t:"Các môn kiểm tra theo thời khoá biểu do giáo viên bộ môn bố trí kiểm tra bù trước ngày 04/12/2026."}]
+};
+for(const d in TEST_DAYS){
+  const [lbl, mon] = TEST_DAYS[d].split(" · ");
+  EV["2026-11-"+d] = [{k:"kt", src:"Mục II, bảng lịch", t:lbl+": "+mon+"."}, ...COMMON_TEST];
+}
+for(let d=23; d<=27; d++) EV["2026-11-"+d] = [TKB];
+const TITLE_NOTE = {"2026-11-10":"Thông báo cần đến cha mẹ học sinh trước ngày này."};
+const DOW = ["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
+const pad = n => String(n).padStart(2,"0");
+const $ = id => document.getElementById(id);
+let month = 11, sel = null;
+function key(m,d){ return "2026-"+pad(m)+"-"+pad(d); }
+function renderCal(){
+  $("m11").setAttribute("aria-selected", month===11); $("m12").setAttribute("aria-selected", month===12);
+  const first = new Date(2026, month-1, 1).getDay();      // 0 = Chủ nhật
+  const lead = (first + 6) % 7;                            // lịch bắt đầu từ Thứ Hai
+  const days = new Date(2026, month, 0).getDate();
+  let h = ["T2","T3","T4","T5","T6","T7","CN"].map(x=>'<div class="dow">'+x+'</div>').join("");
+  for(let i=0;i<lead;i++) h += '<div class="day blank"></div>';
+  for(let d=1; d<=days; d++){
+    const k = key(month,d), ev = EV[k], wd = new Date(2026, month-1, d).getDay();
+    const kinds = ev ? [...new Set(ev.map(e=>e.k))] : [];
+    const cls = "day"+(ev?" ev":"")+(wd===0||wd===6?" wk":"")+(k===sel?" sel":"")+(TEST_DAYS[d]&&month===11?" kt-bg":"");
+    const label = d+" tháng "+month+(ev?", có "+ev.length+" mục":"");
+    h += ev ? '<button class="'+cls+'" data-k="'+k+'" aria-label="'+label+'">'+d+'<span class="dots">'+kinds.map(x=>'<i class="dot '+x+'"></i>').join("")+'</span></button>'
+            : '<div class="'+cls+'">'+d+'</div>';
+  }
+  $("cal").innerHTML = h;
+  document.querySelectorAll(".day.ev").forEach(b=>b.onclick=()=>{ sel=b.dataset.k; renderCal(); renderDetail(); });
+}
+function renderDetail(){
+  const el = $("detail");
+  if(!sel){
+    el.innerHTML = '<p class="panel-title">Mục trong kế hoạch</p><p class="hint">Chưa chọn ngày nào. Thử chạm vào ngày 16/11 hoặc 03/12.</p>'+
+      '<p class="note">Lịch chỉ vẽ lại các mốc có ngày cụ thể. Hình thức và thời gian làm bài từng môn xem ở mục III của kế hoạch.</p>';
+    return;
+  }
+  const [y,m,d] = sel.split("-").map(Number);
+  const wd = DOW[new Date(y,m-1,d).getDay()];
+  let h = '<h3>'+wd+', '+pad(d)+'/'+pad(m)+'/'+y+'</h3>';
+  if(TITLE_NOTE[sel]) h += '<p class="note" style="margin:0 0 6px">'+TITLE_NOTE[sel]+'</p>';
+  h += EV[sel].map(e=>'<div class="item '+e.k+'"><span class="src">'+e.src+'</span><p>'+e.t+'</p></div>').join("");
+  el.innerHTML = h;
+  if(window.innerWidth <= 620 && !quiet) el.scrollIntoView({block:"nearest"});
+}
+let quiet = true;
+$("m11").onclick = ()=>{ month=11; renderCal(); };
+$("m12").onclick = ()=>{ month=12; renderCal(); };
+document.addEventListener("keydown", e=>{ if(e.key==="ArrowRight"){month=12;renderCal();} if(e.key==="ArrowLeft"){month=11;renderCal();} });
+const q = new URLSearchParams(location.search);
+if(q.has("ngay")){ const [d,m] = q.get("ngay").split("-").map(Number); if(EV[key(m,d)]){ sel = key(m,d); month = m; } }
+renderCal(); renderDetail(); quiet = false;
+</script>
+</body>
+</html>

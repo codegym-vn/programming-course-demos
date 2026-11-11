@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Ba kiểu phản hồi của AI cho cùng một bài toán</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --bad:#b42318; --bad-soft:#fbe9e7; --ok:#15803d; --ok-soft:#e3f4e8; --mid:#b45309; --mid-soft:#fdf0dc;
+    --user:#eef1f5;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --bad:#f87171; --bad-soft:#3a1717; --ok:#4ade80; --ok-soft:#13301f; --mid:#fbbf24; --mid-soft:#3a2c10;
+      --user:#222834;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .mock{font-size:12.5px;color:var(--muted);font-style:italic;margin:4px 0 0}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 12px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-size:15px;font-weight:600}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .chat{display:flex;flex-direction:column;gap:8px}
+  .msg{border-radius:12px;padding:6px 11px;font-size:14.5px;max-width:96%}
+  .msg .who{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:2px}
+  .msg.user{background:var(--user);align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.ai{background:var(--accent-soft);align-self:flex-start;border-bottom-left-radius:4px}
+  .msg p{margin:0 0 5px}
+  .msg p:last-child{margin:0}
+  .think .row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:3px}
+  .meter{height:14px;border-radius:7px;background:var(--line);overflow:hidden;display:flex}
+  .meter .s{background:var(--ok);transition:width .4s}
+  .meter .a{background:var(--bad);opacity:.75;transition:width .4s}
+  .think ul{margin:8px 0 0;padding-left:18px;font-size:14.5px}
+  .think li{margin-bottom:3px}
+  .verdict{margin-top:8px;border-left:4px solid var(--bad);background:var(--bad-soft);border-radius:8px;padding:6px 10px;font-size:14px}
+  .verdict.mid{border-color:var(--mid);background:var(--mid-soft)}
+  .verdict.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .ask{margin-top:10px}
+  .ask .q{border:1px dashed var(--accent);border-radius:8px;padding:7px 10px;font-size:14.5px;background:var(--card)}
+  .ask .n{font-size:13px;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Cùng một câu hỏi của học sinh lớp 7, ba kiểu trả lời của AI. Chạm từng thẻ để so.</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-k="0" aria-selected="true">Nói thẳng đáp án</button>
+    <button class="tab" role="tab" data-k="1" aria-selected="false">Gợi hướng</button>
+    <button class="tab" role="tab" data-k="2" aria-selected="false">Thách thức</button>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="chat">
+          <div class="msg user"><span class="who">Học sinh lớp 7</span>Ba lớp 7A, 7B, 7C trồng được tất cả 120 cây. Số cây của ba lớp tỉ lệ với 3; 4; 5. Tính số cây mỗi lớp trồng được.</div>
+          <div class="msg ai" id="ai" aria-live="polite"></div>
+        </div>
+        <p class="mock">Giao diện minh hoạ, công cụ thật có thể khác. Câu trả lời là bản mẫu.</p>
+      </div>
+    </div>
+    <div class="card think">
+      <p class="panel-title">Học sinh làm phần suy nghĩ nào?</p>
+      <div class="row"><span>Học sinh</span><span>AI</span></div>
+      <div class="meter" aria-hidden="true"><span class="s" id="mS"></span><span class="a" id="mA"></span></div>
+      <ul id="list"></ul>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+  <div class="card ask">
+    <p class="panel-title">Muốn AI trả lời theo kiểu này, có thể dặn trong yêu cầu</p>
+    <div class="q" id="askQ"></div>
+    <p class="n" id="askN"></p>
+  </div>
+</div>
+<script>
+const T = [
+  {ai:'<span class="who">AI</span><p>Gọi số cây của ba lớp lần lượt là a, b, c. Ta có a/3 = b/4 = c/5 và a + b + c = 120.</p><p>Theo tính chất của dãy tỉ số bằng nhau: a/3 = b/4 = c/5 = (a + b + c)/(3 + 4 + 5) = 120/12 = 10.</p><p>Vậy a = 30, b = 40, c = 50. Đáp số: lớp 7A trồng 30 cây, lớp 7B 40 cây, lớp 7C 50 cây.</p>',
+   s:10, items:["AI chọn ẩn, lập dãy tỉ số, áp dụng tính chất và tính ra đáp số.","Học sinh chỉ còn việc chép lại."],
+   v:"AI làm gần hết phần suy nghĩ. Bài nộp có thể đúng, nhưng em chưa chắc đã học được cách giải.", vc:"",
+   q:"(Không cần dặn.)", n:"Đây là kiểu AI thường trả lời khi chỉ được dán đề bài."},
+  {ai:'<span class="who">AI</span><p>Mình chưa giải hộ nhé. Em thử từng bước:</p><p>1. Gọi số cây của ba lớp là a, b, c. “Tỉ lệ với 3; 4; 5” viết thành dãy tỉ số nào?</p><p>2. Đề bài cho biết a + b + c bằng bao nhiêu?</p><p>3. Tính chất nào của dãy tỉ số bằng nhau giúp em dùng được tổng đó?</p><p>Làm xong bước 1, em gửi mình xem nhé.</p>',
+   s:65, items:["Học sinh tự viết dãy tỉ số từ lời văn của đề.","Học sinh tự nhận ra cần dùng tổng và tính chất của dãy tỉ số bằng nhau.","Học sinh tự tính ra số cây của từng lớp."],
+   v:"AI chỉ hướng từng bước; phần lớn phần suy nghĩ do học sinh làm.", vc:"mid",
+   q:"“Đừng đưa lời giải hay đáp số. Mỗi lần chỉ gợi ý một bước bằng một câu hỏi, đợi em trả lời rồi mới gợi ý tiếp.”", n:"AI không phải lần nào cũng làm đúng như dặn, nên vẫn cần đọc lại câu trả lời."},
+  {ai:'<span class="who">AI</span><p>Trước khi giải, em đoán xem lớp nào trồng nhiều cây nhất? Vì sao?</p><p>Một bạn giải thế này: “120 : 3 = 40, vậy mỗi lớp trồng 40 cây.” Theo em, lời giải đó sai ở đâu?</p><p>Giải xong, em sẽ tự kiểm tra kết quả của mình bằng cách nào, mà không cần hỏi mình?</p>',
+   s:90, items:["Học sinh dự đoán và giải thích trước khi tính.","Học sinh tìm chỗ sai trong một lập luận: chia đều bỏ qua tỉ lệ 3; 4; 5.","Học sinh tự giải và tự nghĩ cách kiểm kết quả."],
+   v:"AI hỏi ngược lại; học sinh làm gần hết phần suy nghĩ, kể cả việc tự kiểm.", vc:"ok",
+   q:"“Đừng giải hộ. Hãy hỏi ngược lại để em giải thích cách làm, đưa một lời giải có lỗi để em tìm chỗ sai, và hỏi em cách tự kiểm kết quả.”", n:"AI không phải lần nào cũng làm đúng như dặn, nên vẫn cần đọc lại câu trả lời."}
+];
+const $ = id => document.getElementById(id);
+const tabs = [...document.querySelectorAll(".tab")];
+function show(k){
+  tabs.forEach((t,i)=>t.setAttribute("aria-selected", i===k));
+  const d = T[k];
+  $("ai").innerHTML = d.ai;
+  $("mS").style.width = d.s+"%"; $("mA").style.width = (100-d.s)+"%";
+  $("list").innerHTML = d.items.map(x=>"<li>"+x+"</li>").join("");
+  $("verdict").className = "verdict " + d.vc; $("verdict").textContent = d.v;
+  $("askQ").textContent = d.q; $("askN").textContent = d.n;
+}
+tabs.forEach((t,i)=>t.onclick=()=>show(i));
+document.addEventListener("keydown", e=>{
+  const cur = tabs.findIndex(t=>t.getAttribute("aria-selected")==="true");
+  if(e.key==="ArrowRight") show(Math.min(2,cur+1));
+  if(e.key==="ArrowLeft") show(Math.max(0,cur-1));
+});
+const q = new URLSearchParams(location.search);
+show(Math.min(2, Math.max(0, parseInt(q.get("tab")||"1",10)-1)));
+</script>
+</body>
+</html>
