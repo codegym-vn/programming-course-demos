@@ -102,16 +102,55 @@ const EX = {
     rows: [["An","Hà Nội",120],["Bình","Đà Nẵng",80],["Chi","Hà Nội",90],["Dũng","TP.HCM",150]],
     key: r => r[1], add: r => 1, pivotHead: ["Khu vực","Số đơn"],
     code: ["so_don = {}","for dong in don_hang:","    ten, kv, tien = dong.split(\",\")","    so_don[kv] = so_don.get(kv, 0) + 1","print(so_don)"],
-    L: {init:0, loop:1, split:2, conv:null, upd:3, print:4} }
+    L: {init:0, loop:1, split:2, conv:null, upd:3, print:4} },
+  duan: { label: "Dự án: doanh thu theo nhân viên", dict: "ket_qua", cols: ["nhan_vien","khu_vuc","so_luong","don_gia"], unit: " đ",
+    fmt: v => v.toLocaleString("vi-VN"),
+    rows: [["An","Hà Nội",10,65000],["Bình","Đà Nẵng",2,350000],["An","Hà Nội",3,350000]],
+    pivotHead: ["Nhân viên","Tổng doanh thu"],
+    code: ["def tong_hop(don_hang, truong):","    ket_qua = {}","    for don in don_hang:","        khoa = don[truong]","        tien = (don[\"so_luong\"]","                * don[\"don_gia\"])","        cu = ket_qua.get(khoa, 0)","        ket_qua[khoa] = cu + tien","    return ket_qua","# don_hang: 3 đơn ở bảng bên dưới","theo_nv = tong_hop(don_hang,","                   \"nhan_vien\")","xep = sorted(theo_nv.items(),","             key=lambda x: x[1],","             reverse=True)","for ten, tien in xep:","    print(ten, tien)"],
+    custom(){
+      const S = [], d = {}, out = [], I = s => `<b style="display:inline;color:inherit">${s}</b>`, M = s => `<span class="mono">${s}</span>`;
+      const V = o => Object.keys(o).map(x => `${x}=<span>${typeof o[x] === "string" ? `"${o[x]}"` : o[x]}</span>`).join("  ");
+      const snap = (o) => S.push(Object.assign({dict: {...d}, row: -1, vars: o.env ? V(o.env) : "", flash: null, out: out.join("\n"), dname: "ket_qua"}, o));
+      snap({line: 10, to: 11, env: {truong: "nhan_vien"}, pyskip: true,
+        msg: `Gọi hàm ${M('tong_hop(don_hang, "nhan_vien")')}: tham số ${M("truong")} nhận chuỗi "nhan_vien", nghĩa là gộp theo cột nhân viên. Python nhảy vào thân hàm.`});
+      snap({line: 1, pyenv: {ket_qua: {}}, msg: `Tạo từ điển rỗng ${M("ket_qua = {}")}. Chưa có nhân viên nào.`});
+      this.rows.forEach((r, i) => {
+        snap({line: 2, row: i, pyenv: {don: {nhan_vien: r[0], khu_vuc: r[1], so_luong: r[2], don_gia: r[3]}},
+          msg: `Vòng lặp lấy đơn thứ ${i+1}: ${M("don")} là một từ điển gồm 4 cột như dòng tô vàng trong bảng.`});
+        snap({line: 3, row: i, env: {khoa: r[0]}, msg: `${M("don[truong]")} tức ${M('don["nhan_vien"]')} = "${r[0]}". Đây là khoá để gộp nhóm.`});
+        const tien = r[2] * r[3];
+        snap({line: 4, to: 5, row: i, env: {khoa: r[0], tien}, msg: `Doanh thu = số lượng × đơn giá: ${M(`tien = ${r[2]} * ${r[3]}`)} = ${I(tien)}. Không nhân số lượng là sai ngay ở đây.`});
+        const isNew = d[r[0]] === undefined, cu = isNew ? 0 : d[r[0]];
+        snap({line: 6, row: i, env: {khoa: r[0], tien, cu}, msg: isNew
+          ? `"${r[0]}" chưa có trong ${M("ket_qua")}, nên ${M(`get("${r[0]}", 0)`)} trả ${I(0)}.`
+          : `"${r[0]}" đã có ${cu}, nên ${M("get")} trả ${I(cu)}.`});
+        d[r[0]] = cu + tien;
+        snap({line: 7, row: i, flash: r[0], env: {khoa: r[0], tien, cu}, msg: `Ghi ${M(`ket_qua["${r[0]}"] = ${cu} + ${tien}`)} = ${I(d[r[0]])}.`});
+      });
+      snap({line: 8, dname: "theo_nv", pyenv: {ket_qua: {...d}},
+        msg: `Hết đơn, vòng lặp dừng. ${M("return ket_qua")} trả từ điển về, gán cho ${M("theo_nv")}.`});
+      const xep = Object.entries(d).sort((a, b) => b[1] - a[1]);
+      const xs = "[" + xep.map(([t, v]) => `('${t}', ${v})`).join(", ") + "]";
+      snap({line: 12, to: 14, dname: "theo_nv", vars: `xep=<span>${xs}</span>`, pyenv: {theo_nv: {...d}, xep},
+        msg: `${M("sorted")} xếp các cặp (tên, doanh thu) theo ${M("x[1]")} là doanh thu, ${M("reverse=True")} để lớn đứng trước.`});
+      xep.forEach(([t, v], j) => {
+        snap({line: 15, dname: "theo_nv", env: {ten: t, tien: v}, msg: `Lấy cặp thứ ${j+1} trong ${M("xep")}: ${M(`ten = "${t}"`)}, ${M(`tien = ${v}`)}.`});
+        out.push(`${t} ${v}`);
+        snap({line: 16, dname: "theo_nv", env: {ten: t, tien: v}, msg: `In ${M(`${t} ${v}`)}.` + (j === xep.length - 1 ? ` Kết quả khớp PivotTable bên cạnh: An bán nhiều nhất.` : "")});
+      });
+      return S;
+    } }
 };
 const q = new URLSearchParams(location.search);
 let cur = EX[q.get("vd")] ? q.get("vd") : "tong";
 let steps = [], k = 0;
 
 function hl(s){
+  if (/^\s*#/.test(s)) return `<span style="color:var(--cm)">${s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</span>`;
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
     .replace(/("[^"]*")/g,'<span class="str">$1</span>')
-    .replace(/\b(for|in|print)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(for|in|print|def|return|lambda|True)\b/g,'<span class="kw">$1</span>')
     .replace(/(?<![\w"])(\d+)(?![\w"])/g,'<span class="num">$1</span>');
 }
 function pyDict(d, ex){
@@ -119,6 +158,7 @@ function pyDict(d, ex){
   return "{" + parts.join(", ") + "}";
 }
 function build(){
+  if (EX[cur].custom) return EX[cur].custom();
   const ex = EX[cur], L = ex.L, d = {}, S = [];
   const snap = (o) => S.push(Object.assign({dict: {...d}, row: -1, vars: "", flash: null, out: ""}, o));
   snap({line: L.init, msg: `Tạo từ điển rỗng <span class="mono">${ex.dict} = {}</span>. Chưa có nhóm nào.`});
@@ -142,19 +182,19 @@ function build(){
 function render(){
   const ex = EX[cur], s = steps[k];
   document.getElementById("status").innerHTML = `<b>Bước ${k+1}/${steps.length}</b>${s.msg}`;
-  document.getElementById("code").innerHTML = ex.code.map((c,i)=>`<div class="ln${i===s.line?" cur":""}"><span class="no">${i+1}</span>${hl(c)}</div>`).join("");
-  document.getElementById("data").innerHTML = `<tr><th>#</th>${ex.cols.map((c,j)=>`<th${j===2?' class="r"':''}>${c}</th>`).join("")}</tr>` +
-    ex.rows.map((r,i)=>`<tr class="${i===s.row?"cur":(s.row>i||s.row===-1&&k>0?"done":"")}"><td>${i+1}</td><td>${r[0]}</td><td>${r[1]}</td><td class="r">${r[2]}</td></tr>`).join("");
-  document.getElementById("dtitle").textContent = ex.dict;
-  const keys = Object.keys(s.dict);
+  document.getElementById("code").innerHTML = ex.code.map((c,i)=>`<div class="ln${i>=s.line&&i<=(s.to??s.line)?" cur":""}"><span class="no">${i+1}</span><span>${hl(c)}</span></div>`).join("");
+  document.getElementById("data").innerHTML = `<tr><th>#</th>${ex.cols.map((c,j)=>`<th${typeof ex.rows[0][j]==="number"?' class="r"':''}>${c}</th>`).join("")}</tr>` +
+    ex.rows.map((r,i)=>`<tr class="${i===s.row?"cur":(s.row>i||s.row===-1&&k>0?"done":"")}"><td>${i+1}</td>${r.map(c=>typeof c==="number"?`<td class="r">${c}</td>`:`<td>${c}</td>`).join("")}</tr>`).join("");
+  document.getElementById("dtitle").textContent = s.dname || ex.dict;
+  const keys = Object.keys(s.dict), f = ex.fmt || (v => v);
   document.getElementById("dict").innerHTML = keys.length
     ? keys.map(x=>`<div class="kv${x===s.flash?" flash":""}"><span>"${x}"</span><span>${s.dict[x]}</span></div>`).join("")
     : '<span style="color:var(--muted)">{ } (rỗng)</span>';
   document.getElementById("vars").innerHTML = s.vars || "&nbsp;";
   const tot = keys.reduce((a,x)=>a+s.dict[x],0);
   document.getElementById("pivot").innerHTML = `<tr><th>${ex.pivotHead[0]}</th><th class="r">${ex.pivotHead[1]}</th></tr>` +
-    keys.map(x=>`<tr><td>${x}</td><td class="r">${s.dict[x]}${ex.unit}</td></tr>`).join("") +
-    (keys.length ? `<tr><td class="tot">Tổng cộng</td><td class="r tot">${tot}${ex.unit}</td></tr>` : `<tr><td colspan="2" style="color:var(--muted)">(chưa có dữ liệu)</td></tr>`);
+    keys.map(x=>`<tr><td>${x}</td><td class="r">${f(s.dict[x])}${ex.unit}</td></tr>`).join("") +
+    (keys.length ? `<tr><td class="tot">Tổng cộng</td><td class="r tot">${f(tot)}${ex.unit}</td></tr>` : `<tr><td colspan="2" style="color:var(--muted)">(chưa có dữ liệu)</td></tr>`);
   document.getElementById("out").innerHTML = s.out ? s.out.replace(/</g,"&lt;") : '<span class="ph">Kết quả print hiện ở đây</span>';
   document.getElementById("back").disabled = k===0;
   document.getElementById("next").disabled = document.getElementById("all").disabled = k===steps.length-1;
