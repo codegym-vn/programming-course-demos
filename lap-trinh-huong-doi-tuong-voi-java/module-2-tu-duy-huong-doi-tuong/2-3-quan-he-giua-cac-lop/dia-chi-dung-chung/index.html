@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Địa chỉ dùng chung trên heap</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --arrow:#5d6676;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --arrow:#9aa3b2;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab.mono{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.op{background:var(--accent-soft);color:var(--accent);font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .switch{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer}
+  .switch input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+  .hint{color:var(--muted);font-size:12.5px}
+  .hint:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:64px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .stackv{display:flex;flex-direction:column;gap:8px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s;width:max-content;min-width:100%}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.auto{opacity:.62;font-style:italic}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln.curf{background:var(--false-soft);border-left-color:var(--false);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 17px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:24px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#9aa3b2;font-family:system-ui,sans-serif;font-size:12.5px}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  /* mui ten tham chieu */
+  .host{position:relative}
+  .arrows{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .ar path{fill:none;stroke:var(--arrow);stroke-width:1.7}
+  .ar polygon{fill:var(--arrow)}
+  .ar.acc path{stroke:var(--accent)} .ar.acc polygon{fill:var(--accent)}
+  .ar.hi path{stroke:var(--cur-bar);stroke-width:3;animation:glow 1s ease-in-out infinite alternate}
+  .ar.hi polygon{fill:var(--cur-bar)}
+  @keyframes glow{from{opacity:.55}to{opacity:1}}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);vertical-align:middle}
+  .hid{visibility:hidden}
+  .obj{border:1.5px solid var(--node-line);background:var(--node);border-radius:8px;padding:3px 7px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:background .25s,border-color .25s}
+  .obj .oh{font:700 11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .obj.hi{border-color:var(--cur-bar);background:var(--cur)}
+  .obj.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .obj.old{opacity:.45;border-style:dashed}
+  .fld{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .fld.hi{background:var(--cur);border-radius:4px}
+
+  /* day o */
+  .strip{display:grid;gap:2px}
+  .slot{min-width:0;text-align:center}
+  .slot .bx{height:30px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--node-line);border-radius:5px;
+    background:var(--node);font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden;white-space:nowrap}
+  .slot .bx.empty{border-style:dashed;border-color:var(--line);background:transparent;color:var(--muted);font-weight:400}
+  .slot .bx.nul{color:var(--muted);font-weight:400;font-style:italic;font-size:11.5px;background:var(--code-bg)}
+  .slot .bx.stale{color:var(--muted);font-weight:400;background:var(--code-bg);opacity:.6}
+  .slot .bx.hit{border-color:var(--cur-bar);background:var(--cur)}
+  .slot .bx.new{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .slot .bx.del{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .slot .bx.cut{border:2px dashed var(--muted)}
+  .slot .bx .sp{color:var(--muted)}
+  .slot .ix{display:block;font:10.5px/1.3 ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .slot .nt{display:block;margin:0 -20px;text-align:center;font:600 10px/1.2 system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+  @media (prefers-reduced-motion: reduce){.ar.hi path{animation:none}}
+
+  .grid{grid-template-columns:322px 1fr}
+  .mem{display:flex;gap:22px;height:252px}
+  .mcol{display:flex;flex-direction:column;justify-content:space-around;min-width:0}
+  .mcol.st{width:58px;flex:none;background:var(--code-bg);border-radius:8px;padding:0 5px}
+  .mcol.s2{flex:1 1 0}.mcol.s3{flex:1.15 1 0}
+  .sv{font:600 12px ui-monospace,Menlo,Consolas,monospace;display:flex;justify-content:space-between;align-items:center}
+  @media (max-width:600px){.mem{gap:20px}.obj{font-size:11px;padding:3px 4px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) và theo dõi các mũi tên tham chiếu. Bật công tắc để so sánh với địa chỉ riêng.</p>
+  <div class="controls"><div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div><label class="switch"><input type="checkbox" id="priv">Địa chỉ riêng cho <code>binh</code></label></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Trong main của TestStudent</p><div class="code" id="code"></div></div>
+    <div class="stackv">
+      <div class="card"><p class="panel-title">Stack (trái) và heap (phải)</p><div class="mem host" id="mem"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|extends|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|null|this|super)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // o: {cur: so dong | [tu, den], bad: true de to do, cls: {i: lop}, tags: {i: nhan}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var none = cur === undefined || cur === null;
+    var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? (o.bad ? ' curf' : ' cur') : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function conHtml(out, ph){ return out.length ? out.map(esc).join('\n') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>'; }
+
+  // cfg: build(ops) -> snaps; render(sn, i, n, end); script: danh sach thao tac mac dinh (co the khong co)
+  // Moi snap co .op: chi so thao tac sinh ra no. Trang khong co thao tac thi bo qua .op.
+  function Stepper(cfg){
+    var ops = [], snaps = [], step = 0, timer = null, script = cfg.script || null;
+    var jump = parseInt(qs('buoc'), 10);
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function onScript(){
+      if (!script || ops.length >= script.length) return false;
+      return ops.every(function(o, i){ return JSON.stringify(o) === JSON.stringify(script[i]); });
+    }
+    function canNext(){ return step < snaps.length - 1 || onScript(); }
+    function endOfOp(){ var sn = snaps[step], e = sn; snaps.forEach(function(s){ if (s.op === sn.op) e = s; }); return e; }
+    function draw(){
+      var sn = snaps[step], run = timer !== null;
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + (script ? '' : '/' + snaps.length) + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length, endOfOp());
+      $('next').disabled = !canNext() || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || !canNext();
+    }
+    function advance(){
+      if (step < snaps.length - 1) { step++; return true; }
+      if (onScript()) { ops.push(script[ops.length]); snaps = cfg.build(ops); step++; return true; }
+      return false;
+    }
+    function reset(){
+      stop(); ops = []; snaps = cfg.build(ops); step = 0;
+      if (jump > 0) { while (step < jump - 1 && advance()); jump = 0; }
+      draw();
+    }
+    function next(){ if (advance()) draw(); }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    function doOp(op){
+      stop();
+      ops = ops.slice(0, snaps[step].op + 1);
+      if (snaps[step].op === undefined) ops = [];
+      ops.push(op); snaps = cfg.build(ops);
+      for (step = 0; step < snaps.length - 1 && snaps[step].op !== ops.length - 1; step++);
+      draw();
+    }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (!advance()) { stop(); } draw(); if (!canNext()) { stop(); draw(); } }, 600);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', function(){ if (snaps.length) cfg.render(snaps[step], step, snaps.length, endOfOp()); });
+    return {reset: reset, doOp: doOp};
+  }
+
+  // Ve lai host; phan tu co data-k truot tu vi tri cu sang vi tri moi.
+  function flip(host, paint){
+    var old = {}, had = false;
+    host.querySelectorAll('[data-k]').forEach(function(el){ old[el.dataset.k] = el.getBoundingClientRect(); had = true; });
+    paint();
+    if (!had || !host.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    host.querySelectorAll('[data-k]').forEach(function(el){
+      var o = old[el.dataset.k], n = el.getBoundingClientRect();
+      if (!o) { el.animate([{opacity:0},{opacity:1}], {duration:280}); return; }
+      var dx = o.left - n.left, dy = o.top - n.top;
+      if (Math.abs(dx) > .5 || Math.abs(dy) > .5)
+        el.animate([{transform:'translate(' + dx + 'px,' + dy + 'px)'},{transform:'none'}], {duration:360, easing:'ease-out'});
+    });
+  }
+  // list: [{from:id, to:id, out:'r'|'l'|'b'|'t', side:'l'|'r'|'t'|'b', cls:''}]
+  function arrows(host, list){
+    var old = host.querySelector(':scope > svg.arrows'); if (old) old.remove();
+    var H = host.getBoundingClientRect(), parts = '';
+    list.forEach(function(a){
+      var f = $(a.from), t = $(a.to); if (!f || !t) return;
+      var fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+      var out = a.out || 'r', side = a.side || 'l';
+      var fx = fr.left + fr.width / 2 - H.left, fy = (a.edge === 't' ? fr.top : fr.top + fr.height / 2) - H.top;
+      var L = tr.left - H.left, R = tr.right - H.left, T = tr.top - H.top, B = tr.bottom - H.top, x, y, ux = 0, uy = 0;
+      if (side === 'l') { x = L; y = (T + B) / 2; ux = 1; }
+      else if (side === 'r') { x = R; y = (T + B) / 2; ux = -1; }
+      else if (side === 't') { x = Math.min(Math.max(fx, L + 8), R - 8); y = T; uy = 1; }
+      else { x = Math.min(Math.max(fx, L + 8), R - 8); y = B; uy = -1; }
+      var d = Math.max(14, Math.min(46, (Math.abs(x - fx) + Math.abs(y - fy)) * .4));
+      var ox = out === 'r' ? d : out === 'l' ? -d : 0, oy = out === 'b' ? d : out === 't' ? -d : 0;
+      var ex = x - ux * 6, ey = y - uy * 6;
+      var path = 'M' + fx.toFixed(1) + ' ' + fy.toFixed(1) + ' C' + (fx + ox).toFixed(1) + ' ' + (fy + oy).toFixed(1) + ' ' + (ex - ux * d).toFixed(1) + ' ' + (ey - uy * d).toFixed(1) + ' ' + ex.toFixed(1) + ' ' + ey.toFixed(1);
+      var px = -uy * 4.5, py = ux * 4.5;
+      var head = x.toFixed(1) + ',' + y.toFixed(1) + ' ' + (ex + px).toFixed(1) + ',' + (ey + py).toFixed(1) + ' ' + (ex - px).toFixed(1) + ',' + (ey - py).toFixed(1);
+      parts += '<g class="ar ' + (a.cls || '') + '"><path d="' + path + '"/><polygon points="' + head + '"/></g>';
+    });
+    host.insertAdjacentHTML('beforeend', '<svg class="arrows" aria-hidden="true">' + parts + '</svg>');
+  }
+  // cells: [{i, v, k, cls, nt}]; v rong thi la o trong
+  function stripHtml(cells, cols){
+    return '<div class="strip" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' + cells.map(function(c){
+      var empty = c.v === undefined || c.v === null || c.v === '';
+      var v = c.v === ' ' ? '<span class="sp">·</span>' : esc(empty ? '' : c.v);
+      return '<div class="slot"' + (c.id ? ' id="' + c.id + '"' : '') + '><div class="bx ' + (empty ? 'empty ' : '') + (c.cls || '') + '"' + (c.k !== undefined && !empty ? ' data-k="' + esc(c.k) + '"' : '') + '>' + v + '</div>' +
+        '<span class="ix">' + esc(c.i === undefined ? '' : c.i) + '</span>' + (c.nt ? '<span class="nt">' + esc(c.nt) + '</span>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+
+
+//SIM-START
+function linesFor(priv){ return [
+'// Hai ban o chung mot dia chi',
+'Address home =',
+'    new Address("12 Le Loi, Hue");',
+'Student an = new Student(',
+'    new Name("Le", "An"), home);',
+'Student binh = new Student(']
+.concat(priv ? ['    new Name("Le", "Binh"),', '    new Address("12 Le Loi, Hue"));'] : ['    new Name("Le", "Binh"), home);'])
+.concat(['',
+'home.setStreet("5 Tran Phu, Hue");',
+'',
+'System.out.println(an.getInfo());',
+'System.out.println(binh.getInfo());']); }
+function sim(priv){
+  var S = [], out = [], d = priv ? 1 : 0;
+  var m = {a1: null, a2: null, nA: false, nB: false, sA: false, sB: false, home: false, an: false, binh: false};
+  function snap(ln, title, body, hi, pulse){ S.push({ln: ln, title: title, body: body, m: JSON.parse(JSON.stringify(m)), hi: hi || [], pulse: pulse || [], out: out.slice()}); }
+  m.a1 = '12 Le Loi, Hue'; m.home = true;
+  snap([1, 2], 'Tạo đối tượng Address', 'Một đối tượng <code>Address</code> được tạo trên heap. Biến <code>home</code> trên stack giữ tham chiếu tới nó.', ['o-a1'], ['home']);
+  m.nA = true;
+  snap(4, 'Tạo Name cho an', 'Đối số đầu là một đối tượng <code>Name</code> mới, chỉ dành riêng cho <code>an</code>.', ['o-nA']);
+  m.sA = true; m.an = true;
+  snap([3, 4], 'Tạo Student an', 'Trường <code>name</code> trỏ tới <code>Name</code> vừa tạo. Trường <code>address</code> nhận giá trị của <code>home</code>, tức là tham chiếu, không phải bản sao của địa chỉ.', ['o-sA'], ['aA']);
+  m.nB = true;
+  snap(6, 'Tạo Name cho binh', 'Lại một đối tượng <code>Name</code> mới, tách biệt với tên của <code>an</code>.', ['o-nB']);
+  if (priv) {
+    m.a2 = '12 Le Loi, Hue';
+    snap(7, 'Tạo Address thứ hai', 'Với <code>new Address(...)</code>, heap có thêm một đối tượng <code>Address</code>. Nội dung giống hệt đối tượng kia nhưng là một đối tượng khác.', ['o-a2']);
+  }
+  m.sB = true; m.binh = true;
+  snap(priv ? [5, 7] : [5, 6], 'Tạo Student binh', priv ? 'Trường <code>address</code> của <code>binh</code> trỏ tới <code>Address</code> thứ hai. Mỗi học viên giờ có địa chỉ của riêng mình.' : 'Trường <code>address</code> của <code>binh</code> cũng nhận giá trị của <code>home</code>. Hai mũi tên cùng chỉ vào <b>một</b> đối tượng <code>Address</code>.', ['o-sB'], ['aB']);
+  m.a1 = '5 Tran Phu, Hue';
+  snap(8 + d, 'home.setStreet(...)', priv ? 'Chuỗi trong <code>Address</code> của <code>home</code> đổi. Chỉ <code>an</code> trỏ tới đối tượng này; <code>Address</code> của <code>binh</code> giữ nguyên.' : 'Chuỗi bên trong đối tượng <code>Address</code> đổi. Không có mũi tên nào phải sửa, và cả <code>an</code> lẫn <code>binh</code> đều đang trỏ tới đúng đối tượng vừa đổi.', ['o-a1'], priv ? ['home', 'aA'] : ['home', 'aA', 'aB']);
+  out.push('Le An - ' + m.a1);
+  snap(10 + d, 'In thông tin an', '<code>an.getInfo()</code> đi theo hai mũi tên của <code>an</code> để lấy tên và địa chỉ.', ['o-nA', 'o-a1'], ['nA', 'aA']);
+  out.push('Le Binh - ' + (priv ? m.a2 : m.a1));
+  snap(11 + d, 'In thông tin binh', priv ? '<code>binh</code> đi theo mũi tên tới <code>Address</code> riêng nên vẫn thấy địa chỉ cũ.' : '<code>binh</code> đi theo mũi tên tới cùng đối tượng <code>Address</code> nên cũng thấy địa chỉ mới.', ['o-nB', priv ? 'o-a2' : 'o-a1'], ['nB', 'aB']);
+  return S;
+}
+//SIM-END
+var priv = qs('vd') === 'rieng';
+$('priv').checked = priv;
+function obj(id, show, cls, inner){ return '<div class="obj' + (show ? '' : ' hid') + (cls ? ' ' + cls : '') + '" id="' + id + '">' + inner + '</div>'; }
+var st = Stepper({
+  build: function(){ return sim(priv); },
+  render: function(sn){
+    var m = sn.m, H = function(id){ return sn.hi.indexOf(id) >= 0 ? 'hi' : ''; };
+    $('code').innerHTML = codeHtml(linesFor(priv), {cur: sn.ln}); scrollToCur($('code'));
+    function sv(id, name, show){ return '<div class="sv' + (show ? '' : ' hid') + '"><span>' + name + '</span><span class="dot" id="' + id + '"></span></div>'; }
+    function stu(id, label, show, p){ return obj(id, show, H(id), '<div class="oh">Student</div><div class="fld"><span>name</span><span class="dot" id="' + p + 'n"></span></div><div class="fld"><span>address</span><span class="dot" id="' + p + 'a"></span></div>'); }
+    function nam(id, v, show){ return obj(id, show, H(id), '<div class="oh">Name</div>' + v); }
+    function adr(id, v){ return obj(id, !!v, H(id), '<div class="oh">Address</div>' + esc(v || '-')); }
+    var col3 = nam('o-nA', 'Le An', m.nA) + adr('o-a1', m.a1) + nam('o-nB', 'Le Binh', m.nB) + (priv ? adr('o-a2', m.a2) : '');
+    $('mem').innerHTML = '<div class="mcol st">' + sv('d-an', 'an', m.an) + sv('d-home', 'home', m.home) + sv('d-binh', 'binh', m.binh) + '</div>' +
+      '<div class="mcol s2">' + stu('o-sA', '(an)', m.sA, 'fA') + stu('o-sB', '(binh)', m.sB, 'fB') + '</div>' +
+      '<div class="mcol s3">' + col3 + '</div>';
+    var P = function(n){ return sn.pulse.indexOf(n) >= 0 ? 'hi' : ''; }, L = [];
+    if (m.home) L.push({from: 'd-home', to: 'o-a1', cls: 'acc ' + P('home')});
+    if (m.an) L.push({from: 'd-an', to: 'o-sA'});
+    if (m.binh) L.push({from: 'd-binh', to: 'o-sB'});
+    if (m.sA) { L.push({from: 'fAn', to: 'o-nA', cls: P('nA')}); L.push({from: 'fAa', to: 'o-a1', cls: 'acc ' + P('aA')}); }
+    if (m.sB) { L.push({from: 'fBn', to: 'o-nB', cls: P('nB')}); L.push({from: 'fBa', to: priv ? 'o-a2' : 'o-a1', cls: 'acc ' + P('aB')}); }
+    arrows($('mem'), L);
+    $('con').innerHTML = conHtml(sn.out);
+  }
+});
+$('priv').addEventListener('change', function(){ priv = this.checked; st.reset(); });
+st.reset();
+
+})();
+</script>
+</body>
+</html>
