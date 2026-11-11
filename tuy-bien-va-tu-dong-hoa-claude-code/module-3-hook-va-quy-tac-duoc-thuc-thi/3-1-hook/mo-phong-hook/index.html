@@ -149,7 +149,7 @@ function simulate(tool, arg, testsRed){
   } else if(path.indexOf("tests/") === 0 && r.exists){
     r.pre = { matched: true, code: 2, stderr: "Không sửa kiểm thử đã có (" + path + "). Hãy sửa mã nguồn trong app/, hoặc tạo tệp kiểm thử mới." };
   } else {
-    r.pre = { matched: true, code: 0, why: path.indexOf("tests/") === 0 ? "tệp trong tests/ nhưng chưa tồn tại: tệp kiểm thử mới" : "không nằm trong tests/" };
+    r.pre = { matched: true, code: 0, why: path.indexOf("tests/") === 0 ? "tệp trong tests/ nhưng git chưa theo dõi: tệp kiểm thử mới" : "không nằm trong tests/" };
   }
   // permissions
   if(tool === "Read"){
@@ -205,12 +205,12 @@ function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt
 function rows(){
   const r = cur; const out = [];
   out.push(["Thao tác", "<code>" + r.tool + "</code> " + (r.tool === "Bash" ? "chạy lệnh" : "tệp") + " <code>" + esc(r.tool === "Bash" ? r.arg : r.path) + "</code>" +
-    (r.tool === "Bash" ? "" : (r.exists ? " (tệp đã có)" : " (tệp chưa có)")) +
+    (r.tool === "Bash" ? "" : (r.exists ? " (git đang theo dõi)" : " (git chưa theo dõi)")) +
     '<div class="term">JSON cho hook qua stdin: ' + esc(r.json) + "</div>"]);
   // pre
   let pre;
   if(!r.pre.matched) pre = "Bộ khớp <code>Edit|Write</code> không khớp <code>" + r.tool + "</code>: hook không chạy, không thấy thao tác này.";
-  else if(r.pre.code === 2) pre = "<code>chan_sua_kiem_thu.py</code>: tệp nằm trong <code>tests/</code> và đã tồn tại. <span class=\"r-bad\">exit 2</span>" +
+  else if(r.pre.code === 2) pre = "<code>chan_sua_kiem_thu.py</code>: tệp nằm trong <code>tests/</code> và git đang theo dõi (<code>git ls-files --error-unmatch</code> thành công). <span class=\"r-bad\">exit 2</span>" +
     '<div class="term">stderr: ' + esc(r.pre.stderr) + "</div>";
   else pre = "<code>chan_sua_kiem_thu.py</code>: " + r.pre.why + ". <span class=\"r-ok\">exit 0</span>";
   let perm;
@@ -227,8 +227,8 @@ function rows(){
   if(r.post.reason === "notran"){ post = "Không chạy: công cụ chưa chạy thì không có sự kiện PostToolUse."; cls = "skip"; }
   else if(r.post.reason === "matcher"){ post = "Bộ khớp <code>Edit|Write</code> không khớp <code>" + r.tool + "</code>: hook không chạy."; cls = "skip"; }
   else if(!r.post.pytest) post = "<code>chay_kiem_thu.py</code>: không phải tệp <code>.py</code> trong <code>app/</code>, bỏ qua kiểm thử. <span class=\"r-ok\">exit 0</span>";
-  else if(r.post.code === 0) post = "<code>chay_kiem_thu.py</code>: tệp Python trong <code>app/</code>, chạy <code>.venv/bin/pytest -q --tb=line</code>, xanh. <span class=\"r-ok\">exit 0</span>";
-  else post = "<code>chay_kiem_thu.py</code>: chạy <code>.venv/bin/pytest -q --tb=line</code>, có kiểm thử đỏ. <span class=\"r-bad\">exit 2</span>" +
+  else if(r.post.code === 0) post = "<code>chay_kiem_thu.py</code>: tệp Python trong <code>app/</code>, chạy <code>.venv/bin/pytest --tb=no -rf</code>, xanh. <span class=\"r-ok\">exit 0</span>";
+  else post = "<code>chay_kiem_thu.py</code>: chạy <code>.venv/bin/pytest --tb=no -rf</code>, có kiểm thử đỏ. <span class=\"r-bad\">exit 2</span>" +
     '<div class="term">stderr: Kiểm thử đỏ sau khi sửa ' + esc(r.path) + ":\n" + esc(r.post.tail) + "</div>";
   out.push(["Hook PostToolUse", post, cls]);
   // agent
