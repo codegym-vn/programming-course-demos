@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="680">
+<title>Máy tính lợi ích ròng</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800;
+    --b-old:#94a3b8; --b-ai:#6ea0ff; --b-chk:#f0a43c; --b-net:#4ade80;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400;
+      --b-old:#64748b; --b-ai:#3b6fd8; --b-chk:#c27c1a; --b-net:#1f9d55;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1fr 1.1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .f{margin-bottom:8px}
+  .f label{display:flex;justify-content:space-between;gap:8px;font-size:14px;align-items:center}
+  .f label span{min-width:0}
+  .f input[type=number]{width:74px;flex:0 0 auto;font:inherit;font-size:15px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 6px;text-align:right;min-height:38px}
+  .f input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0 0}
+  .f .u{font-size:12.5px;color:var(--muted)}
+  .bars{display:flex;flex-direction:column;gap:8px;margin:4px 0 8px}
+  .bar-row .lbl{font-size:13px;color:var(--muted);margin-bottom:2px}
+  .bar{display:flex;height:30px;border-radius:6px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+  .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#10151f;white-space:nowrap;overflow:hidden;transition:width .3s}
+  .seg.old{background:var(--b-old)} .seg.ai{background:var(--b-ai)} .seg.chk{background:var(--b-chk)}
+  .seg.net{background:repeating-linear-gradient(45deg,var(--b-net) 0 6px,transparent 6px 10px);border-left:2px solid var(--b-net)}
+  .seg.over{background:repeating-linear-gradient(45deg,var(--bad) 0 6px,transparent 6px 10px)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .res{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:14.5px;margin-top:6px}
+  .res b{font-variant-numeric:tabular-nums;text-align:right}
+  .res .big{font-size:16px}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 10px;font-size:14px;margin-top:8px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .remind{font-size:13px;color:var(--muted);margin:8px 0 0}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Nhập hoặc kéo các con số của một việc bạn thử giao cho AI. Số mặc định chỉ là ví dụ giả lập: một trưởng phòng soạn thông báo tuần cho đội.</p>
+  <div class="grid">
+    <div class="card" id="form">
+      <p class="panel-title">Số phút mỗi lần làm việc đó</p>
+      <div class="f"><label for="old"><span>Làm theo cách cũ</span><input type="number" id="old" min="1" max="240" step="1"></label><input type="range" id="old_r" min="1" max="240" step="1" aria-label="Làm theo cách cũ"></div>
+      <div class="f"><label for="ai"><span>Soạn khi có AI <span class="u">(viết yêu cầu, chạy, đọc kết quả)</span></span><input type="number" id="ai" min="0" max="240" step="1"></label><input type="range" id="ai_r" min="0" max="240" step="1" aria-label="Soạn khi có AI"></div>
+      <div class="f"><label for="kmin"><span>Kiểm tra và sửa, lần nhanh nhất</span><input type="number" id="kmin" min="0" max="240" step="1"></label><input type="range" id="kmin_r" min="0" max="240" step="1" aria-label="Kiểm tra và sửa, lần nhanh nhất"></div>
+      <div class="f"><label for="kmax"><span>Kiểm tra và sửa, lần lâu nhất</span><input type="number" id="kmax" min="0" max="240" step="1"></label><input type="range" id="kmax_r" min="0" max="240" step="1" aria-label="Kiểm tra và sửa, lần lâu nhất"></div>
+      <p class="panel-title" style="margin-top:10px">Tần suất và dữ liệu thử</p>
+      <div class="f"><label for="n"><span>Số lần mỗi tuần</span><input type="number" id="n" min="1" max="50" step="1"></label><input type="range" id="n_r" min="1" max="50" step="1" aria-label="Số lần mỗi tuần"></div>
+      <div class="f"><label for="tries"><span>Số lần đã thử và tự ghi giờ</span><input type="number" id="tries" min="1" max="60" step="1"></label><input type="range" id="tries_r" min="1" max="60" step="1" aria-label="Số lần đã thử và tự ghi giờ"></div>
+      <button class="btn" id="reset">Về số ví dụ</button>
+    </div>
+    <div class="card">
+      <p class="panel-title">Một lần làm (phút)</p>
+      <div class="bars">
+        <div class="bar-row"><div class="lbl">Cách cũ</div><div class="bar" id="barOld"></div></div>
+        <div class="bar-row"><div class="lbl">Có AI = soạn + kiểm tra và sửa (lần lâu nhất)</div><div class="bar" id="barAi"></div></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--b-old)"></i>Cách cũ</span>
+        <span><i style="background:var(--b-ai)"></i>Soạn khi có AI</span>
+        <span><i style="background:var(--b-chk)"></i>Kiểm tra và sửa</span>
+        <span><i style="background:var(--b-net)"></i>Lợi ích ròng</span>
+      </div>
+      <div class="res" id="res"></div>
+      <div id="msgs"></div>
+      <p class="remind"><b>Lợi ích ròng = thời gian làm theo cách cũ − thời gian soạn khi có AI − thời gian kiểm tra và sửa.</b> Con số tự ghi, nên báo thành khoảng và nói rõ ai đo, đo bao lâu.</p>
+    </div>
+  </div>
+</div>
+<script>
+// Số ví dụ giả lập (khác mọi số liệu đáp án trong khoá): 25, 9, kiểm tra 5-10, 6 lần/tuần, đã thử 12 lần.
+// Kiểm bằng Python: gộp 25-9 = 16 phút/lần (64%); ròng 6-11 phút/lần (24%-44%); mỗi tuần gộp 96, ròng 36-66 phút.
+const DEF = {old:25, ai:9, kmin:5, kmax:10, n:6, tries:12};
+const KEYS = Object.keys(DEF);
+const $ = id => document.getElementById(id);
+const v = {};
+const pct = (a,b) => b>0 ? Math.round(a/b*100) : 0;
+const num = x => (Math.round(x*10)/10).toLocaleString("vi-VN");
+function set(k, val, fromRange){
+  const el = $(k), r = $(k+"_r");
+  let x = parseFloat(String(val).replace(",", "."));
+  if(isNaN(x)) return;
+  x = Math.max(+el.min, Math.min(+el.max, x));
+  v[k] = x;
+  if(fromRange!==false) el.value = x;
+  r.value = x;
+}
+function seg(cls, w, total, label){
+  if(w<=0) return "";
+  return '<div class="seg '+cls+'" style="width:'+(w/total*100)+'%" title="'+label+'">'+(w/total>0.12?num(w):"")+'</div>';
+}
+function render(){
+  if(v.kmin > v.kmax){ const t=v.kmin; v.kmin=v.kmax; v.kmax=t; $("kmin").value=$("kmin_r").value=v.kmin; $("kmax").value=$("kmax_r").value=v.kmax; }
+  const gross = v.old - v.ai;
+  const netLo = v.old - v.ai - v.kmax, netHi = v.old - v.ai - v.kmin;
+  const withAi = v.ai + v.kmax;
+  const total = Math.max(v.old, withAi);
+  $("barOld").innerHTML = seg("old", v.old, total, "Cách cũ");
+  let h = seg("ai", v.ai, total, "Soạn khi có AI") + seg("chk", v.kmax, total, "Kiểm tra và sửa");
+  if(netLo > 0) h += seg("net", netLo, total, "Lợi ích ròng");
+  $("barAi").innerHTML = h;
+  const range = (a,b) => a===b ? num(a) : num(a)+" đến "+num(b);
+  $("res").innerHTML =
+    "<span>Lợi ích gộp (quên trừ kiểm tra), mỗi lần</span><b>"+num(gross)+" phút ("+pct(gross,v.old)+"%)</b>"+
+    "<span>Lợi ích ròng, mỗi lần</span><b class=\"big\">"+range(netLo,netHi)+" phút</b>"+
+    "<span>Lợi ích gộp, mỗi tuần</span><b>"+num(gross*v.n)+" phút</b>"+
+    "<span>Lợi ích ròng, mỗi tuần</span><b class=\"big\">"+range(netLo*v.n,netHi*v.n)+" phút</b>"+
+    "<span>Ròng so với cách cũ</span><b>"+(pct(netLo,v.old)===pct(netHi,v.old)?pct(netLo,v.old):pct(netLo,v.old)+"% đến "+pct(netHi,v.old))+"%</b>";
+  const m = [];
+  if(netHi < 0) m.push(["bad","<b>Lợi ích ròng âm:</b> kể cả lần kiểm tra nhanh nhất, làm với AI vẫn lâu hơn cách cũ "+num(-netHi)+" phút. Với việc này, giao cho AI đang làm chậm đi."]);
+  else if(netLo < 0) m.push(["bad","<b>Có lần lợi ích ròng âm:</b> lần kiểm tra lâu nhất khiến làm với AI chậm hơn cách cũ "+num(-netLo)+" phút. Đừng chỉ báo con số của lần nhanh nhất."]);
+  else if(netLo === 0 && netHi === 0) m.push(["warn","Lợi ích ròng bằng 0: tiết kiệm được ở bước soạn vừa đủ bù thời gian kiểm tra và sửa."]);
+  if(v.tries <= 1) m.push(["warn","<b>Chỉ có một lần thử:</b> chưa đủ để kết luận. Một lần, một người, một việc có thể rất khác lần sau; hãy thử thêm và ghi cả thời gian kiểm tra."]);
+  else if(v.tries < 5) m.push(["warn","Mới có "+v.tries+" lần thử: con số còn dao động nhiều, nên ghi rõ số lần khi báo cáo."]);
+  if(gross > 0 && v.kmax > 0 && pct(gross,v.old) - pct(Math.max(netLo,0),v.old) >= 15) m.push(["","Nếu quên trừ thời gian kiểm tra và sửa, bạn sẽ báo “tiết kiệm "+pct(gross,v.old)+"%”, cao hơn hẳn mức ròng."]);
+  if(!m.length || m.every(x=>x[0]==="")) m.push(["ok","Câu báo cáo có thể viết: “Tự ghi trong "+v.tries+" lần thử: tiết kiệm ròng khoảng "+range(Math.max(netLo,0)*v.n,netHi*v.n)+" phút mỗi tuần.”"]);
+  $("msgs").innerHTML = m.map(x=>'<div class="msg '+x[0]+'">'+x[1]+'</div>').join("");
+}
+KEYS.forEach(k=>{
+  $(k).addEventListener("input", e=>{ set(k, e.target.value, false); render(); });
+  $(k).addEventListener("change", e=>{ set(k, e.target.value); render(); });
+  $(k+"_r").addEventListener("input", e=>{ set(k, e.target.value); render(); });
+});
+function load(){
+  const q = new URLSearchParams(location.search);
+  KEYS.forEach(k=>set(k, q.has(k) ? q.get(k) : DEF[k]));
+}
+$("reset").onclick = ()=>{ KEYS.forEach(k=>set(k, DEF[k])); render(); };
+load(); render();
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Tra chính sách bảo hành và đổi trả</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800; --paper:#fffdf8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#4a3d0e; --cur-bar:#e0b400; --paper:#1b1f27;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .search{display:flex;gap:6px;margin-bottom:8px}
+  .search input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:236px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .toc{display:flex;flex-direction:column;gap:3px;max-height:470px;overflow-y:auto}
+  .toc button{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);font:inherit;font-size:14px;padding:5px 8px;min-height:36px;border-radius:8px;cursor:pointer}
+  .toc button:hover{background:var(--accent-soft)}
+  .toc button[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+  .toc .lbl{flex:1;min-width:0}
+  .toc .n{font-size:12px;font-weight:700;background:var(--cur);border:1px solid var(--cur-bar);border-radius:10px;padding:0 6px;font-variant-numeric:tabular-nums}
+  .toc button.dim{opacity:.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .doc{height:470px;overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14.5px;line-height:1.55;position:relative}
+  .doc .hd{text-align:center;margin-bottom:10px}
+  .doc .hd p{margin:0}
+  .doc h4{margin:12px 0 4px;font-size:15px}
+  .doc h4:first-child{margin-top:0}
+  .doc ol{margin:0 0 4px;padding-left:22px}
+  .doc ol li{margin:2px 0}
+  .doc ul{list-style:none;margin:2px 0;padding-left:8px}
+  .doc .sign{margin-top:12px;text-align:right}
+  mark{background:var(--cur);color:inherit;border-radius:3px;box-shadow:0 0 0 1px var(--cur-bar)}
+  .status{margin-top:8px;font-size:13.5px;color:var(--muted);min-height:20px}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .toc{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:4px}
+    .toc button{width:auto;flex:0 0 auto;white-space:nowrap}
+    .toc .full{display:none}
+    .doc{height:400px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm một điều ở mục lục để đọc, hoặc gõ từ khoá (gõ có dấu hay không dấu đều được) để tô sáng chỗ khớp. Trang chỉ để tra, không trả lời hộ năm tình huống.</p>
+  <div class="search">
+    <input id="q" type="search" placeholder="Tìm, ví dụ: số seri, đại lý" aria-label="Tìm trong chính sách" autocomplete="off">
+    <button class="btn" id="clr">Xoá</button>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="toc" id="toc" role="tablist"></div></div>
+    <div>
+      <div class="doc" id="doc" aria-live="polite"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+<script>
+const HEAD = [
+  "CÔNG TY CỔ PHẦN GIA DỤNG TÂN VIỆT",
+  "CHÍNH SÁCH BẢO HÀNH VÀ ĐỔI TRẢ SẢN PHẨM",
+  "(Ban hành kèm theo Quyết định số 112/QĐ-TV ngày 22/12/2025 của Tổng Giám đốc)"
+];
+const SIGN = "TỔNG GIÁM ĐỐC · (đã ký)";
+// Nguyên văn 10 điều của chính sách trong bài. Mục có dạng [chữ, [điểm a, b, c...]] là khoản có các điểm.
+const DIEU = [
+ {t:"Điều 1. Phạm vi áp dụng", k:[
+  "Chính sách này áp dụng cho sản phẩm do Công ty phân phối, được mua tại cửa hàng của Công ty, trên trang bán hàng trực tuyến của Công ty hoặc tại đại lý được Công ty uỷ quyền.",
+  "Chính sách này không hạn chế quyền của khách hàng theo quy định của pháp luật về bảo vệ quyền lợi người tiêu dùng. Nội dung chưa quy định trong Chính sách này thực hiện theo quy định của pháp luật."]},
+ {t:"Điều 2. Thời hạn bảo hành", k:[
+  ["Thời hạn bảo hành tính từ ngày mua ghi trên hoá đơn hoặc phiếu bảo hành điện tử:", ["a) Nồi cơm điện, ấm siêu tốc, quạt điện: 12 tháng;", "b) Bếp từ, máy lọc nước: 24 tháng;", "c) Động cơ của quạt điện: 36 tháng;", "d) Lõi lọc của máy lọc nước và phụ kiện tiêu hao: không thuộc phạm vi bảo hành."]],
+  "Sản phẩm đã sửa chữa bảo hành được tiếp tục bảo hành trong thời hạn còn lại. Linh kiện thay mới được bảo hành ít nhất 03 tháng."]},
+ {t:"Điều 3. Đổi sản phẩm mới", k:[
+  "Trong 07 ngày kể từ ngày khách nhận hàng, sản phẩm có lỗi kỹ thuật do nhà sản xuất, được Trung tâm bảo hành xác nhận, được đổi sản phẩm mới cùng mẫu. Hết mẫu đó thì đổi mẫu tương đương hoặc hoàn tiền.",
+  "Sản phẩm đổi phải còn đủ hộp, phụ kiện, quà tặng kèm (nếu có) và không trầy xước, móp méo do người dùng.",
+  "Sản phẩm không có lỗi kỹ thuật: Công ty không nhận đổi, trả, trừ chương trình bán hàng có công bố riêng. Với hàng mua trực tuyến, việc đổi, trả thực hiện theo quy định của pháp luật.",
+  "Sau 07 ngày, sản phẩm lỗi được sửa chữa bảo hành theo Điều 2, không đổi mới, trừ trường hợp được duyệt theo Điều 8."]},
+ {t:"Điều 4. Trường hợp không được bảo hành", k:[
+  ["Sản phẩm không được bảo hành khi:", ["a) Hết thời hạn bảo hành;", "b) Hư hỏng do rơi, va đập, vào nước, côn trùng;", "c) Hư hỏng do dùng sai nguồn điện, điện áp không ổn định hoặc sét đánh;", "d) Đã tháo, sửa tại nơi không phải Trung tâm bảo hành hoặc điểm bảo hành được uỷ quyền;", "đ) Tem bảo hành, số seri bị rách, tẩy xoá."]],
+  "Việc xác định nguyên nhân hư hỏng do Trung tâm bảo hành thực hiện sau khi kiểm tra sản phẩm. Trường hợp từ chối bảo hành, Trung tâm lập biên bản kiểm tra ghi rõ nguyên nhân và gửi khách hàng; khách hàng có thể chọn sửa chữa có tính phí."]},
+ {t:"Điều 5. Tiếp nhận yêu cầu", k:[
+  "Khách hàng gửi yêu cầu qua tổng đài, trang bán hàng trực tuyến, cửa hàng hoặc đại lý.",
+  "Nhân viên Chăm sóc khách hàng tạo yêu cầu trên hệ thống quản lý yêu cầu ngay trong ngày tiếp nhận, ghi mã khách hàng, mã sản phẩm, số seri, ngày mua và mô tả lỗi.",
+  "Khách hàng không có hoá đơn thì tra theo số seri trên hệ thống."]},
+ {t:"Điều 6. Thời hạn xử lý", k:[
+  "Nhân viên Chăm sóc khách hàng liên hệ lại khách hàng trong 01 ngày làm việc kể từ khi tiếp nhận.",
+  "Việc sửa chữa hoàn thành trong 07 ngày làm việc kể từ ngày Trung tâm bảo hành nhận sản phẩm. Với bếp từ và máy lọc nước tại nội thành Hà Nội và TP. Hồ Chí Minh, kỹ thuật viên đến kiểm tra tại nhà trong 02 ngày làm việc.",
+  "Quá 07 ngày làm việc chưa sửa xong, nhân viên Chăm sóc khách hàng báo khách lý do và ngày dự kiến. Quá 15 ngày làm việc chưa sửa xong, Trưởng phòng Chăm sóc khách hàng đề xuất phương án đổi sản phẩm theo Điều 8."]},
+ {t:"Điều 7. Phí vận chuyển", k:[
+  "Sản phẩm thuộc diện đổi mới theo Điều 3 hoặc bảo hành theo Điều 2: Công ty chịu phí vận chuyển hai chiều.",
+  "Sản phẩm không được bảo hành theo Điều 4 hoặc sửa chữa có tính phí: khách hàng chịu phí vận chuyển và phí sửa chữa theo báo giá, sau khi đồng ý báo giá."]},
+ {t:"Điều 8. Ngoại lệ và người duyệt", k:[
+  "Trưởng phòng Chăm sóc khách hàng duyệt ngoại lệ có giá trị dưới 2.000.000 đồng, như bảo hành sản phẩm quá hạn không quá 30 ngày hoặc miễn phí vận chuyển ngoài trường hợp tại khoản 1 Điều 7. Đổi sản phẩm mới ngoài trường hợp tại Điều 3, hoặc ngoại lệ từ 2.000.000 đồng trở lên, do Giám đốc Vận hành duyệt.",
+  "Nhân viên Chăm sóc khách hàng và trưởng nhóm tổng đài không hứa ngoại lệ với khách hàng trước khi được duyệt.",
+  "Mọi ngoại lệ được ghi trên hệ thống quản lý yêu cầu, kèm lý do và người duyệt."]},
+ {t:"Điều 9. Khách hàng mua qua đại lý", k:[
+  "Sản phẩm mua qua đại lý được bảo hành như sản phẩm mua trực tiếp. Khách hàng mang sản phẩm đến đại lý hoặc gọi tổng đài.",
+  "Việc đổi sản phẩm mới theo Điều 3 do khách hàng làm tại đại lý nơi mua; đại lý liên hệ Công ty để xác nhận lỗi. Việc hoàn tiền (nếu có) do đại lý thực hiện; phòng Chăm sóc khách hàng không hoàn tiền trực tiếp cho khách mua qua đại lý.",
+  "Giá bán và khuyến mãi tại đại lý không thuộc phạm vi Chính sách này; phản ánh của khách được chuyển phòng Kinh doanh."]},
+ {t:"Điều 10. Khiếu nại và tổ chức thực hiện", k:[
+  "Khách hàng không đồng ý với kết quả xử lý thì trưởng nhóm tổng đài tiếp nhận khiếu nại; Trưởng phòng Chăm sóc khách hàng trả lời bằng văn bản trong 05 ngày làm việc.",
+  "Khách hàng có quyền khiếu nại và yêu cầu giải quyết tranh chấp theo quy định của pháp luật.",
+  "Chính sách này có hiệu lực từ ngày 01/01/2026, thay thế Chính sách bảo hành ban hành năm 2023. Phòng Chăm sóc khách hàng hướng dẫn và giải đáp việc thực hiện."]}
+];
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Bỏ dấu từng ký tự, giữ nguyên độ dài để vị trí khớp trùng với chữ gốc.
+const fold = s => Array.from(s.normalize("NFC")).map(ch=>{
+  if(ch==="đ") return "d"; if(ch==="Đ") return "d";
+  const b = ch.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return (b.length===1 ? b : ch).toLowerCase();
+}).join("");
+let query = "", cur = -1; // -1 = toàn văn
+function ranges(text){
+  if(!query) return [];
+  const f = fold(text), r = [];
+  let i = f.indexOf(query);
+  while(i>=0){ r.push([i, i+query.length]); i = f.indexOf(query, i+query.length); }
+  return r;
+}
+function hl(text){
+  const chars = Array.from(text.normalize("NFC"));
+  const rs = ranges(text);
+  if(!rs.length) return esc(text);
+  let out = "", p = 0;
+  rs.forEach(([a,b])=>{ out += esc(chars.slice(p,a).join("")) + "<mark>" + esc(chars.slice(a,b).join("")) + "</mark>"; p = b; });
+  return out + esc(chars.slice(p).join(""));
+}
+function countIn(d){
+  let n = ranges(d.t).length;
+  d.k.forEach(x=>{ if(Array.isArray(x)){ n += ranges(x[0]).length; x[1].forEach(y=>n+=ranges(y).length); } else n += ranges(x).length; });
+  return n;
+}
+function dieuHtml(d){
+  let h = "<h4>"+hl(d.t)+"</h4><ol>";
+  d.k.forEach(x=>{
+    if(Array.isArray(x)) h += "<li>"+hl(x[0])+"<ul>"+x[1].map(y=>"<li>"+hl(y)+"</li>").join("")+"</ul></li>";
+    else h += "<li>"+hl(x)+"</li>";
+  });
+  return h+"</ol>";
+}
+function renderToc(){
+  const counts = DIEU.map(countIn);
+  let h = '<button role="tab" data-i="-1" aria-current="'+(cur===-1)+'"><span class="lbl">Toàn văn</span>'+(query?'<span class="n">'+counts.reduce((a,b)=>a+b,0)+'</span>':'')+'</button>';
+  DIEU.forEach((d,i)=>{
+    const m = d.t.match(/^(Điều \d+)\. (.*)$/);
+    h += '<button role="tab" data-i="'+i+'" aria-current="'+(cur===i)+'"'+(query && !counts[i] ? ' class="dim"' : '')+'><span class="lbl"><b>'+m[1]+'</b><span class="full">. '+esc(m[2])+'</span></span>'+(query && counts[i]?'<span class="n">'+counts[i]+'</span>':'')+'</button>';
+  });
+  $("toc").innerHTML = h;
+  $("toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cur = +b.dataset.i; render(true); });
+  return counts;
+}
+function render(scrollTop){
+  const counts = renderToc();
+  let h = "";
+  if(cur===-1){
+    h = '<div class="hd"><p><b>'+hl(HEAD[0])+'</b></p><p><b>'+hl(HEAD[1])+'</b></p><p><i>'+hl(HEAD[2])+'</i></p></div>';
+    h += DIEU.map(dieuHtml).join("");
+    h += '<p class="sign"><b>'+esc(SIGN.split(" · ")[0])+'</b> · '+esc(SIGN.split(" · ")[1])+'</p>';
+  } else {
+    h = dieuHtml(DIEU[cur]);
+  }
+  $("doc").innerHTML = h;
+  const total = counts.reduce((a,b)=>a+b,0) + (cur===-1 ? HEAD.reduce((a,x)=>a+ranges(x).length,0) : 0);
+  if(!query) $("status").textContent = cur===-1 ? "Đang xem toàn văn chính sách (10 điều)." : "Đang xem "+DIEU[cur].t.split(".")[0]+".";
+  else {
+    const nd = counts.filter(Boolean).length;
+    const here = cur===-1 ? total : counts[cur];
+    $("status").textContent = nd ? "Khớp “"+$("q").value.trim()+"”: "+counts.reduce((a,b)=>a+b,0)+" chỗ trong "+nd+" điều. "+(cur===-1 ? "" : "Điều đang xem có "+here+" chỗ. ")+"Điều có số ở mục lục là điều có chỗ khớp."
+                                  : "Không có chỗ nào khớp “"+$("q").value.trim()+"”. Thử từ ngắn hơn.";
+  }
+  const first = $("doc").querySelector("mark"), doc = $("doc");
+  if(first){ let y=0, e=first; while(e && e!==doc){ y+=e.offsetTop; e=e.offsetParent; } doc.scrollTop = Math.max(0, y-60); }
+  else if(scrollTop) doc.scrollTop = 0;
+}
+let timer = null;
+$("q").addEventListener("input", ()=>{
+  clearTimeout(timer);
+  timer = setTimeout(()=>{
+    const v = fold($("q").value.trim().replace(/\s+/g," "));
+    query = v.length >= 2 ? v : "";
+    if(query && cur>=0 && !countIn(DIEU[cur])){ const c = DIEU.map(countIn); const j = c.findIndex(Boolean); if(j>=0) cur = j; }
+    render(false);
+  }, 150);
+});
+$("clr").onclick = ()=>{ $("q").value = ""; query = ""; render(true); $("q").focus(); };
+const p = new URLSearchParams(location.search);
+if(p.has("dieu")){ const d = parseInt(p.get("dieu"),10); if(d>=1 && d<=10) cur = d-1; }
+if(p.has("tim")){ $("q").value = p.get("tim"); const v = fold(p.get("tim").trim()); query = v.length>=2 ? v : ""; }
+render(!query);
+</script>
+</body>
+</html>
