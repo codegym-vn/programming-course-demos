@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng script kiểm đầu ra JSON của claude -p</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8; --skip:#9aa3b2;
+    --j-key:#1d4ed8; --j-str:#047857; --j-num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2d10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c; --skip:#5d6676;
+      --j-key:#93c5fd; --j-str:#86efac; --j-num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .mono,code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:295px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:7px;padding:2px 8px;font-size:12.5px;cursor:pointer;min-height:28px;font-family:inherit}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  .exit{font-size:13px;margin:2px 0 4px}
+  .exit b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 6px;margin-left:6px;background:var(--warn-soft);color:var(--warn)}
+  pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12.3px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+  pre .k{color:var(--j-key)} pre .s{color:var(--j-str)} pre .n{color:var(--j-num)}
+  pre .hl{background:var(--cur);outline:1px solid var(--cur-bar);border-radius:3px}
+  .checks{display:flex;flex-direction:column;gap:3px}
+  .ck{display:grid;grid-template-columns:22px 1fr auto;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:13px;line-height:1.35;min-height:34px}
+  .ck input{width:17px;height:17px;margin:0;cursor:pointer;accent-color:var(--accent)}
+  .ck code{font-size:12.3px;background:var(--code-bg);border-radius:4px;padding:0 4px}
+  .ck .r{font-size:12px;font-weight:700;white-space:nowrap}
+  .ck.cur{border-color:var(--cur-bar);box-shadow:0 0 0 1px var(--cur-bar);background:var(--cur)}
+  .ck.off{color:var(--skip)}
+  .ck.loose{border-style:dashed}
+  .r.pass{color:var(--ok)} .r.fail{color:var(--bad)} .r.skip{color:var(--skip)}
+  .presets{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 2px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 9px;min-height:36px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.sm{min-height:30px;padding:2px 9px;font-size:12.5px;font-weight:500}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 6px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 11px;font-size:14px;min-height:64px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .status code{font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn một đầu ra của <code>claude -p</code>, bật hoặc tắt từng phép kiểm, rồi bấm <b>Bước tiếp</b> để script xét lần lượt và kết luận đạt hay không.</p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Đầu ra của lượt chạy</p>
+      <div class="chips" id="runs" role="group" aria-label="Chọn lượt chạy"></div>
+      <div class="exit" id="exit"></div>
+      <pre id="json" aria-label="Đầu ra JSON"></pre>
+    </div>
+    <div class="card">
+      <p class="panel-title">Hàm kiểm của script (bỏ chọn để tắt một phép kiểm)</p>
+      <div class="checks" id="checks"></div>
+      <div class="presets">
+        <button class="btn ghost sm" id="pFull">Đủ bốn phép kiểm</button>
+        <button class="btn ghost sm" id="pLoose">Chỉ tin subtype</button>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" id="bPrev">Lùi lại</button>
+        <button class="btn" id="bNext">Bước tiếp</button>
+        <button class="btn ghost" id="bAll">Chạy hết</button>
+        <button class="btn ghost" id="bReset">Làm lại</button>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+<script>
+/* ENGINE START */
+const EXPECTED = ["ISSUE-001", "ISSUE-002", "ISSUE-003", "ISSUE-004", "ISSUE-005"];
+
+const RUNS = [
+  { id: "chan", label: "Bị chặn Bash", exit: 0, real: true, good: false,
+    data: { subtype: "success", is_error: false, num_turns: 2, total_cost_usd: 0.1022,
+      permission_denials: [{ tool_name: "Bash", tool_input: { command: "python -m pytest -q" } }],
+      result: "Tôi chưa chạy được pytest..." } },
+  { id: "hetluot", label: "Hết lượt", exit: 1, real: true, good: false,
+    data: { subtype: "error_max_turns", is_error: true, num_turns: 3, total_cost_usd: 0.0845,
+      permission_denials: [], result: "" } },
+  { id: "bare", label: "--bare chưa đăng nhập", exit: 1, real: true, good: false,
+    data: { subtype: "success", is_error: true, total_cost_usd: 0,
+      permission_denials: [], result: "Not logged in" } },
+  { id: "dat", label: "Đủ năm phiếu", exit: 0, real: true, good: true,
+    data: { subtype: "success", is_error: false, num_turns: 8, total_cost_usd: 0.1912,
+      permission_denials: [],
+      structured_output: { phieu: EXPECTED.map(function(m){ return { ma: m }; }) } } },
+  { id: "thieu", label: "Thiếu một phiếu", exit: 0, real: false, good: false,
+    data: { subtype: "success", is_error: false, num_turns: 7, total_cost_usd: 0.17,
+      permission_denials: [],
+      structured_output: { phieu: ["ISSUE-001", "ISSUE-002", "ISSUE-004", "ISSUE-005"].map(function(m){ return { ma: m }; }) } } }
+];
+
+const CHECKS = [
+  { id: "exit", text: "Mã thoát bằng 0", field: null, on: true, loose: false },
+  { id: "is_error", text: "<code>is_error</code> là <code>false</code>", field: "is_error", on: true, loose: false },
+  { id: "denials", text: "<code>permission_denials</code> rỗng", field: "permission_denials", on: true, loose: false },
+  { id: "phieu", text: "<code>structured_output</code> đủ năm phiếu, không thừa", field: "structured_output", on: true, loose: false },
+  { id: "subtype", text: "<code>subtype</code> là <code>\"success\"</code> (kiểm dễ dãi)", field: "subtype", on: false, loose: true }
+];
+
+function idsOf(data){
+  const so = data.structured_output;
+  if(!so || !Array.isArray(so.phieu)) return null;
+  return so.phieu.map(function(p){ return p.ma; });
+}
+
+function evalCheck(id, run){
+  const d = run.data;
+  if(id === "exit"){
+    return run.exit === 0 ? { pass: true, why: "Mã thoát 0." } : { pass: false, why: "Mã thoát " + run.exit + "." };
+  }
+  if(id === "is_error"){
+    return d.is_error ? { pass: false, why: "is_error là true: lượt chạy hỏng." } : { pass: true, why: "is_error là false." };
+  }
+  if(id === "denials"){
+    const n = (d.permission_denials || []).length;
+    if(n === 0) return { pass: true, why: "Không có thao tác nào bị từ chối." };
+    return { pass: false, why: "Có " + n + " thao tác bị từ chối: " + d.permission_denials[0].tool_name + ". Agent đã thiếu thứ nó cần." };
+  }
+  if(id === "phieu"){
+    const got = idsOf(d);
+    if(got === null) return { pass: false, why: "Không có structured_output: không có bảng phiếu nào để dùng." };
+    const missing = EXPECTED.filter(function(m){ return got.indexOf(m) < 0; });
+    const extra = got.filter(function(m){ return EXPECTED.indexOf(m) < 0; });
+    if(missing.length === 0 && extra.length === 0 && got.length === EXPECTED.length) return { pass: true, why: "Đủ " + EXPECTED.length + " phiếu, khớp tên tệp trong docs/issues/." };
+    const parts = [];
+    if(missing.length) parts.push("thiếu " + missing.join(", "));
+    if(extra.length) parts.push("thừa " + extra.join(", "));
+    if(!parts.length) parts.push("có phiếu bị lặp");
+    return { pass: false, why: "Bảng phiếu " + parts.join("; ") + "." };
+  }
+  if(id === "subtype"){
+    return d.subtype === "success" ? { pass: true, why: "subtype là success." } : { pass: false, why: "subtype là " + d.subtype + "." };
+  }
+  throw new Error("unknown check " + id);
+}
+
+/* Sinh danh sách bước: mỗi phép kiểm là một bước (đã tắt thì bỏ qua), bước cuối là kết luận. */
+function buildSteps(run, enabled){
+  const steps = [];
+  const problems = [];
+  CHECKS.forEach(function(c){
+    if(!enabled[c.id]){ steps.push({ check: c.id, skip: true }); return; }
+    const r = evalCheck(c.id, run);
+    if(!r.pass) problems.push(c.id);
+    steps.push({ check: c.id, skip: false, pass: r.pass, why: r.why });
+  });
+  const verdict = problems.length === 0 ? "DAT" : "KHONG_DAT";
+  let kind;
+  if(verdict === "DAT" && run.good) kind = "ok";
+  else if(verdict === "DAT" && !run.good) kind = "missed";
+  else if(verdict !== "DAT" && !run.good) kind = "caught";
+  else kind = "false_alarm";
+  const any = CHECKS.some(function(c){ return enabled[c.id]; });
+  steps.push({ final: true, verdict: verdict, problems: problems, kind: kind, any: any });
+  return steps;
+}
+/* ENGINE END */
+
+(function(){
+  if(typeof document === "undefined") return;
+  const $ = function(id){ return document.getElementById(id); };
+  const qs = new URLSearchParams(location.search);
+  let runIdx = Math.min(Math.max(parseInt(qs.get("vd") || "1", 10) - 1, 0), RUNS.length - 1);
+  if(isNaN(runIdx)) runIdx = 0;
+  const enabled = {};
+  CHECKS.forEach(function(c){ enabled[c.id] = c.on; });
+  let steps = [];
+  let pos = 0;
+
+  function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function hv(v){
+    if(v === null) return '<span class="n">null</span>';
+    if(typeof v === "string") return '<span class="s">' + esc(JSON.stringify(v)) + "</span>";
+    if(typeof v === "number" || typeof v === "boolean") return '<span class="n">' + String(v) + "</span>";
+    if(Array.isArray(v)) return "[" + v.map(hv).join(", ") + "]";
+    return "{" + Object.keys(v).map(function(k){ return '<span class="k">' + esc(JSON.stringify(k)) + "</span>: " + hv(v[k]); }).join(", ") + "}";
+  }
+
+  function renderJson(data, field){
+    const keys = Object.keys(data);
+    const lines = ["{"];
+    keys.forEach(function(k, i){
+      let line = '  <span class="k">"' + k + '"</span>: ' + hv(data[k]) + (i < keys.length - 1 ? "," : "");
+      if(field && k === field) line = '<span class="hl">' + line + "</span>";
+      lines.push(line);
+    });
+    lines.push("}");
+    $("json").innerHTML = lines.join("\n");
+  }
+
+  function renderRuns(){
+    $("runs").innerHTML = "";
+    RUNS.forEach(function(r, i){
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = r.label;
+      b.setAttribute("aria-pressed", i === runIdx ? "true" : "false");
+      b.addEventListener("click", function(){ runIdx = i; restart(); });
+      $("runs").appendChild(b);
+    });
+  }
+
+  function renderChecks(){
+    const box = $("checks");
+    box.innerHTML = "";
+    const shown = pos > 0 ? steps.slice(0, pos) : [];
+    const curStep = pos > 0 ? steps[pos - 1] : null;
+    CHECKS.forEach(function(c, i){
+      const row = document.createElement("label");
+      row.className = "ck" + (c.loose ? " loose" : "") + (enabled[c.id] ? "" : " off") + (curStep && curStep.check === c.id ? " cur" : "");
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = !!enabled[c.id];
+      cb.addEventListener("change", function(){ enabled[c.id] = cb.checked; restart(); });
+      const t = document.createElement("span"); t.innerHTML = c.text;
+      const r = document.createElement("span"); r.className = "r";
+      const st = shown.filter(function(s){ return s.check === c.id; })[0];
+      if(st){
+        if(st.skip){ r.textContent = "bỏ qua"; r.classList.add("skip"); }
+        else if(st.pass){ r.textContent = "qua"; r.classList.add("pass"); }
+        else { r.textContent = "trượt"; r.classList.add("fail"); }
+      }
+      row.appendChild(cb); row.appendChild(t); row.appendChild(r);
+      box.appendChild(row);
+    });
+  }
+
+  function render(){
+    const run = RUNS[runIdx];
+    renderRuns();
+    $("exit").innerHTML = "Mã thoát của lệnh: <b>" + run.exit + "</b>" + (run.real ? "" : '<span class="tag">ví dụ dựng, không phải lượt chạy thật</span>');
+    const cur = pos > 0 ? steps[pos - 1] : null;
+    const chk = cur && !cur.final ? CHECKS.filter(function(c){ return c.id === cur.check; })[0] : null;
+    renderJson(run.data, chk && !cur.skip ? chk.field : null);
+    renderChecks();
+    const st = $("status");
+    st.className = "status";
+    if(!cur){
+      st.innerHTML = "Lượt <b>" + esc(run.label) + "</b>. Bấm <b>Bước tiếp</b> để script xét phép kiểm đầu tiên.";
+    } else if(!cur.final){
+      if(cur.skip) st.innerHTML = "Phép kiểm này đang tắt, script bỏ qua.";
+      else { st.className = "status " + (cur.pass ? "ok" : "bad"); st.innerHTML = (cur.pass ? "Qua. " : "Trượt. ") + esc(cur.why); }
+    } else {
+      const v = cur.verdict === "DAT" ? "ĐẠT, thoát mã 0" : "KHÔNG ĐẠT, thoát mã 1";
+      if(cur.kind === "ok"){ st.className = "status ok"; st.innerHTML = "Kết luận: <b>" + v + "</b>. Lượt chạy làm đủ việc, và script xác nhận được bằng số liệu."; }
+      else if(cur.kind === "caught"){ st.className = "status ok"; st.innerHTML = "Kết luận: <b>" + v + "</b>. Script bắt được lượt hỏng. Thử tắt phép kiểm đã trượt để xem lượt này có lọt qua không."; }
+      else if(cur.kind === "missed"){ st.className = "status warn"; st.innerHTML = "Kết luận: <b>" + v + "</b>, nhưng lượt này hỏng" + (cur.any ? "" : " và script không kiểm gì cả") + ". Phép kiểm cần để bắt nó đang tắt: một lượt hỏng đã lọt qua mà không ai ngồi xem."; }
+      else { st.className = "status warn"; st.innerHTML = "Kết luận: <b>" + v + "</b>, dù lượt chạy làm đủ việc."; }
+    }
+    $("bPrev").disabled = pos === 0;
+    $("bNext").disabled = pos >= steps.length;
+    $("bAll").disabled = pos >= steps.length;
+  }
+
+  function restart(){ steps = buildSteps(RUNS[runIdx], enabled); pos = 0; render(); }
+
+  $("bNext").addEventListener("click", function(){ if(pos < steps.length){ pos++; render(); } });
+  $("bPrev").addEventListener("click", function(){ if(pos > 0){ pos--; render(); } });
+  $("bAll").addEventListener("click", function(){ pos = steps.length; render(); });
+  $("bReset").addEventListener("click", function(){ CHECKS.forEach(function(c){ enabled[c.id] = c.on; }); restart(); });
+  $("pFull").addEventListener("click", function(){ CHECKS.forEach(function(c){ enabled[c.id] = !c.loose; }); restart(); });
+  $("pLoose").addEventListener("click", function(){ CHECKS.forEach(function(c){ enabled[c.id] = c.loose; }); restart(); });
+  document.addEventListener("keydown", function(e){
+    const tag = (e.target && e.target.tagName) || "";
+    if(tag === "INPUT" && e.target.type !== "checkbox") return;
+    if(e.key === "ArrowRight"){ $("bNext").click(); e.preventDefault(); }
+    else if(e.key === "ArrowLeft"){ $("bPrev").click(); e.preventDefault(); }
+  });
+
+  steps = buildSteps(RUNS[runIdx], enabled);
+  const b = parseInt(qs.get("buoc") || "0", 10);
+  pos = isNaN(b) ? 0 : Math.min(Math.max(b, 0), steps.length);
+  render();
+})();
+</script>
+</body>
+</html>

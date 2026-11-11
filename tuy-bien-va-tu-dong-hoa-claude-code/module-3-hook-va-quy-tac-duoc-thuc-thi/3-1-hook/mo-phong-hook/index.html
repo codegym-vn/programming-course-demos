@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Mô phỏng hook chặn và hook kiểm chứng</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8; --skip:#9aa3b2;
+    --term:#0f172a; --term-text:#e2e8f0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2d10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c; --skip:#5d6676;
+      --term:#0b0e13; --term-text:#d6dbe4;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .mono,code,input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:215px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}.grid>.card:first-child{order:2}}
+  .cfg{display:flex;flex-direction:column;gap:5px}
+  .cfg .item{border:1px solid var(--line);border-radius:7px;padding:3px 7px;font-size:12px;background:var(--code-bg);line-height:1.45}
+  .cfg .item b{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:12.5px}
+  .cfg .item.hit{border-color:var(--cur-bar);background:var(--cur);box-shadow:0 0 0 1px var(--cur-bar)}
+  .cfg .item.miss{opacity:.55}
+  .cfg .t{display:block;overflow-wrap:anywhere}
+  .assume{font-size:12px;color:var(--muted);margin-top:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:7px;padding:2px 5px;font-size:11.5px;cursor:pointer;min-height:28px}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  .inrow{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .inrow select,.inrow input{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;background:var(--code-bg);color:var(--text);padding:4px 7px;min-height:34px}
+  .inrow input{flex:1 1 150px;min-width:0}
+  .inrow label{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .inrow label input{flex:none;min-height:0;width:16px;height:16px;margin:0;padding:0}
+  .small{font-size:12.5px;color:var(--muted);margin-top:2px;min-height:0}
+  .small.err{color:var(--bad)}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;min-height:36px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.sm{min-height:34px;padding:3px 9px;font-size:13px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0}
+  .trace{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+  .st{display:grid;grid-template-columns:20px 1fr;gap:6px;border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:12.5px;line-height:1.38;align-items:start}
+  .st .n{width:20px;height:20px;border-radius:50%;background:var(--code-bg);color:var(--muted);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .st.cur{border-color:var(--cur-bar);box-shadow:0 0 0 1px var(--cur-bar)}
+  .st.cur .n{background:var(--cur-bar);color:#1d2330}
+  .st.skip{color:var(--skip)}
+  .st.pending{opacity:.45}
+  .st code{font-size:12.5px;background:var(--code-bg);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+  .term{background:var(--term);color:var(--term-text);border-radius:6px;padding:3px 7px;margin-top:2px;font-size:11.5px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+  .r-bad{color:var(--bad);font-weight:700} .r-ok{color:var(--ok);font-weight:700} .r-warn{color:var(--warn);font-weight:700}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 11px;font-size:14px;min-height:44px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn thao tác của agent, bấm <b>Bước tiếp</b> để xem hai hook của bài quyết định gì.</p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">.claude/settings.json</p>
+      <div class="cfg">
+        <div class="item mono" id="c-deny"><b>permissions.deny</b><span class="t">Read(./.env), Read(./.env.*)</span></div>
+        <div class="item mono" id="c-allow"><b>permissions.allow</b><span class="t">Bash(.venv/bin/pytest *)</span></div>
+        <div class="item mono" id="c-pre"><b>PreToolUse</b>, bộ khớp <span>Edit|Write</span><span class="t">chan_sua_kiem_thu.py</span></div>
+        <div class="item mono" id="c-post"><b>PostToolUse</b>, bộ khớp <span>Edit|Write</span><span class="t">chay_kiem_thu.py, timeout 180</span></div>
+      </div>
+      <div class="assume">Giả sử trong phiên này bạn đã cho phép agent sửa và ghi tệp. Bash chỉ được cho phép với <code>.venv/bin/pytest</code>.</div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Thao tác agent định làm</p>
+      <div class="chips" id="chips"></div>
+      <div class="inrow">
+        <select id="tool" aria-label="Công cụ"><option>Edit</option><option>Write</option><option>Bash</option><option>Read</option></select>
+        <input id="arg" class="mono" maxlength="90" aria-label="Đường dẫn hoặc lệnh" placeholder="tests/test_money.py">
+        <label><input type="checkbox" id="red"> kiểm thử đỏ</label>
+        <button class="btn sm" id="bRun">Xét</button>
+      </div>
+      <div class="small" id="msg"></div>
+      <div class="trace" id="trace"></div>
+      <div class="btns">
+        <button class="btn ghost" id="bPrev">Lùi lại</button>
+        <button class="btn" id="bNext">Bước tiếp</button>
+        <button class="btn ghost" id="bAll">Chạy hết</button>
+        <button class="btn ghost" id="bReset">Làm lại</button>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+<script>
+/* ENGINE START */
+const PROJECT = "/home/ban/so-thu-chi-clb";
+const EXISTING = ["tests/test_money.py", "tests/test_expenses.py", "tests/test_reports.py", "tests/conftest.py",
+  "app/money.py", "app/main.py", "app/services/ledger.py", "app/services/reports.py", "README.md", ".env", "CLAUDE.md"];
+
+function normPath(p){
+  let s = String(p).trim();
+  if(s.indexOf(PROJECT + "/") === 0) s = s.slice(PROJECT.length + 1);
+  while(s.indexOf("./") === 0) s = s.slice(2);
+  return s;
+}
+
+function checkInput(tool, arg){
+  const a = String(arg).trim();
+  if(!a) return "Hãy gõ " + (tool === "Bash" ? "một lệnh." : "một đường dẫn trong dự án.");
+  if(a.length > 90) return "Dài quá 90 ký tự.";
+  if(tool !== "Bash"){
+    const p = normPath(a);
+    if(p.indexOf("/") === 0 || p.split("/").indexOf("..") >= 0) return "Chỉ xét tệp nằm trong thư mục dự án so-thu-chi-clb.";
+    if(!/^[A-Za-z0-9_.\/-]+$/.test(p)) return "Đường dẫn chỉ gồm chữ không dấu, số, dấu chấm, gạch dưới, gạch nối và /.";
+  }
+  return null;
+}
+
+/* returns {pre, perm, ran, post, final} */
+function simulate(tool, arg, testsRed){
+  const r = { tool: tool, arg: String(arg).trim() };
+  const isFileTool = tool === "Edit" || tool === "Write";
+  const path = tool === "Bash" ? null : normPath(r.arg);
+  r.path = path;
+  r.exists = path !== null && EXISTING.indexOf(path) >= 0;
+  r.json = isFileTool || tool === "Read"
+    ? '{"tool_name": "' + tool + '", "tool_input": {"file_path": "' + PROJECT + "/" + path + '"}, ...}'
+    : '{"tool_name": "Bash", "tool_input": {"command": "' + r.arg.replace(/"/g, '\\"') + '"}, ...}';
+  // PreToolUse
+  if(!isFileTool){
+    r.pre = { matched: false };
+  } else if(path.indexOf("tests/") === 0 && r.exists){
+    r.pre = { matched: true, code: 2, stderr: "Không sửa kiểm thử đã có (" + path + "). Hãy sửa mã nguồn trong app/, hoặc tạo tệp kiểm thử mới." };
+  } else {
+    r.pre = { matched: true, code: 0, why: path.indexOf("tests/") === 0 ? "tệp trong tests/ nhưng chưa tồn tại: tệp kiểm thử mới" : "không nằm trong tests/" };
+  }
+  // permissions
+  if(tool === "Read"){
+    const denied = path === ".env" || /^\.env\./.test(path);
+    r.perm = denied ? { res: "deny", rule: path === ".env" ? "Read(./.env)" : "Read(./.env.*)" } : { res: "allow", note: "đọc tệp trong dự án" };
+  } else if(tool === "Bash"){
+    const c = r.arg.replace(/\s+/g, " ");
+    const ok = c === ".venv/bin/pytest" || c.indexOf(".venv/bin/pytest ") === 0;
+    const compound = /&&|\|\||;|\|/.test(c);
+    r.perm = ok && !compound ? { res: "allow", rule: "Bash(.venv/bin/pytest *)" } : { res: "ask" };
+  } else {
+    r.perm = { res: "allow", note: "bạn đã cho phép sửa tệp trong phiên" };
+  }
+  const blockedByHook = r.pre.matched && r.pre.code === 2;
+  r.ran = !blockedByHook && r.perm.res === "allow";
+  // PostToolUse
+  if(!r.ran){
+    r.post = { matched: false, reason: "notran" };
+  } else if(!isFileTool){
+    r.post = { matched: false, reason: "matcher" };
+  } else if(/\.py$/.test(path) && path.indexOf("app/") === 0){
+    r.post = testsRed
+      ? { matched: true, pytest: true, code: 2, tail: "FAILED tests/test_money.py::test_format_vnd_uses_dot_separator\n1 failed, ... passed" }
+      : { matched: true, pytest: true, code: 0, tail: "... passed" };
+  } else {
+    r.post = { matched: true, pytest: false, code: 0 };
+  }
+  // final
+  if(blockedByHook) r.final = "hookblock";
+  else if(r.perm.res === "deny") r.final = "deny";
+  else if(r.perm.res === "ask") r.final = "ask";
+  else if(r.post.matched && r.post.code === 2) r.final = "postred";
+  else r.final = "ok";
+  return r;
+}
+/* ENGINE END */
+
+const PRESETS = [
+  { label: "Edit test_money.py", tool: "Edit", arg: "tests/test_money.py", red: false },
+  { label: "Write test_moi.py", tool: "Write", arg: "tests/test_moi.py", red: false },
+  { label: "Edit money.py, xanh", tool: "Edit", arg: "app/money.py", red: false },
+  { label: "Edit money.py, đỏ", tool: "Edit", arg: "app/money.py", red: true },
+  { label: "Edit README.md", tool: "Edit", arg: "README.md", red: false },
+  { label: "Bash sed", tool: "Bash", arg: "sed -i 's/\\./,/' tests/test_money.py", red: false },
+  { label: "Read .env", tool: "Read", arg: ".env", red: false }
+];
+const $ = id => document.getElementById(id);
+const MAXSTEP = 5;
+let cur = null; let step = 0;
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]); }
+
+function rows(){
+  const r = cur; const out = [];
+  out.push(["Thao tác", "<code>" + r.tool + "</code> " + (r.tool === "Bash" ? "chạy lệnh" : "tệp") + " <code>" + esc(r.tool === "Bash" ? r.arg : r.path) + "</code>" +
+    (r.tool === "Bash" ? "" : (r.exists ? " (tệp đã có)" : " (tệp chưa có)")) +
+    '<div class="term">JSON cho hook qua stdin: ' + esc(r.json) + "</div>"]);
+  // pre
+  let pre;
+  if(!r.pre.matched) pre = "Bộ khớp <code>Edit|Write</code> không khớp <code>" + r.tool + "</code>: hook không chạy, không thấy thao tác này.";
+  else if(r.pre.code === 2) pre = "<code>chan_sua_kiem_thu.py</code>: tệp nằm trong <code>tests/</code> và đã tồn tại. <span class=\"r-bad\">exit 2</span>" +
+    '<div class="term">stderr: ' + esc(r.pre.stderr) + "</div>";
+  else pre = "<code>chan_sua_kiem_thu.py</code>: " + r.pre.why + ". <span class=\"r-ok\">exit 0</span>";
+  let perm;
+  if(r.pre.matched && r.pre.code === 2) perm = "Không cần xét: hook đã chặn.";
+  else if(r.perm.res === "deny") perm = "Khớp quy tắc cấm <code>" + r.perm.rule + "</code>. <span class=\"r-bad\">bị chặn</span>";
+  else if(r.perm.res === "ask") perm = "Không quy tắc nào cho phép lệnh này. <span class=\"r-warn\">dừng lại hỏi bạn</span>";
+  else perm = (r.perm.rule ? "Khớp <code>" + r.perm.rule + "</code>" : r.perm.note) + ". <span class=\"r-ok\">cho qua</span>";
+  out.push(["Trước khi chạy", "Hook PreToolUse: " + pre + "<br>Quy tắc quyền: " + perm]);
+  // run
+  out.push(["Công cụ", r.ran ? "<span class=\"r-ok\">Chạy.</span> " + (r.tool === "Read" ? "Agent đọc được tệp." : r.tool === "Bash" ? "Lệnh đã chạy." : "Tệp đã thay đổi trên đĩa.")
+    : (r.final === "ask" ? "<span class=\"r-warn\">Chưa chạy</span>, chờ bạn chọn ở hộp hỏi quyền." : "<span class=\"r-bad\">Không chạy.</span> Tệp không bị đụng tới."), r.ran ? "" : "skipish"]);
+  // post
+  let post, cls = "";
+  if(r.post.reason === "notran"){ post = "Không chạy: công cụ chưa chạy thì không có sự kiện PostToolUse."; cls = "skip"; }
+  else if(r.post.reason === "matcher"){ post = "Bộ khớp <code>Edit|Write</code> không khớp <code>" + r.tool + "</code>: hook không chạy."; cls = "skip"; }
+  else if(!r.post.pytest) post = "<code>chay_kiem_thu.py</code>: không phải tệp <code>.py</code> trong <code>app/</code>, bỏ qua kiểm thử. <span class=\"r-ok\">exit 0</span>";
+  else if(r.post.code === 0) post = "<code>chay_kiem_thu.py</code>: tệp Python trong <code>app/</code>, chạy <code>.venv/bin/pytest -q --tb=line</code>, xanh. <span class=\"r-ok\">exit 0</span>";
+  else post = "<code>chay_kiem_thu.py</code>: chạy <code>.venv/bin/pytest -q --tb=line</code>, có kiểm thử đỏ. <span class=\"r-bad\">exit 2</span>" +
+    '<div class="term">stderr: Kiểm thử đỏ sau khi sửa ' + esc(r.path) + ":\n" + esc(r.post.tail) + "</div>";
+  out.push(["Hook PostToolUse", post, cls]);
+  // agent
+  const agentTxt = {
+    hookblock: "Nhận lý do từ stderr: không sửa kiểm thử đã có, hãy sửa <code>app/</code> hoặc tạo tệp mới. Agent tìm cách khác hoặc hỏi bạn.",
+    deny: "Nhận thông báo thao tác bị cấm theo cấu hình quyền. Nội dung <code>.env</code> không vào ngữ cảnh.",
+    ask: "Chưa nhận gì: lệnh chờ bạn duyệt. Hook không tham gia, nên an toàn lúc này phụ thuộc vào việc bạn đọc lệnh.",
+    postred: "Phiên ghi <code>PostToolUse:Edit hook blocking error</code> kèm các dòng đỏ. Thay đổi không bị hủy; agent đọc kết quả và sửa tiếp ở lượt sau.",
+    ok: r.post.matched && r.post.pytest ? "Không nhận thêm gì: kiểm thử xanh, hook im lặng." : "Không nhận thêm gì: thao tác đi qua bình thường."
+  }[r.final];
+  out.push(["Agent nhận được", agentTxt]);
+  return out;
+}
+
+function renderTrace(){
+  const t = $("trace");
+  if(!cur){ t.innerHTML = ""; return; }
+  t.innerHTML = rows().map((r, i) => {
+    let cls = "st";
+    if(i > step) cls += " pending";
+    else if(r[2] === "skip") cls += " skip";
+    if(i === step) cls += " cur";
+    return '<div class="' + cls + '"><span class="n">' + i + '</span><div><b>' + r[0] + '</b>' + (i > step ? "" : ": " + r[1]) + '</div></div>';
+  }).join("");
+}
+
+function renderCfg(){
+  ["c-deny", "c-allow", "c-pre", "c-post"].forEach(id => { $(id).className = "item mono"; });
+  if(!cur) return;
+  const set = (id, hit) => { $(id).className = "item mono " + (hit ? "hit" : "miss"); };
+  if(step >= 1){
+    set("c-pre", cur.pre.matched);
+    const permHit = !(cur.pre.matched && cur.pre.code === 2);
+    set("c-deny", permHit && cur.perm.res === "deny");
+    set("c-allow", permHit && cur.perm.res === "allow" && !!cur.perm.rule);
+  }
+  if(step >= 3) set("c-post", cur.post.matched);
+}
+
+function renderStatus(){
+  const s = $("status"); s.className = "status";
+  if(!cur){ s.textContent = "Chọn một thao tác ở trên để bắt đầu."; return; }
+  const msgs = [
+    "Claude Code gửi cho hook một đối tượng JSON qua stdin; hook đọc tool_name và tool_input.",
+    cur.pre.matched ? "Hook PreToolUse chạy trước khi công cụ chạy, nên mã thoát 2 chặn được thao tác." : "Hook chỉ chạy khi bộ khớp khớp tên công cụ. Thao tác này đi thẳng tới bước quyền.",
+    cur.ran ? "Công cụ đã chạy xong. Từ đây không hook nào hoàn tác được." : "Thao tác dừng trước khi chạy.",
+    cur.post.matched ? "Hook PostToolUse chạy sau công cụ: nó chỉ báo lại, không hủy thay đổi." : "Không có gì để hook PostToolUse làm ở thao tác này.",
+    null
+  ];
+  if(step < 4){ s.innerHTML = msgs[step]; return; }
+  const f = cur.final;
+  const map = {
+    hookblock: ["bad", "Bị hook chặn. Tệp kiểm thử đã có không bị sửa, dù agent có nhớ lời dặn hay không."],
+    deny: ["bad", "Bị quy tắc deny chặn. Với một đường dẫn cố định, quy tắc quyền gọn hơn viết hook."],
+    ask: ["warn", "Hook không thấy lệnh Bash này. Thứ chặn lại là bước hỏi quyền, nên bạn phải đọc lệnh trước khi chọn."],
+    postred: ["warn", "Thay đổi đã nằm trên đĩa; hook chỉ đưa kết quả đỏ cho agent để nó tự sửa tiếp."],
+    ok: ["ok", "Thao tác đi qua. " + (cur.post.matched && cur.post.pytest ? "Hook đã chạy kiểm thử và thấy xanh." : "Hook kiểm thử bỏ qua vì không phải mã nguồn Python trong app/.")]
+  };
+  s.className = "status " + map[f][0]; s.innerHTML = map[f][1];
+}
+
+function renderButtons(){
+  $("bPrev").disabled = !cur || step === 0;
+  $("bNext").disabled = !cur || step >= MAXSTEP - 1;
+  $("bAll").disabled = !cur || step >= MAXSTEP - 1;
+  $("bReset").disabled = !cur;
+}
+function render(){ renderTrace(); renderCfg(); renderStatus(); renderButtons(); }
+function nextStep(){ if(cur && step < MAXSTEP - 1){ step++; render(); } }
+function prevStep(){ if(cur && step > 0){ step--; render(); } }
+
+function run(tool, arg, red, presetIdx){
+  const m = $("msg"); m.className = "small"; m.textContent = "";
+  const err = checkInput(tool, arg);
+  if(err){ m.className = "small err"; m.textContent = err; return; }
+  cur = simulate(tool, arg, red); step = 0;
+  if((tool === "Edit" || tool === "Write") && !(/\.py$/.test(cur.path) && cur.path.indexOf("app/") === 0) && red)
+    m.textContent = "Ô kiểm thử đỏ chỉ có tác dụng khi sửa tệp Python trong app/.";
+  [...document.querySelectorAll(".chip")].forEach((b, i) => b.setAttribute("aria-pressed", String(i === presetIdx)));
+  render();
+}
+
+PRESETS.forEach((p, i) => {
+  const b = document.createElement("button");
+  b.className = "chip mono"; b.textContent = p.label; b.setAttribute("aria-pressed", "false");
+  b.onclick = () => { $("tool").value = p.tool; $("arg").value = p.arg; $("red").checked = p.red; run(p.tool, p.arg, p.red, i); };
+  $("chips").appendChild(b);
+});
+$("tool").onchange = () => { $("arg").placeholder = $("tool").value === "Bash" ? "git status" : "tests/test_money.py"; };
+$("bRun").onclick = () => run($("tool").value, $("arg").value, $("red").checked, -1);
+$("arg").addEventListener("keydown", e => { if(e.key === "Enter") run($("tool").value, $("arg").value, $("red").checked, -1); });
+$("bNext").onclick = nextStep; $("bPrev").onclick = prevStep;
+$("bAll").onclick = () => { if(cur){ step = MAXSTEP - 1; render(); } };
+$("bReset").onclick = () => { if(cur){ step = 0; render(); } };
+document.addEventListener("keydown", e => {
+  if(e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if(e.key === "ArrowRight") nextStep();
+  if(e.key === "ArrowLeft") prevStep();
+});
+const qs = new URLSearchParams(location.search);
+const vd = parseInt(qs.get("vd"), 10);
+if(vd >= 1 && vd <= PRESETS.length){
+  const p = PRESETS[vd - 1];
+  $("tool").value = p.tool; $("arg").value = p.arg; $("red").checked = p.red; run(p.tool, p.arg, p.red, vd - 1);
+  const b = parseInt(qs.get("buoc"), 10);
+  if(b > 0){ for(let i = 0; i < b; i++) nextStep(); }
+} else render();
+</script>
+</body>
+</html>

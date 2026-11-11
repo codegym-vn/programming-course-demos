@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Ngữ cảnh của một phiên: CLAUDE.md và skill</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8;
+    --c-rule:#2563eb; --c-list:#0d9488; --c-fix:#d97706; --c-rev:#7c3aed; --c-ref:#a78bfa; --c-ev:#db2777; --c-out:#16a34a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --warn:#fbbf24; --warn-soft:#3a2d10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c;
+      --c-rule:#5b8def; --c-list:#2dd4bf; --c-fix:#f59e0b; --c-rev:#a78bfa; --c-ref:#c4b5fd; --c-ev:#f472b6; --c-out:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-size:12.5px;background:var(--code-bg);border-radius:4px;padding:0 4px}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:5px 12px;font:inherit;font-size:13.5px;cursor:pointer;min-height:36px}
+  .tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .turns{display:flex;flex-direction:column;gap:3px}
+  .turn{display:grid;grid-template-columns:22px 1fr;gap:6px;border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:13px;line-height:1.4}
+  .turn .n{width:20px;height:20px;border-radius:50%;background:var(--code-bg);color:var(--muted);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .turn.cur{border-color:var(--cur-bar);box-shadow:0 0 0 1px var(--cur-bar)}
+  .turn.cur .n{background:var(--cur-bar);color:#1d2330}
+  .turn.pending{opacity:.45}
+  .turn .what{color:var(--muted);font-size:12.5px}
+  .ctx{display:flex;flex-direction:column;gap:3px}
+  .blk{display:grid;grid-template-columns:8px 1fr auto;gap:7px;align-items:center;border:1px solid var(--line);border-radius:7px;padding:3px 8px 3px 0;font-size:12.5px;overflow:hidden}
+  .blk .sw{align-self:stretch}
+  .blk .ln{color:var(--muted);font-variant-numeric:tabular-nums}
+  .blk.new{border-color:var(--cur-bar);background:var(--cur)}
+  .blk.idle{opacity:.5}
+  .total{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:6px;border-top:1px solid var(--line);padding-top:5px}
+  .chart{margin-top:8px}
+  .bars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:end;height:74px;border-bottom:1px solid var(--line);padding:0 4px}
+  .bar{display:flex;gap:3px;align-items:end;justify-content:center;height:100%}
+  .bar i{display:block;width:16px;border-radius:3px 3px 0 0;position:relative}
+  .bar i.a{background:var(--muted);opacity:.55}
+  .bar i.b{background:var(--accent)}
+  .bar.off i{opacity:.12}
+  .lbls{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:11.5px;color:var(--muted);text-align:center;padding:2px 4px 0}
+  .legend{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 9px;min-height:36px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;min-height:44px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn cách tổ chức chỉ dẫn, bấm <b>Bước tiếp</b> để xem mỗi lượt agent mang theo bao nhiêu dòng chỉ dẫn.</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tA" data-k="A">Dồn hết vào CLAUDE.md</button>
+    <button class="tab" role="tab" id="tB" data-k="B">CLAUDE.md ngắn và ba skill</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Các lượt trong phiên</p>
+      <div class="turns" id="turns"></div>
+      <div class="btns">
+        <button class="btn ghost" id="bPrev">Lùi lại</button>
+        <button class="btn" id="bNext">Bước tiếp</button>
+        <button class="btn ghost" id="bAll">Chạy hết</button>
+        <button class="btn ghost" id="bReset">Làm lại</button>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title" id="ctxTitle">Chỉ dẫn trong ngữ cảnh</p>
+      <div class="ctx" id="ctx"></div>
+      <div class="total"><span>Tổng ở lượt này</span><span id="tot"></span></div>
+      <div class="total" style="border-top:0;padding-top:0;font-weight:600;color:var(--muted)"><span>Cộng dồn qua các lượt đã đi</span><span id="cum"></span></div>
+      <div class="chart">
+        <p class="panel-title" style="margin:4px 0">Số dòng mỗi lượt của hai cách (minh họa)</p>
+        <div class="bars" id="bars"></div>
+        <div class="lbls"><span>lượt 1</span><span>lượt 2</span><span>lượt 3</span><span>lượt 4</span><span>lượt 5</span></div>
+        <div class="legend"><span><i style="background:var(--muted);opacity:.55"></i>dồn vào CLAUDE.md</span><span><i style="background:var(--accent)"></i>CLAUDE.md ngắn và skill</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ENGINE START */
+/* Số dòng chỉ là minh họa. */
+const BLOCKS = {
+  rules:   { name: "Quy ước chung của dự án", lines: 20, color: "var(--c-rule)" },
+  list:    { name: "Tên và mô tả của 3 skill", lines: 6, color: "var(--c-list)" },
+  fix:     { name: "Quy trình sửa lỗi", lines: 25, color: "var(--c-fix)" },
+  rev:     { name: "Chỉ dẫn rà soát", lines: 12, color: "var(--c-rev)" },
+  revref:  { name: "Bảng kiểm 9 mục", lines: 15, color: "var(--c-ref)" },
+  ev:      { name: "Cách lưu bằng chứng", lines: 12, color: "var(--c-ev)" },
+  evout:   { name: "Hai dòng script in ra", lines: 2, color: "var(--c-out)" }
+};
+const TURNS = [
+  { ask: "Nút Lưu ở trang Khoản chi bị lệch, sửa giúp mình.", A: "Không cần quy trình nào, nhưng cả CLAUDE.md vẫn đi theo.", B: "Không khớp mô tả skill nào: chỉ CLAUDE.md và danh sách mô tả.", load: [] },
+  { ask: "Thủ quỹ vừa gửi phiếu docs/issues/ISSUE-003.md, xử lý giúp mình.", A: "Quy trình sửa lỗi đã có sẵn trong CLAUDE.md.", B: "Khớp mô tả giao-viec-kiem-chung: agent nạp thân skill.", load: ["fix"] },
+  { ask: "Hàm format_vnd trong app/money.py làm gì?", A: "Câu hỏi ngắn vẫn mang theo cả quy trình rà soát và lưu bằng chứng.", B: "Không nạp gì mới. Thân skill nạp ở lượt 2 vẫn ở lại trong phiên.", load: [] },
+  { ask: "/ra-soat main", A: "Bảng kiểm đã nằm sẵn trong CLAUDE.md từ đầu phiên.", B: "Nạp ra-soat/SKILL.md, rồi agent mở bang-kiem.md ở bước 2.", load: ["rev", "revref"] },
+  { ask: "/bang-chung 1.2", A: "Cách lưu bằng chứng đã nằm sẵn trong CLAUDE.md.", B: "Nạp bang-chung/SKILL.md; mã script không vào ngữ cảnh, chỉ hai dòng nó in ra. Cả ba skill đã nạp nên lượt này nhỉnh hơn cách dồn một chút.", load: ["ev", "evout"] }
+];
+const BASE = { A: ["rules", "fix", "rev", "revref", "ev"], B: ["rules", "list"] };
+
+/* blocks in context at turn t (1..5), plus which ones are new at t */
+function contextAt(k, t){
+  if(t < 1) return { blocks: [], fresh: [] };
+  if(k === "A") return { blocks: BASE.A.slice(), fresh: t === 1 ? BASE.A.slice() : [] };
+  const blocks = BASE.B.slice(); let fresh = t === 1 ? BASE.B.slice() : [];
+  for(let i = 0; i < t; i++){ TURNS[i].load.forEach(b => blocks.push(b)); if(i === t - 1) fresh = fresh.concat(TURNS[i].load); }
+  return { blocks: blocks, fresh: fresh };
+}
+function linesAt(k, t){ return contextAt(k, t).blocks.reduce((s, b) => s + BLOCKS[b].lines, 0); }
+function cumulative(k, t){ let s = 0; for(let i = 1; i <= t; i++) s += linesAt(k, i); return s; }
+/* ENGINE END */
+
+const $ = id => document.getElementById(id);
+let mode = "B"; let step = 0; const MAX = 5;
+
+function render(){
+  ["A", "B"].forEach(k => $("t" + k).setAttribute("aria-selected", String(mode === k)));
+  $("turns").innerHTML = TURNS.map((t, i) => {
+    const n = i + 1; let cls = "turn";
+    if(n > step) cls += " pending"; if(n === step) cls += " cur";
+    return '<div class="' + cls + '"><span class="n">' + n + '</span><div><span class="mono" style="font-size:12.5px">' + t.ask + '</span></div></div>';
+  }).join("");
+  const maxL = Math.max(linesAt("A", 5), linesAt("B", 5));
+  $("bars").innerHTML = [1, 2, 3, 4, 5].map(t => {
+    const a = linesAt("A", t), b = linesAt("B", t);
+    return '<div class="bar' + (t > step ? " off" : "") + '" title="Lượt ' + t + ': ' + a + ' và ' + b + ' dòng"><i class="a" style="height:' + Math.round(a / maxL * 70) + 'px"></i><i class="b" style="height:' + Math.round(b / maxL * 70) + 'px"></i></div>';
+  }).join("");
+  const c = contextAt(mode, step);
+  $("ctxTitle").textContent = step === 0 ? "Chỉ dẫn trong ngữ cảnh (chưa bắt đầu)" : "Chỉ dẫn trong ngữ cảnh ở lượt " + step;
+  let shown = c.blocks;
+  let html = shown.map(b => '<div class="blk' + (c.fresh.indexOf(b) >= 0 && step > 1 ? " new" : "") +
+    (mode === "A" && step > 0 && !usedByTurn(b, step) ? " idle" : "") + '"><span class="sw" style="background:' + BLOCKS[b].color + '"></span><span>' + BLOCKS[b].name + '</span><span class="ln">' + BLOCKS[b].lines + ' dòng</span></div>').join("");
+  if(mode === "B" && step > 0){
+    const waiting = ["fix", "rev", "ev"].filter(b => shown.indexOf(b) < 0);
+    if(waiting.length) html += '<div class="blk idle"><span class="sw" style="background:var(--line)"></span><span>Chưa nạp: thân ' + waiting.map(b => ({ fix: "giao-viec-kiem-chung", rev: "ra-soat", ev: "bang-chung" })[b]).join(", ") + '</span><span class="ln">0 dòng</span></div>';
+  }
+  $("ctx").innerHTML = html || '<div class="what" style="font-size:13px;color:var(--muted)">Bấm Bước tiếp để mở phiên và gửi lượt đầu tiên.</div>';
+  $("tot").textContent = step ? linesAt(mode, step) + " dòng" : "";
+  $("cum").textContent = step ? cumulative(mode, step) + " dòng" : "";
+  const s = $("status"); s.className = "status";
+  if(step === 0) s.innerHTML = mode === "A" ? "CLAUDE.md chứa cả quy ước lẫn ba quy trình: nạp toàn bộ ngay khi mở phiên." : "CLAUDE.md chỉ có quy ước chung. Ba quy trình nằm trong ba skill; lúc mở phiên agent chỉ thấy tên và mô tả của chúng.";
+  else if(step < MAX) s.innerHTML = TURNS[step - 1][mode] + (mode === "A" ? " Phần mờ là chỉ dẫn lượt này không cần." : "");
+  else {
+    const a = cumulative("A", 5), b = cumulative("B", 5);
+    s.className = "status " + (mode === "B" ? "ok" : "warn");
+    s.innerHTML = "Qua năm lượt: dồn vào CLAUDE.md mang theo <b>" + a + "</b> dòng, CLAUDE.md ngắn và skill mang theo <b>" + b + "</b> dòng. Skill tiết kiệm nhất ở những lượt không cần quy trình; một phiên mới (hoặc <code>/clear</code>) lại bắt đầu từ " + linesAt("B", 1) + " dòng.";
+  }
+  $("bPrev").disabled = step === 0; $("bNext").disabled = step >= MAX; $("bAll").disabled = step >= MAX; $("bReset").disabled = step === 0;
+}
+function usedByTurn(b, t){
+  const need = { 1: ["rules"], 2: ["rules", "fix"], 3: ["rules"], 4: ["rules", "rev", "revref"], 5: ["rules", "ev"] }[t];
+  return need.indexOf(b) >= 0;
+}
+$("tA").onclick = () => { mode = "A"; render(); };
+$("tB").onclick = () => { mode = "B"; render(); };
+$("bNext").onclick = () => { if(step < MAX){ step++; render(); } };
+$("bPrev").onclick = () => { if(step > 0){ step--; render(); } };
+$("bAll").onclick = () => { step = MAX; render(); };
+$("bReset").onclick = () => { step = 0; render(); };
+document.addEventListener("keydown", e => {
+  if(e.key === "ArrowRight" && step < MAX){ step++; render(); }
+  if(e.key === "ArrowLeft" && step > 0){ step--; render(); }
+});
+const qs = new URLSearchParams(location.search);
+if(qs.get("cach") === "a") mode = "A";
+const b0 = parseInt(qs.get("buoc"), 10);
+if(b0 >= 0 && b0 <= MAX) step = b0;
+render();
+</script>
+</body>
+</html>
