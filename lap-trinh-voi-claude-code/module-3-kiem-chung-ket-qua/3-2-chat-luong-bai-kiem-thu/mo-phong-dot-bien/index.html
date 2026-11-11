@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Mô phỏng kiểm thử đột biến</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --warn:#a16207; --warn-soft:#fdf3d7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8; --dim:#c3c8d1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2f10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c; --dim:#4a5160;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .grid{display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);gap:10px;align-items:start}
+  @media (max-width:620px){.grid{grid-template-columns:minmax(0,1fr)}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+  .ptitle{font-size:12.5px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .spec{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;font-size:12.5px;overflow-x:auto}
+  .ln{display:flex;align-items:center;min-height:22px;padding-right:6px;border-left:3px solid transparent}
+  .ln .no{width:24px;text-align:right;color:var(--muted);padding-right:8px;flex:none;font-size:11.5px}
+  .ln .src{white-space:pre;flex:1;min-width:0}
+  .ln.mut{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.del .src{text-decoration:line-through;color:var(--muted)}
+  .ln.del{background:var(--bad-soft);border-left-color:var(--bad)}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:6px 8px;text-align:left;cursor:pointer;font:inherit;font-size:12.5px;line-height:1.3;min-height:40px}
+  .chip b{display:block;font-size:12px;color:var(--muted)}
+  .chip.on{border-color:var(--cur-bar);box-shadow:0 0 0 2px var(--cur-bar);background:var(--cur)}
+  .chip.on b{color:var(--text)}
+  .tests{display:flex;flex-direction:column;gap:4px}
+  .t{border:1px solid var(--line);border-radius:8px;padding:2px 8px 3px}
+  .t.fail{border-color:var(--bad);background:var(--bad-soft)}
+  .t .r1{display:flex;align-items:center;gap:8px}
+  .t .nm{font-weight:600;font-size:12.5px;overflow-wrap:anywhere;flex:1;min-width:0}
+  .t .as{display:block;font-size:11.5px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.35}
+  .t .rt{font-size:11.5px;color:var(--bad);font-weight:600;white-space:nowrap}
+  .st{font-weight:700;font-size:12px;border-radius:999px;padding:1px 8px;text-align:center;min-width:46px}
+  .st.p{background:var(--ok-soft);color:var(--ok)}
+  .st.f{background:var(--bad);color:#fff}
+  .hist{display:flex;gap:3px;justify-content:flex-end;align-items:center}
+  .hist i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--dim);display:inline-block}
+  .hist i.g{background:var(--ok);border-color:var(--ok)}
+  .hist i.r{background:var(--bad);border-color:var(--bad)}
+  .tag{display:inline-block;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:1px 6px;justify-self:start}
+  .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .legend{font-size:11px;color:var(--muted)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 8px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:7px 13px;min-height:38px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 11px;font-size:13.5px;min-height:44px}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .status code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .step{font-size:12.5px;color:var(--muted);margin-left:auto;align-self:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bật từng đột biến, mỗi lần một cái, rồi xem kiểm thử nào đỏ. Kết quả lấy từ chạy Python thật.</p>
+  <div class="grid">
+    <div class="card">
+      <p class="ptitle">Hàm cần kiểm: phí giao hàng</p>
+      <p class="spec">15.000 đ mỗi kg; từ 5 kg cộng 20.000 đ; giao nhanh gấp đôi; khối lượng từ 0 trở xuống thì phí 0.</p>
+      <div class="code mono" id="code"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="card">
+      <div class="hd"><p class="ptitle">8 kiểm thử</p><span class="legend">chấm: đột biến 1 đến 4</span></div>
+      <div class="tests" id="tests"></div>
+    </div>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="bPrev">Lùi lại</button>
+    <button class="btn" id="bNext">Bước tiếp</button>
+    <button class="btn ghost" id="bAll">Chạy hết</button>
+    <button class="btn ghost" id="bReset">Làm lại</button>
+    <span class="step" id="stepLbl"></span>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</div>
+<script>
+const DATA = {"0":{"res":{"test_two_kg":"PASS","test_fee_is_computed":"PASS","test_five_kg":"PASS","test_five_kg_surcharge":"PASS","test_express_doubles":"PASS","test_express_option":"PASS","test_negative_weight":"PASS","test_returns_number":"PASS"},"vals":{"test_two_kg":"30000","test_fee_is_computed":"60000","test_five_kg":"95000","test_five_kg_surcharge":null,"test_express_doubles":"90000","test_express_option":"0","test_negative_weight":"0","test_returns_number":"90000"}},"1":{"res":{"test_two_kg":"PASS","test_fee_is_computed":"PASS","test_five_kg":"PASS","test_five_kg_surcharge":"PASS","test_express_doubles":"PASS","test_express_option":"PASS","test_negative_weight":"FAIL","test_returns_number":"PASS"},"vals":{"test_two_kg":"30000","test_fee_is_computed":"60000","test_five_kg":"95000","test_five_kg_surcharge":null,"test_express_doubles":"90000","test_express_option":"0","test_negative_weight":"-30000","test_returns_number":"90000"}},"2":{"res":{"test_two_kg":"PASS","test_fee_is_computed":"PASS","test_five_kg":"FAIL","test_five_kg_surcharge":"PASS","test_express_doubles":"PASS","test_express_option":"PASS","test_negative_weight":"PASS","test_returns_number":"PASS"},"vals":{"test_two_kg":"30000","test_fee_is_computed":"60000","test_five_kg":"75000","test_five_kg_surcharge":null,"test_express_doubles":"90000","test_express_option":"0","test_negative_weight":"0","test_returns_number":"90000"}},"3":{"res":{"test_two_kg":"PASS","test_fee_is_computed":"PASS","test_five_kg":"PASS","test_five_kg_surcharge":"PASS","test_express_doubles":"FAIL","test_express_option":"PASS","test_negative_weight":"PASS","test_returns_number":"PASS"},"vals":{"test_two_kg":"30000","test_fee_is_computed":"60000","test_five_kg":"95000","test_five_kg_surcharge":null,"test_express_doubles":"45000","test_express_option":"0","test_negative_weight":"0","test_returns_number":"45000"}},"4":{"res":{"test_two_kg":"FAIL","test_fee_is_computed":"PASS","test_five_kg":"FAIL","test_five_kg_surcharge":"PASS","test_express_doubles":"FAIL","test_express_option":"PASS","test_negative_weight":"PASS","test_returns_number":"PASS"},"vals":{"test_two_kg":"0","test_fee_is_computed":"0","test_five_kg":"0","test_five_kg_surcharge":null,"test_express_doubles":"0","test_express_option":"0","test_negative_weight":"0","test_returns_number":"0"}}};
+const BASE = ["def shipping_fee(kg, express):",
+"    if kg <= 0:",
+"        return 0",
+"    fee = kg * 15_000",
+"    if kg >= 5:",
+"        fee += 20_000",
+"    if express:",
+"        fee = fee * 2",
+"    return fee"];
+// Each mutant: lines deleted (index) or one line replaced.
+const MUTS = [
+  null,
+  {title:"Xóa kiểm khối lượng", del:[1,2]},
+  {title:"Đổi >= thành >", rep:[4,"    if kg > 5:"]},
+  {title:"Xóa nhánh giao nhanh", del:[6,7]},
+  {title:"Trả về hằng số 0", rep:[8,"    return 0"]}
+];
+const TESTS = [
+  {n:"test_two_kg", a:"assert shipping_fee(2, False) == 30_000"},
+  {n:"test_fee_is_computed", a:"assert shipping_fee(4, False) is not None", form:"assert luôn đúng"},
+  {n:"test_five_kg", a:"assert shipping_fee(5, False) == 95_000"},
+  {n:"test_five_kg_surcharge", a:"expected = 5 * 15_000 + 20_000\nassert expected == 95_000", form:"không gọi hàm cần kiểm"},
+  {n:"test_express_doubles", a:"assert shipping_fee(3, True) == 90_000"},
+  {n:"test_express_option", a:"assert shipping_fee(0, True) == 0", form:"dữ liệu không chạm nhánh giao nhanh"},
+  {n:"test_negative_weight", a:"assert shipping_fee(-2, False) == 0"},
+  {n:"test_returns_number", a:"assert isinstance(shipping_fee(3, True), int)", form:"kiểm kiểu thay vì giá trị"}
+];
+const NOTES = [
+  {cls:"", html:"Mã gốc: cả 8 kiểm thử xanh. Bấm <b>Bước tiếp</b> hoặc chọn một đột biến bên trái để làm hỏng đúng một chỗ trong hàm. Chữ đỏ cạnh tên kiểm thử là giá trị hàm trả khác mã gốc."},
+  {cls:"bad", html:"Đột biến 1 xóa phần kiểm khối lượng: <code>shipping_fee(-2, False)</code> trả -30000, nên <code>test_negative_weight</code> đỏ. Các kiểm thử khác vẫn xanh vì không dùng khối lượng âm; với 0 kg, <code>0 * 15_000</code> vẫn là 0."},
+  {cls:"bad", html:"Đột biến 2 đổi <code>&gt;=</code> thành <code>&gt;</code>: chỉ đúng 5 kg cho kết quả khác (75000 thay vì 95000), nên chỉ <code>test_five_kg</code> đỏ. <code>test_five_kg_surcharge</code> có tên nói về phụ phí 5 kg mà vẫn xanh: nó không hề gọi <code>shipping_fee</code>."},
+  {cls:"bad", html:"Đột biến 3 xóa nhánh giao nhanh: <code>shipping_fee(3, True)</code> trả 45000, nên <code>test_express_doubles</code> đỏ. <code>test_express_option</code> nói về giao nhanh nhưng dùng 0 kg, hàm dừng ở dòng 3 trước khi tới nhánh đó, nên vẫn xanh."},
+  {cls:"bad", html:"Đột biến 4 trả về 0: ba kiểm thử so giá trị cụ thể đỏ. <code>test_negative_weight</code> xanh vì mong đợi đúng là 0 (nó đã bắt đột biến 1). <code>test_fee_is_computed</code> và <code>test_returns_number</code> xanh dù hàm trả 0: 0 khác None và là số nguyên."},
+  {cls:"warn", html:"Tổng kết: mỗi kiểm thử tốt đỏ dưới ít nhất một đột biến. Bốn kiểm thử chưa từng đỏ là kiểm thử rỗng, mỗi cái một dạng (nhãn vàng). Muốn chúng bảo vệ hàm, viết lại để so giá trị cụ thể trên dữ liệu đi qua đúng nhánh."}
+];
+const LAST = 5;
+let step = 0;          // 0 original, 1..4 mutant, 5 summary
+let visited = new Set();
+
+function codeLines(m){
+  const out = [];
+  BASE.forEach((s,i)=>{
+    let cls = "", src = s;
+    const mu = MUTS[m];
+    if (mu && mu.del && mu.del.includes(i)) cls = "del";
+    if (mu && mu.rep && mu.rep[0] === i){ cls = "mut"; src = mu.rep[1]; }
+    out.push({no:i+1, src, cls});
+  });
+  return out;
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function activeMut(){ return (step>=1 && step<=4) ? step : 0; }
+function render(){
+  const m = activeMut();
+  document.getElementById("code").innerHTML = codeLines(m).map(l =>
+    `<div class="ln ${l.cls}"><span class="no">${l.no}</span><span class="src">${esc(l.src)}</span></div>`).join("");
+  document.getElementById("chips").innerHTML = MUTS.slice(1).map((mu,i)=>
+    `<button class="chip ${m===i+1?"on":""}" data-m="${i+1}" aria-pressed="${m===i+1}"><b>Đột biến ${i+1}</b>${mu.title}</button>`).join("");
+  const allDone = [1,2,3,4].every(k=>visited.has(k));
+  const r = DATA[m];
+  document.getElementById("tests").innerHTML = TESTS.map(t=>{
+    const pass = r.res[t.n] === "PASS";
+    const v = r.vals[t.n];
+    const changed = v !== null && v !== DATA[0].vals[t.n];
+    const ret = changed ? "trả " + v : "";
+    const hist = [1,2,3,4].map(k=> !visited.has(k) ? "<i></i>" : (DATA[k].res[t.n]==="FAIL" ? '<i class="r"></i>' : '<i class="g"></i>')).join("");
+    const never = allDone && [1,2,3,4].every(k=>DATA[k].res[t.n]==="PASS");
+    return `<div class="t ${pass?"":"fail"}"><div class="r1"><span class="nm mono">${t.n}</span>${ret ? `<span class="rt mono">${ret}</span>` : ""}`+
+      `<span class="hist" aria-hidden="true">${hist}</span><span class="st ${pass?"p":"f"}">${pass?"PASS":"FAIL"}</span></div>`+
+      `<span class="as mono">${esc(t.a)}${never && t.form ? ` <span class="tag">rỗng: ${t.form}</span>` : ""}</span>`+`</div>`;
+  }).join("");
+  const st = document.getElementById("status");
+  const note = NOTES[step];
+  st.className = "status " + note.cls;
+  st.innerHTML = note.html;
+  document.getElementById("stepLbl").textContent = step===0 ? "Mã gốc" : (step===LAST ? "Tổng kết" : "Đột biến " + step + "/4");
+  document.getElementById("bPrev").disabled = step===0;
+  document.getElementById("bNext").disabled = step===LAST;
+}
+function go(s){
+  step = Math.max(0, Math.min(LAST, s));
+  if (step>=1 && step<=4) visited.add(step);
+  if (step===LAST) [1,2,3,4].forEach(k=>visited.add(k));
+  render();
+}
+document.getElementById("chips").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  const k = +b.dataset.m;
+  go(activeMut()===k ? 0 : k);
+});
+document.getElementById("bNext").onclick = ()=>go(step+1);
+document.getElementById("bPrev").onclick = ()=>go(step-1);
+document.getElementById("bAll").onclick = ()=>go(LAST);
+document.getElementById("bReset").onclick = ()=>{ visited = new Set(); go(0); };
+document.addEventListener("keydown", e=>{
+  if (e.key==="ArrowRight") go(step+1);
+  if (e.key==="ArrowLeft") go(step-1);
+});
+const q = new URLSearchParams(location.search);
+const qb = parseInt(q.get("buoc"),10);
+if (!isNaN(qb)) { for (let k=1;k<=Math.min(qb,4);k++) visited.add(k); go(qb); } else go(0);
+</script>
+</body>
+</html>

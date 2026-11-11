@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Mô phỏng cửa sổ ngữ cảnh đầy dần, /clear và /compact</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7; --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --track:#eef0f4;
+    --s-claude:#8b5cf6; --s-chat:#3b82f6; --s-file:#14b8a6; --s-cmd:#f59e0b; --s-sum:#94a3b8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717; --warn:#fbbf24; --warn-soft:#3a2c10;
+      --cur:#3d3412; --cur-bar:#e0b400; --track:#232934;
+      --s-claude:#a78bfa; --s-chat:#60a5fa; --s-file:#2dd4bf; --s-cmd:#fbbf24; --s-sum:#7c8799;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .panel-title .num{font-variant-numeric:tabular-nums;color:var(--text)}
+  .bar{position:relative;height:30px;margin-top:16px;background:var(--track);border-radius:7px;overflow:visible;display:flex}
+  .seg{height:100%;transition:width .35s;border-right:1px solid var(--card);min-width:0}
+  .seg:first-child{border-radius:7px 0 0 7px}
+  .seg.claude{background:var(--s-claude)} .seg.chat{background:var(--s-chat)} .seg.file{background:var(--s-file)}
+  .seg.cmd{background:var(--s-cmd)} .seg.sum{background:var(--s-sum)}
+  .seg.old{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 4px,transparent 4px 9px)}
+  .seg.fresh{box-shadow:inset 0 0 0 2px var(--cur-bar)}
+  .thr{position:absolute;top:-5px;bottom:-5px;left:90%;width:0;border-left:2px dashed var(--bad)}
+  .thr span{position:absolute;top:-17px;right:4px;font-size:11.5px;color:var(--bad);white-space:nowrap;font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:7px;font-size:12.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .legend i.old{background:var(--s-chat);background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.6) 0 3px,transparent 3px 6px)}
+  .grid{display:grid;grid-template-columns:1.3fr 1fr;gap:10px;margin-top:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .log{list-style:none;margin:0;padding:0;max-height:132px;overflow:auto;font-size:13.5px}
+  .log li{padding:4px 6px;border-radius:6px;display:flex;gap:7px;align-items:flex-start}
+  .log li .t{flex:none;font-size:11.5px;font-weight:700;color:var(--muted);min-width:42px;font-variant-numeric:tabular-nums;padding-top:1px}
+  .log li.cur{background:var(--cur);box-shadow:inset 3px 0 0 var(--cur-bar)}
+  .log li.sys{color:var(--bad)}
+  .log li.choice{color:var(--accent);font-weight:600}
+  .log li.empty{color:var(--muted);font-style:italic}
+  .facts{list-style:none;margin:0;padding:0;font-size:13.5px}
+  .facts li{display:flex;gap:7px;align-items:flex-start;padding:2px 0;border-bottom:1px solid var(--line)}
+  .facts li:last-child{border-bottom:0}
+  .facts .tag{flex:none;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 6px;margin-top:1px}
+  .facts .ok .tag{background:var(--ok-soft);color:var(--ok)}
+  .facts .old .tag{background:var(--warn-soft);color:var(--warn)}
+  .facts .lost .tag{background:var(--bad-soft);color:var(--bad)}
+  .facts .lost .tx{text-decoration:line-through;color:var(--muted)}
+  .facts .none{color:var(--muted);font-style:italic}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 12px;font-size:14px;min-height:40px;margin-top:8px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .decide{margin-top:8px;border:2px solid var(--cur-bar);border-radius:10px;padding:8px 12px;background:var(--card)}
+  .decide p{margin:0 0 6px;font-size:14px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{border:1px solid var(--accent);background:var(--accent-soft);color:var(--text);padding:6px 11px;min-height:38px;border-radius:9px;cursor:pointer;font:inherit;font-size:13.5px;text-align:left}
+  .opt code{font-weight:700}
+  .opt:hover{border-width:2px;padding:5px 10px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:15px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> qua một buổi làm việc; ở điểm dừng, chọn <code>/clear</code>, <code>/compact</code> hay tiếp tục. Số token là số minh họa.</p>
+
+  <div class="card">
+    <p class="panel-title"><span>Cửa sổ ngữ cảnh của phiên</span><span class="num" id="usage"></span></p>
+    <div class="bar" id="bar"><div class="thr"><span>ngưỡng tự nén</span></div></div>
+    <div class="legend">
+      <span><i style="background:var(--s-claude)"></i>CLAUDE.md</span>
+      <span><i style="background:var(--s-chat)"></i>yêu cầu và trả lời</span>
+      <span><i style="background:var(--s-file)"></i>tệp đã đọc</span>
+      <span><i style="background:var(--s-cmd)"></i>kết quả lệnh</span>
+      <span><i style="background:var(--s-sum)"></i>bản tóm tắt</span>
+      <span><i class="old"></i>sọc: thuộc việc cũ</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title"><span>Diễn biến phiên</span></p>
+      <ul class="log" id="log"></ul>
+    </div>
+    <div class="card">
+      <p class="panel-title"><span>Agent còn nắm được</span></p>
+      <ul class="facts" id="facts"></ul>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="decide hidden" id="decide" role="group" aria-label="Chọn cách xử lý">
+    <p id="dq"></p>
+    <div class="opts" id="opts"></div>
+  </div>
+
+  <div class="btns">
+    <button class="btn" id="bNext">Bước tiếp</button>
+    <button class="btn ghost" id="bBack">Lùi lại</button>
+    <button class="btn ghost" id="bAll">Chạy hết</button>
+    <button class="btn ghost" id="bReset">Làm lại</button>
+  </div>
+</div>
+<script>
+/*ENGINE*/
+const CAP = 200, THR = 180;
+const FACTS = {
+  money: "Quy ước tiền (từ CLAUDE.md)",
+  oldTask: "Tệp của việc lọc khoản chi",
+  plan: "Kế hoạch nhập CSV đã duyệt",
+  cols: "Các cột của tệp CSV",
+  dup: "Quyết định về dòng trùng",
+  prog: "Tiến độ: xong bước 1 và 2"
+};
+const CSV_FACTS = ["plan","cols","dup","prog"];
+
+function newState(){
+  return { i:0, segs:[{type:"claude",size:4,task:null}], facts:{money:"ok"}, task:"L",
+           log:[{t:"mở",text:"Mở phiên mới. CLAUDE.md được nạp vào đầu phiên.",cls:""}],
+           note:{cls:"",html:"Phiên mới chỉ có CLAUDE.md. Bấm <b>Bước tiếp</b>."}, choices:[], auto:0, done:false };
+}
+function clone(s){ return JSON.parse(JSON.stringify(s)); }
+function total(s){ return s.segs.reduce((a,x)=>a+x.size,0); }
+function nonClaude(s){ return s.segs.filter(x=>x.type!=="claude"); }
+function hasOld(s){ return s.segs.some(x=>x.task==="L") && s.task==="C"; }
+
+function add(s, parts){
+  s.segs.forEach(x=>x.fresh=false);
+  parts.forEach(p=>s.segs.push({type:p[0],size:p[1],task:s.task,fresh:true}));
+}
+// Auto compact: summarise everything except CLAUDE.md; details decided late in the session get lost.
+function autoCompact(s){
+  const keepOld = s.segs.some(x=>x.task==="L") && s.task==="C";
+  s.segs = [{type:"claude",size:4,task:null},{type:"sum",size:10,task:s.task,fresh:true}];
+  if(keepOld) s.segs.push({type:"sum",size:3,task:"L",fresh:true});
+  if(s.facts.dup==="ok") s.facts.dup="lost";
+  s.auto++;
+  s.log.push({t:"hệ thống",text:"Cửa sổ chạm ngưỡng: Claude Code tự nén giữa chừng. Bản tóm tắt không còn ghi quyết định về dòng trùng.",cls:"sys"});
+}
+function afterAdd(s){
+  if(total(s) > THR){ autoCompact(s); return true; }
+  return false;
+}
+
+const EVENTS = [
+  {t:"việc 1", text:"Bạn giao việc: lọc khoản chi theo nhóm. Agent trình kế hoạch.", add:[["chat",5]],
+   note:"Yêu cầu và kế hoạch của agent bắt đầu chiếm chỗ."},
+  {t:"việc 1", text:"Agent đọc app/services/ledger.py, app/routes/expenses.py, list.html, tests/test_expenses.py.", add:[["file",22]],
+   note:"Mỗi tệp agent mở đều nằm lại trong ngữ cảnh tới hết phiên."},
+  {t:"việc 1", text:"Agent sửa tệp, chạy pytest, toàn bộ xanh.", add:[["cmd",8],["chat",3]],
+   note:"Kết quả lệnh cũng chiếm chỗ như chữ bạn gõ."},
+  {t:"việc 1", text:"Bạn đọc git diff rồi commit. Trang lọc khoản chi đã xong.", add:[["cmd",7]], fact:["oldTask","ok"],
+   note:"Việc 1 đã nằm an toàn trong commit."},
+  {decision:"d1", t:"chọn",
+   q:()=>"Việc tiếp theo: nhập danh sách thành viên từ tệp CSV, không liên quan tới trang lọc khoản chi. Bạn làm gì?",
+   opts:[["clear","<code>/clear</code> rồi giao việc mới"],["compact","<code>/compact</code> rồi giao việc mới"],["cont","Gõ tiếp vào phiên đang mở"]]},
+  {t:"việc 2", text:"Bạn giao việc nhập CSV. Agent hỏi lại ba điểm chưa rõ.", add:[["chat",6]], startC:true,
+   note:"Bắt đầu việc 2. Phần sọc trên thanh (nếu có) là thứ của việc cũ còn nằm lại."},
+  {t:"việc 2", text:"Agent đọc app/services/members.py, app/routes/members.py, các template thành viên, tests/test_members.py.", add:[["file",34]],
+   note:"Tệp đã đọc và kết quả lệnh dài là phần làm cửa sổ đầy nhanh nhất."},
+  {t:"việc 2", text:"Bạn trả lời: dòng trùng mã sinh viên thì bỏ qua và báo lại; nêu các cột của tệp. Bạn duyệt kế hoạch 4 bước.", add:[["chat",8]],
+   facts:[["plan","ok"],["cols","ok"],["dup","ok"]], note:"Các quyết định của bạn giờ chỉ nằm trong cuộc trao đổi này."},
+  {t:"việc 2", text:"Agent làm bước 1 và 2: sửa tệp, chạy pytest nhiều lần, đọc thông báo lỗi.", add:[["cmd",52]], fact:["prog","ok"],
+   note:"Mỗi lần chạy kiểm thử và đọc lỗi lại thêm một khối kết quả lệnh."},
+  {t:"việc 2", text:"Agent đọc tệp CSV mẫu và vài kết quả lệnh dài.", add:[["cmd",34]], longHint:true},
+  {decision:"d2", t:"chọn",
+   q:s=>s.auto ? "Phiên đã gọn lại sau khi tự nén. Việc nhập CSV đang dở (xong 2/4 bước). Bạn làm gì?"
+               : "Việc nhập CSV đang dở (xong 2/4 bước) và phiên đã dài. Bạn làm gì?",
+   opts:[["compactKeep","<code>/compact</code> kèm lời dặn giữ các quyết định"],
+         ["saveClear","Ghi tiến độ ra tệp, <code>/clear</code>, nhắc tệp bằng <code>@</code>"],
+         ["clear","<code>/clear</code>, gõ lại yêu cầu từ đầu"],["cont","Tiếp tục phiên"]]},
+  {t:"việc 2", text:"Agent làm bước 3 và 4, chạy pytest, đọc thông báo lỗi dài.", add:[["cmd",40],["chat",4]], final34:true},
+  {t:"việc 2", text:"Bạn đọc git diff rồi commit.", add:[["cmd",8]], end:true, note:""}
+];
+
+const FEED = {
+  d1:{
+    clear:["ok","Đúng lúc. Việc cũ đã nằm trong commit và việc mới không cần nó, nên bắt đầu sạch là rẻ nhất."],
+    compact:["warn","Bản tóm tắt của việc cũ vẫn đi theo. Nó không giúp gì cho việc nhập CSV mà vẫn chiếm chỗ ở mọi lượt sau."],
+    cont:["bad","Tệp và quyết định của trang lọc khoản chi vẫn nằm trong ngữ cảnh, lẫn với việc mới. Agent dễ lấy nhầm và phiên đầy nhanh hơn."]
+  },
+  d2:{
+    compactKeep:["ok","Đúng lúc. Việc đang dở nên cần giữ, phiên dài nên cần gọn. Lời dặn giúp bản tóm tắt giữ đúng quyết định quan trọng."],
+    saveClear:["ok","Cũng tốt. Tiến độ và quyết định nằm trong tệp, phiên mới bắt đầu gọn mà không mất điều cần giữ."],
+    clear:["bad","Phiên mới không còn kế hoạch đã duyệt và các câu trả lời của bạn. Agent có thể đề xuất kế hoạch khác, mâu thuẫn với hai bước đã làm."],
+    cont:["warn","Phiên cứ thế đầy lên. Nếu chạm ngưỡng, hệ thống tự nén giữa chừng và bạn không chọn được điều gì được giữ."]
+  }
+};
+
+function choose(s, ev, key){
+  const label = ev.opts.find(o=>o[0]===key)[1].replace(/<[^>]+>/g,"");
+  s.choices.push({d:ev.decision,key});
+  s.log.push({t:"bạn chọn",text:label,cls:"choice"});
+  s.segs.forEach(x=>x.fresh=false);
+  if(ev.decision==="d1"){
+    if(key==="clear"){ s.segs=[{type:"claude",size:4,task:null}]; delete s.facts.oldTask; }
+    else if(key==="compact"){ s.segs=[{type:"claude",size:4,task:null},{type:"sum",size:6,task:"L",fresh:true}]; }
+  } else {
+    if(key==="compactKeep"){
+      const old = hasOld(s);
+      s.segs=[{type:"claude",size:4,task:null},{type:"sum",size:12,task:"C",fresh:true}];
+      if(old) s.segs.push({type:"sum",size:3,task:"L",fresh:true});
+    } else if(key==="saveClear"){
+      s.segs=[{type:"claude",size:4,task:null},{type:"file",size:3,task:"C",fresh:true},{type:"chat",size:2,task:"C",fresh:true}];
+      delete s.facts.oldTask;
+      CSV_FACTS.forEach(f=>{ if(s.facts[f]) s.facts[f] = (s.facts[f]==="lost") ? "lost" : "ok"; });
+    } else if(key==="clear"){
+      s.segs=[{type:"claude",size:4,task:null},{type:"chat",size:2,task:"C",fresh:true}];
+      delete s.facts.oldTask;
+      CSV_FACTS.forEach(f=>{ if(s.facts[f]) s.facts[f]="lost"; });
+    }
+  }
+  let [cls,msg] = FEED[ev.decision][key];
+  if(ev.decision==="d2" && s.facts.dup==="lost" && key!=="clear"){
+    cls = "warn";
+    msg += " Có điều: quyết định về dòng trùng đã mất từ lần tự nén trước, lựa chọn này không lấy lại được nó.";
+  }
+  s.note = {cls, html:msg};
+  s.i++;
+}
+
+function step(s){
+  const ev = EVENTS[s.i];
+  if(!ev || ev.decision) return false;
+  if(ev.startC){ s.task="C"; if(s.facts.oldTask==="ok") s.facts.oldTask="old"; }
+  s.log.push({t:ev.t,text:ev.text,cls:""});
+  if(ev.fact) s.facts[ev.fact[0]] = ev.fact[1];
+  if(ev.facts) ev.facts.forEach(f=>s.facts[f[0]]=f[1]);
+  add(s, ev.add);
+  const compacted = afterAdd(s);
+  let cls="", html = ev.note || "";
+  if(compacted){
+    cls="bad"; html="Hệ thống tự nén ngay giữa lúc agent đang làm. Bản tóm tắt giữ ý chính nhưng đã mất quyết định về dòng trùng mà bạn trả lời trước đó.";
+  } else if(ev.longHint){
+    const pct = Math.round(total(s)/CAP*100);
+    if(pct >= 60){ cls="warn"; html="Cửa sổ đã dùng "+pct+"%. Agent bắt đầu hỏi lại điều bạn đã trả lời: dấu hiệu phiên quá dài."; }
+    else { html="Cửa sổ mới dùng "+pct+"%, phiên còn gọn."; }
+  } else if(ev.final34){
+    if(s.facts.plan!=="ok"){ cls="bad"; html="Agent không còn kế hoạch đã duyệt nên tự đề xuất cách khác cho bước 3 và 4."; }
+    else if(s.facts.dup==="lost"){ cls="bad"; html="Agent làm bước 3 mà không còn biết quyết định về dòng trùng: nó dừng cả tệp khi gặp dòng trùng, trái với điều bạn đã chốt."; }
+    else { cls="ok"; html="Agent làm tiếp đúng kế hoạch và đúng các quyết định đã chốt."; }
+  }
+  if(ev.end){ s.done=true; cls=""; html=summary(s); }
+  s.note={cls,html};
+  s.i++;
+  return true;
+}
+
+function summary(s){
+  const d1 = s.choices.find(c=>c.d==="d1"), d2 = s.choices.find(c=>c.d==="d2");
+  const r1 = FEED.d1[d1.key][0], r2 = FEED.d2[d2.key][0];
+  const good = r1==="ok" && r2==="ok";
+  let h = "<b>Buổi làm việc kết thúc.</b> ";
+  h += good ? "Bạn bắt đầu sạch khi đổi việc và nén có chủ đích khi việc dở mà phiên dài. "
+            : "Thử <b>Làm lại</b> với lựa chọn khác và so cửa sổ ngữ cảnh. ";
+  h += "Tự nén giữa chừng: <b>"+s.auto+"</b> lần. Câu hỏi để chọn: việc tiếp theo có cần những gì đang nằm trong phiên không?";
+  return h;
+}
+/*END*/
+
+const $ = id => document.getElementById(id);
+const TYPE_NAME = {claude:"CLAUDE.md",chat:"yêu cầu và trả lời",file:"tệp đã đọc",cmd:"kết quả lệnh",sum:"bản tóm tắt"};
+let st = newState(), hist = [];
+
+function render(){
+  const tot = total(st);
+  $("usage").textContent = "đang dùng " + tot + "k / " + CAP + "k token (" + Math.round(tot/CAP*100) + "%)";
+  const bar = $("bar");
+  bar.querySelectorAll(".seg").forEach(n=>n.remove());
+  const thr = bar.querySelector(".thr");
+  st.segs.forEach(sg=>{
+    const d = document.createElement("div");
+    d.className = "seg " + sg.type + ((sg.task==="L" && st.task==="C") ? " old" : "") + (sg.fresh ? " fresh" : "");
+    d.style.width = (sg.size/CAP*100) + "%";
+    d.title = TYPE_NAME[sg.type] + ": " + sg.size + "k" + ((sg.task==="L" && st.task==="C") ? " (việc cũ)" : "");
+    bar.insertBefore(d, thr);
+  });
+  const log = $("log");
+  log.innerHTML = st.log.map((e,k)=>'<li class="'+e.cls+(k===st.log.length-1?' cur':'')+'"><span class="t">'+e.t+'</span><span>'+e.text+'</span></li>').join("");
+  log.scrollTop = log.scrollHeight;
+  const order = ["money","oldTask","plan","cols","dup","prog"];
+  const TAG = {ok:"còn",old:"việc cũ",lost:"mất"};
+  $("facts").innerHTML = order.filter(k=>st.facts[k]).map(k=>{
+    const v = st.facts[k];
+    return '<li class="'+v+'"><span class="tag">'+TAG[v]+'</span><span class="tx">'+FACTS[k]+'</span></li>';
+  }).join("") || '<li class="none">Chưa có gì.</li>';
+  const ev = EVENTS[st.i];
+  const pending = ev && ev.decision;
+  $("decide").classList.toggle("hidden", !pending);
+  if(pending){
+    $("dq").textContent = ev.q(st);
+    $("opts").innerHTML = ev.opts.map(o=>'<button class="opt" data-k="'+o[0]+'">'+o[1]+'</button>').join("");
+    $("opts").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ hist.push(clone(st)); choose(st, ev, b.dataset.k); render(); });
+  }
+  const s = $("status");
+  s.className = "status" + (st.note.cls ? " " + st.note.cls : "");
+  s.innerHTML = st.note.html;
+  s.classList.toggle("hidden", !!pending && !st.note.cls);
+  $("bNext").disabled = $("bAll").disabled = st.done || !!pending;
+  $("bBack").disabled = hist.length === 0;
+}
+function next(){ const snap = clone(st); if(step(st)){ hist.push(snap); render(); } }
+function runAll(){ let moved=false; while(EVENTS[st.i] && !EVENTS[st.i].decision && !st.done){ hist.push(clone(st)); step(st); moved=true; } if(moved) render(); }
+function back(){ if(hist.length){ st = hist.pop(); render(); } }
+$("bNext").onclick = next;
+$("bAll").onclick = runAll;
+$("bBack").onclick = back;
+$("bReset").onclick = ()=>{ st = newState(); hist = []; render(); };
+document.addEventListener("keydown", e=>{
+  if(e.target.closest && e.target.closest("button") && (e.key===" "||e.key==="Enter")) return;
+  if(e.key==="ArrowRight") next(); else if(e.key==="ArrowLeft") back();
+});
+// ?chon=clear,compactKeep  ?buoc=N  (để chụp kiểm tra)
+const qs = new URLSearchParams(location.search);
+const picks = (qs.get("chon")||"").split(",").filter(Boolean);
+const nStep = Math.max(0, Math.min(40, parseInt(qs.get("buoc")||"0",10) || 0));
+for(let k=0;k<nStep;k++){
+  const ev = EVENTS[st.i]; if(!ev || st.done) break;
+  hist.push(clone(st));
+  if(ev.decision){ const key = picks.shift(); if(!key || !ev.opts.some(o=>o[0]===key)){ hist.pop(); break; } choose(st, ev, key); }
+  else step(st);
+}
+render();
+</script>
+</body>
+</html>

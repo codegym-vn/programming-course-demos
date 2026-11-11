@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Vòng lặp của agent từng bước</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8;
+    --node:#f3f5f8; --node-line:#c5ccd8; --edge:#b5bdca;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2d10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c;
+      --node:#11151c; --node-line:#3a4250; --edge:#4a5363;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .seg button{flex:1 1 160px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:6px 10px;min-height:38px;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  .req{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.45;background:var(--code-bg);border-radius:8px;padding:6px 10px;margin:0}
+  .req .add{background:var(--cur);border-radius:4px}
+  .grid{display:grid;grid-template-columns:260px 1fr;gap:10px;margin-top:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  svg{display:block;width:100%;max-width:230px;height:auto;margin:0 auto}
+  .nd rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.5}
+  .nd text{fill:var(--text);font-size:16px;font-weight:600}
+  .nd.on rect{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.5}
+  .nd.end rect{stroke-dasharray:4 3}
+  .nd.done rect{fill:var(--ok-soft);stroke:var(--ok);stroke-width:2.5}
+  .eg{stroke:var(--edge);stroke-width:2;fill:none}
+  .eg.on{stroke:var(--cur-bar);stroke-width:3.5}
+  .ah{fill:var(--edge)} .ah.on{fill:var(--cur-bar)}
+  .elbl{fill:var(--muted);font-size:14px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:6px;font-size:13px}
+  .stats div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:2px 0}
+  .stats b{font-variant-numeric:tabular-nums}
+  .stats .wide{grid-column:1 / -1}
+  .ev-no{color:var(--warn)} .ev-yes{color:var(--ok)}
+  .log{list-style:none;margin:0;padding:0;height:300px;overflow:auto;font-size:13px}
+  @media (max-width:600px){.log{height:240px}}
+  .log li{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:3px 6px;border-radius:6px;align-items:baseline}
+  .log li.cur{background:var(--cur);box-shadow:inset 3px 0 0 var(--cur-bar)}
+  .log li.sep{display:block;color:var(--muted);font-size:12px;font-weight:700;padding:6px 6px 2px;border-top:1px dashed var(--line);margin-top:4px}
+  .k{font-size:11.5px;font-weight:700;border-radius:5px;padding:1px 0;text-align:center}
+  .k-doc,.k-tim{background:var(--accent-soft);color:var(--accent)}
+  .k-sua{background:var(--warn-soft);color:var(--warn)}
+  .k-chay{background:var(--code-bg);color:var(--text);border:1px solid var(--line)}
+  .k-kq{background:var(--code-bg);color:var(--muted)}
+  .k-do{background:var(--bad-soft);color:var(--bad)}
+  .k-xanh{background:var(--ok-soft);color:var(--ok)}
+  .k-nghi,.k-yc{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-word}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:15px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 12px;font-size:14px;min-height:46px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn yêu cầu, bấm <b>Bước tiếp</b> và tự đoán trước agent sẽ làm gì. Nhật ký là minh họa, giao diện thật khác.</p>
+  <div class="seg" role="group" aria-label="Chọn yêu cầu">
+    <button id="vdA" type="button">Yêu cầu A: chỉ nêu việc cần làm</button>
+    <button id="vdB" type="button">Yêu cầu B: kèm cách kiểm chứng</button>
+  </div>
+  <p class="req" id="req"></p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Vòng lặp của agent</p>
+      <svg viewBox="0 0 300 290" role="img" aria-label="Sơ đồ vòng lặp: yêu cầu, thu thập ngữ cảnh, lập kế hoạch, dùng công cụ, quan sát, báo xong">
+        <defs>
+          <marker id="m0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path class="ah on" d="M0 0L10 5L0 10z"/></marker>
+        </defs>
+        <path class="eg" id="e-yc-nc" d="M62 44 L62 72"/>
+        <path class="eg" id="e-nc-kh" d="M118 96 L174 96"/>
+        <path class="eg" id="e-kh-cc" d="M232 120 L232 168"/>
+        <path class="eg" id="e-cc-qs" d="M174 192 L118 192"/>
+        <path class="eg" id="e-qs-nc" d="M38 168 L38 120"/>
+        <path class="eg" id="e-qs-kh" d="M112 170 L180 120" stroke-dasharray="5 4"/>
+        <path class="eg" id="e-qs-xong" d="M62 216 L62 242"/>
+        <text class="elbl" x="6" y="148">lặp</text>
+        <text class="elbl" x="150" y="152">hoặc</text>
+        <text class="elbl" x="70" y="235">tự cho là xong</text>
+        <g class="nd" id="n-yc"><rect x="6" y="8" width="112" height="36" rx="9"/><text x="62" y="31" text-anchor="middle">Yêu cầu</text></g>
+        <g class="nd" id="n-nc"><rect x="6" y="72" width="112" height="48" rx="9"/><text x="62" y="93" text-anchor="middle">Thu thập</text><text x="62" y="110" text-anchor="middle">ngữ cảnh</text></g>
+        <g class="nd" id="n-kh"><rect x="174" y="72" width="116" height="48" rx="9"/><text x="232" y="101" text-anchor="middle">Lập kế hoạch</text></g>
+        <g class="nd" id="n-cc"><rect x="174" y="168" width="116" height="48" rx="9"/><text x="232" y="197" text-anchor="middle">Dùng công cụ</text></g>
+        <g class="nd" id="n-qs"><rect x="6" y="168" width="112" height="48" rx="9"/><text x="62" y="197" text-anchor="middle">Quan sát</text></g>
+        <g class="nd end" id="n-xong"><rect x="6" y="242" width="112" height="40" rx="9"/><text x="62" y="267" text-anchor="middle">Báo "đã xong"</text></g>
+      </svg>
+      <div class="stats" aria-live="polite">
+        <div><span>Vòng</span><b id="sV">0</b></div>
+        <div><span>Tệp đã đọc</span><b id="sD">0</b></div>
+        <div><span>Tệp đã sửa</span><b id="sS">0</b></div>
+        <div><span>Lần chạy pytest</span><b id="sP">0</b></div>
+        <div class="wide"><span>Bằng chứng bộ lọc chạy đúng</span><b id="sE">chưa có</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Nhật ký phiên (minh họa)</p>
+      <ul class="log" id="log"></ul>
+    </div>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="bPrev" type="button">Lùi lại</button>
+    <button class="btn" id="bNext" type="button">Bước tiếp</button>
+    <button class="btn ghost" id="bAll" type="button">Chạy hết</button>
+    <button class="btn ghost" id="bReset" type="button">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</div>
+<script>
+const TASK = "Thêm bộ lọc theo hạng mục cho trang Khoản chi.";
+const REQ = {
+  a: TASK,
+  b: TASK + ' <span class="add">Trước khi sửa, viết một kiểm thử: lọc theo "Sự kiện" thì trang chỉ còn khoản chi Sự kiện. Chạy pytest, chỉ báo xong khi mọi kiểm thử qua.</span>'
+};
+// k: yc (yêu cầu), nghi, tim, doc, sua, chay, kq, do, xanh
+const SC = {
+  a: [
+    {n:"yc", log:[["yc","Nhận yêu cầu A"]],
+     why:"Yêu cầu nói cần làm gì, nhưng không nói thế nào thì coi là xong. Agent sẽ tự chọn thước đo."},
+    {n:"nc", log:[["tim","expense trong app/"],["doc","app/routes/expenses.py"],["doc","app/services/ledger.py"],["doc","app/templates/expenses/list.html"]],
+     why:"Agent tự tìm và mở các tệp liên quan. Nó chỉ biết những gì đọc được ở bước này."},
+    {n:"kh", log:[["nghi","Thêm tham số category cho list_expenses, route nhận ?category=, thêm ô chọn hạng mục trên trang."]],
+     why:"Kế hoạch hợp lý. Để ý: kế hoạch không có bước nào chứng minh bộ lọc chạy đúng."},
+    {n:"cc", log:[["sua","app/services/ledger.py"],["sua","app/routes/expenses.py"],["sua","app/templates/expenses/list.html"],["chay","pytest -q"]],
+     why:"Agent sửa ba tệp rồi chạy bộ kiểm thử có sẵn."},
+    {n:"qs", log:[["xanh","Tất cả kiểm thử qua"],["doc","đọc lại ba tệp vừa sửa: trông đúng"]],
+     why:"Các kiểm thử có sẵn được viết trước khi có bộ lọc, không cái nào gọi tới nó. Xanh ở đây chỉ nói: chưa làm hỏng chức năng cũ."},
+    {n:"xong", log:[["kq","Agent: Đã thêm bộ lọc theo hạng mục."]], end:"warn",
+     why:"Agent dừng sau 1 vòng vì mã nguồn <b>trông đúng</b> và kiểm thử cũ vẫn xanh. Chưa có gì chứng minh bộ lọc chạy đúng; bạn phải tự mở trang để thử. Chuyển sang <b>Yêu cầu B</b> để so sánh."}
+  ],
+  b: [
+    {n:"yc", log:[["yc","Nhận yêu cầu B"]],
+     why:"Cùng việc đó, nhưng yêu cầu nói rõ thước đo: một kiểm thử cụ thể, và chỉ báo xong khi mọi kiểm thử qua."},
+    {n:"nc", log:[["tim","expense trong app/"],["doc","app/routes/expenses.py"],["doc","app/services/ledger.py"],["doc","tests/test_expenses.py"]],
+     why:"Lần này agent đọc thêm tệp kiểm thử để viết kiểm thử mới theo đúng cách dự án đang viết."},
+    {n:"kh", log:[["nghi","Viết kiểm thử trước, chạy để thấy đỏ, rồi mới sửa mã nguồn."]],
+     why:"Thước đo trong yêu cầu đổi luôn kế hoạch: kiểm thử đi trước."},
+    {n:"cc", log:[["sua","tests/test_expenses.py: thêm test_expense_list_filters_by_category"],["chay","pytest tests/test_expenses.py"]],
+     why:"Agent viết kiểm thử mới và chạy nó khi chưa sửa gì."},
+    {n:"qs", log:[["do","1 failed: test_expense_list_filters_by_category"]], loop:"kh",
+     why:"Đỏ, đúng như mong đợi: trang chưa có bộ lọc. Kiểm thử này giờ đã chứng minh được nó bắt được chỗ thiếu. Agent quay lại lập kế hoạch."},
+    {n:"kh", log:[["nghi","Thêm tham số category cho list_expenses, route nhận tham số hạng mục, thêm ô chọn trên trang."]],
+     why:"Vòng 2 bắt đầu, lần này với một mục tiêu đo được."},
+    {n:"cc", log:[["sua","app/services/ledger.py"],["sua","app/routes/expenses.py"],["sua","app/templates/expenses/list.html"],["chay","pytest tests/test_expenses.py"]],
+     why:"Agent sửa ba tệp rồi chạy lại đúng kiểm thử đó."},
+    {n:"qs", log:[["do","1 failed: lọc \"Sự kiện\" vẫn hiện khoản \"Nước uống\""]], loop:"nc",
+     why:"Vẫn đỏ. Không có kiểm thử này, lỗi này đã lọt qua như ở yêu cầu A. Agent quay lại thu thập ngữ cảnh để tìm vì sao."},
+    {n:"nc", log:[["doc","tests/test_expenses.py"],["doc","app/routes/expenses.py"],["nghi","Kiểm thử gửi ?category=, route lại đọc tham số tên cat."]],
+     why:"Đọc lại hai tệp, agent thấy chỗ lệch giữa kiểm thử và route."},
+    {n:"kh", log:[["nghi","Sửa route cho đọc đúng tham số category, giữ nguyên kiểm thử."]],
+     why:"Kế hoạch nhỏ: sửa mã nguồn cho khớp thước đo, không sửa thước đo cho khớp mã nguồn."},
+    {n:"cc", log:[["sua","app/routes/expenses.py"],["chay","pytest -q"]],
+     why:"Sửa route rồi chạy toàn bộ bộ kiểm thử, không chỉ một tệp."},
+    {n:"qs", log:[["xanh","Tất cả kiểm thử qua, gồm kiểm thử mới"]], evidence:true,
+     why:"Xanh lần này có nghĩa: kiểm thử mới từng đỏ khi chưa có bộ lọc, giờ xanh khi đã có."},
+    {n:"xong", log:[["kq","Agent: Đã thêm bộ lọc. Kiểm thử mới đỏ trước khi sửa, xanh sau khi sửa."]], end:"ok",
+     why:"Agent dừng sau 3 vòng vì thước đo bạn đưa đã đạt, không phải vì mã nguồn trông đúng. Bạn vẫn đọc lại thay đổi, nhưng giờ đã có bằng chứng để đối chiếu."}
+  ]
+};
+const LABEL = {yc:"Yêu cầu",nghi:"Kế hoạch",tim:"Tìm",doc:"Đọc",sua:"Sửa",chay:"Chạy",kq:"Kết quả",do:"Đỏ",xanh:"Xanh"};
+const KCLASS = {yc:"k-yc",nghi:"k-nghi",tim:"k-tim",doc:"k-doc",sua:"k-sua",chay:"k-chay",kq:"k-kq",do:"k-do",xanh:"k-xanh"};
+
+// Pure: compute state after k steps (k = 0..len)
+function stateAt(vd, k){
+  const steps = SC[vd];
+  let round = 0, read = new Set(), edited = new Set(), runs = 0, evidence = false, prev = null, edge = null;
+  for(let i=0;i<k;i++){
+    const s = steps[i];
+    if(s.n === "nc" && round === 0) round = 1;
+    if(prev === "qs" && (s.n === "nc" || s.n === "kh")) round++;
+    edge = prev ? prev + "-" + s.n : null;
+    for(const [t, txt] of s.log){
+      const f = txt.split(/[ :]/)[0];
+      if(t === "doc" && /\//.test(f)) read.add(f);
+      if(t === "sua") edited.add(f);
+      if(t === "chay" && txt.startsWith("pytest")) runs++;
+    }
+    if(s.evidence) evidence = true;
+    prev = s.n;
+  }
+  return {node: prev, edge, round, read: read.size, edited: edited.size, runs, evidence};
+}
+
+const qs = new URLSearchParams(location.search);
+let vd = qs.get("vd") === "b" ? "b" : "a";
+let k = 0;
+const $ = id => document.getElementById(id);
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function render(){
+  const steps = SC[vd];
+  $("vdA").setAttribute("aria-pressed", vd === "a");
+  $("vdB").setAttribute("aria-pressed", vd === "b");
+  $("req").innerHTML = REQ[vd];
+  const st = stateAt(vd, k);
+  document.querySelectorAll(".nd").forEach(g => g.classList.remove("on","done"));
+  document.querySelectorAll(".eg").forEach(e => { e.classList.remove("on"); e.setAttribute("marker-end","url(#m0)"); });
+  if(st.node){
+    const g = $("n-" + st.node);
+    g.classList.add(st.node === "xong" && steps[k-1].end === "ok" ? "done" : "on");
+  }
+  if(st.edge){
+    const e = $("e-" + st.edge);
+    if(e){ e.classList.add("on"); e.setAttribute("marker-end","url(#m1)"); }
+  }
+  $("sV").textContent = st.round;
+  $("sD").textContent = st.read;
+  $("sS").textContent = st.edited;
+  $("sP").textContent = st.runs;
+  const ev = $("sE");
+  if(st.evidence){ ev.textContent = "có: kiểm thử đỏ rồi xanh"; ev.className = "ev-yes"; }
+  else { ev.textContent = "chưa có"; ev.className = k === steps.length ? "ev-no" : ""; }
+  // log
+  let html = "", r = 0, prev = null;
+  for(let i=0;i<k;i++){
+    const s = steps[i];
+    if((s.n === "nc" && r === 0) || (prev === "qs" && (s.n === "nc" || s.n === "kh"))){
+      r = r === 0 ? 1 : r + 1;
+      html += '<li class="sep">Vòng ' + r + '</li>';
+    }
+    for(const [t, txt] of s.log){
+      const isCode = ["tim","doc","sua","chay"].includes(t);
+      html += '<li class="' + (i === k-1 ? "cur" : "") + '"><span class="k ' + KCLASS[t] + '">' + LABEL[t] + '</span><span' + (isCode ? ' class="mono"' : '') + '>' + esc(txt) + '</span></li>';
+    }
+    prev = s.n;
+  }
+  if(k === 0) html = '<li class="sep" style="border:0">Chưa có gì. Bấm Bước tiếp.</li>';
+  const log = $("log");
+  log.innerHTML = html;
+  const cur = log.querySelector("li.cur");
+  if(cur) log.scrollTop = cur.offsetTop - log.offsetTop - 40;
+  // status
+  const s = $("status");
+  s.className = "status";
+  if(k === 0){
+    s.innerHTML = vd === "a" ? "Yêu cầu A chỉ nói việc cần làm. Theo bạn, agent sẽ dựa vào đâu để quyết định là xong?"
+                             : "Yêu cầu B thêm một câu về cách kiểm chứng. Theo bạn, câu đó đổi gì trong vòng lặp?";
+  } else {
+    const step = steps[k-1];
+    if(step.end) s.className = "status " + step.end;
+    s.innerHTML = '<b>Bước ' + k + '/' + steps.length + '.</b> ' + step.why;
+  }
+  $("bPrev").disabled = k === 0;
+  $("bNext").disabled = $("bAll").disabled = k >= steps.length;
+}
+function next(){ if(k < SC[vd].length){ k++; render(); } }
+function prevStep(){ if(k > 0){ k--; render(); } }
+$("bNext").onclick = next;
+$("bPrev").onclick = prevStep;
+$("bAll").onclick = () => { k = SC[vd].length; render(); };
+$("bReset").onclick = () => { k = 0; render(); };
+$("vdA").onclick = () => { vd = "a"; k = 0; render(); };
+$("vdB").onclick = () => { vd = "b"; k = 0; render(); };
+document.addEventListener("keydown", e => {
+  if(e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;
+  if(e.key === "ArrowRight") next();
+  if(e.key === "ArrowLeft") prevStep();
+});
+const b = parseInt(qs.get("buoc") || "0", 10);
+k = Math.max(0, Math.min(isNaN(b) ? 0 : b, SC[vd].length));
+render();
+if(typeof module !== "undefined") module.exports = {SC, stateAt};
+</script>
+</body>
+</html>

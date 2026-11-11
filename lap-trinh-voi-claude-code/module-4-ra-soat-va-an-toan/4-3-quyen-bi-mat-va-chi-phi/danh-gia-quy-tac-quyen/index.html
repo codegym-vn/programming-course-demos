@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Mô phỏng đánh giá quy tắc quyền</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fdf1dc;
+    --cur:#fff1b8; --cur-bar:#e0a800; --code-bg:#f3f5f8; --skip:#9aa3b2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2d10;
+      --cur:#3d3412; --cur-bar:#e0b400; --code-bg:#11151c; --skip:#5d6676;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .mono,code,input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:270px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}.grid>.card:first-child{order:2}}
+  .grp{margin-bottom:8px}
+  .grp h4{margin:0 0 3px;font-size:13px;display:flex;align-items:center;gap:6px}
+  .tagl{font-size:11.5px;font-weight:700;border-radius:5px;padding:0 6px}
+  .g-deny .tagl{background:var(--bad-soft);color:var(--bad)}
+  .g-ask .tagl{background:var(--warn-soft);color:var(--warn)}
+  .g-allow .tagl{background:var(--ok-soft);color:var(--ok)}
+  .rules{display:flex;flex-direction:column;gap:3px}
+  .rule{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:1px 4px 1px 8px;font-size:12.5px;background:var(--code-bg);min-height:26px}
+  .rule .t{flex:1;min-width:0;overflow-wrap:anywhere}
+  .rule .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:15px;line-height:1;padding:2px 6px;border-radius:4px}
+  .rule .x:hover{background:var(--line)}
+  .rule.hit{border-color:var(--cur-bar);background:var(--cur);box-shadow:0 0 0 1px var(--cur-bar)}
+  .rule.new{border-style:dashed}
+  .addrow{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+  .addrow select,.addrow input{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);padding:4px 6px;min-height:32px}
+  .addrow input{flex:1 1 120px;min-width:0}
+  .small{font-size:12.5px;color:var(--muted);margin-top:2px;min-height:0}
+  .small.err{color:var(--bad)}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:7px;padding:2px 7px;font-size:12px;cursor:pointer;min-height:28px}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  .inrow{display:flex;gap:6px}
+  .inrow input{flex:1;min-width:0;font-size:14px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--text);padding:6px 9px;min-height:38px}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;min-height:36px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.sm{min-height:32px;padding:3px 9px;font-size:13px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+  .trace{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+  .st{display:grid;grid-template-columns:20px 1fr;gap:6px;border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:13px;line-height:1.4;align-items:start}
+  .st .n{width:20px;height:20px;border-radius:50%;background:var(--code-bg);color:var(--muted);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .st.cur{border-color:var(--cur-bar);box-shadow:0 0 0 1px var(--cur-bar)}
+  .st.cur .n{background:var(--cur-bar);color:#1d2330}
+  .st.skip{color:var(--skip)}
+  .st.pending{opacity:.45}
+  .st b{font-weight:700}
+  .st code{font-size:12.5px;background:var(--code-bg);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+  .res{font-weight:700}
+  .r-deny{color:var(--bad)} .r-ask{color:var(--warn)} .r-allow{color:var(--ok)}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 11px;font-size:14px;min-height:44px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .status.warn{border-color:var(--warn);background:var(--warn-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn hoặc gõ một thao tác, bấm <b>Bước tiếp</b> để xem thứ tự xét <b>cấm, hỏi, cho phép</b>. Bấm x để bỏ quy tắc, hoặc thêm quy tắc mới.</p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">.claude/settings.json (ví dụ trong bài)</p>
+      <div class="grp g-deny"><h4><span class="tagl">deny</span>cấm</h4><div class="rules" id="r-deny"></div></div>
+      <div class="grp g-ask"><h4><span class="tagl">ask</span>hỏi</h4><div class="rules" id="r-ask"></div></div>
+      <div class="grp g-allow"><h4><span class="tagl">allow</span>cho phép</h4><div class="rules" id="r-allow"></div></div>
+      <div class="addrow">
+        <select id="addList" aria-label="Danh sách"><option value="deny">deny</option><option value="ask">ask</option><option value="allow" selected>allow</option></select>
+        <input id="addRule" class="mono" maxlength="80" placeholder="Bash(git *)" aria-label="Quy tắc mới">
+        <button class="btn sm" id="bAdd">Thêm</button>
+      </div>
+      <div class="small" id="addMsg"></div>
+      <button class="btn ghost sm" id="bRules">Khôi phục danh sách</button>
+    </div>
+    <div class="card">
+      <p class="panel-title">Thao tác agent xin làm</p>
+      <div class="chips" id="chips"></div>
+      <div class="inrow">
+        <input id="act" class="mono" maxlength="120" aria-label="Thao tác" placeholder="Bash(git push origin main) hoặc Read(./.env)">
+        <button class="btn sm" id="bCheck">Xét</button>
+      </div>
+      <div class="small" id="actMsg"></div>
+      <div class="trace" id="trace"></div>
+      <div class="btns">
+        <button class="btn ghost" id="bPrev">Lùi lại</button>
+        <button class="btn" id="bNext">Bước tiếp</button>
+        <button class="btn ghost" id="bAll">Chạy hết</button>
+        <button class="btn ghost" id="bReset">Làm lại</button>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+<script>
+/* ENGINE START */
+const DEFAULT_RULES = {
+  deny: ["Read(./.env)", "Read(./.env.*)", "Bash(rm -rf *)", "Bash(git push *)", "Bash(curl *)"],
+  ask: ["Bash(pip install *)"],
+  allow: ["Bash(pytest)", "Bash(pytest *)", "Bash(git status)", "Bash(git diff *)", "Bash(git log *)"]
+};
+const TOOLS = ["Bash", "Read", "Edit", "Write", "WebFetch"];
+const READ_ONLY = ["ls", "cat", "echo", "pwd", "head", "tail", "grep", "wc", "which", "diff", "stat", "du", "cd",
+  "git status", "git diff", "git log", "git show"];
+const FILE_READERS = ["cat", "head", "tail", "less"];
+
+function norm(s){ return String(s).trim().replace(/\s+/g, " "); }
+
+function parseRule(str){
+  const s = norm(str);
+  const m = /^([A-Za-z]+)(?:\((.*)\))?$/.exec(s);
+  if(!m) return null;
+  if(TOOLS.indexOf(m[1]) < 0) return null;
+  if(m[2] !== undefined && norm(m[2]) === "") return null;
+  return { tool: m[1], spec: m[2] === undefined ? null : norm(m[2]), text: s };
+}
+
+function parseAction(str){
+  const s = norm(str);
+  if(!s) return null;
+  const m = /^([A-Za-z]+)\((.*)\)$/.exec(s);
+  if(m && TOOLS.indexOf(m[1]) >= 0){
+    const arg = norm(m[2]);
+    if(!arg) return null;
+    return { tool: m[1], arg: arg };
+  }
+  return { tool: "Bash", arg: s };
+}
+
+function splitCompound(cmd){
+  const parts = []; let cur = ""; let q = null;
+  for(let i = 0; i < cmd.length; i++){
+    const c = cmd[i];
+    if(q){ cur += c; if(c === q) q = null; continue; }
+    if(c === '"' || c === "'"){ q = c; cur += c; continue; }
+    const two = cmd.slice(i, i + 2);
+    if(two === "&&" || two === "||" || two === "|&"){ parts.push(cur); cur = ""; i++; continue; }
+    if(c === ";" || c === "|" || c === "&" || c === "\n"){ parts.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  parts.push(cur);
+  return parts.map(norm).filter(p => p.length > 0);
+}
+
+function globToRegex(p, pathMode){
+  let r = "";
+  for(let i = 0; i < p.length; i++){
+    const c = p[i];
+    if(c === "*"){
+      if(pathMode && p[i + 1] === "*"){ r += ".*"; i++; }
+      else r += pathMode ? "[^/]*" : ".*";
+    } else if(pathMode && c === "?") r += "[^/]";
+    else r += c.replace(/[.+^${}()|[\]\\?]/g, "\\$&");
+  }
+  return new RegExp("^" + r + "$");
+}
+
+function bashMatch(pattern, cmd){
+  let p = norm(pattern);
+  if(/:\*$/.test(p)) p = p.slice(0, -2) + " *";
+  const stars = (p.match(/\*/g) || []).length;
+  if(stars === 0) return cmd === p;
+  if(stars === 1 && / \*$/.test(p)){
+    const pre = p.slice(0, -2);
+    return cmd === pre || cmd.indexOf(pre + " ") === 0;
+  }
+  return globToRegex(p, false).test(cmd);
+}
+
+function normPath(p){
+  let s = norm(p).replace(/^["']|["']$/g, "");
+  while(s.indexOf("./") === 0) s = s.slice(2);
+  if(s.indexOf("/") === 0 && s.indexOf("//") !== 0) s = s.slice(1);
+  return s;
+}
+
+function pathMatch(pattern, path){
+  return globToRegex(normPath(pattern), true).test(normPath(path));
+}
+
+function readTarget(sub){
+  const w = sub.split(" ");
+  if(FILE_READERS.indexOf(w[0]) < 0) return null;
+  const files = w.slice(1).filter(x => x.length && x[0] !== "-");
+  return files.length ? files[files.length - 1] : null;
+}
+
+function isReadOnly(sub){
+  return READ_ONLY.some(r => sub === r || sub.indexOf(r + " ") === 0);
+}
+
+/* rule vs one unit of the action: returns a short "via" note or null */
+function ruleHits(rule, action, sub){
+  if(action.tool === "Bash"){
+    if(rule.tool === "Bash") return (rule.spec === null || bashMatch(rule.spec, sub)) ? "bash" : null;
+    if(rule.tool === "Read"){
+      const f = readTarget(sub);
+      if(f && (rule.spec === null || pathMatch(rule.spec, f))) return "file";
+    }
+    return null;
+  }
+  const same = rule.tool === action.tool || (rule.tool === "Edit" && action.tool === "Write");
+  if(!same) return null;
+  if(rule.spec === null) return "tool";
+  if(action.tool === "Bash") return null;
+  return pathMatch(rule.spec, action.arg) ? "path" : null;
+}
+
+function evaluate(rules, actionStr){
+  const action = parseAction(actionStr);
+  if(!action) return null;
+  const units = action.tool === "Bash" ? splitCompound(action.arg) : [action.arg];
+  if(units.length === 0) return null;
+  const parsed = {};
+  ["deny", "ask", "allow"].forEach(k => { parsed[k] = rules[k].map(parseRule).filter(Boolean); });
+  const lists = {};
+  ["deny", "ask", "allow"].forEach(k => {
+    lists[k] = [];
+    units.forEach(u => parsed[k].forEach(r => {
+      const via = ruleHits(r, action, u);
+      if(via) lists[k].push({ unit: u, rule: r.text, via: via });
+    }));
+  });
+  let outcome, stopAt, basis = null;
+  if(lists.deny.length){ outcome = "deny"; stopAt = 1; }
+  else if(lists.ask.length){ outcome = "ask"; stopAt = 2; }
+  else {
+    stopAt = 3;
+    const covered = units.map(u => lists.allow.some(h => h.unit === u) ? "rule" : (action.tool === "Bash" && isReadOnly(u) ? "readonly" : null));
+    if(covered.every(c => c === "rule")) outcome = "allow";
+    else if(covered.every(c => c)){ outcome = "allow-default"; basis = "readonly"; }
+    else if(action.tool === "Read" && !/^(\/\/|~|\.\.)/.test(action.arg)){ outcome = "allow-default"; basis = "read"; }
+    else { outcome = "ask-default"; basis = action.tool === "Bash" ? "bash" : "edit"; }
+    lists.uncovered = units.filter((u, i) => !covered[i]);
+  }
+  const wrapped = action.tool === "Bash" && units.some(u => /^(bash|sh|zsh|python3?|node) -c /.test(u));
+  return { action: action, units: units, lists: lists, outcome: outcome, stopAt: stopAt, basis: basis, wrapped: wrapped };
+}
+/* ENGINE END */
+
+const PRESETS = [
+  "Bash(git push origin main)",
+  "Read(./.env)",
+  "Bash(pytest -q)",
+  "Bash(pip install requests)",
+  "Read(./.env.backup)",
+  "Bash(pytest -q && git push origin main)",
+  "Bash(bash -c \"pytest && rm -rf data\")",
+  "Read(./app/config.py)"
+];
+const $ = id => document.getElementById(id);
+const clone = o => JSON.parse(JSON.stringify(o));
+let rules = clone(DEFAULT_RULES);
+let added = {};
+let current = null; let step = 0; let actText = "";
+const MAXSTEP = 4;
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]); }
+
+function hitRules(){
+  if(!current || step === 0) return {};
+  const keys = ["deny", "ask", "allow"].slice(0, Math.min(step, current.stopAt));
+  const set = {};
+  keys.forEach(k => current.lists[k].forEach(h => { set[k + "|" + h.rule] = true; }));
+  return set;
+}
+
+function renderRules(){
+  const hits = hitRules();
+  ["deny", "ask", "allow"].forEach(k => {
+    const box = $("r-" + k);
+    box.innerHTML = "";
+    if(rules[k].length === 0){ box.innerHTML = '<div class="small">(trống)</div>'; }
+    rules[k].forEach((r, i) => {
+      const d = document.createElement("div");
+      d.className = "rule mono" + (hits[k + "|" + norm(r)] ? " hit" : "") + (added[k + "|" + r] ? " new" : "");
+      d.innerHTML = '<span class="t">' + esc(r) + '</span><button class="x" aria-label="Bỏ quy tắc ' + esc(r) + '">x</button>';
+      d.querySelector("button").onclick = () => { rules[k].splice(i, 1); recompute(); };
+      box.appendChild(d);
+    });
+  });
+}
+
+function listLine(k){
+  const hs = current.lists[k];
+  if(!hs.length) return "không quy tắc nào khớp";
+  return hs.map(h => '<code>' + esc(h.unit) + '</code> khớp <code>' + esc(h.rule) + '</code>' +
+    (h.via === "file" ? " (lệnh đọc tệp, Claude Code áp quy tắc Read)" : "")).join("; ");
+}
+
+function outcomeText(){
+  const c = current;
+  switch(c.outcome){
+    case "deny": return ['<span class="res r-deny">Bị chặn.</span> Agent không được làm, dù danh sách cho phép có quy tắc nào khớp đi nữa.', "bad", '<span class="res r-deny">bị chặn</span>'];
+    case "ask": return ['<span class="res r-ask">Hỏi bạn.</span> Quy tắc hỏi thắng cả quy tắc cho phép: lần nào cũng phải đọc lệnh rồi mới chọn.', "warn", '<span class="res r-ask">hỏi bạn</span>'];
+    case "allow": return ['<span class="res r-allow">Chạy luôn, không hỏi.</span> ' + (c.units.length > 1 ? "Mọi phần của lệnh ghép đều khớp danh sách cho phép." : "Khớp danh sách cho phép."), "ok", '<span class="res r-allow">chạy luôn</span>'];
+    case "allow-default":
+      return c.basis === "readonly"
+        ? ['<span class="res r-allow">Chạy luôn.</span> Không khớp quy tắc nào, nhưng đây là lệnh chỉ đọc có sẵn trong Claude Code.', "ok", '<span class="res r-allow">chạy luôn</span> (lệnh chỉ đọc)']
+        : ['<span class="res r-allow">Đọc luôn.</span> Không khớp quy tắc nào; đọc tệp trong thư mục dự án không cần hỏi.', "ok", '<span class="res r-allow">đọc luôn</span> (không khớp quy tắc nào)'];
+    default:
+      return c.basis === "bash"
+        ? ['<span class="res r-ask">Hỏi bạn</span> (theo chế độ mặc định). Không quy tắc nào phủ <code>' + esc(c.lists.uncovered[0]) + '</code>.' +
+           (c.wrapped ? ' Phần trong ngoặc kép của <code>bash -c</code> không được xét riêng nên quy tắc cấm không bắt được: đọc hết lệnh trước khi chọn.' : ""), "warn", '<span class="res r-ask">hỏi bạn</span> (không khớp quy tắc nào, theo chế độ mặc định)']
+        : ['<span class="res r-ask">Hỏi bạn</span> (theo chế độ mặc định). Không quy tắc nào khớp.', "warn", '<span class="res r-ask">hỏi bạn</span> (không khớp quy tắc nào)'];
+  }
+}
+
+function renderTrace(){
+  const t = $("trace");
+  if(!current){ t.innerHTML = ""; return; }
+  const c = current;
+  const rows = [];
+  const unitsTxt = c.action.tool === "Bash"
+    ? (c.units.length > 1 ? "Lệnh ghép, tách thành " + c.units.length + " phần: " + c.units.map(u => "<code>" + esc(u) + "</code>").join(", ") + ". Mỗi phần được xét riêng."
+                         : "Công cụ <b>Bash</b>, lệnh <code>" + esc(c.units[0]) + "</code>.")
+    : "Công cụ <b>" + c.action.tool + "</b>, tệp <code>" + esc(c.action.arg) + "</code>.";
+  rows.push(["Thao tác", unitsTxt]);
+  const names = { deny: "1. Xét danh sách cấm", ask: "2. Xét danh sách hỏi", allow: "3. Xét danh sách cho phép" };
+  ["deny", "ask", "allow"].forEach((k, i) => {
+    const idx = i + 1;
+    if(idx > c.stopAt) rows.push([names[k], "bỏ qua, đã có kết quả", "skip"]);
+    else rows.push([names[k], listLine(k)]);
+  });
+  const o = outcomeText();
+  rows.push(["Kết quả", o[2]]);
+  t.innerHTML = rows.map((r, i) => {
+    let cls = "st";
+    if(i > step) cls += " pending";
+    else if(r[2] === "skip") cls += " skip";
+    if(i === step) cls += " cur";
+    const body = i > step ? "" : ": " + r[1];
+    return '<div class="' + cls + '"><span class="n">' + i + '</span><div><b>' + r[0] + '</b>' + body + '</div></div>';
+  }).join("");
+}
+
+function statusFor(){
+  const s = $("status");
+  s.className = "status";
+  if(!current){ s.textContent = "Chọn một thao tác ở trên để bắt đầu."; return; }
+  const c = current;
+  if(step === 0){ s.innerHTML = "Claude Code nhận ra công cụ và nội dung của thao tác, rồi xét ba danh sách theo thứ tự cố định."; return; }
+  if(step <= 3 && step <= c.stopAt){
+    const k = ["deny", "ask", "allow"][step - 1];
+    const hit = c.lists[k].length > 0;
+    if(k === "deny") s.innerHTML = hit ? "Có quy tắc cấm khớp. Dừng ngay, không cần xét hai danh sách sau." : "Không quy tắc cấm nào khớp. Xét tiếp danh sách hỏi.";
+    if(k === "ask") s.innerHTML = hit ? "Có quy tắc hỏi khớp. Dừng ở đây: cho phép không thể gỡ việc hỏi." : "Không quy tắc hỏi nào khớp. Xét tiếp danh sách cho phép.";
+    if(k === "allow") s.innerHTML = c.outcome === "allow" ? "Mọi phần đều khớp danh sách cho phép."
+      : (hit ? "Có phần khớp cho phép, nhưng còn phần chưa được phủ." : "Không quy tắc cho phép nào khớp. Khi đó chế độ quyền quyết định.");
+    return;
+  }
+  if(step < MAXSTEP){ s.innerHTML = "Bước này không cần xét vì đã có kết quả."; return; }
+  const o = outcomeText();
+  s.className = "status " + o[1];
+  s.innerHTML = o[0];
+}
+
+function renderButtons(){
+  $("bPrev").disabled = !current || step === 0;
+  $("bNext").disabled = !current || step >= MAXSTEP;
+  $("bAll").disabled = !current || step >= MAXSTEP;
+  $("bReset").disabled = !current;
+}
+
+function render(){ renderRules(); renderTrace(); statusFor(); renderButtons(); }
+
+function nextStep(){
+  if(!current || step >= MAXSTEP) return;
+  step++;
+  if(step > current.stopAt && step < MAXSTEP) step = MAXSTEP;
+  render();
+}
+function prevStep(){
+  if(!current || step === 0) return;
+  step--;
+  if(step > current.stopAt && step < MAXSTEP) step = current.stopAt;
+  render();
+}
+
+function check(text, keepStep){
+  const raw = String(text);
+  const msg = $("actMsg");
+  msg.className = "small";
+  if(!norm(raw)){ msg.className = "small err"; msg.textContent = "Hãy gõ một thao tác, ví dụ Bash(pytest -q) hoặc git status."; return; }
+  if(raw.length > 120){ msg.className = "small err"; msg.textContent = "Thao tác dài quá 120 ký tự."; return; }
+  const r = evaluate(rules, raw);
+  if(!r){ msg.className = "small err"; msg.textContent = "Không đọc được thao tác. Dạng hợp lệ: Bash(lệnh), Read(đường dẫn), Edit(đường dẫn), hoặc gõ thẳng một lệnh."; return; }
+  msg.textContent = r.action.tool === "Bash" && !/^Bash\(/.test(norm(raw)) ? "Gõ thẳng một lệnh được hiểu là Bash(" + norm(raw) + ")." : "";
+  actText = raw; current = r; step = keepStep ? Math.min(step, MAXSTEP) : 0;
+  [...document.querySelectorAll(".chip")].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === raw)));
+  render();
+}
+
+function recompute(){
+  if(current){ const s = step; current = evaluate(rules, actText); step = s; if(step > current.stopAt && step < MAXSTEP) step = MAXSTEP; }
+  render();
+}
+
+function addRule(){
+  const list = $("addList").value;
+  const txt = norm($("addRule").value);
+  const m = $("addMsg");
+  m.className = "small";
+  const r = parseRule(txt);
+  if(!r){ m.className = "small err"; m.textContent = "Quy tắc chưa đúng dạng Công cụ(phạm vi), ví dụ Bash(git *) hoặc Read(./secrets/**)."; return; }
+  if(rules[list].indexOf(r.text) >= 0){ m.className = "small err"; m.textContent = "Quy tắc này đã có trong danh sách " + list + "."; return; }
+  if(rules[list].length >= 10){ m.className = "small err"; m.textContent = "Mỗi danh sách tối đa 10 quy tắc."; return; }
+  rules[list].push(r.text); added[list + "|" + r.text] = true;
+  m.textContent = "Đã thêm vào " + list + ". Xét lại thao tác để xem khác gì.";
+  $("addRule").value = "";
+  recompute();
+}
+
+PRESETS.forEach((p, i) => {
+  const b = document.createElement("button");
+  b.className = "chip mono"; b.textContent = p.replace(/^Bash\((.*)\)$/, "$1").replace(/^Read\(\.\/(.*)\)$/, "đọc $1"); b.title = p; b.dataset.v = p; b.setAttribute("aria-pressed", "false");
+  b.onclick = () => { $("act").value = p; check(p); };
+  $("chips").appendChild(b);
+});
+$("bCheck").onclick = () => check($("act").value);
+$("act").addEventListener("keydown", e => { if(e.key === "Enter") check($("act").value); });
+$("addRule").addEventListener("keydown", e => { if(e.key === "Enter") addRule(); });
+$("bAdd").onclick = addRule;
+$("bRules").onclick = () => { rules = clone(DEFAULT_RULES); added = {}; $("addMsg").textContent = ""; recompute(); };
+$("bNext").onclick = nextStep;
+$("bPrev").onclick = prevStep;
+$("bAll").onclick = () => { if(current){ step = MAXSTEP; render(); } };
+$("bReset").onclick = () => { if(current){ step = 0; render(); } };
+document.addEventListener("keydown", e => {
+  if(e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if(e.key === "ArrowRight") nextStep();
+  if(e.key === "ArrowLeft") prevStep();
+});
+
+const qs = new URLSearchParams(location.search);
+const vd = parseInt(qs.get("vd"), 10);
+if(vd >= 1 && vd <= PRESETS.length){
+  $("act").value = PRESETS[vd - 1]; check(PRESETS[vd - 1]);
+  const b = parseInt(qs.get("buoc"), 10);
+  if(b > 0){ for(let i = 0; i < b; i++) nextStep(); }
+} else render();
+</script>
+</body>
+</html>
