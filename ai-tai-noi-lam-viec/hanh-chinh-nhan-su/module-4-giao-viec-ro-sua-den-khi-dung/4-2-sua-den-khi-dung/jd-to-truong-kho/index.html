@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="680">
+<title>Soát bản mô tả công việc do AI soạn</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --bad:#b42318; --bad-soft:#fbe9e7; --ok:#15803d; --ok-soft:#e3f4e8; --head:#f0f2f6; --paper:#fffdf8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --bad:#f87171; --bad-soft:#3a1717; --ok:#4ade80; --ok-soft:#13301f; --head:#1f2430; --paper:#1b1f27;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:14px}
+  .mock{font-size:12.5px;color:var(--muted);font-style:italic;margin:4px 0 0}
+  .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .jd{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.5}
+  .jd h3{margin:0 0 2px;font-size:16px}
+  .jd .sub{font-size:13px;color:var(--muted);margin:0 0 6px}
+  .jd h4{margin:8px 0 2px;font-size:14px}
+  .jd ul{margin:0;padding-left:18px}
+  .jd li{margin:1px 0}
+  .jd p{margin:0}
+  .hot{display:inline;-webkit-box-decoration-break:clone;box-decoration-break:clone;background:none;border:0;border-bottom:2px dashed var(--cur-bar);color:inherit;font:inherit;padding:0 1px;cursor:pointer;text-align:left;border-radius:2px}
+  .hot:hover{background:var(--cur)}
+  .hot.found{border-bottom:2px solid var(--bad);background:var(--bad-soft)}
+  .hot.fine{border-bottom:2px solid var(--ok);background:var(--ok-soft)}
+  .hot.cur{outline:2px solid var(--accent)}
+  .count{font-weight:700}
+  .tip{min-height:150px;font-size:14.5px}
+  .tip .t{font-weight:700;margin:0 0 3px}
+  .tip p{margin:0 0 6px}
+  .src{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:6px}
+  .src b{display:block;font-size:12.5px;color:var(--muted);margin-bottom:1px}
+  .done{border-left:4px solid var(--ok);background:var(--ok-soft);border-radius:8px;padding:6px 10px;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bản JD dưới đây do AI soạn (giả lập). Chạm vào dòng gạch chân vàng để xem vì sao đáng ngờ và căn cứ trong phiếu hoặc chính sách. Dòng đáng ngờ đã tìm: <span class="count" id="cnt">0/6</span></p>
+  <div class="grid">
+    <div>
+      <div class="jd" id="jd">
+        <h3>Tuyển Tổ trưởng kho thành phẩm</h3>
+        <p class="sub">Công ty Cổ phần Thực phẩm Minh An · 01 người · Bản nháp do AI soạn</p>
+        <h4>Nơi làm việc và thời gian</h4>
+        <p>Kho thành phẩm, nhà máy Minh An ở khu công nghiệp. <span class="hot" role="button" tabindex="0" data-h="ca">Làm việc giờ hành chính 08:00-17:00, từ thứ Hai đến thứ Sáu.</span></p>
+        <h4>Nhiệm vụ</h4>
+        <ul>
+          <li><span class="hot" role="button" tabindex="0" data-h="nhan">Nhận hàng thành phẩm từ xưởng theo phiếu nhập kho, kiểm số lượng, số lô, hạn sử dụng.</span></li>
+          <li><span class="hot" role="button" tabindex="0" data-h="sao">Giữ vai trò then chốt trong chuỗi cung ứng, không ngừng nâng cao hiệu suất vận hành kho.</span></li>
+          <li><span class="hot" role="button" tabindex="0" data-h="sao">Xây dựng đội ngũ kho gắn kết, chuyên nghiệp.</span></li>
+        </ul>
+        <h4>Yêu cầu</h4>
+        <ul>
+          <li><span class="hot" role="button" tabindex="0" data-h="gt">Ưu tiên ứng viên nam, sức khoẻ tốt, tuổi không quá 40.</span></li>
+          <li><span class="hot" role="button" tabindex="0" data-h="bang">Tốt nghiệp trung cấp trở lên chuyên ngành quản trị kho vận.</span></li>
+          <li>Từ 2 năm làm kho hàng thực phẩm hoặc hàng tiêu dùng.</li>
+        </ul>
+        <h4>Quyền lợi</h4>
+        <ul>
+          <li><span class="hot" role="button" tabindex="0" data-h="luong">Lương 13.000.000 - 15.000.000 đồng/tháng, đã gồm phụ cấp ca đêm.</span></li>
+          <li><span class="hot" role="button" tabindex="0" data-h="an">Mỗi ca một bữa ăn tại nhà ăn của nhà máy, không thu tiền.</span></li>
+          <li><span class="hot" role="button" tabindex="0" data-h="pl">Hỗ trợ nhà ở 1.000.000 đồng/tháng; bảo hiểm sức khoẻ cao cấp cho cả gia đình.</span></li>
+        </ul>
+        <h4>Cách nộp hồ sơ</h4>
+        <p>Gửi hồ sơ qua email [email tuyển dụng] hoặc nộp tại phòng Hành chính - Nhân sự ở nhà máy.</p>
+      </div>
+      <p class="mock">Bản nháp giả lập để luyện soát, không phải JD mẫu. Giao diện minh hoạ.</p>
+    </div>
+    <div class="card tip" id="tip" aria-live="polite">
+      <p class="t">Chưa chọn dòng nào</p>
+      <p style="color:var(--muted)">Bản nháp đủ mục, câu chữ trôi chảy. Có sáu chỗ đáng ngờ, và không phải dòng gạch chân nào cũng sai.</p>
+    </div>
+  </div>
+</div>
+<script>
+const H = {
+  ca:{t:"Sai giờ làm", d:"Phiếu ghi ca xoay vòng theo tuần, có ca đêm. Ứng viên đọc “giờ hành chính” sẽ hiểu sai điều kiện làm việc quan trọng nhất của vị trí.",
+      s:"Phiếu đề nghị, dòng Thời gian làm việc", q:"Ca xoay vòng theo tuần, từ thứ Hai đến thứ Bảy: ca 1 06:00-14:00, ca 2 14:00-22:00, ca 3 22:00-06:00"},
+  sao:{t:"Nhiệm vụ chung chung", d:"Hai dòng này nghe chuyên nghiệp nhưng không nói hằng ngày phải làm gì. Phiếu có năm nhiệm vụ cụ thể; bản nháp chỉ giữ được một.",
+      s:"Phiếu đề nghị, dòng Nhiệm vụ chính", q:"Năm việc: nhận hàng; xuất hàng theo lệnh xuất; kiểm kê cuối tháng; phân việc, phân ca 6 công nhân kho; cập nhật phần mềm và gửi báo cáo tồn trước 09:00 sáng hôm sau"},
+  gt:{t:"Giới tính và tuổi", d:"Giới tính và tuổi không gắn với việc tổ trưởng kho phải làm. Bộ luật Lao động cấm phân biệt đối xử trong lao động, trong đó có vì giới tính, tuổi. Yêu cầu của trưởng phòng cũng cấm ghi điều này.",
+      s:"Yêu cầu của trưởng phòng", q:"Không yêu cầu hay ưu tiên giới tính, tuổi, ngoại hình, tình trạng hôn nhân"},
+  bang:{t:"Bằng cấp phiếu không đòi", d:"AI thêm một bằng cấp nghe hợp lý với vị trí kho, nhưng phiếu không yêu cầu. Dòng này loại bớt những người làm được việc.",
+      s:"Phiếu đề nghị, dòng Trình độ", q:"Tốt nghiệp THPT trở lên"},
+  luong:{t:"Lương lệch phiếu", d:"So từng chữ số: cả hai đầu khoảng lương đều khác phiếu. Phiếu còn ghi rõ mức lương chưa gồm phụ cấp ca đêm, bản nháp ghi ngược lại.",
+      s:"Phiếu đề nghị, dòng Lương", q:"11.000.000 - 13.000.000 đồng/tháng, gồm lương cơ bản và phụ cấp trách nhiệm tổ trưởng; chưa gồm phụ cấp ca đêm và tiền làm thêm giờ"},
+  pl:{t:"Phúc lợi không có trong chính sách", d:"Chính sách có 10 mục; không mục nào nói hỗ trợ nhà ở hay bảo hiểm sức khoẻ cho gia đình. Ứng viên sẽ hỏi lại, và người phải giải thích là phòng bạn.",
+      s:"Chính sách phúc lợi chung", q:"Mục 2: bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp theo quy định của pháp luật. Không có mục nào về nhà ở."},
+  nhan:{t:"Dòng này khớp phiếu", d:"Nhiệm vụ này lấy đúng từ phiếu. Không phải dòng nào AI viết cũng sai, nên cần soát từng dòng và giữ lại dòng đúng.", ok:true,
+      s:"Phiếu đề nghị, nhiệm vụ (1)", q:"Nhận hàng thành phẩm từ xưởng theo phiếu nhập kho, kiểm số lượng, số lô, hạn sử dụng"},
+  an:{t:"Dòng này khớp chính sách", d:"Quyền lợi này có trong chính sách. Soát lỗi cũng có nghĩa là không sửa nhầm chỗ đúng.", ok:true,
+      s:"Chính sách phúc lợi chung, mục 4", q:"Mỗi ca một bữa ăn tại nhà ăn của nhà máy, không thu tiền."}
+};
+const TRAPS = Object.keys(H).filter(k=>!H[k].ok);
+const found = new Set(), fine = new Set();
+const $ = id => document.getElementById(id);
+let quiet = true;
+function pick(k){
+  if(H[k].ok) fine.add(k); else found.add(k);
+  document.querySelectorAll(".hot").forEach(b=>{
+    const kk = b.dataset.h;
+    b.classList.toggle("found", found.has(kk));
+    b.classList.toggle("fine", fine.has(kk));
+    b.classList.toggle("cur", kk===k);
+  });
+  $("cnt").textContent = found.size+"/"+TRAPS.length;
+  let h = '<p class="t">'+H[k].t+'</p><p>'+H[k].d+'</p><div class="src"><b>Căn cứ: '+H[k].s+'</b>'+H[k].q+'</div>';
+  if(found.size===TRAPS.length) h += '<div class="done">Đủ sáu chỗ đáng ngờ. Bản nháp vẫn đủ mục và đọc rất trôi chảy: chỉ đối chiếu từng dòng với phiếu và chính sách mới thấy lỗi.</div>';
+  $("tip").innerHTML = h;
+  if(!quiet && window.innerWidth <= 640) $("tip").scrollIntoView({block:"nearest"});
+}
+document.querySelectorAll(".hot").forEach(b=>{
+  b.onclick = ()=>pick(b.dataset.h);
+  b.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(b.dataset.h); } };
+});
+const q = new URLSearchParams(location.search);
+if(q.has("chon")) q.get("chon").split(",").forEach(k=>{ if(H[k]) pick(k); });
+quiet = false;
+</script>
+</body>
+</html>

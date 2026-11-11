@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="680">
+<title>Mô hình đoán chữ tiếp theo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --cur:#fff1b8; --cur-bar:#e0a800; --bar:#c9d6f5; --code-bg:#f3f5f8; --off:#eef0f3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --cur:#3d3412; --cur-bar:#e0b400; --bar:#2d3b5c; --code-bg:#11151c; --off:#11151c;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .panel-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:10px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:15px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .sentence{font-size:17px;line-height:1.6;min-height:84px}
+  .sentence .pre{color:var(--muted)}
+  .sentence .tok{background:var(--accent-soft);border-radius:5px;padding:1px 3px;margin-left:2px}
+  .sentence .tok.np{margin-left:0;padding-left:0}
+  .sentence .tok.last{background:var(--cur);box-shadow:inset 0 -2px 0 var(--cur-bar)}
+  .caret{display:inline-block;width:2px;height:1.1em;background:var(--accent);vertical-align:-2px;margin-left:3px;animation:bl 1s steps(2) infinite}
+  @keyframes bl{to{opacity:0}}
+  .cands{display:flex;flex-direction:column;gap:6px}
+  .cand{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:38px;display:flex;align-items:center;padding:6px 10px;font-size:15px}
+  .cand .fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar);transition:width .4s;z-index:0}
+  .cand span{position:relative;z-index:1}
+  .cand .txt{flex:1;min-width:0}
+  .cand .pct{font-weight:700;font-variant-numeric:tabular-nums;margin-left:10px}
+  .cand.picked{border-color:var(--cur-bar);box-shadow:0 0 0 2px var(--cur-bar)}
+  .cand.picked .fill{background:var(--cur)}
+  .note{font-size:13px;color:var(--muted);margin-top:6px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:14.5px;min-height:46px}
+  .status.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .status.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:14px;margin-bottom:8px}
+  .kv span{color:var(--muted)}
+  .cal{border-collapse:collapse;width:100%;font-size:13.5px;table-layout:fixed}
+  .cal th{font-size:12px;color:var(--muted);font-weight:600;padding:2px 0;text-align:center}
+  .cal td{text-align:center;padding:4px 0;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .cal td.we{background:var(--off);color:var(--muted)}
+  .cal td.start{box-shadow:inset 0 0 0 2px var(--accent)}
+  .cal td.leave{background:var(--cur)}
+  .cal td.back{background:var(--ok-soft);box-shadow:inset 0 0 0 2px var(--ok);font-weight:700}
+  .cal td.empty{border:0}
+  .cmp{margin-top:8px;font-size:14px}
+  .cmp b{font-variant-numeric:tabular-nums}
+  .tagx{display:inline-block;font-size:12.5px;padding:0 6px;border-radius:6px;background:var(--code-bg);color:var(--muted)}
+  .tagx.od{background:var(--bad-soft);color:var(--bad)}
+  .tagx.okk{background:var(--ok-soft);color:var(--ok)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Chọn chữ tiếp theo</b> để xem mô hình viết câu trả lời từng mẩu. Xác suất trên trang chỉ là số minh hoạ.</p>
+  <div class="grid">
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Câu trả lời đang được viết</p>
+        <div class="sentence" id="sentence"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title" id="candTitle">Ứng viên cho mẩu tiếp theo (xác suất minh hoạ)</p>
+        <div class="cands" id="cands"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <p class="panel-title">Đơn xin nghỉ bạn đã dán (giả lập)</p>
+        <div class="kv">
+          <span>Người lao động</span><div>NV31, khối văn phòng</div>
+          <span>Lịch làm việc</span><div>Thứ Hai đến thứ Sáu</div>
+          <span>Loại nghỉ</span><div>Nghỉ phép năm, 3 ngày làm việc</div>
+          <span>Bắt đầu</span><div>Thứ Năm 15/10/2026</div>
+        </div>
+        <p class="panel-title">Lịch tháng 10/2026</p>
+        <table class="cal" id="cal"></table>
+        <p class="note">Mô hình không mở lịch này ở bước nào. Bạn sẽ so sau khi câu viết xong.</p>
+        <div class="cmp hidden" id="cmp"></div>
+      </div>
+    </div>
+  </div>
+  <div class="btns">
+    <button class="btn" id="bNext">Chọn chữ tiếp theo</button>
+    <button class="btn ghost" id="bAll">Viết hết câu</button>
+    <button class="btn ghost" id="bReset">Làm lại</button>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</div>
+<script>
+const PREFIX = "NV31 nghỉ phép năm 3 ngày làm việc, bắt đầu từ thứ Năm 15/10/2026, và sẽ đi làm lại vào";
+const STEPS = [
+  {why:"Sau “đi làm lại vào”, mẩu hợp lý nhất là một thứ trong tuần. Mô hình chọn thứ nghe hợp lý, không đếm trên lịch.",
+   c:[["thứ Hai",36],["thứ Ba",30],["Chủ nhật",18],["thứ Tư",16]]},
+  {why:"Sau thứ, văn bản hành chính thường ghi ngày. Mẩu này được chọn riêng, không có gì bảo đảm nó khớp với thứ vừa viết.",
+   c:[[", ngày 18/10/2026",34],[", ngày 19/10/2026",30],[", ngày 20/10/2026",24],[", ngày 21/10/2026",12]]},
+  {why:"Mẩu cuối khép câu theo khuôn quen của một câu trả lời về ngày nghỉ.",
+   c:[[". Phòng đã ghi nhận đơn của bạn.",44],[". Chúc bạn có kỳ nghỉ vui vẻ.",34],[". Đề nghị bạn bàn giao công việc trước khi nghỉ.",22]]}
+];
+const WD = ["Chủ nhật","thứ Hai","thứ Ba","thứ Tư","thứ Năm","thứ Sáu","thứ Bảy"];
+const Y = 2026, M = 10 - 1; // tháng 10, Date đếm tháng từ 0
+const START = 15, LEAVE = [15,16,19], BACK = 20; // 15 T5, 16 T6, 19 T2; đi làm lại T3 20/10 (đã kiểm bằng Python)
+const wdOf = d => new Date(Y, M, d).getDay();
+const qs = new URLSearchParams(location.search);
+let seed = qs.has("seed") ? (parseInt(qs.get("seed"),10)||1) : null;
+function rnd(){
+  if(seed===null) return Math.random();
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+function sample(c){
+  const r = rnd()*100; let acc = 0;
+  for(let i=0;i<c.length;i++){ acc += c[i][1]; if(r < acc) return i; }
+  return c.length-1;
+}
+let picks = [];
+const $ = id => document.getElementById(id);
+function renderCal(done){
+  const first = (wdOf(1)+6)%7; // cột 0 = thứ Hai
+  const days = new Date(Y, M+1, 0).getDate();
+  let h = "<tr>"+["T2","T3","T4","T5","T6","T7","CN"].map(x=>"<th>"+x+"</th>").join("")+"</tr><tr>";
+  for(let i=0;i<first;i++) h += '<td class="empty"></td>';
+  for(let d=1; d<=days; d++){
+    const col = (first+d-1)%7;
+    const cls = [];
+    if(col>=5) cls.push("we");
+    if(d===START) cls.push("start");
+    if(done && LEAVE.includes(d)) cls.push("leave");
+    if(done && d===BACK) cls.push("back");
+    h += '<td'+(cls.length?' class="'+cls.join(" ")+'"':'')+'>'+d+'</td>';
+    if(col===6 && d<days) h += "</tr><tr>";
+  }
+  const tail = (7 - (first+days)%7)%7;
+  for(let i=0;i<tail;i++) h += '<td class="empty"></td>';
+  $("cal").innerHTML = h+"</tr>";
+}
+function render(){
+  const k = picks.length;
+  let html = '<span class="pre">'+PREFIX+'</span>';
+  picks.forEach((p,i)=>{
+    const t = STEPS[i].c[p][0];
+    const glue = (t[0]===","||t[0]===".") ? "" : " ";
+    html += glue + '<span class="tok'+(glue?'':' np')+(i===k-1?' last':'')+'">'+t+'</span>';
+  });
+  if(k < STEPS.length) html += '<span class="caret"></span>';
+  $("sentence").innerHTML = html;
+  const showIdx = k < STEPS.length ? k : k-1;
+  const st = STEPS[showIdx];
+  const picked = k > showIdx ? picks[showIdx] : -1;
+  $("candTitle").textContent = (picked>=0 ? "Ứng viên vừa xét" : "Ứng viên cho mẩu tiếp theo") + " (xác suất minh hoạ)";
+  $("cands").innerHTML = st.c.map((c,i)=>
+    '<div class="cand'+(i===picked?' picked':'')+'"><span class="fill" style="width:'+c[1]+'%"></span>'+
+    '<span class="txt">'+c[0].replace(/^[,.] /,"")+'</span><span class="pct">'+c[1]+'%</span></div>').join("");
+  $("bNext").disabled = $("bAll").disabled = k >= STEPS.length;
+  const s = $("status"), cmp = $("cmp");
+  s.className = "status";
+  renderCal(k >= STEPS.length);
+  if(k===0){
+    s.innerHTML = "Mô hình đã có phần đầu câu. Ở mỗi bước, nó chọn một mẩu chữ theo xác suất, rồi lặp lại.";
+    cmp.classList.add("hidden");
+  } else if(k < STEPS.length){
+    s.innerHTML = "Đã chọn <b>“"+STEPS[k-1].c[picks[k-1]][0].replace(/^[,.] /,"")+"”</b>. "+STEPS[k-1].why;
+    cmp.classList.add("hidden");
+  } else {
+    const wd = STEPS[0].c[picks[0]][0];
+    const day = parseInt(STEPS[1].c[picks[1]][0].match(/(\d+)\/10/)[1],10);
+    const pair = WD[wdOf(day)] === wd;
+    const right = pair && day === BACK;
+    s.className = "status " + (right ? "ok" : "bad");
+    s.innerHTML = "<b>Câu đã xong:</b> trôi chảy và lịch sự vì mỗi mẩu đều được chọn hợp lý sau phần trước, không phải vì mô hình đã đếm lịch. " +
+      (right ? "Lần này ngày đi làm lại trùng với lịch là do may. Bấm <b>Làm lại</b> để thấy câu khác."
+             : "Ngày trong câu không khớp với lịch, nhưng câu vẫn đọc chắc chắn y như khi đúng.");
+    cmp.classList.remove("hidden");
+    cmp.innerHTML = "Trong câu: <b>"+wd+", ngày "+day+"/10/2026</b> " +
+      (pair ? '<span class="tagx okk">thứ khớp ngày</span>' : '<span class="tagx od">'+day+'/10 là '+WD[wdOf(day)]+'</span>') +
+      "<br>Đếm trên lịch: 15 (thứ Năm), 16 (thứ Sáu), bỏ thứ Bảy và Chủ nhật, 19 (thứ Hai) là đủ 3 ngày làm việc. Đi làm lại: <b>thứ Ba, ngày 20/10/2026</b> " +
+      (right ? '<span class="tagx">khớp lần này</span>' : '<span class="tagx od">không khớp</span>');
+  }
+}
+function next(){ if(picks.length < STEPS.length){ picks.push(sample(STEPS[picks.length].c)); render(); } }
+$("bNext").onclick = next;
+$("bAll").onclick = ()=>{ while(picks.length < STEPS.length) picks.push(sample(STEPS[picks.length].c)); render(); };
+$("bReset").onclick = ()=>{ picks = []; render(); };
+const b = parseInt(qs.get("buoc")||"0",10);
+for(let i=0;i<Math.min(b,STEPS.length);i++) picks.push(sample(STEPS[i].c));
+render();
+</script>
+</body>
+</html>

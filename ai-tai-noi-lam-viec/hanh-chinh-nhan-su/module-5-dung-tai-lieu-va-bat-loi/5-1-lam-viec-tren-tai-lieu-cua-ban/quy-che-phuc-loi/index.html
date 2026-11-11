@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="620">
+<title>Tra Quy chế phúc lợi và chế độ nghỉ</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800; --paper:#fffdf8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#4a3d0e; --cur-bar:#e0b400; --paper:#1b1f27;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .search{display:flex;gap:6px;margin-bottom:8px}
+  .search input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:236px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .toc{display:flex;flex-direction:column;gap:3px;max-height:470px;overflow-y:auto}
+  .toc button{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);font:inherit;font-size:14px;padding:5px 8px;min-height:36px;border-radius:8px;cursor:pointer}
+  .toc button:hover{background:var(--accent-soft)}
+  .toc button[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+  .toc .lbl{flex:1;min-width:0}
+  .toc .n{font-size:12px;font-weight:700;background:var(--cur);border:1px solid var(--cur-bar);border-radius:10px;padding:0 6px;font-variant-numeric:tabular-nums}
+  .toc button.dim{opacity:.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+  .doc{height:470px;overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14.5px;line-height:1.55;position:relative}
+  .doc .hd{text-align:center;margin-bottom:10px}
+  .doc .hd p{margin:0}
+  .doc h4{margin:12px 0 4px;font-size:15px}
+  .doc h4:first-child{margin-top:0}
+  .doc ol{margin:0 0 4px;padding-left:22px}
+  .doc ol li{margin:2px 0}
+  .doc ul{list-style:none;margin:2px 0;padding-left:8px}
+  .doc .sign{margin-top:12px;text-align:right}
+  mark{background:var(--cur);color:inherit;border-radius:3px;box-shadow:0 0 0 1px var(--cur-bar)}
+  .status{margin-top:8px;font-size:13.5px;color:var(--muted);min-height:20px}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .toc{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:4px}
+    .toc button{width:auto;flex:0 0 auto;white-space:nowrap}
+    .toc .full{display:none}
+    .doc{height:400px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm một điều ở mục lục để đọc, hoặc gõ từ khoá (gõ có dấu hay không dấu đều được) để tô sáng chỗ khớp. Trang chỉ để tra, không trả lời hộ năm câu hỏi.</p>
+  <div class="search">
+    <input id="q" type="search" placeholder="Tìm, ví dụ: thâm niên, khám sức khoẻ" aria-label="Tìm trong quy chế" autocomplete="off">
+    <button class="btn" id="clr">Xoá</button>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="toc" id="toc" role="tablist"></div></div>
+    <div>
+      <div class="doc" id="doc" aria-live="polite"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+<script>
+const HEAD = [
+  "CÔNG TY CỔ PHẦN THỰC PHẨM MINH AN",
+  "QUY CHẾ PHÚC LỢI VÀ CHẾ ĐỘ NGHỈ",
+  "(Ban hành kèm theo Quyết định số 128/QĐ-MA ngày 15/12/2025 của Tổng Giám đốc)"
+];
+const SIGN = "TỔNG GIÁM ĐỐC · (đã ký)";
+// Nguyên văn 10 điều. Mục có dạng [chữ, [điểm a, b, c]] là khoản có các điểm.
+const DIEU = [
+ {t:"Điều 1. Phạm vi và đối tượng áp dụng", k:[
+  "Quy chế này quy định chế độ nghỉ và phúc lợi cho người lao động làm việc tại văn phòng Hà Nội và Nhà máy của Công ty.",
+  "Người lao động trong thời gian thử việc được hưởng chế độ tại Điều 6 và Điều 7. Các chế độ khác áp dụng từ ngày người lao động ký hợp đồng lao động.",
+  "Nội dung chưa quy định trong Quy chế này thực hiện theo quy định của pháp luật, Nội quy lao động và Thoả ước lao động tập thể của Công ty."]},
+ {t:"Điều 2. Nghỉ hằng năm", k:[
+  "Người lao động làm việc đủ 12 tháng được nghỉ hằng năm 12 ngày làm việc, hưởng nguyên lương. Người làm việc chưa đủ 12 tháng thì số ngày nghỉ tính theo tỷ lệ tương ứng với số tháng làm việc, theo quy định của pháp luật.",
+  "Ngoài số ngày tại khoản 1, người lao động có thâm niên làm việc tại Công ty đủ 03 năm được nghỉ thêm 01 ngày; đủ 06 năm trở lên được nghỉ thêm 02 ngày. Thâm niên tính đến hết ngày 31/12 của năm trước. Số ngày nghỉ thêm theo thâm niên không thấp hơn mức pháp luật quy định.",
+  "Người lao động có thể thoả thuận với trưởng bộ phận để nghỉ hằng năm thành nhiều lần. Việc thanh toán tiền lương cho những ngày nghỉ hằng năm chưa nghỉ thực hiện theo quy định của pháp luật."]},
+ {t:"Điều 3. Nghỉ việc riêng", k:[
+  ["Người lao động được nghỉ việc riêng, hưởng nguyên lương trong các trường hợp sau:", [
+    "a) Bản thân kết hôn: 03 ngày;",
+    "b) Con kết hôn: 01 ngày;",
+    "c) Cha, mẹ (kể cả cha mẹ nuôi, cha mẹ của vợ hoặc chồng), vợ hoặc chồng, con chết: 03 ngày."]],
+  "Người lao động được nghỉ không hưởng lương 01 ngày khi ông, bà, anh, chị, em ruột chết; khi cha hoặc mẹ kết hôn; khi anh, chị, em ruột kết hôn. Ngoài ra, người lao động có thể thoả thuận với Công ty để nghỉ không hưởng lương."]},
+ {t:"Điều 4. Nghỉ ốm đau, thai sản", k:[
+  "Chế độ ốm đau, thai sản thực hiện theo quy định của pháp luật về bảo hiểm xã hội.",
+  "Người lao động nghỉ ốm phải báo cho trưởng bộ phận trước giờ vào ca. Khi trở lại làm việc, người lao động nộp giấy tờ của cơ sở khám bệnh, chữa bệnh cho Phòng Hành chính - Nhân sự để lập hồ sơ đề nghị hưởng chế độ."]},
+ {t:"Điều 5. Thủ tục xin nghỉ và người duyệt", k:[
+  "Nghỉ hằng năm: người lao động gửi đơn trên phần mềm nhân sự (công nhân có thể dùng mẫu đơn giấy tại văn phòng Nhà máy) trước ít nhất 03 ngày làm việc. Nghỉ từ 03 ngày liên tục trở lên thì gửi đơn trước ít nhất 07 ngày làm việc.",
+  "Nghỉ kết hôn: gửi đơn trước ít nhất 05 ngày làm việc. Nghỉ vì việc tang: báo ngay cho trưởng bộ phận bằng điện thoại hoặc tin nhắn, bổ sung đơn trong 03 ngày làm việc kể từ ngày trở lại làm việc.",
+  "Người duyệt: nghỉ dưới 03 ngày do trưởng bộ phận duyệt; nghỉ từ 03 ngày trở lên do trưởng bộ phận đề xuất, Trưởng phòng Hành chính - Nhân sự duyệt.",
+  "Với công nhân làm ca, tổ trưởng bố trí người thay ca trước khi trưởng bộ phận duyệt đơn. Trong tháng 11 và tháng 12, Công ty hạn chế duyệt nghỉ hằng năm từ 03 ngày liên tục trở lên; trường hợp đặc biệt do Trưởng phòng Hành chính - Nhân sự xem xét."]},
+ {t:"Điều 6. Ăn ca", k:[
+  "Giờ làm việc theo ca tại Nhà máy: ca 1 từ 06 giờ 00 đến 14 giờ 00; ca 2 từ 14 giờ 00 đến 22 giờ 00; ca 3 từ 22 giờ 00 đến 06 giờ 00 ngày hôm sau.",
+  "Mỗi ca làm việc, người lao động được một suất ăn tại nhà ăn Nhà máy, trị giá 30.000 đồng/suất. Người làm ca 3 được thêm một bữa ăn nhẹ giữa ca.",
+  "Người làm thêm giờ liên tục từ 02 giờ trở lên sau khi hết ca được thêm một suất ăn.",
+  "Người lao động làm việc tại văn phòng Hà Nội được hỗ trợ tiền ăn trưa 30.000 đồng/ngày làm việc thực tế, trả cùng kỳ lương."]},
+ {t:"Điều 7. Xe đưa đón", k:[
+  "Công ty bố trí xe đưa đón công nhân theo giờ ca trên 02 tuyến cố định. Điểm đón, giờ đón được niêm yết tại bảng tin Nhà máy.",
+  "Người lao động đăng ký đi xe hoặc đổi tuyến với Phòng Hành chính - Nhân sự trước ít nhất 03 ngày làm việc.",
+  "Người lao động không đi xe của Công ty không được hỗ trợ tiền đi lại."]},
+ {t:"Điều 8. Quà, tiền nhân dịp lễ, Tết", k:[
+  "Tết Dương lịch, dịp 30/4 và 1/5, Quốc khánh 2/9: mỗi dịp 500.000 đồng/người.",
+  "Tết Nguyên đán: mức quà Tết do Tổng Giám đốc quyết định hằng năm, căn cứ kết quả sản xuất, kinh doanh.",
+  "Ngày 8/3 và ngày 20/10: quà cho lao động nữ. Tết Trung thu: quà cho con của người lao động dưới 15 tuổi.",
+  "Người được nhận là người lao động có tên trong danh sách lao động của Công ty vào dịp lễ, Tết, trừ người đang thử việc."]},
+ {t:"Điều 9. Khám sức khoẻ định kỳ", k:[
+  "Công ty tổ chức khám sức khoẻ định kỳ mỗi năm 01 lần cho người lao động. Người làm công việc mà pháp luật yêu cầu khám nhiều hơn thì khám theo quy định của pháp luật.",
+  "Chi phí khám do Công ty chi trả. Thời gian đi khám theo lịch của Công ty được tính là thời gian làm việc.",
+  "Kết quả khám là thông tin cá nhân của người lao động, do Phòng Hành chính - Nhân sự lưu giữ và chỉ cung cấp cho người có thẩm quyền theo quy định."]},
+ {t:"Điều 10. Tổ chức thực hiện", k:[
+  "Quy chế này có hiệu lực từ ngày 01/01/2026, thay thế Quy chế phúc lợi ban hành năm 2023.",
+  "Phòng Hành chính - Nhân sự phổ biến, hướng dẫn và giải đáp thắc mắc của người lao động về Quy chế này. Trưởng các bộ phận phổ biến Quy chế cho người lao động thuộc bộ phận mình.",
+  "Vướng mắc trong quá trình thực hiện được phản ánh về Phòng Hành chính - Nhân sự để tổng hợp, báo cáo Tổng Giám đốc."]}
+];
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Bỏ dấu từng ký tự, giữ nguyên độ dài để vị trí khớp trùng với chữ gốc.
+const fold = s => Array.from(s.normalize("NFC")).map(ch=>{
+  if(ch==="đ") return "d"; if(ch==="Đ") return "d";
+  const b = ch.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return (b.length===1 ? b : ch).toLowerCase();
+}).join("");
+let query = "", cur = -1; // -1 = toàn văn
+function ranges(text){
+  if(!query) return [];
+  const f = fold(text), r = [];
+  let i = f.indexOf(query);
+  while(i>=0){ r.push([i, i+query.length]); i = f.indexOf(query, i+query.length); }
+  return r;
+}
+function hl(text){
+  const chars = Array.from(text.normalize("NFC"));
+  const rs = ranges(text);
+  if(!rs.length) return esc(text);
+  let out = "", p = 0;
+  rs.forEach(([a,b])=>{ out += esc(chars.slice(p,a).join("")) + "<mark>" + esc(chars.slice(a,b).join("")) + "</mark>"; p = b; });
+  return out + esc(chars.slice(p).join(""));
+}
+function countIn(d){
+  let n = ranges(d.t).length;
+  d.k.forEach(x=>{ if(Array.isArray(x)){ n += ranges(x[0]).length; x[1].forEach(y=>n+=ranges(y).length); } else n += ranges(x).length; });
+  return n;
+}
+function dieuHtml(d){
+  let h = "<h4>"+hl(d.t)+"</h4><ol>";
+  d.k.forEach(x=>{
+    if(Array.isArray(x)) h += "<li>"+hl(x[0])+"<ul>"+x[1].map(y=>"<li>"+hl(y)+"</li>").join("")+"</ul></li>";
+    else h += "<li>"+hl(x)+"</li>";
+  });
+  return h+"</ol>";
+}
+function renderToc(){
+  const counts = DIEU.map(countIn);
+  let h = '<button role="tab" data-i="-1" aria-current="'+(cur===-1)+'"><span class="lbl">Toàn văn</span>'+(query?'<span class="n">'+counts.reduce((a,b)=>a+b,0)+'</span>':'')+'</button>';
+  DIEU.forEach((d,i)=>{
+    const m = d.t.match(/^(Điều \d+)\. (.*)$/);
+    h += '<button role="tab" data-i="'+i+'" aria-current="'+(cur===i)+'"'+(query && !counts[i] ? ' class="dim"' : '')+'><span class="lbl"><b>'+m[1]+'</b><span class="full">. '+esc(m[2])+'</span></span>'+(query && counts[i]?'<span class="n">'+counts[i]+'</span>':'')+'</button>';
+  });
+  $("toc").innerHTML = h;
+  $("toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cur = +b.dataset.i; render(true); });
+  return counts;
+}
+function render(scrollTop){
+  const counts = renderToc();
+  let h = "";
+  if(cur===-1){
+    h = '<div class="hd"><p><b>'+hl(HEAD[0])+'</b></p><p><b>'+hl(HEAD[1])+'</b></p><p><i>'+hl(HEAD[2])+'</i></p></div>';
+    h += DIEU.map(dieuHtml).join("");
+    h += '<p class="sign"><b>'+esc(SIGN.split(" · ")[0])+'</b> · '+esc(SIGN.split(" · ")[1])+'</p>';
+  } else {
+    h = dieuHtml(DIEU[cur]);
+  }
+  $("doc").innerHTML = h;
+  const total = counts.reduce((a,b)=>a+b,0) + (cur===-1 ? HEAD.reduce((a,x)=>a+ranges(x).length,0) : 0);
+  if(!query) $("status").textContent = cur===-1 ? "Đang xem toàn văn quy chế (10 điều)." : "Đang xem "+DIEU[cur].t.split(".")[0]+".";
+  else {
+    const nd = counts.filter(Boolean).length;
+    const here = cur===-1 ? total : counts[cur];
+    $("status").textContent = nd ? "Khớp “"+$("q").value.trim()+"”: "+counts.reduce((a,b)=>a+b,0)+" chỗ trong "+nd+" điều. "+(cur===-1 ? "" : "Điều đang xem có "+here+" chỗ. ")+"Điều có số ở mục lục là điều có chỗ khớp."
+                                  : "Không có chỗ nào khớp “"+$("q").value.trim()+"”. Thử từ ngắn hơn.";
+  }
+  const first = $("doc").querySelector("mark"), doc = $("doc");
+  if(first){ let y=0, e=first; while(e && e!==doc){ y+=e.offsetTop; e=e.offsetParent; } doc.scrollTop = Math.max(0, y-60); }
+  else if(scrollTop) doc.scrollTop = 0;
+}
+let timer = null;
+$("q").addEventListener("input", ()=>{
+  clearTimeout(timer);
+  timer = setTimeout(()=>{
+    const v = fold($("q").value.trim().replace(/\s+/g," "));
+    query = v.length >= 2 ? v : "";
+    if(query && cur>=0 && !countIn(DIEU[cur])){ const c = DIEU.map(countIn); const j = c.findIndex(Boolean); if(j>=0) cur = j; }
+    render(false);
+  }, 150);
+});
+$("clr").onclick = ()=>{ $("q").value = ""; query = ""; render(true); $("q").focus(); };
+const p = new URLSearchParams(location.search);
+if(p.has("dieu")){ const d = parseInt(p.get("dieu"),10); if(d>=1 && d<=10) cur = d-1; }
+if(p.has("tim")){ $("q").value = p.get("tim"); const v = fold(p.get("tim").trim()); query = v.length>=2 ? v : ""; }
+render(!query);
+</script>
+</body>
+</html>
