@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Thuộc tính quan sát được báo tin cho listener</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --arrow:#5d6676;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --arrow:#9aa3b2;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 10px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.op{background:var(--accent-soft);color:var(--accent);padding:4px 7px;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btn.op.on{background:var(--accent);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .switch{display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+  .switch input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
+  .hint{color:var(--muted);font-size:12.5px}
+  .hint:empty{display:none}
+  .hint.bad{color:var(--false);font-weight:600}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:5px 12px;margin-bottom:8px;min-height:56px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr) !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;position:relative;
+    font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s;width:max-content;min-width:100%}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.dim{opacity:.4}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln.curf{background:var(--false-soft);border-left-color:var(--false);opacity:1}
+  .ln.curt{background:var(--true-soft);border-left-color:var(--true);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}.an{color:var(--num)}
+  .vars{display:flex;gap:6px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:1px 8px;min-width:54px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:20px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:48px;white-space:pre-wrap;word-break:break-word;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#9aa3b2;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .new{color:#fde68a}
+  .console .dimc{color:#9aa3b2}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .inp{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:4px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);width:70px}
+  .inp:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  select.inp{width:auto;font-size:12.5px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted)}
+  .tag.a{background:var(--accent-soft);color:var(--accent)}
+
+  /* Cửa sổ JavaFX mô phỏng (luôn sáng như cửa sổ thật) */
+  .fxwin{border:1px solid #9aa0a6;border-radius:7px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.14);margin:0 auto;width:max-content;max-width:100%}
+  .fxbar{height:22px;background:linear-gradient(#ececec,#d9d9d9);display:flex;align-items:center;gap:5px;padding:0 8px;font:600 11.5px system-ui,sans-serif;color:#333;border-bottom:1px solid #bdbdbd;user-select:none}
+  .fxbar i{width:9px;height:9px;border-radius:50%;display:inline-block;background:#ff5f57}
+  .fxbar i+i{background:#febc2e}.fxbar i+i+i{background:#28c840}
+  .fxbar .t{flex:1;text-align:center;margin-right:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fxbox{position:relative;overflow:hidden}
+  .fxscene{position:absolute;left:0;top:0;transform-origin:0 0;background:#fff;color:#000;overflow:hidden;
+    font:13px "Segoe UI",system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+  .fxscene.modena{background:#f4f4f4}
+  .fxscene svg{position:absolute;left:0;top:0;overflow:visible}
+  .fxscene:focus{outline:none}
+  /* Nút kiểu Modena */
+  .mbtn{position:absolute;height:25px;padding:0 8px;border-radius:3px;border:1px solid #b5b5b5;
+    background:linear-gradient(#fdfdfd,#e2e2e2);color:#333;font:12px "Segoe UI",system-ui,-apple-system,sans-serif;
+    box-shadow:inset 0 1px 0 #fff;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+  .mbtn:hover{background:linear-gradient(#ffffff,#ececec)}
+  .mbtn.armed{background:linear-gradient(#d4d4d4,#e6e6e6);box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+  .mbtn.focus{border-color:#039ed3;box-shadow:0 0 0 2px rgba(3,158,211,.35),inset 0 0 0 1px #fff}
+  .fxnote{font:600 10.5px system-ui,sans-serif;color:var(--muted);text-align:center;margin-top:3px}
+  .pad{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pad .btn.op{min-width:30px}
+
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+  input[type=range]{width:110px;accent-color:var(--accent)}
+  .grid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
+  .prop{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+  .pbox{border:2px solid var(--accent);border-radius:10px;padding:4px 10px;min-width:120px;background:var(--accent-soft)}
+  .pbox small{display:block;color:var(--muted);font:11px ui-monospace,Menlo,monospace}
+  .pbox strong{font:700 18px ui-monospace,Menlo,Consolas,monospace}
+  .pbox.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .lst{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+  .li{display:flex;align-items:center;gap:6px;border:1.5px solid var(--node-line);border-radius:8px;padding:3px 8px;font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .li .k{font-weight:700;color:var(--accent);min-width:22px}
+  .li .d{flex:1;color:var(--muted);font-family:system-ui,sans-serif;font-size:12px}
+  .li.hi{border-color:var(--cur-bar);background:var(--cur)}
+  .li.hi .ord{display:inline-block}
+  .li .ord{display:none;background:var(--cur-bar);color:#000;border-radius:50%;width:18px;height:18px;text-align:center;font:700 11px/18px system-ui}
+  .li button{border:0;background:transparent;color:var(--false);cursor:pointer;font-size:14px;padding:0 2px}
+  .code{font-size:10.5px}
+  .console{min-height:96px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Đổi giá trị <code>balance</code>, thêm hoặc bỏ listener rồi xem ai được báo tin; hoặc bấm <b>Bước tiếp</b> (<kbd>→</kbd>).</p>
+  <div class="controls"><div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div><span class="hint" id="hint"></span></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card">
+      <div class="row"><span>balance.set(</span><input class="inp" id="v" value="4.5" maxlength="6" inputmode="decimal" aria-label="Giá trị mới"><span>)</span><button class="btn op" id="set">Chạy</button><input type="range" id="rg" min="0" max="10" step="0.5" value="0" aria-label="Kéo để đặt giá trị mới cho balance"></div>
+      <div class="row"><button class="btn op" id="get">balance.get()</button><span class="hint">Gắn thêm:</span><button class="btn op" id="a1">+ L1</button><button class="btn op" id="a2">+ L2</button><button class="btn op" id="a3">+ L3</button></div>
+      <div class="prop"><div class="pbox" id="pb"><small>balance</small><strong id="pv">0.0</strong></div><div class="pbox" id="pvd" style="border-color:var(--node-line);background:var(--node)"><small>giá trị đã được đọc?</small><strong id="pval" style="font-size:14px"></strong></div></div>
+      <div class="lst" id="lst"></div>
+    </div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Code tương ứng</p><div class="code" id="code"></div></div>
+      <div class="card"><p class="panel-title">Console</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|(@\w+)|\b(import|public|private|protected|class|interface|extends|implements|static|final|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|null|this|super|switch|case|default|break)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="an">' + esc(m[3]) + '</span>';
+      else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+      else out += '<span class="num">' + m[5] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // o: {cur: số dòng (đếm từ 0) | [a, b] | {list: [..]}, kind: 'cur'|'curf'|'curt', dim: {i: true}, tags: {i: nhãn}}
+  function codeHtml(lines, o){
+    o = o || {}; var dim = o.dim || {}, tags = o.tags || {}, set = {};
+    var c = o.cur;
+    if (c !== undefined && c !== null) {
+      if (Array.isArray(c)) { for (var k = c[0]; k <= c[1]; k++) set[k] = 1; }
+      else if (typeof c === 'object') c.list.forEach(function(k){ set[k] = 1; });
+      else set[c] = 1;
+    }
+    var kind = o.kind || 'cur';
+    return lines.map(function(l, i){
+      var cl = 'ln' + (dim[i] ? ' dim' : '') + (set[i] ? ' ' + kind : '');
+      return '<div class="' + cl + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur,.ln.curf,.ln.curt'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // out: chuỗi hoặc [chuỗi, lớp]
+  function conHtml(out, ph){ return out.length ? out.map(function(x){ return Array.isArray(x) ? '<span class="' + x[1] + '">' + esc(x[0]) + '</span>' : esc(x); }).join('\n') : '<span class="ph">' + (ph || 'Chưa có dòng nào.') + '</span>'; }
+  // Double.toString của Java
+  function jd(x){
+    if (x === 0) return (1 / x < 0) ? '-0.0' : '0.0';
+    var a = Math.abs(x);
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var e = x.toExponential(), p = e.split('e'), mant = p[0], ex = parseInt(p[1], 10);
+    if (mant.indexOf('.') < 0) mant += '.0';
+    return mant + 'E' + ex;
+  }
+  function hint(msg){ var h = $('hint'); if (!h) return; h.textContent = msg || ''; h.className = msg ? 'hint bad' : 'hint'; }
+
+  // Lịch sử trạng thái: mỗi thao tác sinh một hoặc nhiều ảnh chụp; Bước tiếp chạy kịch bản mặc định,
+  // thao tác của người dùng cắt nhánh và nối tiếp. cfg: init(), apply(snap, op) -> snap | [snap...], script, render(snap, i), delay
+  function History(cfg){
+    var H = [], pos = 0, off = false, timer = null, base = 0, MAX = 500;
+    var script = cfg.script || [];
+    function last(){ return H[H.length - 1]; }
+    function canNext(){ return pos < H.length - 1 || (!off && base === 0 && last().n < script.length); }
+    function draw(){
+      var sn = H[pos], run = timer !== null;
+      $('status').innerHTML = '<b>Bước ' + (base + pos + 1) + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, pos);
+      $('next').disabled = !canNext() || run;
+      $('prev').disabled = pos <= 0 || run;
+      $('all').disabled = run || !canNext();
+    }
+    function add(prev, op){
+      var r = cfg.apply(prev, op); if (!Array.isArray(r)) r = [r];
+      r.forEach(function(x){ x.n = prev.n + 1; H.push(x); });
+      while (H.length > MAX) { H.shift(); base++; }
+      return r.length;
+    }
+    function advance(){
+      if (pos < H.length - 1) { pos++; return true; }
+      if (canNext()) { var k = add(last(), script[last().n]); pos = H.length - k; return true; }
+      return false;
+    }
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function reset(){ stop(); var s0 = cfg.init(); s0.n = 0; H = [s0]; pos = 0; off = false; base = 0; hint(''); draw(); }
+    function doOp(op){
+      stop(); hint('');
+      if (pos < H.length - 1) H = H.slice(0, pos + 1);
+      var cur = H[pos];
+      if (!off && (cur.n >= script.length || JSON.stringify(script[cur.n]) !== JSON.stringify(op))) off = true;
+      add(cur, op); pos = H.length - 1; draw();
+    }
+    $('next').addEventListener('click', function(){ stop(); if (advance()) draw(); });
+    $('prev').addEventListener('click', function(){ stop(); if (pos > 0) { pos--; draw(); } });
+    $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (!advance()) stop(); if (!canNext()) stop(); draw(); }, cfg.delay || 700);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target, tn = t && t.tagName;
+      if (tn === 'INPUT' || tn === 'SELECT' || tn === 'TEXTAREA' || (t && t.closest && t.closest('[data-keys]')) || timer) return;
+      if (e.key === 'ArrowRight') { $('next').click(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { $('prev').click(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', function(){ if (H.length) cfg.render(H[pos], pos); });
+    return {reset: function(){
+              reset();
+              var j = parseInt(qs('buoc'), 10);
+              if (j > 1) { while (pos < j - 1 && advance()); draw(); }
+            },
+            doOp: doOp, cur: function(){ return H[pos]; }, stop: stop, running: function(){ return timer !== null; }};
+  }
+
+  // Cảnh JavaFX kích thước W x H (px của JavaFX), tự co giãn theo bề rộng khung chứa.
+  function FxScene(boxId, W, H, maxScale){
+    var box = $(boxId), sc = box.querySelector('.fxscene'), s = 1;
+    sc.style.width = W + 'px'; sc.style.height = H + 'px';
+    function fit(){
+      var card = box.closest(".card") || box.parentElement.parentElement; var avail = card.clientWidth - 24;
+      s = Math.min(maxScale || 1.4, avail / W);
+      sc.style.transform = 'scale(' + s + ')';
+      box.style.width = (W * s) + 'px'; box.style.height = (H * s) + 'px';
+    }
+    fit(); window.addEventListener('resize', fit);
+    return {el: sc, fit: fit,
+      toLocal: function(ev){ var r = sc.getBoundingClientRect(); return {x: (ev.clientX - r.left) * W / r.width, y: (ev.clientY - r.top) * H / r.height}; }};
+  }
+  function rd(x, n){ var p = Math.pow(10, n || 0); return Math.round(x * p) / p; }
+
+  // Điều khiển trang hoạt hình: Bước tiếp = cho thời gian trôi stepMs; Lùi lại = hoàn tác thao tác trước;
+  // Chạy hết = cho thời gian trôi liên tục (bấm lại để dừng); Làm lại = trạng thái đầu.
+  // cfg: init() -> state, clone(state), tick(state, ms) -> thông báo|undefined, render(state, msg), stepMs, stepMsg(state)
+  function AnimCtl(cfg){
+    var S, hist = [], raf = null, lastT = 0, msg = '', cnt = 0;
+    function draw(){ cfg.render(S, msg); $('prev').disabled = !hist.length; $('next').disabled = raf !== null;
+      $('all').textContent = raf !== null ? 'Dừng' : 'Chạy hết'; }
+    function save(){ hist.push({s: cfg.clone(S), m: msg}); if (hist.length > 300) hist.shift(); }
+    function stopRT(){ if (raf !== null) { cancelAnimationFrame(raf); raf = null; } }
+    function act(fn){ save(); var m = fn(S); if (m !== undefined) msg = m; draw(); }
+    function frame(t){
+      var dt = Math.min(100, t - lastT); lastT = t;
+      var m = cfg.tick(S, dt); if (m) msg = m;
+      draw();
+      if (cfg.done && cfg.done(S)) { stopRT(); draw(); return; }
+      raf = requestAnimationFrame(frame);
+    }
+    $('next').addEventListener('click', function(){ save(); var m = cfg.step ? cfg.step(S) : cfg.tick(S, cfg.stepMs); msg = m || (cfg.stepMsg ? cfg.stepMsg(S) : msg); draw(); });
+    $('prev').addEventListener('click', function(){ stopRT(); var h = hist.pop(); if (h) { S = h.s; msg = h.m; } draw(); });
+    $('all').addEventListener('click', function(){
+      if (raf !== null) { stopRT(); draw(); return; }
+      save(); if (cfg.onRun) { var m = cfg.onRun(S); if (m) msg = m; }
+      lastT = performance.now(); raf = requestAnimationFrame(frame); draw();
+    });
+    $('reset').addEventListener('click', function(){ stopRT(); hist = []; S = cfg.init(); msg = cfg.initMsg; draw(); });
+    document.addEventListener('keydown', function(e){
+      var t = e.target, tn = t && t.tagName;
+      if (tn === 'INPUT' || tn === 'SELECT' || tn === 'TEXTAREA' || (t && t.closest && t.closest('[data-keys]'))) return;
+      if (e.key === 'ArrowRight' && raf === null) { $('next').click(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { $('prev').click(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', draw);
+    S = cfg.init(); msg = cfg.initMsg;
+    var j = parseInt(qs('buoc'), 10);
+    if (j > 1) for (var i = 1; i < j; i++) { save(); var m = cfg.step ? cfg.step(S) : cfg.tick(S, cfg.stepMs); msg = m || (cfg.stepMsg ? cfg.stepMsg(S) : msg); }
+    draw();
+    return {act: act, state: function(){ return S; }, draw: draw, running: function(){ return raf !== null; }, stop: function(){ stopRT(); draw(); }};
+  }
+  function easeBoth(t){ return Math.min(1, Math.max(0, t < 0.2 ? 3.125 * t * t : t > 0.8 ? -3.125 * t * t + 6.25 * t - 2.125 : 1.25 * t - 0.125)); }
+  function fmtS(ms){ return (ms / 1000).toFixed(2).replace('.', ',') + ' s'; }
+
+var LS = {
+  1: {code: ['balance.addListener(ov -> System.out.println(', '  "The new value is " + balance.doubleValue()));'], read: true, d: 'in giá trị mới (có đọc giá trị)', out: function(v){ return 'The new value is ' + jd(v); }},
+  2: {code: ['balance.addListener(ov -> System.out.println(', '  "Listener 2 duoc bao tin"));'], read: false, d: 'chỉ in một câu, không đọc giá trị', out: function(){ return 'Listener 2 duoc bao tin'; }},
+  3: {code: ['balance.addListener(ov -> System.out.println(', '  "Gap doi: " + balance.get() * 2));'], read: true, d: 'in gấp đôi giá trị (có đọc giá trị)', out: function(v){ return 'Gap doi: ' + jd(v * 2); }}
+};
+function copy(p){ return {v: p.v, valid: p.valid, ls: p.ls.slice(), out: p.out.slice(), fired: [], fresh: 0, last: '', chg: false}; }
+function apply(p, op){
+  var s = copy(p);
+  if (op.t === 'add') {
+    s.ls.push(op.k); s.last = LS[op.k].code.join('\n');
+    s.title = 'Gắn listener L' + op.k; s.body = 'L' + op.k + ' được thêm vào <b>cuối</b> danh sách listener (' + LS[op.k].d + '). Khi được báo tin, các listener chạy theo thứ tự đã gắn.';
+  } else if (op.t === 'rm') {
+    s.ls = s.ls.filter(function(k){ return k !== op.k; }); s.last = 'balance.removeListener(...); // bo L' + op.k;
+    s.title = 'Bỏ listener L' + op.k; s.body = '<code>removeListener</code> gỡ L' + op.k + ' khỏi danh sách; lần đổi giá trị sau nó không được báo nữa.';
+  } else if (op.t === 'get') {
+    s.last = 'balance.get();'; var was = s.valid; s.valid = true;
+    s.title = 'Đọc giá trị: balance.get()'; s.body = 'Trả về ' + jd(s.v) + '. ' + (was ? 'Giá trị vốn đã được đọc, không có gì thay đổi.' : 'Giá trị mới đã được đọc, nên lần đổi sau JavaFX sẽ <b>báo tin lại</b>.');
+  } else if (op.t === 'set') {
+    var nv = op.v; s.last = 'balance.set(' + (Number.isInteger(nv) ? nv : jd(nv)) + ');';
+    s.title = 'balance.set(' + jd(nv) + ')';
+    if (nv === s.v) { s.body = 'Giá trị mới bằng giá trị cũ (' + jd(nv) + '): không có gì thay đổi nên <b>không listener nào được báo</b>.'; }
+    else {
+      s.v = nv; s.chg = true;
+      if (!s.valid) {
+        s.body = 'Giá trị đổi thành ' + jd(nv) + ' nhưng <b>không ai được báo</b>: lần báo trước chưa ai đọc giá trị mới (<code>get()</code>, <code>doubleValue()</code>), JavaFX coi giá trị vẫn đang "không hợp lệ" nên không báo lặp lại.';
+      } else {
+        s.valid = false;
+        if (!s.ls.length) s.body = 'Giá trị đổi thành ' + jd(nv) + ' nhưng chưa có listener nào để báo.';
+        else {
+          s.ls.forEach(function(k){ s.fired.push(k); s.out.push(LS[k].out(nv)); s.fresh++; if (LS[k].read) s.valid = true; });
+          s.body = 'Giá trị đổi thành ' + jd(nv) + ': thuộc tính gọi <code>invalidated</code> của từng listener <b>theo thứ tự gắn</b>: ' + s.ls.map(function(k){ return 'L' + k; }).join(' rồi ') + '.' +
+            (s.valid ? '' : ' Không listener nào đọc giá trị mới, nên các lần đổi sau sẽ không được báo cho đến khi có ai đọc.');
+        }
+      }
+    }
+  }
+  while (s.out.length > 30) s.out.shift();
+  return s;
+}
+var SCRIPT = [{t: 'set', v: 4.5}, {t: 'set', v: 4.5}, {t: 'set', v: 10}, {t: 'add', k: 2}, {t: 'set', v: 3}, {t: 'rm', k: 1}, {t: 'set', v: 5}, {t: 'set', v: 6}, {t: 'get'}, {t: 'set', v: 7}];
+var H = History({
+  script: SCRIPT, delay: 900,
+  init: function(){ return {v: 0, valid: true, ls: [1], out: [], fired: [], fresh: 0, last: '', title: 'balance = 0.0, một listener',
+    body: '<code>new SimpleDoubleProperty()</code> có giá trị 0.0. Listener L1 đã được gắn bằng <code>addListener</code>.'}; },
+  apply: apply,
+  render: function(s){
+    var L = ['DoubleProperty balance =', '  new SimpleDoubleProperty();'], cur = null;
+    s.ls.forEach(function(k){ L.push('// L' + k); L = L.concat(LS[k].code); });
+    if (s.last) { L.push(''); var a = L.length; L = L.concat(s.last.split('\n')); cur = [a, L.length - 1]; }
+    $('code').innerHTML = codeHtml(L, {cur: cur});
+    $('pv').textContent = jd(s.v); $('pb').className = 'pbox' + (s.chg ? ' chg' : '');
+    $('pval').innerHTML = s.valid ? '<span class="tag t">đã đọc</span>' : '<span class="tag f">chưa đọc</span>';
+    $('lst').innerHTML = s.ls.length ? s.ls.map(function(k){ var i = s.fired.indexOf(k);
+      return '<div class="li' + (i >= 0 ? ' hi' : '') + '"><span class="ord">' + (i + 1) + '</span><span class="k">L' + k + '</span><span class="d">' + LS[k].d + '</span><button data-k="' + k + '" title="removeListener L' + k + '" aria-label="Bỏ listener L' + k + '">✕</button></div>'; }).join('')
+      : '<span class="hint">Chưa có listener nào.</span>';
+    ['a1', 'a2', 'a3'].forEach(function(id, i){ $(id).disabled = s.ls.indexOf(i + 1) >= 0; });
+    var o = s.out.slice(-5).map(function(x, i, a){ return i >= a.length - s.fresh ? [x, 'new'] : x; });
+    $('con').innerHTML = conHtml(o, 'Chưa có dòng nào được in.');
+    $('rg').value = Math.max(0, Math.min(10, s.v));
+  }
+});
+function setV(str){
+  var t = String(str).trim().replace(',', '.');
+  if (!/^-?\d{1,3}(\.\d{1,2})?$/.test(t)) { hint('Nhập số thực trong khoảng -999 đến 999, tối đa 2 chữ số thập phân.'); return; }
+  H.doOp({t: 'set', v: parseFloat(t)});
+}
+$('set').addEventListener('click', function(){ setV($('v').value); });
+$('v').addEventListener('keydown', function(e){ if (e.key === 'Enter') setV(this.value); });
+$('rg').addEventListener('change', function(){ $('v').value = this.value; setV(this.value); });
+$('get').addEventListener('click', function(){ H.doOp({t: 'get'}); });
+[1, 2, 3].forEach(function(k){ $('a' + k).addEventListener('click', function(){ H.doOp({t: 'add', k: k}); }); });
+$('lst').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) H.doOp({t: 'rm', k: +b.dataset.k}); });
+H.reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="620">
+<title>Timeline gọi handler ở mỗi KeyFrame</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --arrow:#5d6676;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --arrow:#9aa3b2;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 10px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.op{background:var(--accent-soft);color:var(--accent);padding:4px 7px;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btn.op.on{background:var(--accent);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .switch{display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+  .switch input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
+  .hint{color:var(--muted);font-size:12.5px}
+  .hint:empty{display:none}
+  .hint.bad{color:var(--false);font-weight:600}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:5px 12px;margin-bottom:8px;min-height:56px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr) !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;position:relative;
+    font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s;width:max-content;min-width:100%}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.dim{opacity:.4}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln.curf{background:var(--false-soft);border-left-color:var(--false);opacity:1}
+  .ln.curt{background:var(--true-soft);border-left-color:var(--true);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}.an{color:var(--num)}
+  .vars{display:flex;gap:6px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:1px 8px;min-width:54px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:20px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:48px;white-space:pre-wrap;word-break:break-word;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#9aa3b2;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .new{color:#fde68a}
+  .console .dimc{color:#9aa3b2}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .inp{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:4px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);width:70px}
+  .inp:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  select.inp{width:auto;font-size:12.5px}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted)}
+  .tag.a{background:var(--accent-soft);color:var(--accent)}
+
+  /* Cửa sổ JavaFX mô phỏng (luôn sáng như cửa sổ thật) */
+  .fxwin{border:1px solid #9aa0a6;border-radius:7px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.14);margin:0 auto;width:max-content;max-width:100%}
+  .fxbar{height:22px;background:linear-gradient(#ececec,#d9d9d9);display:flex;align-items:center;gap:5px;padding:0 8px;font:600 11.5px system-ui,sans-serif;color:#333;border-bottom:1px solid #bdbdbd;user-select:none}
+  .fxbar i{width:9px;height:9px;border-radius:50%;display:inline-block;background:#ff5f57}
+  .fxbar i+i{background:#febc2e}.fxbar i+i+i{background:#28c840}
+  .fxbar .t{flex:1;text-align:center;margin-right:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fxbox{position:relative;overflow:hidden}
+  .fxscene{position:absolute;left:0;top:0;transform-origin:0 0;background:#fff;color:#000;overflow:hidden;
+    font:13px "Segoe UI",system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+  .fxscene.modena{background:#f4f4f4}
+  .fxscene svg{position:absolute;left:0;top:0;overflow:visible}
+  .fxscene:focus{outline:none}
+  /* Nút kiểu Modena */
+  .mbtn{position:absolute;height:25px;padding:0 8px;border-radius:3px;border:1px solid #b5b5b5;
+    background:linear-gradient(#fdfdfd,#e2e2e2);color:#333;font:12px "Segoe UI",system-ui,-apple-system,sans-serif;
+    box-shadow:inset 0 1px 0 #fff;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+  .mbtn:hover{background:linear-gradient(#ffffff,#ececec)}
+  .mbtn.armed{background:linear-gradient(#d4d4d4,#e6e6e6);box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+  .mbtn.focus{border-color:#039ed3;box-shadow:0 0 0 2px rgba(3,158,211,.35),inset 0 0 0 1px #fff}
+  .fxnote{font:600 10.5px system-ui,sans-serif;color:var(--muted);text-align:center;margin-top:3px}
+  .pad{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pad .btn.op{min-width:30px}
+
+  .grid{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+  .tl svg{display:block;width:100%;height:auto}
+  .tl text{font:10.5px system-ui,sans-serif;fill:var(--muted)}
+  .tl .axis{stroke:var(--muted);stroke-width:1.2}
+  .tl .kf{fill:var(--accent)} .tl .kf.off{fill:var(--line)} .tl .kf.hit{fill:var(--cur-bar)}
+  .tl .kfl{font:600 10px ui-monospace,Menlo,monospace;fill:var(--text)}
+  .tl .call{fill:var(--cur);stroke:var(--cur-bar)}
+  .tl .play{stroke:#dc2626;stroke-width:2.2}
+  .tl .seg{fill:#86efac} .tl .seg.hide{fill:#fca5a5}
+  .code{font-size:10px;line-height:1.33}
+  .row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .fxscene{cursor:default}
+  .fxscene text.hit{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Chạy hết</b> hoặc <b>Bước tiếp</b> (0,25 s); bấm vào chữ đỏ để tạm dừng / chạy tiếp.</p>
+  <div class="controls"><div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div><span class="hint" id="hint"></span></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card tl" style="margin-bottom:8px"><div class="row" style="margin-bottom:4px"><span>animation.setCycleCount(</span><select class="inp" id="cc" aria-label="cycleCount"><option value="0">Timeline.INDEFINITE</option><option value="1">1</option><option value="3">3</option></select><span>)</span>
+    <button class="btn op" id="play">animation.play()</button><button class="btn op" id="click">bấm vào chữ</button><span id="stt"></span></div><div id="tl"></div></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Cửa sổ TimelineDemo</p>
+      <div class="fxwin"><div class="fxbar"><i></i><i></i><i></i><span class="t">TimelineDemo</span></div>
+        <div class="fxbox" id="box"><div class="fxscene" id="scene"><svg width="250" height="250" id="svg"></svg></div></div></div></div>
+    <div class="card"><p class="panel-title">TimelineDemo (trích)</p><div class="code" id="code"></div></div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|(@\w+)|\b(import|public|private|protected|class|interface|extends|implements|static|final|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|null|this|super|switch|case|default|break)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="an">' + esc(m[3]) + '</span>';
+      else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+      else out += '<span class="num">' + m[5] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // o: {cur: số dòng (đếm từ 0) | [a, b] | {list: [..]}, kind: 'cur'|'curf'|'curt', dim: {i: true}, tags: {i: nhãn}}
+  function codeHtml(lines, o){
+    o = o || {}; var dim = o.dim || {}, tags = o.tags || {}, set = {};
+    var c = o.cur;
+    if (c !== undefined && c !== null) {
+      if (Array.isArray(c)) { for (var k = c[0]; k <= c[1]; k++) set[k] = 1; }
+      else if (typeof c === 'object') c.list.forEach(function(k){ set[k] = 1; });
+      else set[c] = 1;
+    }
+    var kind = o.kind || 'cur';
+    return lines.map(function(l, i){
+      var cl = 'ln' + (dim[i] ? ' dim' : '') + (set[i] ? ' ' + kind : '');
+      return '<div class="' + cl + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur,.ln.curf,.ln.curt'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // out: chuỗi hoặc [chuỗi, lớp]
+  function conHtml(out, ph){ return out.length ? out.map(function(x){ return Array.isArray(x) ? '<span class="' + x[1] + '">' + esc(x[0]) + '</span>' : esc(x); }).join('\n') : '<span class="ph">' + (ph || 'Chưa có dòng nào.') + '</span>'; }
+  // Double.toString của Java
+  function jd(x){
+    if (x === 0) return (1 / x < 0) ? '-0.0' : '0.0';
+    var a = Math.abs(x);
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var e = x.toExponential(), p = e.split('e'), mant = p[0], ex = parseInt(p[1], 10);
+    if (mant.indexOf('.') < 0) mant += '.0';
+    return mant + 'E' + ex;
+  }
+  function hint(msg){ var h = $('hint'); if (!h) return; h.textContent = msg || ''; h.className = msg ? 'hint bad' : 'hint'; }
+
+  // Lịch sử trạng thái: mỗi thao tác sinh một hoặc nhiều ảnh chụp; Bước tiếp chạy kịch bản mặc định,
+  // thao tác của người dùng cắt nhánh và nối tiếp. cfg: init(), apply(snap, op) -> snap | [snap...], script, render(snap, i), delay
+  function History(cfg){
+    var H = [], pos = 0, off = false, timer = null, base = 0, MAX = 500;
+    var script = cfg.script || [];
+    function last(){ return H[H.length - 1]; }
+    function canNext(){ return pos < H.length - 1 || (!off && base === 0 && last().n < script.length); }
+    function draw(){
+      var sn = H[pos], run = timer !== null;
+      $('status').innerHTML = '<b>Bước ' + (base + pos + 1) + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, pos);
+      $('next').disabled = !canNext() || run;
+      $('prev').disabled = pos <= 0 || run;
+      $('all').disabled = run || !canNext();
+    }
+    function add(prev, op){
+      var r = cfg.apply(prev, op); if (!Array.isArray(r)) r = [r];
+      r.forEach(function(x){ x.n = prev.n + 1; H.push(x); });
+      while (H.length > MAX) { H.shift(); base++; }
+      return r.length;
+    }
+    function advance(){
+      if (pos < H.length - 1) { pos++; return true; }
+      if (canNext()) { var k = add(last(), script[last().n]); pos = H.length - k; return true; }
+      return false;
+    }
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function reset(){ stop(); var s0 = cfg.init(); s0.n = 0; H = [s0]; pos = 0; off = false; base = 0; hint(''); draw(); }
+    function doOp(op){
+      stop(); hint('');
+      if (pos < H.length - 1) H = H.slice(0, pos + 1);
+      var cur = H[pos];
+      if (!off && (cur.n >= script.length || JSON.stringify(script[cur.n]) !== JSON.stringify(op))) off = true;
+      add(cur, op); pos = H.length - 1; draw();
+    }
+    $('next').addEventListener('click', function(){ stop(); if (advance()) draw(); });
+    $('prev').addEventListener('click', function(){ stop(); if (pos > 0) { pos--; draw(); } });
+    $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (!advance()) stop(); if (!canNext()) stop(); draw(); }, cfg.delay || 700);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target, tn = t && t.tagName;
+      if (tn === 'INPUT' || tn === 'SELECT' || tn === 'TEXTAREA' || (t && t.closest && t.closest('[data-keys]')) || timer) return;
+      if (e.key === 'ArrowRight') { $('next').click(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { $('prev').click(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', function(){ if (H.length) cfg.render(H[pos], pos); });
+    return {reset: function(){
+              reset();
+              var j = parseInt(qs('buoc'), 10);
+              if (j > 1) { while (pos < j - 1 && advance()); draw(); }
+            },
+            doOp: doOp, cur: function(){ return H[pos]; }, stop: stop, running: function(){ return timer !== null; }};
+  }
+
+  // Cảnh JavaFX kích thước W x H (px của JavaFX), tự co giãn theo bề rộng khung chứa.
+  function FxScene(boxId, W, H, maxScale){
+    var box = $(boxId), sc = box.querySelector('.fxscene'), s = 1;
+    sc.style.width = W + 'px'; sc.style.height = H + 'px';
+    function fit(){
+      var card = box.closest(".card") || box.parentElement.parentElement; var avail = card.clientWidth - 24;
+      s = Math.min(maxScale || 1.4, avail / W);
+      sc.style.transform = 'scale(' + s + ')';
+      box.style.width = (W * s) + 'px'; box.style.height = (H * s) + 'px';
+    }
+    fit(); window.addEventListener('resize', fit);
+    return {el: sc, fit: fit,
+      toLocal: function(ev){ var r = sc.getBoundingClientRect(); return {x: (ev.clientX - r.left) * W / r.width, y: (ev.clientY - r.top) * H / r.height}; }};
+  }
+  function rd(x, n){ var p = Math.pow(10, n || 0); return Math.round(x * p) / p; }
+
+  // Điều khiển trang hoạt hình: Bước tiếp = cho thời gian trôi stepMs; Lùi lại = hoàn tác thao tác trước;
+  // Chạy hết = cho thời gian trôi liên tục (bấm lại để dừng); Làm lại = trạng thái đầu.
+  // cfg: init() -> state, clone(state), tick(state, ms) -> thông báo|undefined, render(state, msg), stepMs, stepMsg(state)
+  function AnimCtl(cfg){
+    var S, hist = [], raf = null, lastT = 0, msg = '', cnt = 0;
+    function draw(){ cfg.render(S, msg); $('prev').disabled = !hist.length; $('next').disabled = raf !== null;
+      $('all').textContent = raf !== null ? 'Dừng' : 'Chạy hết'; }
+    function save(){ hist.push({s: cfg.clone(S), m: msg}); if (hist.length > 300) hist.shift(); }
+    function stopRT(){ if (raf !== null) { cancelAnimationFrame(raf); raf = null; } }
+    function act(fn){ save(); var m = fn(S); if (m !== undefined) msg = m; draw(); }
+    function frame(t){
+      var dt = Math.min(100, t - lastT); lastT = t;
+      var m = cfg.tick(S, dt); if (m) msg = m;
+      draw();
+      if (cfg.done && cfg.done(S)) { stopRT(); draw(); return; }
+      raf = requestAnimationFrame(frame);
+    }
+    $('next').addEventListener('click', function(){ save(); var m = cfg.step ? cfg.step(S) : cfg.tick(S, cfg.stepMs); msg = m || (cfg.stepMsg ? cfg.stepMsg(S) : msg); draw(); });
+    $('prev').addEventListener('click', function(){ stopRT(); var h = hist.pop(); if (h) { S = h.s; msg = h.m; } draw(); });
+    $('all').addEventListener('click', function(){
+      if (raf !== null) { stopRT(); draw(); return; }
+      save(); if (cfg.onRun) { var m = cfg.onRun(S); if (m) msg = m; }
+      lastT = performance.now(); raf = requestAnimationFrame(frame); draw();
+    });
+    $('reset').addEventListener('click', function(){ stopRT(); hist = []; S = cfg.init(); msg = cfg.initMsg; draw(); });
+    document.addEventListener('keydown', function(e){
+      var t = e.target, tn = t && t.tagName;
+      if (tn === 'INPUT' || tn === 'SELECT' || tn === 'TEXTAREA' || (t && t.closest && t.closest('[data-keys]'))) return;
+      if (e.key === 'ArrowRight' && raf === null) { $('next').click(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { $('prev').click(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', draw);
+    S = cfg.init(); msg = cfg.initMsg;
+    var j = parseInt(qs('buoc'), 10);
+    if (j > 1) for (var i = 1; i < j; i++) { save(); var m = cfg.step ? cfg.step(S) : cfg.tick(S, cfg.stepMs); msg = m || (cfg.stepMsg ? cfg.stepMsg(S) : msg); }
+    draw();
+    return {act: act, state: function(){ return S; }, draw: draw, running: function(){ return raf !== null; }, stop: function(){ stopRT(); draw(); }};
+  }
+  function easeBoth(t){ return Math.min(1, Math.max(0, t < 0.2 ? 3.125 * t * t : t > 0.8 ? -3.125 * t * t + 6.25 * t - 2.125 : 1.25 * t - 0.125)); }
+  function fmtS(ms){ return (ms / 1000).toFixed(2).replace('.', ',') + ' s'; }
+
+var KF = 500, MSG = 'Programming is fun', WIN = 3000;
+function lines(cc){ return [
+'EventHandler<ActionEvent> eventHandler = e -> {',
+'  if (text.getText().length() != 0) {',
+'    text.setText("");',
+'  }',
+'  else {',
+'    text.setText("Programming is fun");',
+'  }',
+'};',
+'Timeline animation = new Timeline(',
+'  new KeyFrame(Duration.millis(500), eventHandler));',
+'animation.setCycleCount(' + (cc ? cc : 'Timeline.INDEFINITE') + ');',
+'animation.play();',
+'',
+'text.setOnMouseClicked(e -> {',
+'  if (animation.getStatus() == Animation.Status.PAUSED) {',
+'    animation.play();',
+'  }',
+'  else {',
+'    animation.pause();',
+'  }',
+'});']; }
+function init(cc){ return {st: 'RUNNING', P: 0, cc: cc || 0, vis: true, n: 0, clock: 0, calls: [], segs: [], cur: 11, last: -1}; }
+function clone(s){ var c = Object.assign({}, s); c.calls = s.calls.slice(); c.segs = s.segs.map(function(x){ return x.slice(); }); return c; }
+function seg(s, a, b){ if (b <= a) return; var l = s.segs[s.segs.length - 1]; if (l && l[1] === a && l[2] === s.vis) l[1] = b; else s.segs.push([a, b, s.vis]); if (s.segs.length > 40) s.segs.shift(); }
+function tick(s, ms){
+  s.clock += ms; s.flash = false;
+  if (s.st !== 'RUNNING') return;
+  var end = s.cc ? s.cc * KF : Infinity, np = Math.min(s.P + ms, end), m = '';
+  var k = Math.floor(s.P / KF) + 1;
+  for (; k * KF <= np; k++) {
+    seg(s, s.P, k * KF); s.P = k * KF;
+    s.vis = !s.vis; s.n++; s.calls.push(k * KF); if (s.calls.length > 40) s.calls.shift(); s.flash = true; s.last = k * KF;
+    s.cur = s.vis ? [4, 5] : [1, 2];
+    m = 'Hết 500 ms của chu kỳ ' + k + ': KeyFrame gọi <code>handle</code> lần thứ ' + s.n + '. ' + (s.vis ? 'Chữ đang rỗng nên hiện lại.' : 'Chữ đang có nên bị xoá.');
+  }
+  seg(s, s.P, np); s.P = np;
+  if (np >= end) { s.st = 'STOPPED'; m += ' Đã chạy đủ ' + s.cc + ' chu kỳ: Timeline kết thúc, status <b>STOPPED</b>, chữ giữ nguyên trạng thái cuối.'; }
+  if (!m) { s.cur = null; m = 'Đang ở giữa một chu kỳ (' + Math.round(s.P % KF) + ' / 500 ms): chưa tới KeyFrame nên chưa có gì đổi.'; }
+  return m;
+}
+function clickText(s){
+  if (!s.vis) { s.cur = null; return 'Chữ đang ẩn (chuỗi rỗng): không có gì để bấm, handler chuột không chạy.'; }
+  if (s.st === 'PAUSED') { s.st = 'RUNNING'; s.cur = [14, 15]; return 'Bấm chữ: <code>getStatus()</code> là PAUSED nên gọi <code>play()</code>, chạy tiếp từ chỗ dừng.'; }
+  s.cur = [17, 18];
+  if (s.st === 'RUNNING') { s.st = 'PAUSED'; return 'Bấm chữ: status là RUNNING (không phải PAUSED) nên gọi <code>pause()</code>: tạm dừng.'; }
+  return 'Bấm chữ: status là <b>STOPPED</b>, không phải PAUSED, nên nhánh else gọi <code>pause()</code>. Với Timeline đã dừng hẳn, <code>pause()</code> không có tác dụng: chữ vẫn đứng yên.';
+}
+var sc = FxScene('box', 250, 250, 0.85);
+function tlSvg(s){
+  var W = 640, L = 14, R = 626, base = Math.floor(s.P / WIN) * WIN;
+  if (s.st === 'STOPPED' && s.P > 0 && s.P % WIN === 0) base -= WIN;
+  function X(t){ return L + (R - L) * (t - base) / WIN; }
+  var g = '<svg viewBox="0 0 ' + W + ' 66" role="img" aria-label="Dòng thời gian các KeyFrame">';
+  // dải hiện/ẩn chữ đã trải qua
+  s.segs.forEach(function(q){ var a = Math.max(q[0], base), b = Math.min(q[1], base + WIN);
+    if (b > a) g += '<rect class="seg' + (q[2] ? '' : ' hide') + '" x="' + X(a) + '" y="30" width="' + (X(b) - X(a)) + '" height="8"/>'; });
+  g += '<line class="axis" x1="' + L + '" x2="' + R + '" y1="38" y2="38"/>';
+  for (var k = 0; k <= WIN / KF; k++) {
+    var tt = base + k * KF, x = X(tt), on = !s.cc || (tt > 0 && tt <= s.cc * KF), hit = tt === s.last && s.flash;
+    g += '<text x="' + x + '" y="56" text-anchor="middle">' + (tt / 1000).toFixed(1).replace('.', ',') + ' s</text>';
+    if (tt > 0) g += '<path class="kf' + (hit ? ' hit' : on ? '' : ' off') + '" d="M' + x + ' 24 l6 7 l-6 7 l-6 -7 z"/>';
+    if (hit) g += '<rect class="call" x="' + (x - 30) + '" y="2" width="60" height="16" rx="5"/><text class="kfl" x="' + x + '" y="14" text-anchor="middle">handle()</text>';
+  }
+  var px = X(s.P);
+  g += '<line class="play" x1="' + px + '" x2="' + px + '" y1="20" y2="44"/>';
+  g += '<text x="' + L + '" y="14">◆ KeyFrame (mỗi 500 ms)</text><text x="' + R + '" y="14" text-anchor="end">xanh: chữ hiện · đỏ: chữ ẩn</text>';
+  return g + '</svg>';
+}
+function render(s, msg){
+  $('svg').innerHTML = s.vis ? '<text class="hit" id="tx" x="125" y="125" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#ff0000" font-family="System, -apple-system, Segoe UI, sans-serif">' + MSG + '</text>' : '';
+  $('tl').innerHTML = tlSvg(s);
+  $('code').innerHTML = codeHtml(lines(s.cc), {cur: s.cur});
+  var tag = s.st === 'RUNNING' ? 't' : s.st === 'PAUSED' ? 'a' : 'f';
+  $('stt').innerHTML = 'status <span class="tag ' + tag + '">' + s.st + '</span> · handler đã gọi ' + s.n + ' lần';
+  $('status').innerHTML = '<b>' + fmtS(s.clock) + ' đã trôi</b><span>' + msg + '</span>';
+  $('cc').value = String(s.cc);
+}
+var A = AnimCtl({stepMs: 250, init: function(){ return init(0); }, clone: clone, tick: tick, render: render,
+  stepMsg: function(s){ return 'Timeline đang ' + s.st + ': thời gian trôi nhưng handler không được gọi.'; },
+  initMsg: 'Chương trình vừa gọi <code>animation.play()</code>: chữ đang hiện. Cứ hết 500 ms, KeyFrame gọi <code>eventHandler</code> một lần.'});
+$('cc').addEventListener('change', function(){ var v = +this.value; A.act(function(s){ var n = init(v); Object.keys(n).forEach(function(k){ s[k] = n[k]; });
+  return 'Chạy lại chương trình với cycleCount = ' + (v ? v : 'INDEFINITE') + (v ? ': handler chỉ được gọi ' + v + ' lần rồi Timeline dừng hẳn.' : ': handler được gọi mãi.'); }); });
+$('play').addEventListener('click', function(){ A.act(function(s){ s.cur = 11;
+  if (s.st === 'RUNNING') return '<code>play()</code> khi đang chạy: không có tác dụng.';
+  if (s.st === 'PAUSED') { s.st = 'RUNNING'; return '<code>play()</code>: chạy tiếp từ chỗ tạm dừng.'; }
+  s.st = 'RUNNING'; s.P = 0; s.segs = []; s.calls = []; return '<code>play()</code> khi đang STOPPED: Timeline chạy lại từ đầu (chữ giữ trạng thái hiện tại, handler lại đảo nó mỗi 500 ms).'; }); });
+$('click').addEventListener('click', function(){ A.act(clickText); });
+sc.el.addEventListener('click', function(e){ if (e.target && e.target.id === 'tx') A.act(clickText); });
+})();
+</script>
+</body>
+</html>

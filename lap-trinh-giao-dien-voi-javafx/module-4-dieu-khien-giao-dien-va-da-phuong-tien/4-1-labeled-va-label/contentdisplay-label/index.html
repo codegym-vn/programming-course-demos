@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="525">
+<title>Thuộc tính của nhãn Label</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 12px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:6px 0}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{padding:2px 9px;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.err{color:var(--false);font-size:12.5px}
+.err:empty{display:none}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:5px 12px;margin-bottom:6px;min-height:62px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.code{position:relative;background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 4px 0 0;border-left:3px solid transparent;width:max-content;min-width:100%}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.dim{opacity:.45}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre-wrap;word-break:break-word;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tag{display:inline-block;padding:0 6px;border-radius:5px;font:700 12px ui-monospace,Menlo,Consolas,monospace}
+.tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+.vars{width:100%;border-collapse:collapse;font:12px ui-monospace,Menlo,Consolas,monospace}
+.vars td,.vars th{border-bottom:1px solid var(--line);padding:2px 6px;text-align:left}
+.vars th{font:700 11.5px system-ui,sans-serif;color:var(--muted)}
+.vars tr.chg td{background:var(--cur)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.note{color:var(--muted);font-size:12px}
+
+/* ===== Cửa sổ JavaFX mô phỏng (giao diện Modena; luôn sáng như ảnh chụp thật) ===== */
+.fxwin{border:1px solid #a9a9a9;border-radius:8px;overflow:hidden;background:#f4f4f4;box-shadow:0 2px 8px rgba(0,0,0,.18);
+  color:#333;font:13px/1.25 -apple-system,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;width:max-content;max-width:100%}
+.fxbar{height:24px;background:linear-gradient(#ececec,#d9d9d9);border-bottom:1px solid #b9b9b9;display:flex;align-items:center;
+  position:relative;font-size:12.5px;color:#4a4a4a;user-select:none}
+.fxbar i{width:11px;height:11px;border-radius:50%;margin-left:7px;display:inline-block;flex:none}
+.fxbar i:nth-child(1){background:#ff5f57;margin-left:9px}.fxbar i:nth-child(2){background:#febc2e}.fxbar i:nth-child(3){background:#28c840}
+.fxbar span{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.fxbody{position:relative;background:#f4f4f4;overflow:hidden}
+.fx-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid #b2b2b2;border-radius:4px;
+  background:linear-gradient(#fefefe,#e3e3e3);box-shadow:inset 0 1px 0 #fff;color:#333;font:inherit;cursor:pointer;line-height:1.3}
+.fx-btn:hover{background:linear-gradient(#ffffff,#ebebeb)}
+.fx-btn:active,.fx-btn.armed{background:linear-gradient(#d6d6d6,#e2e2e2)}
+.fx-btn:focus-visible{outline:none;border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-check,.fx-radio{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;background:none;border:0;padding:0;color:#333;font:inherit}
+.fx-check .box{width:15px;height:15px;border:1px solid #a8a8a8;border-radius:3px;background:linear-gradient(#fdfdfd,#e8e8e8);position:relative;flex:none}
+.fx-check.on .box::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #333;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.fx-radio .box{width:15px;height:15px;border:1px solid #a8a8a8;border-radius:50%;background:linear-gradient(#fdfdfd,#e8e8e8);position:relative;flex:none}
+.fx-radio.on .box::after{content:"";position:absolute;left:3.5px;top:3.5px;width:6px;height:6px;border-radius:50%;background:#333}
+.fx-check:focus-visible .box,.fx-radio:focus-visible .box{border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-check:focus-visible,.fx-radio:focus-visible{outline:none}
+.fx-tf{border:1px solid #b5b5b5;border-radius:3px;background:#fff;box-shadow:inset 0 1px 1px #ddd;padding:3px 6px;color:#333;
+  font:inherit;min-width:0}
+.fx-tf:focus{outline:none;border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-combo{display:inline-flex;align-items:center;gap:10px;padding:3px 8px;border:1px solid #b2b2b2;border-radius:4px;
+  background:linear-gradient(#fefefe,#e3e3e3);color:#333;font:inherit;cursor:pointer}
+.fx-combo::after{content:"";border:4px solid transparent;border-top:5px solid #333;margin-top:4px}
+.fx-list{background:#fff;border:1px solid #b5b5b5;overflow:hidden}
+.fx-cell{padding:3px 6px;height:24px;cursor:pointer;user-select:none;white-space:nowrap}
+.fx-cell:nth-child(even){background:#f9f9f9}
+.fx-cell.sel{background:#0096c9;color:#fff}
+.fx-cell.foc{box-shadow:inset 0 0 0 1px #039ed3}
+.fx-cell.sel.foc{box-shadow:inset 0 0 0 1px #fff}
+/* BorderPane mô phỏng của chuỗi ButtonDemo (450x200) */
+.bp{width:450px;height:200px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto 1fr auto;
+  grid-template-areas:"t t t" "l c r" "b b b";background:#f4f4f4}
+.bp.empty{background:repeating-linear-gradient(45deg,#f4f4f4 0 8px,#ececec 8px 16px)}
+.bp>.t{grid-area:t;border:1px solid green;padding:5px;display:flex;align-items:center;gap:0}
+.bp>.t .fx-tf{flex:1;text-align:right}
+.bp>.l{grid-area:l;border:2px solid green;padding:5px;display:flex;flex-direction:column;gap:20px}
+.bp>.r{grid-area:r;border:1px solid green;padding:5px;display:flex;flex-direction:column;gap:20px}
+.bp>.b{grid-area:b;border:1px solid green;display:flex;justify-content:center;gap:20px;padding:0}
+.bp>.c{grid-area:c;position:relative}
+.bp>.c span{position:absolute;left:50px;white-space:nowrap;color:#000}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+<script>
+/* Phần dùng chung cho các trang minh hoạ Module 4 (khoá Lập trình giao diện với JavaFX). */
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|(@\w+)|\b(import|public|private|protected|class|static|final|void|int|double|long|char|boolean|if|else|return|for|while|new|true|false|null|extends|this|super)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+    else out += '<span class="num">' + m[5] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+/* lines: mảng chuỗi; o.cur: chỉ số | [từ, đến] | o.curList: mảng chỉ số; o.dim: mảng chỉ số làm mờ */
+function codeHtml(lines, o){
+  o = o || {}; var set = {}, dim = {}, cur = o.cur;
+  if (Array.isArray(o.curList)) o.curList.forEach(function(i){ set[i] = 1; });
+  else if (Array.isArray(cur)) { for (var k = cur[0]; k <= cur[1]; k++) set[k] = 1; }
+  else if (cur !== undefined && cur !== null && cur >= 0) set[cur] = 1;
+  (o.dim || []).forEach(function(i){ dim[i] = 1; });
+  return lines.map(function(l, i){
+    return '<div class="ln' + (set[i] ? ' cur' : '') + (dim[i] ? ' dim' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function tag(v){ return '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+/* Nhóm nút .tab trong phần tử id; onChange(value) */
+function tabs(id, onChange){
+  var box = $(id);
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if (!b) return;
+    setTab(id, b.getAttribute('data-v')); onChange(b.getAttribute('data-v'));
+  });
+}
+function setTab(id, v){
+  $(id).querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-v') === v ? 'true' : 'false'); });
+}
+/* Cờ minh hoạ tự vẽ (giống các tệp image/*.png 150x100 của bài) */
+var FLAG_CODES = ['vn', 'jp', 'fr', 'de', 'it', 'th'];
+function flagSvg(code, w, h){
+  var star = function(cx, cy, R){
+    var p = [];
+    for (var k = 0; k < 10; k++) { var r = k % 2 ? R * 0.382 : R, a = -Math.PI / 2 + k * Math.PI / 5; p.push((cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2)); }
+    return '<polygon points="' + p.join(' ') + '" fill="#ffcd00"/>';
+  };
+  var v3 = function(c){ return c.map(function(x, i){ return '<rect x="' + (i * 50) + '" y="0" width="50" height="100" fill="' + x + '"/>'; }).join(''); };
+  var h3 = function(c){ return c.map(function(x, i){ return '<rect x="0" y="' + (i * 100 / 3) + '" width="150" height="' + (100 / 3 + 0.2) + '" fill="' + x + '"/>'; }).join(''); };
+  var body = {
+    vn: '<rect width="150" height="100" fill="#da251d"/>' + star(75, 50, 30),
+    jp: '<rect width="150" height="100" fill="#fff"/><circle cx="75" cy="50" r="30" fill="#bc002d"/>',
+    fr: v3(['#0055a4', '#ffffff', '#ef4135']),
+    it: v3(['#009246', '#ffffff', '#ce2b37']),
+    de: h3(['#000000', '#dd0000', '#ffce00']),
+    th: ['#a51931', '#f4f5f8', '#2d2a4a', '#2d2a4a', '#f4f5f8', '#a51931'].map(function(c, i){ return '<rect x="0" y="' + (i * 100 / 6) + '" width="150" height="' + (100 / 6 + 0.2) + '" fill="' + c + '"/>'; }).join('')
+  }[code];
+  return '<svg viewBox="0 0 150 100" width="' + w + '" height="' + (h || w * 2 / 3) + '" aria-hidden="true" style="display:block">' + body +
+    '<rect x="0.5" y="0.5" width="149" height="99" fill="none" stroke="#787878"/></svg>';
+}
+/* Âm thanh mô phỏng bằng Web Audio: chỉ tạo AudioContext khi người học bấm nút. */
+var Snd = {
+  ctx: null,
+  get: function(){
+    if (!this.ctx) { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this.ctx = new A(); }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  /* Phát dãy nốt (Hz, 0 = lặng), mỗi nốt dur giây, bỏ qua `from` giây đầu; trả về {stop()} */
+  notes: function(freqs, dur, from, vol){
+    var ctx = this.get(); if (!ctx) return {stop: function(){}};
+    var t0 = ctx.currentTime + 0.02, oscs = [], master = ctx.createGain();
+    master.gain.value = (vol === undefined ? 1 : vol) * 0.18; master.connect(ctx.destination);
+    freqs.forEach(function(f, i){
+      var s = i * dur - (from || 0), e = s + dur;
+      if (!f || e <= 0) return;
+      var st = Math.max(0, s), o = ctx.createOscillator(), g = ctx.createGain(), ramp = 0.018;
+      o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(master);
+      g.gain.setValueAtTime(0, t0 + st);
+      g.gain.linearRampToValueAtTime(1, t0 + Math.min(st + ramp, e));
+      g.gain.setValueAtTime(1, t0 + Math.max(st + ramp, e - ramp));
+      g.gain.linearRampToValueAtTime(0, t0 + e);
+      o.start(t0 + st); o.stop(t0 + e + 0.01); oscs.push(o);
+    });
+    return {stop: function(){ oscs.forEach(function(o){ try { o.stop(); } catch (x) {} }); try { master.disconnect(); } catch (x) {} }};
+  }
+};
+var NOTE = {C: 262, D: 294, E: 330, F: 349, G: 392, A: 440, B: 494, C5: 523};
+/* Mô hình MediaPlayer (đã đối chiếu JavaFX 21): stop() đưa về 0; play() khi đang PLAYING không làm gì;
+   phát hết bài thì trạng thái vẫn là PLAYING, đứng ở cuối, và play() không phát lại (phải stop() hoặc seek()). */
+function mpNew(dur){ return {status: 'READY', pos: 0, t0: 0, dur: dur}; }
+function mpPos(m, now){ return m.status === 'PLAYING' ? Math.min(m.dur, m.pos + (now - m.t0)) : m.pos; }
+function mpPlay(m, now){
+  var p = mpPos(m, now);
+  if (m.status === 'PLAYING') return {m: m, act: p >= m.dur ? 'end' : 'noop'};
+  if (m.status === 'PAUSED') return {m: {status: 'PLAYING', pos: p, t0: now, dur: m.dur}, act: p >= m.dur ? 'end' : 'resume'};
+  return {m: {status: 'PLAYING', pos: 0, t0: now, dur: m.dur}, act: 'start'};
+}
+function mpPause(m, now){ return {status: 'PAUSED', pos: mpPos(m, now), t0: now, dur: m.dur}; }
+function mpStop(m){ return {status: 'STOPPED', pos: 0, t0: 0, dur: m.dur}; }
+if (typeof module !== 'undefined') module.exports = {mpNew: mpNew, mpPos: mpPos, mpPlay: mpPlay, mpPause: mpPause, mpStop: mpStop, flagSvg: flagSvg, hl: hl};
+
+</script>
+</head>
+<body>
+<style>
+.grid{display:grid;grid-template-columns:minmax(0,0.85fr) minmax(0,1.15fr);gap:8px;align-items:start}
+.stage{display:flex;justify-content:center;padding:4px 0 8px}
+.lblbox{position:absolute;left:15px;top:15px;width:195px;outline:1.5px dashed #9aa3b2;font-size:19.5px;line-height:1.25;color:#333}
+.lblbox .g{position:absolute;width:54px;height:54px;border-radius:50%;background:#6495ed}
+.lblbox .t{position:absolute;white-space:pre;text-align:left}
+.lblbox.wrap .t{white-space:normal}
+.lblbox.ul .t{text-decoration:underline;text-underline-offset:2px}
+.ctl{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px}
+.ctl .k{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.ctl input[type=range]{width:100%;max-width:220px;accent-color:var(--accent)}
+.ctl label{display:inline-flex;gap:6px;align-items:center;cursor:pointer;margin-right:12px;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+.ctl input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+@media (max-width:620px){.grid{grid-template-columns:1fr}}
+</style>
+<div class="wrap">
+  <p class="lead">Đổi từng thuộc tính của nhãn và xem nhãn thay đổi ngay (viền nét đứt chỉ để thấy khung của nhãn).</p>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card">
+      <div class="stage"><div class="fxwin"><div class="fxbar"><i></i><i></i><i></i><span>LabelDemo</span></div>
+        <div class="fxbody" style="width:240px;height:205px"><div class="lblbox" id="lbl" role="img" aria-label="Nhãn mô phỏng"><span class="g"></span><span class="t" id="lt"></span></div></div></div></div>
+      <div class="ctl">
+        <span class="k">contentDisplay</span>
+        <div class="tabs" id="cd"><button class="tab mono" data-v="TOP">TOP</button><button class="tab mono" data-v="BOTTOM">BOTTOM</button><button class="tab mono" data-v="LEFT">LEFT</button><button class="tab mono" data-v="RIGHT">RIGHT</button></div>
+        <span class="k">graphicTextGap</span>
+        <div style="display:flex;align-items:center;gap:8px"><input type="range" id="gap" min="0" max="40" step="1" value="4" aria-label="graphicTextGap từ 0 đến 40"><b class="mono" id="gapv">4</b></div>
+        <span class="k"></span>
+        <div><label><input type="checkbox" id="ul">underline</label><label><input type="checkbox" id="wr">wrapText</label></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Mã tạo nhãn</p>
+      <div class="code" id="code"></div>
+      <div class="controls"><button class="btn ghost" id="reset">Làm lại</button></div>
+      <p class="note" style="margin:0">Nhãn rộng 130 px; hình tròn bán kính 18 px. Mặc định <code>graphicTextGap</code> là 4, <code>underline</code> và <code>wrapText</code> là <code>false</code>.</p>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var S = 1.5, W = 130, D = 36, TEXT = 'Viet Nam - Thu do Ha Noi';
+  var st, last;
+  function init(){ st = {cd: 'TOP', gap: 4, ul: false, wr: false}; last = null; }
+  var cv = document.createElement('canvas').getContext('2d');
+  function measure(s){ cv.font = getComputedStyle($('lbl')).fontSize + ' ' + getComputedStyle($('lbl')).fontFamily; return cv.measureText(s).width; }
+  // JavaFX cắt chữ quá dài và thêm "..." (textOverrun = ELLIPSIS)
+  function clip(s, avail){
+    if (measure(s) <= avail) return {text: s, cut: false};
+    for (var n = s.length - 1; n > 0; n--) { var c = s.slice(0, n) + '...'; if (measure(c) <= avail) return {text: c, cut: true}; }
+    return {text: '...', cut: true};
+  }
+  function lines(){
+    var L = ['Label lbl = new Label("' + TEXT + '",', '  new Circle(18, Color.CORNFLOWERBLUE));', 'lbl.setPrefWidth(130);',
+      'lbl.setContentDisplay(ContentDisplay.' + st.cd + ');', 'lbl.setGraphicTextGap(' + st.gap + ');', 'lbl.setUnderline(' + st.ul + ');', 'lbl.setWrapText(' + st.wr + ');'];
+    return L;
+  }
+  var CUR = {cd: 3, gap: 4, ul: 5, wr: 6};
+  var SIDE = {TOP: 'phía trên', BOTTOM: 'phía dưới', LEFT: 'bên trái', RIGHT: 'bên phải'};
+  function draw(){
+    var el = $('lbl'), side = st.cd === 'LEFT' || st.cd === 'RIGHT';
+    el.className = 'lblbox ' + st.cd + (st.ul ? ' ul' : '') + (st.wr ? ' wrap' : '');
+        var avail = (side ? W - D - st.gap : W) * S, r = {text: TEXT, cut: false};
+    if (!st.wr) r = clip(TEXT, avail);
+    var t = $('lt'), g = el.querySelector('.g'), gp = st.gap * S, d = D * S, w = W * S;
+    t.textContent = r.text; t.style.width = avail + 'px';
+    var th = t.offsetHeight, h;
+    if (side) { h = Math.max(d, th); g.style.top = (h - d) / 2 + 'px'; t.style.top = (h - th) / 2 + 'px';
+      g.style.left = (st.cd === 'LEFT' ? 0 : w - d) + 'px'; t.style.left = (st.cd === 'LEFT' ? d + gp : 0) + 'px'; }
+    else { h = d + gp + th; g.style.left = (w - d) / 2 + 'px'; t.style.left = '0px';
+      g.style.top = (st.cd === 'TOP' ? 0 : th + gp) + 'px'; t.style.top = (st.cd === 'TOP' ? d + gp : 0) + 'px'; }
+    el.style.height = h + 'px';
+    var wrapped = st.wr && measure(TEXT) > avail;
+    setTab('cd', st.cd); $('gap').value = st.gap; $('gapv').textContent = st.gap; $('ul').checked = st.ul; $('wr').checked = st.wr;
+    $('code').innerHTML = codeHtml(lines(), {cur: last ? CUR[last] : -1});
+    var room = side ? 'Ở ' + st.cd + ', chữ chỉ còn ' + (W - D - st.gap) + ' px (130 − 36 − ' + st.gap + ').' : 'Ở ' + st.cd + ', chữ có đủ 130 px bề rộng của nhãn.';
+    var fit = r.cut ? ' Chữ dài hơn chỗ trống nên bị cắt và thêm dấu <code>...</code>.' : (wrapped ? ' Chữ dài hơn chỗ trống nên xuống dòng.' : ' Chữ vừa một dòng.');
+    var head, body;
+    if (!last) { head = 'Nhãn có chữ và một hình tròn'; body = 'Graphic đang ở ' + SIDE[st.cd] + ' chữ. Bấm các nút, kéo thanh trượt hoặc đánh dấu hộp kiểm bên dưới.'; }
+    else if (last === 'cd') { head = 'setContentDisplay(ContentDisplay.' + st.cd + ')'; body = 'Graphic (hình tròn) nằm ở ' + SIDE[st.cd] + ' chữ. ' + room + fit; }
+    else if (last === 'gap') { head = 'setGraphicTextGap(' + st.gap + ')'; body = 'Graphic và chữ cách nhau ' + st.gap + ' px.' + (side ? ' ' + room + fit : ''); }
+    else if (last === 'ul') { head = 'setUnderline(' + st.ul + ')'; body = st.ul ? 'Chữ có gạch chân; graphic không bị ảnh hưởng.' : 'Bỏ gạch chân.'; }
+    else { head = 'setWrapText(' + st.wr + ')'; body = st.wr ? (wrapped ? 'Chữ quá dài được xuống dòng thay vì bị cắt; nhãn cao thêm.' : 'Chữ đang vừa một dòng nên chưa thấy khác biệt.') : 'Không tự xuống dòng: chữ quá dài bị cắt và thêm <code>...</code>.' + (r.cut ? '' : ' (Lúc này chữ vừa chỗ nên chưa bị cắt.)'); }
+    $('status').innerHTML = '<b>' + esc(head) + '</b><span>' + body + '</span>';
+  }
+  tabs('cd', function(v){ st.cd = v; last = 'cd'; draw(); });
+  $('gap').addEventListener('input', function(){ var v = parseInt(this.value, 10); if (isNaN(v)) return; st.gap = Math.max(0, Math.min(40, v)); last = 'gap'; draw(); });
+  $('ul').addEventListener('change', function(){ st.ul = this.checked; last = 'ul'; draw(); });
+  $('wr').addEventListener('change', function(){ st.wr = this.checked; last = 'wr'; draw(); });
+  $('reset').addEventListener('click', function(){ init(); draw(); });
+  init();
+  // ?cd=LEFT&gap=20&ul=1&wr=1 mở sẵn một cấu hình
+  if (SIDE[qs('cd')]) { st.cd = qs('cd'); last = 'cd'; }
+  if (qs('gap') && !isNaN(+qs('gap'))) { st.gap = Math.max(0, Math.min(40, Math.round(+qs('gap')))); last = 'gap'; }
+  if (qs('ul') === '1') { st.ul = true; last = 'ul'; }
+  if (qs('wr') === '1') { st.wr = true; last = 'wr'; }
+  draw();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>

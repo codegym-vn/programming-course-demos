@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="575">
+<title>Chuỗi getPane qua các lớp con</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 12px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:6px 0}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{padding:2px 9px;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.err{color:var(--false);font-size:12.5px}
+.err:empty{display:none}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:5px 12px;margin-bottom:6px;min-height:62px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.code{position:relative;background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 4px 0 0;border-left:3px solid transparent;width:max-content;min-width:100%}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.dim{opacity:.45}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre-wrap;word-break:break-word;overflow:auto;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tag{display:inline-block;padding:0 6px;border-radius:5px;font:700 12px ui-monospace,Menlo,Consolas,monospace}
+.tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+.vars{width:100%;border-collapse:collapse;font:12px ui-monospace,Menlo,Consolas,monospace}
+.vars td,.vars th{border-bottom:1px solid var(--line);padding:2px 6px;text-align:left}
+.vars th{font:700 11.5px system-ui,sans-serif;color:var(--muted)}
+.vars tr.chg td{background:var(--cur)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.note{color:var(--muted);font-size:12px}
+
+/* ===== Cửa sổ JavaFX mô phỏng (giao diện Modena; luôn sáng như ảnh chụp thật) ===== */
+.fxwin{border:1px solid #a9a9a9;border-radius:8px;overflow:hidden;background:#f4f4f4;box-shadow:0 2px 8px rgba(0,0,0,.18);
+  color:#333;font:13px/1.25 -apple-system,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;width:max-content;max-width:100%}
+.fxbar{height:24px;background:linear-gradient(#ececec,#d9d9d9);border-bottom:1px solid #b9b9b9;display:flex;align-items:center;
+  position:relative;font-size:12.5px;color:#4a4a4a;user-select:none}
+.fxbar i{width:11px;height:11px;border-radius:50%;margin-left:7px;display:inline-block;flex:none}
+.fxbar i:nth-child(1){background:#ff5f57;margin-left:9px}.fxbar i:nth-child(2){background:#febc2e}.fxbar i:nth-child(3){background:#28c840}
+.fxbar span{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.fxbody{position:relative;background:#f4f4f4;overflow:hidden}
+.fx-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid #b2b2b2;border-radius:4px;
+  background:linear-gradient(#fefefe,#e3e3e3);box-shadow:inset 0 1px 0 #fff;color:#333;font:inherit;cursor:pointer;line-height:1.3}
+.fx-btn:hover{background:linear-gradient(#ffffff,#ebebeb)}
+.fx-btn:active,.fx-btn.armed{background:linear-gradient(#d6d6d6,#e2e2e2)}
+.fx-btn:focus-visible{outline:none;border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-check,.fx-radio{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;background:none;border:0;padding:0;color:#333;font:inherit}
+.fx-check .box{width:15px;height:15px;border:1px solid #a8a8a8;border-radius:3px;background:linear-gradient(#fdfdfd,#e8e8e8);position:relative;flex:none}
+.fx-check.on .box::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #333;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.fx-radio .box{width:15px;height:15px;border:1px solid #a8a8a8;border-radius:50%;background:linear-gradient(#fdfdfd,#e8e8e8);position:relative;flex:none}
+.fx-radio.on .box::after{content:"";position:absolute;left:3.5px;top:3.5px;width:6px;height:6px;border-radius:50%;background:#333}
+.fx-check:focus-visible .box,.fx-radio:focus-visible .box{border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-check:focus-visible,.fx-radio:focus-visible{outline:none}
+.fx-tf{border:1px solid #b5b5b5;border-radius:3px;background:#fff;box-shadow:inset 0 1px 1px #ddd;padding:3px 6px;color:#333;
+  font:inherit;min-width:0}
+.fx-tf:focus{outline:none;border-color:#039ed3;box-shadow:0 0 0 2px #91d4ee}
+.fx-combo{display:inline-flex;align-items:center;gap:10px;padding:3px 8px;border:1px solid #b2b2b2;border-radius:4px;
+  background:linear-gradient(#fefefe,#e3e3e3);color:#333;font:inherit;cursor:pointer}
+.fx-combo::after{content:"";border:4px solid transparent;border-top:5px solid #333;margin-top:4px}
+.fx-list{background:#fff;border:1px solid #b5b5b5;overflow:hidden}
+.fx-cell{padding:3px 6px;height:24px;cursor:pointer;user-select:none;white-space:nowrap}
+.fx-cell:nth-child(even){background:#f9f9f9}
+.fx-cell.sel{background:#0096c9;color:#fff}
+.fx-cell.foc{box-shadow:inset 0 0 0 1px #039ed3}
+.fx-cell.sel.foc{box-shadow:inset 0 0 0 1px #fff}
+/* BorderPane mô phỏng của chuỗi ButtonDemo (450x200) */
+.bp{width:450px;height:200px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto 1fr auto;
+  grid-template-areas:"t t t" "l c r" "b b b";background:#f4f4f4}
+.bp.empty{background:repeating-linear-gradient(45deg,#f4f4f4 0 8px,#ececec 8px 16px)}
+.bp>.t{grid-area:t;border:1px solid green;padding:5px;display:flex;align-items:center;gap:0}
+.bp>.t .fx-tf{flex:1;text-align:right}
+.bp>.l{grid-area:l;border:2px solid green;padding:5px;display:flex;flex-direction:column;gap:20px}
+.bp>.r{grid-area:r;border:1px solid green;padding:5px;display:flex;flex-direction:column;gap:20px}
+.bp>.b{grid-area:b;border:1px solid green;display:flex;justify-content:center;gap:20px;padding:0}
+.bp>.c{grid-area:c;position:relative}
+.bp>.c span{position:absolute;left:50px;white-space:nowrap;color:#000}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+<script>
+/* Phần dùng chung cho các trang minh hoạ Module 4 (khoá Lập trình giao diện với JavaFX). */
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|(@\w+)|\b(import|public|private|protected|class|static|final|void|int|double|long|char|boolean|if|else|return|for|while|new|true|false|null|extends|this|super)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+    else out += '<span class="num">' + m[5] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+/* lines: mảng chuỗi; o.cur: chỉ số | [từ, đến] | o.curList: mảng chỉ số; o.dim: mảng chỉ số làm mờ */
+function codeHtml(lines, o){
+  o = o || {}; var set = {}, dim = {}, cur = o.cur;
+  if (Array.isArray(o.curList)) o.curList.forEach(function(i){ set[i] = 1; });
+  else if (Array.isArray(cur)) { for (var k = cur[0]; k <= cur[1]; k++) set[k] = 1; }
+  else if (cur !== undefined && cur !== null && cur >= 0) set[cur] = 1;
+  (o.dim || []).forEach(function(i){ dim[i] = 1; });
+  return lines.map(function(l, i){
+    return '<div class="ln' + (set[i] ? ' cur' : '') + (dim[i] ? ' dim' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function tag(v){ return '<span class="tag ' + (v ? 't' : 'f') + '">' + v + '</span>'; }
+/* Nhóm nút .tab trong phần tử id; onChange(value) */
+function tabs(id, onChange){
+  var box = $(id);
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if (!b) return;
+    setTab(id, b.getAttribute('data-v')); onChange(b.getAttribute('data-v'));
+  });
+}
+function setTab(id, v){
+  $(id).querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-v') === v ? 'true' : 'false'); });
+}
+/* Cờ minh hoạ tự vẽ (giống các tệp image/*.png 150x100 của bài) */
+var FLAG_CODES = ['vn', 'jp', 'fr', 'de', 'it', 'th'];
+function flagSvg(code, w, h){
+  var star = function(cx, cy, R){
+    var p = [];
+    for (var k = 0; k < 10; k++) { var r = k % 2 ? R * 0.382 : R, a = -Math.PI / 2 + k * Math.PI / 5; p.push((cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2)); }
+    return '<polygon points="' + p.join(' ') + '" fill="#ffcd00"/>';
+  };
+  var v3 = function(c){ return c.map(function(x, i){ return '<rect x="' + (i * 50) + '" y="0" width="50" height="100" fill="' + x + '"/>'; }).join(''); };
+  var h3 = function(c){ return c.map(function(x, i){ return '<rect x="0" y="' + (i * 100 / 3) + '" width="150" height="' + (100 / 3 + 0.2) + '" fill="' + x + '"/>'; }).join(''); };
+  var body = {
+    vn: '<rect width="150" height="100" fill="#da251d"/>' + star(75, 50, 30),
+    jp: '<rect width="150" height="100" fill="#fff"/><circle cx="75" cy="50" r="30" fill="#bc002d"/>',
+    fr: v3(['#0055a4', '#ffffff', '#ef4135']),
+    it: v3(['#009246', '#ffffff', '#ce2b37']),
+    de: h3(['#000000', '#dd0000', '#ffce00']),
+    th: ['#a51931', '#f4f5f8', '#2d2a4a', '#2d2a4a', '#f4f5f8', '#a51931'].map(function(c, i){ return '<rect x="0" y="' + (i * 100 / 6) + '" width="150" height="' + (100 / 6 + 0.2) + '" fill="' + c + '"/>'; }).join('')
+  }[code];
+  return '<svg viewBox="0 0 150 100" width="' + w + '" height="' + (h || w * 2 / 3) + '" aria-hidden="true" style="display:block">' + body +
+    '<rect x="0.5" y="0.5" width="149" height="99" fill="none" stroke="#787878"/></svg>';
+}
+/* Âm thanh mô phỏng bằng Web Audio: chỉ tạo AudioContext khi người học bấm nút. */
+var Snd = {
+  ctx: null,
+  get: function(){
+    if (!this.ctx) { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this.ctx = new A(); }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  /* Phát dãy nốt (Hz, 0 = lặng), mỗi nốt dur giây, bỏ qua `from` giây đầu; trả về {stop()} */
+  notes: function(freqs, dur, from, vol){
+    var ctx = this.get(); if (!ctx) return {stop: function(){}};
+    var t0 = ctx.currentTime + 0.02, oscs = [], master = ctx.createGain();
+    master.gain.value = (vol === undefined ? 1 : vol) * 0.18; master.connect(ctx.destination);
+    freqs.forEach(function(f, i){
+      var s = i * dur - (from || 0), e = s + dur;
+      if (!f || e <= 0) return;
+      var st = Math.max(0, s), o = ctx.createOscillator(), g = ctx.createGain(), ramp = 0.018;
+      o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(master);
+      g.gain.setValueAtTime(0, t0 + st);
+      g.gain.linearRampToValueAtTime(1, t0 + Math.min(st + ramp, e));
+      g.gain.setValueAtTime(1, t0 + Math.max(st + ramp, e - ramp));
+      g.gain.linearRampToValueAtTime(0, t0 + e);
+      o.start(t0 + st); o.stop(t0 + e + 0.01); oscs.push(o);
+    });
+    return {stop: function(){ oscs.forEach(function(o){ try { o.stop(); } catch (x) {} }); try { master.disconnect(); } catch (x) {} }};
+  }
+};
+var NOTE = {C: 262, D: 294, E: 330, F: 349, G: 392, A: 440, B: 494, C5: 523};
+/* Mô hình MediaPlayer (đã đối chiếu JavaFX 21): stop() đưa về 0; play() khi đang PLAYING không làm gì;
+   phát hết bài thì trạng thái vẫn là PLAYING, đứng ở cuối, và play() không phát lại (phải stop() hoặc seek()). */
+function mpNew(dur){ return {status: 'READY', pos: 0, t0: 0, dur: dur}; }
+function mpPos(m, now){ return m.status === 'PLAYING' ? Math.min(m.dur, m.pos + (now - m.t0)) : m.pos; }
+function mpPlay(m, now){
+  var p = mpPos(m, now);
+  if (m.status === 'PLAYING') return {m: m, act: p >= m.dur ? 'end' : 'noop'};
+  if (m.status === 'PAUSED') return {m: {status: 'PLAYING', pos: p, t0: now, dur: m.dur}, act: p >= m.dur ? 'end' : 'resume'};
+  return {m: {status: 'PLAYING', pos: 0, t0: now, dur: m.dur}, act: 'start'};
+}
+function mpPause(m, now){ return {status: 'PAUSED', pos: mpPos(m, now), t0: now, dur: m.dur}; }
+function mpStop(m){ return {status: 'STOPPED', pos: 0, t0: 0, dur: m.dur}; }
+if (typeof module !== 'undefined') module.exports = {mpNew: mpNew, mpPos: mpPos, mpPlay: mpPlay, mpPause: mpPause, mpStop: mpStop, flagSvg: flagSvg, hl: hl};
+
+/* Chuỗi getPane(): sinh các bước khi chạy một lớp trong chuỗi ButtonDemo → CheckBoxDemo → RadioButtonDemo → TextFieldDemo. */
+var GP_CLASSES = ['ButtonDemo', 'CheckBoxDemo', 'RadioButtonDemo', 'TextFieldDemo'];
+var GP_LINES = [
+  'public class ButtonDemo extends Application {',
+  '  protected BorderPane getPane() {',
+  '    BorderPane pane = new BorderPane();',
+  '    pane.setBottom(paneForButtons); // Left, Right',
+  '    pane.setCenter(paneForText);    // dòng chữ',
+  '    return pane;',
+  '  }',
+  '  public void start(Stage primaryStage) {',
+  '    Scene scene = new Scene(getPane(), 450, 200);',
+  '    primaryStage.setTitle("ButtonDemo");',
+  '    primaryStage.setScene(scene); primaryStage.show();',
+  '  }',
+  '}',
+  'public class CheckBoxDemo extends ButtonDemo {',
+  '  protected BorderPane getPane() {',
+  '    BorderPane pane = super.getPane();',
+  '    text.setFont(fontNormal); // Times New Roman 20',
+  '    pane.setRight(paneForCheckBoxes);',
+  '    return pane;',
+  '  }',
+  '}',
+  'public class RadioButtonDemo extends CheckBoxDemo {',
+  '  protected BorderPane getPane() {',
+  '    BorderPane pane = super.getPane();',
+  '    pane.setLeft(paneForRadioButtons);',
+  '    return pane;',
+  '  }',
+  '}',
+  'public class TextFieldDemo extends RadioButtonDemo {',
+  '  protected BorderPane getPane() {',
+  '    BorderPane pane = super.getPane();',
+  '    pane.setTop(paneForTextField);',
+  '    return pane;',
+  '  }',
+  '}'
+];
+/* vị trí dòng trong từng lớp con: [dòng super.getPane(), các dòng thêm vùng, dòng return, vùng thêm] */
+var GP_SUB = {
+  CheckBoxDemo: {sup: 15, adds: [[16, 'font'], [17, 'right']], ret: 18, first: 13, last: 20},
+  RadioButtonDemo: {sup: 23, adds: [[24, 'left']], ret: 25, first: 21, last: 27},
+  TextFieldDemo: {sup: 30, adds: [[31, 'top']], ret: 32, first: 28, last: 34}
+};
+var GP_REGION = {bottom: 'hàng nút ở cạnh dưới (bottom)', center: 'dòng chữ ở giữa (center)', right: 'hai hộp kiểm ở cạnh phải (right)',
+  left: 'ba nút chọn ở cạnh trái (left)', top: 'nhãn và ô nhập ở cạnh trên (top)', font: 'phông chữ Times New Roman 20'};
+
+function gpSteps(k){
+  var run = GP_CLASSES[k], steps = [], stack = [], parts = {}, shown = false;
+  function snap(line, text, added){
+    steps.push({line: line, text: text, stack: stack.map(function(f){ return {cls: f.cls, m: f.m, line: f.line}; }),
+      parts: JSON.parse(JSON.stringify(parts)), added: added || null, shown: shown});
+  }
+  function top(line){ stack[stack.length - 1].line = line; }
+  stack.push({cls: 'ButtonDemo', m: 'start', line: 7});
+  snap(7, 'JavaFX tạo một đối tượng <code>' + run + '</code> rồi gọi <code>start()</code>. ' +
+    (k === 0 ? 'Phương thức <code>start()</code> được viết ngay trong <code>ButtonDemo</code>.' : '<code>' + run + '</code> không viết <code>start()</code> nên dùng bản thừa kế từ <code>ButtonDemo</code>.'));
+  top(8);
+  snap(8, '<code>start()</code> gọi <code>getPane()</code>. Đối tượng thật là <code>' + run + '</code> nên bản được chạy là <code>getPane()</code> của <code>' + run + '</code>' +
+    (k === 0 ? '.' : ' (đa hình), dù dòng gọi nằm trong lớp <code>ButtonDemo</code>.'));
+  for (var j = k; j >= 1; j--) {
+    var c = GP_CLASSES[j], s = GP_SUB[c];
+    stack.push({cls: c, m: 'getPane', line: s.sup});
+    snap(s.sup, 'Trong <code>' + c + '.getPane()</code>: dòng đầu gọi <code>super.getPane()</code>, tức bản của lớp cha <code>' + GP_CLASSES[j - 1] + '</code>. Phần còn lại của phương thức phải chờ lời gọi này trả về.');
+  }
+  stack.push({cls: 'ButtonDemo', m: 'getPane', line: 2});
+  parts.pane = true;
+  snap(2, '<code>ButtonDemo.getPane()</code> tạo một <code>BorderPane</code> trống. Đây là đối tượng duy nhất được tạo; các lớp con chỉ thêm đồ vào nó.', 'pane');
+  top(3); parts.bottom = true; snap(3, 'Thêm ' + GP_REGION.bottom + '.', 'bottom');
+  top(4); parts.center = true; snap(4, 'Thêm ' + GP_REGION.center + '. Chữ dùng phông mặc định.', 'center');
+  top(5);
+  snap(5, '<code>return pane;</code> trả <code>BorderPane</code> về cho nơi gọi' + (k === 0 ? ', tức <code>start()</code>.' : ': <code>' + GP_CLASSES[1] + '.getPane()</code>.'));
+  stack.pop();
+  for (j = 1; j <= k; j++) {
+    c = GP_CLASSES[j]; s = GP_SUB[c];
+    s.adds.forEach(function(a, i){
+      top(a[0]); parts[a[1]] = true;
+      snap(a[0], (i === 0 ? 'Quay lại <code>' + c + '.getPane()</code>, biến <code>pane</code> nhận <code>BorderPane</code> vừa trả về. ' : '') +
+        (a[1] === 'font' ? 'Đổi phông của <code>text</code> (trường <code>protected</code> thừa kế từ <code>ButtonDemo</code>) thành ' + GP_REGION.font + '.' : 'Thêm ' + GP_REGION[a[1]] + '.'), a[1]);
+    });
+    top(s.ret);
+    snap(s.ret, '<code>return pane;</code> trả về cho ' + (j === k ? '<code>start()</code>.' : '<code>' + GP_CLASSES[j + 1] + '.getPane()</code>.'));
+    stack.pop();
+  }
+  top(8);
+  snap(8, 'Quay lại <code>start()</code>: <code>getPane()</code> đã trả về một <code>BorderPane</code> có đủ ' + (k + 1) + ' phần. <code>new Scene(..., 450, 200)</code> đặt nó vào cảnh.');
+  top(9); snap(9, 'Tiêu đề cửa sổ là <code>"ButtonDemo"</code> vì <code>start()</code> được thừa kế nguyên vẹn' + (k ? ', kể cả khi chạy <code>' + run + '</code>.' : '.'));
+  top(10); shown = true;
+  snap(10, 'Cửa sổ hiện ra. Mỗi lớp con chỉ viết thêm vài dòng nhưng giao diện có đủ phần của mọi lớp cha.', 'show');
+  return steps;
+}
+if (typeof module !== 'undefined') module.exports = {gpSteps: gpSteps, GP_LINES: GP_LINES, GP_CLASSES: GP_CLASSES};
+</script>
+</head>
+<body>
+<style>
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(334px,1fr);gap:8px;align-items:start}
+#code{height:318px;font-size:11px}
+.stack{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.fr{border:1px solid var(--node-line);background:var(--node);border-radius:6px;padding:1px 8px;font:12px ui-monospace,Menlo,Consolas,monospace;display:flex;justify-content:space-between;gap:6px}
+.fr small{color:var(--muted)}
+.fr.top{border-color:var(--cur-bar);background:var(--cur)}
+.bpwrap{width:324px;height:168px;position:relative;max-width:100%}
+.bpwrap.pre .fxbar{visibility:hidden}
+.bpwrap.pre .fxwin{box-shadow:none;border:1.5px dashed var(--muted);background:transparent}
+.bpwrap .fxwin{max-width:none;transform:scale(.72);transform-origin:0 0;position:absolute;left:0;top:0}
+.bp>.new{animation:flash 1.2s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 4px #e0a800;background:#fff1b8}100%{box-shadow:0 0 0 0 transparent}}
+.cap{font-size:12px;color:var(--muted);margin:2px 0 0}
+@media (max-width:660px){.grid{grid-template-columns:1fr} #code{height:220px}}
+</style>
+<div class="wrap">
+  <p class="lead">Chọn lớp để chạy rồi bấm <b>Bước tiếp</b> (hoặc phím <kbd>→</kbd>) để xem <code>getPane()</code> được gọi qua chuỗi <code>super</code>.</p>
+  <div class="controls" style="margin-top:0">
+    <div class="tabs" id="cls"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">Mã nguồn (rút gọn)</p><div class="code" id="code"></div></div>
+    <div class="card">
+      <p class="panel-title">Ngăn xếp lời gọi (trên cùng là phương thức đang chạy)</p>
+      <div class="stack" id="stack"></div>
+      <p class="panel-title" id="wtitle">Đối tượng pane</p>
+      <div class="bpwrap" id="bpwrap"></div>
+      <p class="cap" id="cap"></p>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div>
+    <span class="note" id="cnt"></span>
+  </div>
+</div>
+<script>
+(function(){
+  var k = 3, steps, i;
+  $('cls').innerHTML = GP_CLASSES.map(function(c, j){ return '<button class="tab mono" data-v="' + j + '">' + c + '</button>'; }).join('');
+  function arrow(left){
+    return '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><polygon points="' + (left ? '2,10 16,2 16,18' : '18,10 4,2 4,18') + '" fill="#1e6ec8"/></svg>';
+  }
+  function bpHtml(p, added){
+    if (!p.pane) return '';
+    var h = '<div class="bp' + (p.bottom ? '' : ' empty') + '">';
+    var nw = function(r){ return added === r ? ' new' : ''; };
+    if (p.top) h += '<div class="t' + nw('top') + '"><span>Enter a new message: </span><input class="fx-tf" readonly tabindex="-1" aria-label="Ô nhập mô phỏng"></div>';
+    if (p.left) h += '<div class="l' + nw('left') + '">' + ['Red', 'Green', 'Blue'].map(function(x){ return '<span class="fx-radio"><span class="box"></span>' + x + '</span>'; }).join('') + '</div>';
+    if (p.center) {
+      var font = p.font ? 'font:20px \'Times New Roman\',Times,serif;top:' + (50 - 18) + 'px' : 'font:13px -apple-system,system-ui,sans-serif;top:' + (50 - 12) + 'px';
+      h += '<div class="c' + nw('center') + nw('font') + '"><span style="' + font + '">JavaFX Programming</span></div>';
+    }
+    if (p.right) h += '<div class="r' + nw('right') + '">' + ['Bold', 'Italic'].map(function(x){ return '<span class="fx-check"><span class="box"></span>' + x + '</span>'; }).join('') + '</div>';
+    if (p.bottom) h += '<div class="b' + nw('bottom') + '"><span class="fx-btn">' + arrow(true) + 'Left</span><span class="fx-btn">' + arrow(false) + 'Right</span></div>';
+    return h + '</div>';
+  }
+  function load(kk){ k = kk; steps = gpSteps(k); i = 0; setTab('cls', String(k)); draw(); }
+  function draw(){
+    var s = steps[i], own = {}, d = [];
+    // làm mờ các lớp không có trong chuỗi đang chạy
+    var ranges = [[13, 20], [21, 27], [28, 34]];
+    for (var j = k + 1; j < 4; j++) for (var x = ranges[j - 1][0]; x <= ranges[j - 1][1]; x++) d.push(x);
+    $('code').innerHTML = codeHtml(GP_LINES, {cur: s.line, dim: d});
+    scrollToCur($('code'));
+    $('stack').innerHTML = s.stack.slice().reverse().map(function(f, n){
+      return '<div class="fr' + (n === 0 ? ' top' : '') + '"><span>' + f.cls + '.' + f.m + '()</span><small>dòng ' + (f.line + 1) + '</small></div>';
+    }).join('');
+    var w = $('bpwrap');
+    w.className = 'bpwrap' + (s.shown ? '' : ' pre');
+    w.innerHTML = s.parts.pane ? '<div class="fxwin"><div class="fxbar"><i></i><i></i><i></i><span>ButtonDemo</span></div>' + bpHtml(s.parts, s.added) + '</div>' : '';
+    $('wtitle').textContent = s.shown ? 'Cửa sổ trên màn hình' : 'Đối tượng pane (chưa hiện lên màn hình)';
+    $('cap').textContent = s.parts.pane ? '' : 'Chưa có BorderPane nào được tạo.';
+    $('status').innerHTML = '<b>Bước ' + (i + 1) + '/' + steps.length + ' · đang chạy ' + s.stack[s.stack.length - 1].cls + '.' + s.stack[s.stack.length - 1].m + '()</b><span>' + s.text + '</span>';
+    $('prev').disabled = i === 0; $('next').disabled = $('all').disabled = i === steps.length - 1;
+    $('cnt').textContent = 'Lớp đang chạy: ' + GP_CLASSES[k];
+  }
+  tabs('cls', function(v){ load(+v); });
+  $('next').onclick = function(){ if (i < steps.length - 1) { i++; draw(); } };
+  $('prev').onclick = function(){ if (i > 0) { i--; draw(); } };
+  $('all').onclick = function(){ i = steps.length - 1; draw(); };
+  $('reset').onclick = function(){ i = 0; draw(); };
+  document.addEventListener('keydown', function(e){
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight') { $('next').click(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { $('prev').click(); e.preventDefault(); }
+  });
+  // ?vd=0..3 chọn lớp chạy (mặc định TextFieldDemo), ?buoc=N mở bước N
+  var v = parseInt(qs('vd'), 10); load(v >= 0 && v <= 3 ? v : 3);
+  var b = parseInt(qs('buoc'), 10); if (b >= 1) { i = Math.min(b, steps.length) - 1; draw(); }
+})();
+</script>
+</body>
+</html>
