@@ -154,7 +154,7 @@ function render(){
   const tot = keys.reduce((a,x)=>a+s.dict[x],0);
   document.getElementById("pivot").innerHTML = `<tr><th>${ex.pivotHead[0]}</th><th class="r">${ex.pivotHead[1]}</th></tr>` +
     keys.map(x=>`<tr><td>${x}</td><td class="r">${s.dict[x]}${ex.unit}</td></tr>`).join("") +
-    `<tr><td class="tot">Tổng cộng</td><td class="r tot">${tot}${ex.unit}</td></tr>`;
+    (keys.length ? `<tr><td class="tot">Tổng cộng</td><td class="r tot">${tot}${ex.unit}</td></tr>` : `<tr><td colspan="2" style="color:var(--muted)">(chưa có dữ liệu)</td></tr>`);
   document.getElementById("out").innerHTML = s.out ? s.out.replace(/</g,"&lt;") : '<span class="ph">Kết quả print hiện ở đây</span>';
   document.getElementById("back").disabled = k===0;
   document.getElementById("next").disabled = document.getElementById("all").disabled = k===steps.length-1;
