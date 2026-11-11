@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="620">
+<title>Con trỏ tệp của RandomAccessFile: seek, readInt, writeInt</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --run:#e3f4e8; --run-bar:#15803d;
+  --b2:#0e7490; --b2-soft:#e0f4f8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --run:#13301f; --run-bar:#4ade80;
+    --b2:#67e8f9; --b2-soft:#0f2e36;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs:empty{display:none}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+  border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.op{background:var(--card);color:var(--text);border-color:var(--node-line);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:6px 12px;margin-bottom:8px;min-height:64px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 0 4px;flex-wrap:wrap}
+.head .panel-title{margin:0}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s;width:max-content;min-width:100%}
+.ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+.ln.run{background:var(--run);border-left-color:var(--run-bar)}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.curf{background:var(--false-soft);border-left-color:var(--false)}
+.ln .tagln{position:sticky;right:4px;margin-left:auto;padding:0 6px;border-radius:5px;background:var(--card);border:1px solid var(--line);font:600 11px/1.3 system-ui,sans-serif;color:var(--muted);align-self:center;white-space:nowrap}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+.tag.n{background:var(--code-bg);color:var(--muted)}
+.vars{display:flex;gap:6px;flex-wrap:wrap}
+.var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:62px;text-align:center;transition:all .25s}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px;white-space:nowrap}
+.var.chg{border-color:var(--cur-bar);background:var(--cur)}
+.var.bad{border-color:var(--false);background:var(--false-soft)}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+.console .new{color:#fde68a}
+.console .er{color:#fca5a5}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.exbox{border:2px solid var(--false);background:var(--false-soft);border-radius:8px;padding:3px 10px;animation:pop .3s ease-out;overflow-wrap:anywhere}
+.exbox small{display:block;font:600 11px system-ui,sans-serif;color:var(--false)}
+.exbox b{display:block;font:700 13px ui-monospace,Menlo,Consolas,monospace}
+.exbox.caught{border-color:var(--true);background:var(--true-soft)}
+.exbox.caught small{color:var(--true)}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:600px){.code{max-height:250px !important}}
+
+/* dải byte có con trỏ */
+.bytes{display:flex;flex-wrap:wrap;row-gap:16px;padding:14px 2px 2px;align-items:flex-end}
+.bc{position:relative;min-width:27px;height:38px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--code-bg);border:1px solid var(--node-line);margin-right:-1px;transition:background .2s,opacity .2s;
+  font:600 12.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:0 3px}
+.bc small{font:10px/1 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400;margin-top:2px}
+.bc.g0{background:var(--accent-soft)}
+.bc.g1{background:var(--b2-soft)}
+.bc.done{opacity:.5}
+.bc.gap{background:transparent;border-style:dashed;color:var(--muted);min-width:26px}
+.bc.eof{background:transparent;border-style:dashed;color:var(--muted)}
+.bc.hit{background:var(--cur);border-color:var(--cur-bar);opacity:1;z-index:1}
+.bc.wr{background:var(--true-soft);border-color:var(--true);color:var(--true);opacity:1;z-index:1}
+.bc.bad{background:var(--false-soft);border-color:var(--false);color:var(--false);opacity:1;z-index:1}
+.bc.at{box-shadow:-3px 0 0 var(--accent);z-index:2}
+.bc.at::before{content:"";position:absolute;left:-8px;top:-12px;border:6px solid transparent;border-top:8px solid var(--accent);border-bottom:0}
+.bnote{font-size:11.5px;color:var(--muted);margin-top:6px}
+.bnote b{color:var(--accent)}
+
+#code{max-height:420px}
+.ints .bc{min-width:36px}
+.bc .old{font:400 10px ui-monospace,Menlo,monospace;text-decoration:line-through;color:var(--false)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để theo dõi con trỏ tệp qua từng lệnh <code>seek</code>, <code>readInt</code>, <code>writeInt</code>.</p>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">TestRandomAccessFile.java</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><div class="head"><p class="panel-title">inout.dat (mỗi ô một int, 4 byte)</p></div><div class="ints" id="strip"></div><div class="bnote" id="note"></div></div>
+      <div class="card"><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|package|public|private|protected|class|interface|extends|implements|super|abstract|static|final|void|int|long|double|char|boolean|byte|if|else|while|do|for|try|catch|finally|throw|throws|return|new|true|false|null|this)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+// o: {start: số dòng đầu, cur: số dòng hoặc [từ, đến], bad: tô đỏ, cls: {dòng: lớp}, tags: {dòng: nhãn}}
+function codeHtml(lines, o){
+  o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur, st = o.start || 1;
+  var none = cur === undefined || cur === null;
+  var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    var n = i + st, c = 'ln' + (cls[n] ? ' ' + cls[n] : '') + (n >= a && n <= b ? (o.bad ? ' curf' : ' cur') : '');
+    return '<div class="' + c + '"><span class="no">' + n + '</span><span>' + (hl(l) || ' ') + '</span>' +
+      (tags[n] ? '<span class="tagln">' + esc(tags[n]) + '</span>' : '') + '</div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+// cfg: build() -> snaps; render(sn, i, n)
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10);
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step], run = timer !== null;
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+    if (cfg.after) cfg.after(sn, step, snaps.length, run);
+  }
+  function reset(toEnd){
+    stop(); snaps = cfg.build(); step = toEnd ? snaps.length - 1 : 0;
+    if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; }
+    draw();
+  }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 500);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, step: function(){ return step; }, atEnd: function(){ return step >= snaps.length - 1; }, running: function(){ return timer !== null; }};
+}
+// opts: [{k, label}]; trả về khoá đang chọn (mở sẵn theo ?vd=).
+function setupTabs(opts, onChange){
+  var box = $('tabs'), sel = opts[0].k, want = qs('vd');
+  opts.forEach(function(o){ if (o.k === want) sel = o.k; });
+  box.setAttribute('role', 'tablist');
+  opts.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.innerHTML = o.label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', o.k === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      [].forEach.call(box.children, function(c){ c.setAttribute('aria-selected', 'false'); });
+      b.setAttribute('aria-selected', 'true'); onChange(o.k);
+    });
+    box.appendChild(b);
+  });
+  return sel;
+}
+// out: [[chuỗi, lớp]]
+function drawCon(box, out, ph){
+  box.innerHTML = out.length ? out.map(function(s){ return s[1] ? '<span class="' + s[1] + '">' + esc(s[0]) + '</span>' : esc(s[0]); }).join('') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>';
+  box.scrollTop = box.scrollHeight;
+}
+// list: [[tên, giá trị, lớp]]
+function varsHtml(list){
+  return list.map(function(v){ return '<div class="var' + (v[2] ? ' ' + v[2] : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+}
+// Dải byte có con trỏ. cells: [{v, sub, cls}]; o: {pos: chỉ số ô con trỏ đứng trước (bằng cells.length: sau ô cuối), eof: nhãn ô cuối tệp}
+function bytesHtml(cells, o){
+  o = o || {}; var h = '';
+  cells.forEach(function(c, i){
+    h += '<span class="bc' + (c.cls ? ' ' + c.cls : '') + (i === o.pos ? ' at' : '') + '">' + esc(c.v) + (c.sub !== undefined ? '<small>' + esc(c.sub) + '</small>' : '') + '</span>';
+  });
+  if (o.pos === cells.length || o.eof) h += '<span class="bc eof' + (o.pos === cells.length ? ' at' : '') + '">' + (o.eof ? '<small>' + esc(o.eof) + '</small>' : '') + '</span>';
+  return '<div class="bytes">' + h + '</div>';
+}
+function hex2(n){ return (n < 16 ? '0' : '') + n.toString(16).toUpperCase(); }
+// Tìm số dòng (đếm từ 1) của dòng đầu tiên chứa chuỗi s, bắt đầu tìm từ dòng from.
+function lineOf(lines, s, from){ for (var i = (from || 1) - 1; i < lines.length; i++) if (lines[i].indexOf(s) >= 0) return i + 1; throw new Error('Không thấy dòng: ' + s); }
+function clone(o){ return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+
+//SIM-START
+var LINES = [
+'import java.io.*;',
+'',
+'public class TestRandomAccessFile {',
+'  public static void main(String[] args)',
+'      throws IOException {',
+'    try ( // Tao tep truy cap ngau nhien',
+'      RandomAccessFile inout =',
+'        new RandomAccessFile("inout.dat",',
+'            "rw");',
+'    ) {',
+'      // Xoa noi dung cu neu co',
+'      inout.setLength(0);',
+'',
+'      // Ghi 200 so nguyen vao tep',
+'      for (int i = 0; i < 200; i++)',
+'        inout.writeInt(i);',
+'',
+'      // In kich thuoc hien tai cua tep',
+'      System.out.println(',
+'        "Current file length is "',
+'        + inout.length());',
+'',
+'      // Lay so thu nhat',
+'      inout.seek(0); // ve dau tep',
+'      System.out.println(',
+'        "The first number is "',
+'        + inout.readInt());',
+'',
+'      // Lay so thu hai',
+'      inout.seek(1 * 4);',
+'      System.out.println(',
+'        "The second number is "',
+'        + inout.readInt());',
+'',
+'      // Lay so thu muoi',
+'      inout.seek(9 * 4);',
+'      System.out.println(',
+'        "The tenth number is "',
+'        + inout.readInt());',
+'',
+'      // Sua so thu muoi mot',
+'      inout.writeInt(555);',
+'',
+'      // Them mot so vao cuoi tep',
+'      inout.seek(inout.length());',
+'      inout.writeInt(999);',
+'',
+'      // In kich thuoc moi',
+'      System.out.println(',
+'        "The new length is "',
+'        + inout.length());',
+'',
+'      // Lay so thu muoi mot moi',
+'      inout.seek(10 * 4);',
+'      System.out.println(',
+'        "The eleventh number is "',
+'        + inout.readInt());',
+'    }',
+'  }',
+'}'];
+// Ô hiển thị: chỉ số int 0..11, dấu …, 199, 200 (khi đã nối thêm).
+var SHOW = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+function sim(){
+  var S = [], file = [], fp = 0, out = [], hit = -1, wr = -1, old = {}, closed = false, newOut = -1;
+  function L(s, from){ return lineOf(LINES, s, from); }
+  function s(cur, title, body){
+    S.push({cur: cur, title: title, body: body, n: file.length, f: file.slice(), fp: fp, out: clone(out), hit: hit, wr: wr, old: clone(old), closed: closed, newOut: newOut});
+    hit = -1; wr = -1; newOut = -1;
+  }
+  function println(t){ out.push([t + '\n', '']); newOut = out.length - 1; }
+  function readInt(){ var v = file[fp / 4]; hit = fp / 4; fp += 4; return v; }
+  function writeInt(v){ var k = fp / 4; if (k < file.length) old[k] = file[k]; file[k] = v; wr = k; fp += 4; }
+  s([L('RandomAccessFile inout'), L('"rw"')], 'Mở tệp ở chế độ "rw"', 'Mở để vừa đọc vừa ghi. Con trỏ tệp ở vị trí 0.');
+  s(L('setLength(0)'), 'setLength(0)', 'Cắt tệp về 0 byte, xoá nội dung cũ nếu có.');
+  writeInt(0); s([L('for (int i'), L('writeInt(i)')], 'i = 0: writeInt(0)', 'Ghi 4 byte tại vị trí 0. Con trỏ tiến 4 byte, tới vị trí 4.');
+  writeInt(1); s([L('for (int i'), L('writeInt(i)')], 'i = 1: writeInt(1)', 'Ghi tại vị trí 4, con trỏ tới 8.');
+  for (var i = 2; i < 200; i++) writeInt(i);
+  wr = -1; s([L('for (int i'), L('writeInt(i)')], 'i = 2 … 199', 'Ghi tiếp 198 số. Tệp có 200 × 4 = 800 byte; con trỏ ở 800, tức là <b>cuối tệp</b>.');
+  println('Current file length is ' + file.length * 4);
+  s([L('System.out.println('), L('+ inout.length()')], 'In length()', '<code>length()</code> = 800. Hỏi kích thước không làm con trỏ di chuyển.');
+  var reads = [['seek(0)', 0, 'The first number is ', 'số thứ nhất'], ['seek(1 * 4)', 4, 'The second number is ', 'số thứ hai'], ['seek(9 * 4)', 36, 'The tenth number is ', 'số thứ mười']];
+  reads.forEach(function(r){
+    var ls = L('inout.' + r[0]);
+    fp = r[1]; s(ls, r[0] + ' → con trỏ ở ' + r[1], 'Dời con trỏ tới byte ' + r[1] + ', đầu ' + r[3] + ' (chỉ số ' + r[1] / 4 + ').');
+    var v = readInt(); println(r[2] + v);
+    s([ls + 1, ls + 3], 'readInt() → ' + v, 'Đọc 4 byte từ byte ' + r[1] + ', được ' + v + '. Con trỏ tiến tới ' + fp + '.');
+  });
+  writeInt(555);
+  s(L('inout.writeInt(555)'), 'writeInt(555) ghi đè', 'Con trỏ đang ở 40, đầu số thứ mười một. <code>writeInt(555)</code> <b>ghi đè</b> 4 byte đó: giá trị 10 cũ mất. Con trỏ tới 44, tệp vẫn 800 byte.');
+  fp = file.length * 4;
+  s(L('seek(inout.length())'), 'seek(length()) → con trỏ ở 800', 'Dời con trỏ tới cuối tệp, sau số cuối cùng (199).');
+  writeInt(999);
+  s(L('writeInt(999)'), 'writeInt(999) nối thêm', 'Ghi ở cuối tệp nên tệp dài thêm 4 byte: 804 byte. Con trỏ ở 804.');
+  println('The new length is ' + file.length * 4);
+  s([L('"The new length is "') - 1, L('"The new length is "') + 1], 'In length()', '<code>length()</code> = 804.');
+  fp = 40;
+  s(L('seek(10 * 4)'), 'seek(10 * 4) → con trỏ ở 40', 'Quay lại đầu số thứ mười một.');
+  var v2 = readInt(); println('The eleventh number is ' + v2);
+  s([L('seek(10 * 4)') + 1, L('seek(10 * 4)') + 3], 'readInt() → ' + v2, 'Đọc được 555, giá trị vừa ghi đè. Con trỏ ở 44.');
+  closed = true;
+  s(L('    }', L('seek(10 * 4)')), 'Đóng tệp', 'Ra khỏi khối try-with-resources, tệp được đóng.');
+  return S;
+}
+function TEST(){ sim().forEach(function(sn, i){ console.log(i + 1, JSON.stringify(sn.cur), sn.title, '| fp=' + sn.fp, 'len=' + sn.n * 4, '| f[10]=' + sn.f[10], 'f[200]=' + sn.f[200], '| out=' + (sn.out.length ? JSON.stringify(sn.out[sn.out.length - 1][0]) : '')); }); }
+//SIM-END
+Stepper({
+  build: sim,
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, sn); scrollToCur($('code'));
+    if (!sn.n) { $('strip').innerHTML = '<div class="bnote">Tệp rỗng (0 byte).</div>'; }
+    else {
+      var idx = SHOW.filter(function(k){ return k < sn.n; }), cells = [], posCell;
+      var tail = [];
+      if (sn.n > 12) { tail.push(199); if (sn.n > 200) tail.push(200); }
+      function cell(k){
+        var c = sn.wr === k ? 'wr' : sn.hit === k ? 'hit' : 'g' + (k % 2);
+        if (k === 200 && sn.wr !== k) c = 'g1';
+        var o = {v: sn.f[k], sub: '@' + k * 4, cls: c};
+        if (sn.old[k] !== undefined && sn.wr === k) o.sub = 'cũ: ' + sn.old[k];
+        return o;
+      }
+      var fpCell = sn.fp / 4;
+      idx.forEach(function(k){ if (k === fpCell) posCell = cells.length; cells.push(cell(k)); });
+      if (tail.length) {
+        if (fpCell > 11 && fpCell < 199) posCell = cells.length;
+        cells.push({v: '…', sub: '', cls: 'gap'});
+        tail.forEach(function(k){ if (k === fpCell) posCell = cells.length; cells.push(cell(k)); });
+      }
+      if (fpCell === sn.n) posCell = cells.length;
+      if (sn.n <= 12 && fpCell === sn.n) posCell = cells.length;
+      $('strip').innerHTML = bytesHtml(cells, {pos: sn.closed ? undefined : posCell});
+    }
+    $('note').innerHTML = sn.closed ? 'Tệp đã đóng.' : '<b>▼</b> con trỏ tệp ở byte ' + sn.fp + (sn.fp === sn.n * 4 ? ' (cuối tệp)' : ' (đầu ô chỉ số ' + sn.fp / 4 + ')') + '. Số nhỏ: vị trí byte bắt đầu của ô.';
+    $('vars').innerHTML = varsHtml([['getFilePointer()', sn.fp, ''], ['length()', sn.n * 4, '']]);
+    drawCon($('con'), sn.out.map(function(o, i){ return [o[0], i === sn.newOut ? 'new' : '']; }));
+  }
+}).reset();
+})();
+</script>
+</body>
+</html>

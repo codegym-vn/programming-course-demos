@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>TreeSet dùng Comparator</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --arrow:#5d6676;
+    --run:#e3f4e8; --run-bar:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --arrow:#9aa3b2;
+      --run:#13301f; --run-bar:#4ade80;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab.mono{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 10px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.op{background:var(--accent-soft);color:var(--accent);padding:4px 7px;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .switch{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer}
+  .switch input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+  .hint{color:var(--muted);font-size:12.5px}
+  .hint:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:5px 12px;margin-bottom:8px;min-height:56px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .stackv{display:flex;flex-direction:column;gap:8px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s;width:max-content;min-width:100%}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.auto{opacity:.62;font-style:italic}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln.curf{background:var(--false-soft);border-left-color:var(--false);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:1px 10px;min-width:60px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 15px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#9aa3b2;font-family:system-ui,sans-serif;font-size:12.5px}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  /* mui ten tham chieu */
+  .host{position:relative}
+  .arrows{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .ar path{fill:none;stroke:var(--arrow);stroke-width:1.7}
+  .ar polygon{fill:var(--arrow)}
+  .ar.acc path{stroke:var(--accent)} .ar.acc polygon{fill:var(--accent)}
+  .ar.hi path{stroke:var(--cur-bar);stroke-width:3;animation:glow 1s ease-in-out infinite alternate}
+  .ar.hi polygon{fill:var(--cur-bar)}
+  @keyframes glow{from{opacity:.55}to{opacity:1}}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);vertical-align:middle}
+  .hid{visibility:hidden}
+  .obj{border:1.5px solid var(--node-line);background:var(--node);border-radius:8px;padding:3px 7px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:background .25s,border-color .25s}
+  .obj .oh{font:700 11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .obj.hi{border-color:var(--cur-bar);background:var(--cur)}
+  .obj.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .obj.old{opacity:.45;border-style:dashed}
+  .fld{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .fld.hi{background:var(--cur);border-radius:4px}
+
+  /* day o */
+  .strip{display:grid;gap:2px}
+  .slot{min-width:0;text-align:center}
+  .slot .bx{height:30px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--node-line);border-radius:5px;
+    background:var(--node);font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden;white-space:nowrap}
+  .slot .bx.empty{border-style:dashed;border-color:var(--line);background:transparent;color:var(--muted);font-weight:400}
+  .slot .bx.nul{color:var(--muted);font-weight:400;font-style:italic;font-size:11.5px;background:var(--code-bg)}
+  .slot .bx.stale{color:var(--muted);font-weight:400;background:var(--code-bg);opacity:.6}
+  .slot .bx.hit{border-color:var(--cur-bar);background:var(--cur)}
+  .slot .bx.new{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .slot .bx.del{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .slot .bx.cut{border:2px dashed var(--muted)}
+  .slot .bx .sp{color:var(--muted)}
+  .slot .ix{display:block;font:10.5px/1.3 ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .slot .nt{display:block;margin:0 -20px;text-align:center;font:600 10px/1.2 system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+  @media (prefers-reduced-motion: reduce){.ar.hi path{animation:none}}
+
+  /* m3m4: dãy ô có con trỏ */
+  .row1{display:flex;align-items:stretch;flex-wrap:nowrap;padding:22px 2px 16px;min-height:86px;overflow-x:auto}
+  .row1.emp{align-items:center}
+  .emptxt{color:var(--muted);font-size:12.5px;font-style:italic;margin-left:6px}
+  .gp{width:14px;flex:none;position:relative}
+  .gp.on::before{content:"";position:absolute;left:5px;top:-6px;bottom:-4px;width:4px;border-radius:2px;background:var(--accent)}
+  .gp .gpl{position:absolute;top:-22px;left:7px;transform:translateX(-50%);white-space:nowrap;font:700 10.5px system-ui,sans-serif;color:var(--accent)}
+  .c1{position:relative;min-width:46px;flex:0 1 auto;height:40px;padding:0 8px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--node-line);border-radius:7px;background:var(--node);
+    font:600 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap;transition:background .25s,border-color .25s,opacity .25s}
+  .c1 .ix{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font:10.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .c1 .nt{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font:600 10px system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+  .c1.hit{border-color:var(--cur-bar);background:var(--cur)}
+  .c1.last{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .c1.new{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .c1.del{border-color:var(--false);background:var(--false-soft);color:var(--false);opacity:.55;text-decoration:line-through;border-style:dashed}
+  .c1.done{opacity:.55}
+  .inp{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);width:92px}
+  .inp:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .hint.bad{color:var(--false);font-weight:600}
+  .opbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .console .er{color:#fca5a5}
+  .console .ok{color:#86efac}
+  .errbox{border:2px solid var(--false);background:var(--false-soft);color:var(--false);border-radius:8px;padding:3px 10px;font:700 12.5px ui-monospace,Menlo,Consolas,monospace}
+  .chip{display:inline-block;padding:1px 7px;border-radius:6px;border:1.5px solid var(--node-line);background:var(--node);font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+  .chip.hit{border-color:var(--cur-bar);background:var(--cur)}
+  .chip.new{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .chip.bad{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .gp.first .gpl{transform:translateX(-6px)}
+  .gp.lastg .gpl{transform:translateX(calc(-100% + 8px))}
+
+  .grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+  .code{font-size:11px;line-height:1.42}
+  .tree svg{display:block;width:100%;height:auto}
+  .tree line{stroke:var(--node-line);stroke-width:2}
+  .tree line.hi{stroke:var(--cur-bar);stroke-width:3.5}
+  .tree rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.6}
+  .tree g.hit rect{fill:var(--cur);stroke:var(--cur-bar)}
+  .tree g.new rect{fill:var(--true-soft);stroke:var(--true)}
+  .tree g.rej rect{fill:var(--false-soft);stroke:var(--false);stroke-dasharray:5 3}
+  .tree text{font:600 12px ui-monospace,Menlo,Consolas,monospace;fill:var(--text);text-anchor:middle;dominant-baseline:central}
+  .tree text.s{font:11px ui-monospace,Menlo,monospace;fill:var(--muted)}
+  .tree text.c{font:700 12px ui-monospace,Menlo,monospace;fill:var(--accent)}
+  .cand{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:32px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem <code>TreeSet</code> gọi <code>compare</code> (so diện tích) khi thêm từng hình.</p>
+  <div class="controls"><div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">TestTreeSetWithComparator.java</p><div class="code" id="code"></div></div>
+    <div class="stackv">
+      <div class="card"><p class="panel-title">Hình đang thêm</p><div class="cand" id="cand"></div></div>
+      <div class="card tree"><p class="panel-title">Cây trong TreeSet: trái nhỏ hơn, phải lớn hơn</p><div id="tree"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|extends|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|null|this|super|try|catch|throws|throw|final|implements|abstract|char)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // o: {cur: so dong | [tu, den], bad: true de to do, cls: {i: lop}, tags: {i: nhan}}
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur;
+    var none = cur === undefined || cur === null;
+    var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? (o.bad ? ' curf' : ' cur') : '');
+      return '<div class="' + c + '"><span class="no">' + (i + (o.start || 1)) + '</span><span>' + hl(l) + '</span>' +
+        (tags[i] ? '<span class="tagln">' + esc(tags[i]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // out: chuỗi hoặc [chuỗi, lớp] (er: lỗi, ok: xanh, ph: ghi chú)
+  function conHtml(out, ph){ return out.length ? out.map(function(x){ return Array.isArray(x) ? '<span class="' + x[1] + '">' + esc(x[0]) + '</span>' : esc(x); }).join('\n') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>'; }
+
+  // cfg: build(ops) -> snaps; render(sn, i, n, end); script: danh sach thao tac mac dinh (co the khong co)
+  // Moi snap co .op: chi so thao tac sinh ra no. Trang khong co thao tac thi bo qua .op.
+  function Stepper(cfg){
+    var ops = [], snaps = [], step = 0, timer = null, script = null;
+    function getScript(){ return typeof cfg.script === 'function' ? cfg.script() : (cfg.script || null); }
+    var jump = parseInt(qs('buoc'), 10);
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function onScript(){
+      if (!script || ops.length >= script.length) return false;
+      return ops.every(function(o, i){ return JSON.stringify(o) === JSON.stringify(script[i]); });
+    }
+    function canNext(){ return step < snaps.length - 1 || onScript(); }
+    function endOfOp(){ var sn = snaps[step], e = sn; snaps.forEach(function(s){ if (s.op === sn.op) e = s; }); return e; }
+    function draw(){
+      var sn = snaps[step], run = timer !== null;
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + (script ? '' : '/' + snaps.length) + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length, endOfOp());
+      $('next').disabled = !canNext() || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || !canNext();
+    }
+    function advance(){
+      if (step < snaps.length - 1) { step++; return true; }
+      if (onScript()) { ops.push(script[ops.length]); snaps = cfg.build(ops); step++; return true; }
+      return false;
+    }
+    function reset(){
+      stop(); script = getScript(); ops = []; snaps = cfg.build(ops); step = 0;
+      if (jump > 0) { while (step < jump - 1 && advance()); jump = 0; }
+      draw();
+    }
+    function next(){ if (advance()) draw(); }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    function doOp(op, replace){
+      stop();
+      ops = ops.slice(0, snaps[step].op + 1);
+      if (snaps[step].op === undefined) ops = [];
+      if (replace && ops.length && replace(ops[ops.length - 1])) ops.pop();
+      ops.push(op); snaps = cfg.build(ops);
+      for (step = 0; step < snaps.length - 1 && snaps[step].op !== ops.length - 1; step++);
+      draw();
+    }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (!advance()) { stop(); } draw(); if (!canNext()) { stop(); draw(); } }, 600);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    window.addEventListener('resize', function(){ if (snaps.length) cfg.render(snaps[step], step, snaps.length, endOfOp()); });
+    return {reset: reset, doOp: doOp, ops: function(){ return ops; }, stop: stop};
+  }
+
+  // Ve lai host; phan tu co data-k truot tu vi tri cu sang vi tri moi.
+  function flip(host, paint){
+    var old = {}, had = false;
+    host.querySelectorAll('[data-k]').forEach(function(el){ old[el.dataset.k] = el.getBoundingClientRect(); had = true; });
+    paint();
+    if (!had || !host.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    host.querySelectorAll('[data-k]').forEach(function(el){
+      var o = old[el.dataset.k], n = el.getBoundingClientRect();
+      if (!o) { el.animate([{opacity:0},{opacity:1}], {duration:280}); return; }
+      var dx = o.left - n.left, dy = o.top - n.top;
+      if (Math.abs(dx) > .5 || Math.abs(dy) > .5)
+        el.animate([{transform:'translate(' + dx + 'px,' + dy + 'px)'},{transform:'none'}], {duration:360, easing:'ease-out'});
+    });
+  }
+  // list: [{from:id, to:id, out:'r'|'l'|'b'|'t', side:'l'|'r'|'t'|'b', cls:''}]
+  function arrows(host, list){
+    var old = host.querySelector(':scope > svg.arrows'); if (old) old.remove();
+    var H = host.getBoundingClientRect(), parts = '';
+    list.forEach(function(a){
+      var f = $(a.from), t = $(a.to); if (!f || !t) return;
+      var fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+      var out = a.out || 'r', side = a.side || 'l';
+      var fx = fr.left + fr.width / 2 - H.left, fy = (a.edge === 't' ? fr.top : fr.top + fr.height / 2) - H.top;
+      var L = tr.left - H.left, R = tr.right - H.left, T = tr.top - H.top, B = tr.bottom - H.top, x, y, ux = 0, uy = 0;
+      if (side === 'l') { x = L; y = (T + B) / 2; ux = 1; }
+      else if (side === 'r') { x = R; y = (T + B) / 2; ux = -1; }
+      else if (side === 't') { x = Math.min(Math.max(fx, L + 8), R - 8); y = T; uy = 1; }
+      else { x = Math.min(Math.max(fx, L + 8), R - 8); y = B; uy = -1; }
+      var d = Math.max(14, Math.min(46, (Math.abs(x - fx) + Math.abs(y - fy)) * .4));
+      var ox = out === 'r' ? d : out === 'l' ? -d : 0, oy = out === 'b' ? d : out === 't' ? -d : 0;
+      var ex = x - ux * 6, ey = y - uy * 6;
+      var path = 'M' + fx.toFixed(1) + ' ' + fy.toFixed(1) + ' C' + (fx + ox).toFixed(1) + ' ' + (fy + oy).toFixed(1) + ' ' + (ex - ux * d).toFixed(1) + ' ' + (ey - uy * d).toFixed(1) + ' ' + ex.toFixed(1) + ' ' + ey.toFixed(1);
+      var px = -uy * 4.5, py = ux * 4.5;
+      var head = x.toFixed(1) + ',' + y.toFixed(1) + ' ' + (ex + px).toFixed(1) + ',' + (ey + py).toFixed(1) + ' ' + (ex - px).toFixed(1) + ',' + (ey - py).toFixed(1);
+      parts += '<g class="ar ' + (a.cls || '') + '"><path d="' + path + '"/><polygon points="' + head + '"/></g>';
+    });
+    host.insertAdjacentHTML('beforeend', '<svg class="arrows" aria-hidden="true">' + parts + '</svg>');
+  }
+  // cells: [{i, v, k, cls, nt}]; v rong thi la o trong
+  function stripHtml(cells, cols){
+    return '<div class="strip" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' + cells.map(function(c){
+      var empty = c.v === undefined || c.v === null || c.v === '';
+      var v = c.v === ' ' ? '<span class="sp">·</span>' : esc(empty ? '' : c.v);
+      return '<div class="slot"' + (c.id ? ' id="' + c.id + '"' : '') + '><div class="bx ' + (empty ? 'empty ' : '') + (c.cls || '') + '"' + (c.k !== undefined && !empty ? ' data-k="' + esc(c.k) + '"' : '') + '>' + v + '</div>' +
+        '<span class="ix">' + esc(c.i === undefined ? '' : c.i) + '</span>' + (c.nt ? '<span class="nt">' + esc(c.nt) + '</span>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+
+  // ---- Dãy ô có con trỏ (dùng chung cho Iterator, ListIterator, List, Stack, Queue) ----
+  // items: [{v, k, cls, ix, nt}]; o: {cur: chỉ số khe (0..n) hoặc -1, curLabel, idx: true để hiện chỉ số, empty: chữ khi rỗng}
+  function rowHtml(items, o){
+    o = o || {};
+    var h = '', cur = o.cur === undefined ? -1 : o.cur;
+    var nI = items.length;
+    function gap(i){ return '<div class="gp' + (i === cur ? ' on' : '') + (i === 0 ? ' first' : '') + (i === nI && nI ? ' lastg' : '') + '">' + (i === cur ? '<span class="gpl">' + esc(o.curLabel || 'con trỏ') + '</span>' : '') + '</div>'; }
+    if (!items.length) return '<div class="row1 emp">' + gap(0) + '<span class="emptxt">' + esc(o.empty || 'rỗng') + '</span></div>';
+    items.forEach(function(it, i){
+      h += gap(i);
+      h += '<div class="c1 ' + (it.cls || '') + '"' + (it.k !== undefined ? ' data-k="' + esc(it.k) + '"' : '') + '><span class="v">' + esc(it.v) + '</span>' +
+        (o.idx ? '<span class="ix">' + (it.ix !== undefined ? esc(it.ix) : i) + '</span>' : '') + (it.nt ? '<span class="nt">' + esc(it.nt) + '</span>' : '') + '</div>';
+    });
+    h += gap(items.length);
+    return '<div class="row1">' + h + '</div>';
+  }
+  // Dòng nhập có kiểm tra: trả về chuỗi đã cắt hoặc null (kèm thông báo vào #hint).
+  function readWord(id, re, msg){
+    var el = $(id), v = el.value.trim();
+    if (!re.test(v)) { $('hint').textContent = msg; $('hint').className = 'hint bad'; el.focus(); return null; }
+    $('hint').textContent = ''; $('hint').className = 'hint';
+    return v;
+  }
+  function jstr(s){ return '"' + s + '"'; }
+  // String.hashCode() của Java (số nguyên 32 bit có dấu)
+  function strHash(s){ var h = 0; for (var i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; return h; }
+  // Bước trộn bit của HashMap.hash(): h ^ (h >>> 16)
+  function spread(h){ return (h ^ (h >>> 16)) | 0; }
+
+
+//SIM-START
+var LINES = [
+'import java.util.*;',
+'',
+'public class TestTreeSetWithComparator {',
+'  public static void main(String[] args) {',
+'    Set<GeometricObject> set = new TreeSet<>(',
+'        new GeometricObjectComparator());',
+'    set.add(new Rectangle(4, 5));',
+'    set.add(new Circle(40));',
+'    set.add(new Circle(40));',
+'    set.add(new Rectangle(4, 1));',
+'',
+'    System.out.println(',
+'        "A sorted set of geometric objects");',
+'    for (GeometricObject element : set) {',
+'      System.out.println("area = "',
+'          + element.getArea());',
+'    }',
+'  }',
+'}'];
+// Diện tích tính như Java (double); chuỗi in ra theo Double.toString.
+var SHAPES = [{n: 'Rectangle(4, 5)', a: 4 * 5, s: '20.0', ln: 6}, {n: 'Circle(40)', a: 40 * 40 * Math.PI, s: '5026.548245743669', ln: 7}, {n: 'Circle(40)', a: 40 * 40 * Math.PI, s: '5026.548245743669', ln: 8}, {n: 'Rectangle(4, 1)', a: 4 * 1, s: '4.0', ln: 9}];
+function sgn(x, y){ return x < y ? -1 : x > y ? 1 : 0; }
+function sim(){
+  var S = [], nodes = [], out = [], root = -1;
+  // node: {s: shape, l, r, x, y}
+  function snap(ln, title, body, o){ o = o || {}; S.push({ln: ln, title: title, body: body, nodes: JSON.parse(JSON.stringify(nodes)), cand: o.cand || null, at: o.at === undefined ? -1 : o.at, cmp: o.cmp === undefined ? null : o.cmp, mk: o.mk || {}, edge: o.edge === undefined ? -1 : o.edge, out: out.slice()}); }
+  snap([4, 5], 'Tạo TreeSet với comparator', 'Từ giờ <code>TreeSet</code> không dùng <code>compareTo</code> của phần tử mà gọi <code>compare(o1, o2)</code> của <code>GeometricObjectComparator</code>, tức <code>Double.compare(o1.getArea(), o2.getArea())</code>.');
+  SHAPES.forEach(function(sh, si){
+    var c = {n: sh.n, s: sh.s};
+    snap(sh.ln, 'add(new ' + sh.n + ')', 'Hình mới có diện tích ' + sh.s + '.' + (root < 0 ? ' Cây đang rỗng nên nó thành <b>gốc</b>.' : ' Bắt đầu so sánh từ gốc.'), {cand: c});
+    if (root < 0) { nodes.push({n: sh.n, s: sh.s, a: sh.a, l: -1, r: -1, p: -1, side: 0}); root = 0; var mk0 = {}; mk0[0] = 'new'; snap(sh.ln, 'Thêm làm gốc', 'Tập hợp có 1 phần tử.', {mk: mk0}); return; }
+    var cur = root, done = false;
+    while (!done) {
+      var nd = nodes[cur], r = sgn(sh.a, nd.a), mk = {}; mk[cur] = 'hit';
+      var txt = 'compare(mới, ' + nd.s + ') = ' + r;
+      if (r === 0) {
+        mk[cur] = 'rej';
+        snap(sh.ln, txt + ': trùng', 'Hai diện tích bằng nhau nên <code>compare</code> trả về 0: <code>TreeSet</code> coi hình mới là <b>trùng</b> với hình đã có, không thêm, <code>add</code> trả về <code>false</code>. <code>equals</code> không hề được gọi.', {cand: c, at: cur, cmp: r, mk: mk});
+        done = true; break;
+      }
+      var side = r < 0 ? 'l' : 'r', nxt = nd[side];
+      snap(sh.ln, txt + ': đi sang ' + (r < 0 ? 'trái' : 'phải'), (r < 0 ? 'Diện tích mới nhỏ hơn ' : 'Diện tích mới lớn hơn ') + nd.s + ' nên đi sang nhánh ' + (r < 0 ? 'trái' : 'phải') + (nxt < 0 ? ', nhánh này đang trống.' : '.'), {cand: c, at: cur, cmp: r, mk: mk});
+      if (nxt < 0) {
+        nodes.push({n: sh.n, s: sh.s, a: sh.a, l: -1, r: -1, p: cur, side: r < 0 ? -1 : 1}); nd[side] = nodes.length - 1;
+        var mk2 = {}; mk2[nodes.length - 1] = 'new';
+        snap(sh.ln, 'Thêm vào nhánh ' + (r < 0 ? 'trái' : 'phải'), 'Hình mới được gắn vào chỗ trống. Tập hợp có ' + nodes.length + ' phần tử.', {mk: mk2, edge: nodes.length - 1});
+        done = true;
+      } else cur = nxt;
+    }
+  });
+  out.push('A sorted set of geometric objects');
+  snap([11, 12], 'In tiêu đề', 'Bắt đầu in.');
+  var order = [];
+  (function walk(i){ if (i < 0) return; walk(nodes[i].l); order.push(i); walk(nodes[i].r); })(root);
+  order.forEach(function(i){ var mk = {}; mk[i] = 'hit'; out.push('area = ' + nodes[i].s); snap([13, 15], 'area = ' + nodes[i].s, 'Vòng for-each duyệt cây theo thứ tự <b>từ trái sang phải</b>, tức diện tích tăng dần.', {mk: mk}); });
+  snap(17, 'Kết thúc', 'Bốn lời gọi <code>add</code> nhưng chỉ ba hình được lưu.');
+  return S;
+}
+//SIM-END
+function treeSvg(sn){
+  var W = 360, H = 150, P = {};
+  function pos(i){ if (P[i]) return P[i]; var nd = sn.nodes[i]; if (nd.p < 0) return (P[i] = [W / 2, 30]); var pp = pos(nd.p); return (P[i] = [pp[0] + nd.side * 90, pp[1] + 72]); }
+  if (!sn.nodes.length) return '<svg viewBox="0 0 ' + W + ' ' + H + '"><text class="s" x="' + W / 2 + '" y="' + H / 2 + '">cây rỗng</text></svg>';
+  var g = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cây TreeSet">';
+  sn.nodes.forEach(function(nd, i){ if (nd.p >= 0) { var a = pos(nd.p), b = pos(i); g += '<line class="' + (sn.edge === i ? 'hi' : '') + '" x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '"/>'; } });
+  sn.nodes.forEach(function(nd, i){ var p = pos(i); g += '<g class="' + (sn.mk[i] || '') + '"><rect x="' + (p[0] - 66) + '" y="' + (p[1] - 21) + '" width="132" height="42" rx="8"/><text x="' + p[0] + '" y="' + (p[1] - 8) + '">' + nd.n + '</text><text class="s" x="' + p[0] + '" y="' + (p[1] + 10) + '">area ' + (nd.s.length > 10 ? nd.s.slice(0, 9) + '…' : nd.s) + '</text></g>'; });
+  if (sn.at >= 0 && sn.cmp !== null) { var q = pos(sn.at); g += '<text class="c" x="' + q[0] + '" y="' + (q[1] + 33) + '">compare = ' + sn.cmp + '</text>'; }
+  return g + '</svg>';
+}
+var st = Stepper({
+  build: function(){ return sim(); },
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.ln}); scrollToCur($('code'));
+    $('cand').innerHTML = sn.cand ? '<span class="chip new">' + sn.cand.n + '</span><span>getArea() = <b>' + sn.cand.s + '</b></span>' : '<span class="hint">—</span>';
+    $('tree').innerHTML = treeSvg(sn);
+    $('con').innerHTML = conHtml(sn.out);
+  }
+});
+st.reset();
+
+})();
+</script>
+</body>
+</html>

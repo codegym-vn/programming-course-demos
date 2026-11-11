@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="590">
+<title>Sơ đồ tuần tự client và server</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --c1:#2563eb; --c1s:#e7eefc; --c2:#c2410c; --c2s:#fdeedd; --c3:#15803d; --c3s:#e3f4e8; --c4:#7c3aed; --c4s:#f0e9fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --c1:#6ea0ff; --c1s:#1e2a44; --c2:#fdba74; --c2s:#3a2614; --c3:#4ade80; --c3s:#13301f; --c4:#c4a1ff; --c4s:#2a1f40;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .er{color:#fca5a5}
+  .console .ok{color:#86efac}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line);transition:background .3s,opacity .3s}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl tr.bad td{background:var(--false-soft);color:var(--false)}
+  .tbl tr.new td{background:var(--true-soft)}
+  .tbl tr.dim td{opacity:.3}
+  .scroll{overflow:auto}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @keyframes flash{0%,100%{background:var(--cur)}50%{background:var(--cur-bar)}}
+  .tbl tr.flash td{animation:flash .5s 3;background:var(--cur)}
+  /* Biểu đồ thời gian (Gantt) */
+  .gantt{display:grid;grid-template-columns:var(--gl,96px) 1fr;row-gap:5px;font-size:12px}
+  .gantt .gl{color:var(--muted);font-weight:600;align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+  .gantt .track{position:relative;height:22px;background:var(--code-bg);border-radius:5px;overflow:hidden}
+  .gantt .bar{position:absolute;top:0;bottom:0;border-radius:4px;display:flex;align-items:center;justify-content:center;
+    font:600 11px system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;transition:width .3s}
+  .gantt .bar.wait{background:repeating-linear-gradient(45deg,var(--cur-bar) 0 4px,transparent 4px 8px);color:var(--text);opacity:.75}
+  .gantt .bar.k1{background:var(--c1)} .gantt .bar.k2{background:var(--c2)} .gantt .bar.k3{background:var(--c3)} .gantt .bar.k4{background:var(--c4)}
+  .gantt .bar.acc{background:var(--muted)}
+  .gantt .now{position:absolute;top:0;bottom:0;width:2px;background:var(--false);z-index:2}
+  .gantt .axis{position:relative;height:16px;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted)}
+  .gantt .axis span{position:absolute;transform:translateX(-50%)}
+  @media (prefers-color-scheme: dark){.gantt .bar{color:#0f1218}}
+
+  .field input#radii{width:150px}
+  .seq{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seq-h{display:grid;grid-template-columns:1fr 92px 1fr;background:var(--code-bg);font:700 12px system-ui,sans-serif;color:var(--muted);text-align:center}
+  .seq-h div{padding:4px 6px}
+  .seq-h .st{display:block;font:500 11.5px system-ui,sans-serif;min-height:17px}
+  .seq-h .st.w{color:var(--cur-bar)} .seq-h .st.e{color:var(--false)}
+  .seq-b{height:214px;overflow:auto;position:relative;background:
+    linear-gradient(var(--line),var(--line)) calc(50% - 46px) 0/2px 100% no-repeat,
+    linear-gradient(var(--line),var(--line)) calc(50% + 46px) 0/2px 100% no-repeat}
+  .row{display:grid;grid-template-columns:1fr 92px 1fr;align-items:center;min-height:30px;font-size:12.5px;transition:background .3s}
+  .row.cur{background:var(--cur)}
+  .row .l{text-align:right;padding:2px 8px}.row .r{padding:2px 8px}
+  .row code{font-size:12px}
+  .arr{position:relative;height:22px;font:600 11.5px ui-monospace,Menlo,Consolas,monospace;text-align:center;color:var(--accent)}
+  .arr::before{content:"";position:absolute;left:2px;right:2px;top:15px;border-top:2px solid currentColor}
+  .arr::after{content:"";position:absolute;top:10px;border:6px solid transparent}
+  .arr.c2s::after{right:-4px;border-left-color:currentColor}
+  .arr.s2c::after{left:-4px;border-right-color:currentColor}
+  .arr.close{color:var(--false)} .arr.close::before{border-top-style:dashed}
+  .arr.s2c{color:var(--c3)}
+  .arr span{position:relative;top:-3px;background:var(--card);padding:0 3px;white-space:nowrap}
+  .row.cur .arr span{background:var(--cur)}
+  .bot{display:grid;grid-template-columns:auto 1fr;gap:10px;margin-top:8px}
+  @media (max-width:600px){.bot{grid-template-columns:1fr}.seq-b{height:230px}.row{font-size:11.5px}}
+  .var strong{font-size:14px}
+  .console{min-height:96px;font-size:12px}
+  .bot .vars{flex-direction:column;gap:4px}.bot .var{padding:1px 8px;display:flex;gap:8px;align-items:baseline;text-align:left}.bot .var small{width:44px}.bot .var strong{font-size:13px;min-height:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem client và server trao đổi từng bán kính, và vì sao server biết lúc nào dừng.</p>
+  <div class="controls">
+    <div class="field"><label for="radii">radii =</label><input type="text" id="radii" value="1, 2.5, 10" maxlength="40"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="seq">
+      <div class="seq-h"><div>Client (luồng chính)<span class="st" id="cst"></span></div><div></div><div>Server (luồng t)<span class="st" id="sst"></span></div></div>
+      <div class="seq-b" id="seq"></div>
+    </div>
+    <div class="bot">
+      <div><p class="panel-title">Biến của server</p><div class="vars" id="vars"></div></div>
+      <div><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var JAVA_KW = 'import|public|private|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|try|catch|throws|throw|final|null|this';
+  var SQL_KW = 'SELECT|FROM|WHERE|AND|OR|NOT|ORDER|BY|ASC|DESC|DISTINCT|GROUP|HAVING|COUNT|SUM|AVG|MIN|MAX|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|TABLE|CREATE|AS|LIKE|IS|NULL|true|false';
+  function hlWith(src, kws){
+    var re = new RegExp('("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\')|(//.*$|--.*$)|\\b(' + kws + ')\\b|(\\b\\d+(?:\\.\\d+)?\\b)', 'g'), out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function hl(src){ return hlWith(src, JAVA_KW); }
+  function hlSql(src){ return hlWith(src, SQL_KW); }
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, cur = o.cur, f = o.sql ? hlSql : hl;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + f(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}; snap.title, snap.body, snap.kind ('bad'|'ok')
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var s = $('status');
+      s.className = 'status' + (sn.kind ? ' ' + sn.kind : '');
+      s.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 650);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, step: function(){ return step; }};
+  }
+  function tabs(box, items, cur, onPick){
+    box.innerHTML = items.map(function(it){ return '<button class="tab" role="tab" data-k="' + it[0] + '" aria-selected="' + (it[0] === cur) + '">' + it[1] + '</button>'; }).join('');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.tab'); if (!b) return;
+      Array.prototype.forEach.call(box.children, function(x){ x.setAttribute('aria-selected', String(x === b)); });
+      onPick(b.getAttribute('data-k'));
+    });
+  }
+  // Double.toString của Java (JDK 19+): chữ số ngắn nhất như JS, khác ở dạng hiển thị
+  function jd(x){
+    if (x === 0) return 1 / x < 0 ? '-0.0' : '0.0';
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? 'Infinity' : '-Infinity';
+    var a = Math.abs(x), sg = x < 0 ? '-' : '';
+    if (a === 5e-324) return sg + '4.9E-324';
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var m = x.toExponential().split('e'), man = m[0];
+    if (man.indexOf('.') < 0) man += '.0';
+    return man + 'E' + (+m[1]);
+  }
+  // rows: [{label, bars: [{s, e, cls, text}]}]; T: độ dài trục; t: thời điểm hiện tại (cắt thanh tại t)
+  function ganttHtml(rows, T, t){
+    function pc(x){ return (x / T * 100) + '%'; }
+    var h = rows.map(function(r){
+      var bars = r.bars.filter(function(b){ return b.s < t || (b.s === b.e && b.s <= t); }).map(function(b){
+        var e = Math.min(b.e, t), w = b.s === b.e ? 0.12 : e - b.s;
+        return '<div class="bar ' + b.cls + '" style="left:' + pc(b.s) + ';width:' + pc(w) + '" title="' + esc(b.text || '') + '">' + (e - b.s >= 1 ? esc(b.text || '') : '') + '</div>';
+      }).join('');
+      return '<div class="gl" title="' + esc(r.label) + '">' + esc(r.label) + '</div><div class="track">' + bars + '<div class="now" style="left:calc(' + pc(t) + ' - 1px)"></div></div>';
+    }).join('');
+    var ax = '';
+    for (var i = 0; i <= T; i++) ax += '<span style="left:' + pc(i) + '">' + i + (i === T ? 's' : '') + '</span>';
+    return h + '<div></div><div class="axis">' + ax + '</div>';
+  }
+
+//SIM-START
+// Mỗi snap: rows (đến hiện tại), cst/sst (trạng thái hai bên), vars, out
+function simArea(radii){
+  var S = [], rows = [], last = 0, out = [], v = {count: 0, radius: null, area: null}, cst = '', sst = '';
+  function row(r){ rows.push(r); }
+  function snap(title, body, kind, chg){ S.push({title: title, body: body, kind: kind, rows: rows.slice(), from: last, cst: cst, sst: sst, v: {count: v.count, radius: v.radius, area: v.area}, chg: chg || [], out: out.slice()}); last = rows.length; }
+  sst = 'w:accept() đang chờ';
+  row({r: '<code>accept()</code> chờ kết nối'});
+  snap('Server khởi động', 'Luồng chính tạo <code>ServerSocket</code> và chạy luồng server <code>t</code>. Server gọi <code>accept()</code> và đứng chờ.');
+  row({l: '<code>new Socket(...)</code>', a: 'c2s', t: 'kết nối', r: '<code>accept()</code> trả về socket'});
+  sst = 'w:readDouble() đang chờ';
+  row({r: '<code>readDouble()</code> chờ dữ liệu'});
+  snap('Kết nối', 'Client tạo socket, <code>accept()</code> ở server trả về. Server vào vòng lặp <code>while (true)</code> và đứng chờ ở <code>readDouble()</code> vì chưa có byte nào.');
+  radii.forEach(function(r, k){
+    var area = r * r * Math.PI;
+    cst = 'w:readDouble() đang chờ';
+    row({l: '<code>writeDouble(' + jd(r) + ')</code>', a: 'c2s', t: jd(r)});
+    snap('Client gửi bán kính ' + jd(r), 'Client ghi 8 byte của <code>' + jd(r) + '</code>, <code>flush()</code> rồi đứng chờ ở <code>readDouble()</code> để nhận diện tích.');
+    v.radius = r; v.area = area; v.count++;
+    row({a: 's2c', t: jd(+area.toPrecision(6)) + '…', r: 'tính diện tích, <code>writeDouble</code>; <code>count++</code>'});
+    snap('Server trả lời yêu cầu ' + v.count, 'Server đọc được <code>' + jd(r) + '</code>, tính <code>radius * radius * Math.PI</code> = ' + jd(area) + ', ghi về client rồi tăng <code>count</code> lên ' + v.count + '. Vòng lặp quay lại <code>readDouble()</code> và lại chờ.', null, ['count', 'radius', 'area']);
+    cst = '';
+    out.push('Ban kinh ' + jd(r) + ' -> dien tich ' + jd(area));
+    row({l: 'nhận diện tích, in ra'});
+    snap('Client in kết quả', 'Client đọc được diện tích và in một dòng.' + (k < radii.length - 1 ? ' Còn bán kính tiếp theo trong mảng <code>radii</code>.' : ' Mảng <code>radii</code> đã hết.'));
+  });
+  cst = 'e:đã đóng socket';
+  row({l: 'ra khỏi <code>try</code>: đóng socket', a: 'c2s close', t: 'hết dữ liệu'});
+  snap('Client đóng socket', 'Hết vòng <code>for</code>, khối <code>try</code> kết thúc nên socket của client tự đóng. Phía server, luồng vào không còn byte nào nữa và cũng sẽ không bao giờ có thêm.');
+  sst = 'e:EOFException';
+  row({r: '<code>readDouble()</code> ném <b>EOFException</b>'});
+  snap('Server gặp EOFException', '<code>readDouble()</code> đang chờ thì phát hiện luồng đã tới cuối, nên ném <code>EOFException</code>. Lệnh ném nhảy ra khỏi <code>while (true)</code> tới khối <code>catch (EOFException ex)</code>: đây là tín hiệu kết thúc.', 'bad');
+  sst = 'e:đã kết thúc';
+  row({r: 'đóng socket, <code>run()</code> kết thúc'});
+  snap('Luồng server kết thúc', '<code>try</code> tự đóng socket của server, phương thức <code>run()</code> chạy hết và luồng <code>t</code> kết thúc. Server không cần biết trước sẽ có bao nhiêu yêu cầu.');
+  cst = '';
+  out.push('Server da tra loi ' + v.count + ' yeu cau');
+  row({l: '<code>t.join()</code>, in <code>count</code>'});
+  snap('join() rồi in', 'Luồng chính đã chờ ở <code>t.join()</code>; giờ luồng <code>t</code> kết thúc nên <code>join()</code> trả về. Đọc <code>s.count</code> lúc này luôn được giá trị cuối cùng: ' + v.count + '.', 'ok');
+  return S;
+}
+//SIM-END
+var R = [1, 2.5, 10];
+var st = Stepper({
+  build: function(){ return simArea(R); },
+  render: function(sn){
+    $('seq').innerHTML = sn.rows.map(function(r, i){
+      var cur = i >= sn.from;
+      return '<div class="row' + (cur ? ' cur' : '') + '"><div class="l">' + (r.l || '') + '</div><div>' + (r.a ? '<div class="arr ' + r.a + '"><span>' + esc(r.t) + '</span></div>' : '') + '</div><div class="r">' + (r.r || '') + '</div></div>';
+    }).join('');
+    $('seq').scrollTop = 1e6;
+    [['cst', sn.cst], ['sst', sn.sst]].forEach(function(p){ var el = $(p[0]), s = p[1] || ''; el.className = 'st' + (s ? ' ' + s[0] : ''); el.textContent = s ? s.slice(2) : 'đang chạy'; });
+    $('vars').innerHTML = [['count', sn.v.count], ['radius', sn.v.radius === null ? '?' : jd(sn.v.radius)], ['area', sn.v.area === null ? '?' : jd(sn.v.area)]].map(function(p){
+      return '<div class="var' + (sn.chg.indexOf(p[0]) >= 0 ? ' chg' : '') + '"><small>' + p[0] + '</small><strong>' + esc(p[1]) + '</strong></div>'; }).join('');
+    $('con').innerHTML = sn.out.length ? sn.out.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+  }
+});
+function apply(){
+  var parts = $('radii').value.split(','), arr = [], ok = parts.length >= 1 && parts.length <= 5;
+  parts.forEach(function(p){ p = p.trim(); if (!/^\d+(\.\d+)?$/.test(p) || +p <= 0 || +p > 1000) ok = false; else arr.push(+p); });
+  $('radii').classList.toggle('bad', !ok);
+  if (!ok) { $('err').textContent = 'Nhập 1 đến 5 bán kính dương (tối đa 1000), cách nhau bởi dấu phẩy.'; return; }
+  $('err').textContent = ''; R = arr; st.reset();
+}
+$('radii').addEventListener('input', apply);
+st.reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="570">
+<title>Giao thức Tic-Tac-Toe</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --c1:#2563eb; --c1s:#e7eefc; --c2:#c2410c; --c2s:#fdeedd; --c3:#15803d; --c3s:#e3f4e8; --c4:#7c3aed; --c4s:#f0e9fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --c1:#6ea0ff; --c1s:#1e2a44; --c2:#fdba74; --c2s:#3a2614; --c3:#4ade80; --c3s:#13301f; --c4:#c4a1ff; --c4s:#2a1f40;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .er{color:#fca5a5}
+  .console .ok{color:#86efac}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line);transition:background .3s,opacity .3s}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl tr.bad td{background:var(--false-soft);color:var(--false)}
+  .tbl tr.new td{background:var(--true-soft)}
+  .tbl tr.dim td{opacity:.3}
+  .scroll{overflow:auto}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @keyframes flash{0%,100%{background:var(--cur)}50%{background:var(--cur-bar)}}
+  .tbl tr.flash td{animation:flash .5s 3;background:var(--cur)}
+  /* Biểu đồ thời gian (Gantt) */
+  .gantt{display:grid;grid-template-columns:var(--gl,96px) 1fr;row-gap:5px;font-size:12px}
+  .gantt .gl{color:var(--muted);font-weight:600;align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+  .gantt .track{position:relative;height:22px;background:var(--code-bg);border-radius:5px;overflow:hidden}
+  .gantt .bar{position:absolute;top:0;bottom:0;border-radius:4px;display:flex;align-items:center;justify-content:center;
+    font:600 11px system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;transition:width .3s}
+  .gantt .bar.wait{background:repeating-linear-gradient(45deg,var(--cur-bar) 0 4px,transparent 4px 8px);color:var(--text);opacity:.75}
+  .gantt .bar.k1{background:var(--c1)} .gantt .bar.k2{background:var(--c2)} .gantt .bar.k3{background:var(--c3)} .gantt .bar.k4{background:var(--c4)}
+  .gantt .bar.acc{background:var(--muted)}
+  .gantt .now{position:absolute;top:0;bottom:0;width:2px;background:var(--false);z-index:2}
+  .gantt .axis{position:relative;height:16px;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted)}
+  .gantt .axis span{position:absolute;transform:translateX(-50%)}
+  @media (prefers-color-scheme: dark){.gantt .bar{color:#0f1218}}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+  .who{font:700 12.5px system-ui,sans-serif}
+  .who small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+  .board{display:inline-grid;grid-template-columns:repeat(3,26px);grid-auto-rows:26px;gap:2px;margin:4px auto 0;background:var(--node-line);border-radius:6px;padding:2px}
+  .board div{background:var(--card);display:flex;align-items:center;justify-content:center;font:700 15px ui-monospace,Menlo,Consolas,monospace;border-radius:3px;transition:background .3s;font-family:system-ui,sans-serif}
+  .board .X{color:var(--c1)} .board .O{color:var(--c2)}
+  .board .new{background:var(--cur)}
+  .log{position:relative;height:236px;overflow:auto;margin-top:8px;border-top:1px solid var(--line);background:
+    linear-gradient(var(--line),var(--line)) calc(100%/6) 0/2px 100% no-repeat,
+    linear-gradient(var(--line),var(--line)) 50% 0/2px 100% no-repeat,
+    linear-gradient(var(--line),var(--line)) calc(500%/6) 0/2px 100% no-repeat}
+  .msg{position:relative;height:28px;transition:background .3s}
+  .msg.cur{background:var(--cur)}
+  .msg .ar{position:absolute;top:17px;border-top:2px solid currentColor;color:var(--c3)}
+  .msg .ar.fromP{color:var(--accent)}
+  .msg .ar::after{content:"";position:absolute;top:-7px;border:6px solid transparent}
+  .msg .ar.toR::after{right:-6px;border-left-color:currentColor}
+  .msg .ar.toL::after{left:-6px;border-right-color:currentColor}
+  .msg .lb{position:absolute;top:1px;transform:translateX(-50%);font:600 11.5px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;background:var(--card);padding:0 4px;border-radius:4px}
+  .msg.cur .lb{background:var(--cur)}
+  .msg .nt{position:absolute;top:5px;font-size:11.5px;color:var(--muted);transform:translateX(-50%);white-space:nowrap;background:var(--card);padding:0 4px}
+  .msg.cur .nt{background:var(--cur)}
+  @media (max-width:600px){.board{grid-template-columns:repeat(3,22px);grid-auto-rows:22px}.msg .lb{font-size:10.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn một ván rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>): mỗi mũi tên là những số <code>int</code> được gửi qua socket.</p>
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Ván mẫu"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="cols">
+      <div><div class="who">Người chơi 1<small id="r1">cầm X</small></div><div class="board" id="b1"></div></div>
+      <div><div class="who">Server<small>HandleASession</small></div><div class="board" id="b0"></div></div>
+      <div><div class="who">Người chơi 2<small id="r2">cầm O</small></div><div class="board" id="b2"></div></div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var JAVA_KW = 'import|public|private|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|try|catch|throws|throw|final|null|this';
+  var SQL_KW = 'SELECT|FROM|WHERE|AND|OR|NOT|ORDER|BY|ASC|DESC|DISTINCT|GROUP|HAVING|COUNT|SUM|AVG|MIN|MAX|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|TABLE|CREATE|AS|LIKE|IS|NULL|true|false';
+  function hlWith(src, kws){
+    var re = new RegExp('("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\')|(//.*$|--.*$)|\\b(' + kws + ')\\b|(\\b\\d+(?:\\.\\d+)?\\b)', 'g'), out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function hl(src){ return hlWith(src, JAVA_KW); }
+  function hlSql(src){ return hlWith(src, SQL_KW); }
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, cur = o.cur, f = o.sql ? hlSql : hl;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + f(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}; snap.title, snap.body, snap.kind ('bad'|'ok')
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var s = $('status');
+      s.className = 'status' + (sn.kind ? ' ' + sn.kind : '');
+      s.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 650);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, step: function(){ return step; }};
+  }
+  function tabs(box, items, cur, onPick){
+    box.innerHTML = items.map(function(it){ return '<button class="tab" role="tab" data-k="' + it[0] + '" aria-selected="' + (it[0] === cur) + '">' + it[1] + '</button>'; }).join('');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.tab'); if (!b) return;
+      Array.prototype.forEach.call(box.children, function(x){ x.setAttribute('aria-selected', String(x === b)); });
+      onPick(b.getAttribute('data-k'));
+    });
+  }
+  // Double.toString của Java (JDK 19+): chữ số ngắn nhất như JS, khác ở dạng hiển thị
+  function jd(x){
+    if (x === 0) return 1 / x < 0 ? '-0.0' : '0.0';
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? 'Infinity' : '-Infinity';
+    var a = Math.abs(x), sg = x < 0 ? '-' : '';
+    if (a === 5e-324) return sg + '4.9E-324';
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var m = x.toExponential().split('e'), man = m[0];
+    if (man.indexOf('.') < 0) man += '.0';
+    return man + 'E' + (+m[1]);
+  }
+  // rows: [{label, bars: [{s, e, cls, text}]}]; T: độ dài trục; t: thời điểm hiện tại (cắt thanh tại t)
+  function ganttHtml(rows, T, t){
+    function pc(x){ return (x / T * 100) + '%'; }
+    var h = rows.map(function(r){
+      var bars = r.bars.filter(function(b){ return b.s < t || (b.s === b.e && b.s <= t); }).map(function(b){
+        var e = Math.min(b.e, t), w = b.s === b.e ? 0.12 : e - b.s;
+        return '<div class="bar ' + b.cls + '" style="left:' + pc(b.s) + ';width:' + pc(w) + '" title="' + esc(b.text || '') + '">' + (e - b.s >= 1 ? esc(b.text || '') : '') + '</div>';
+      }).join('');
+      return '<div class="gl" title="' + esc(r.label) + '">' + esc(r.label) + '</div><div class="track">' + bars + '<div class="now" style="left:calc(' + pc(t) + ' - 1px)"></div></div>';
+    }).join('');
+    var ax = '';
+    for (var i = 0; i <= T; i++) ax += '<span style="left:' + pc(i) + '">' + i + (i === T ? 's' : '') + '</span>';
+    return h + '<div></div><div class="axis">' + ax + '</div>';
+  }
+
+//SIM-START
+var GAMES = {
+  x: {name: 'X thắng', X: [[2, 2], [1, 1], [0, 0]], O: [[0, 2], [2, 0]]},
+  o: {name: 'O thắng', X: [[0, 0], [0, 1], [2, 2]], O: [[1, 1], [2, 0], [0, 2]]},
+  h: {name: 'Hoà', X: [[0, 0], [0, 2], [2, 1], [1, 0], [2, 2]], O: [[1, 1], [0, 1], [2, 0], [1, 2]]}
+};
+function emptyB(){ return [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]; }
+function isWon(c, t){
+  for (var i = 0; i < 3; i++) { if (c[i][0] === t && c[i][1] === t && c[i][2] === t) return true; if (c[0][i] === t && c[1][i] === t && c[2][i] === t) return true; }
+  return (c[0][0] === t && c[1][1] === t && c[2][2] === t) || (c[0][2] === t && c[1][1] === t && c[2][0] === t);
+}
+function isFull(c){ return c.every(function(r){ return r.every(function(x){ return x !== ' '; }); }); }
+// Mô phỏng đúng vòng lặp của HandleASession và Player (13016). Cột: 0 = P1, 1 = server, 2 = P2.
+function simTTT(g){
+  var B = [emptyB(), emptyB(), emptyB()], NEW = [null, null, null], msgs = [], S = [], res = ['', ''];
+  function put(k, r, c, ch){ B[k][r][c] = ch; NEW[k] = [r, c]; }
+  function msg(from, to, label, note){ msgs.push({f: from, t: to, l: label, n: note}); }
+  var mark = 0;
+  function snap(title, body, kind){ S.push({title: title, body: body, kind: kind, B: JSON.parse(JSON.stringify(B)), NEW: NEW.slice(), msgs: msgs.slice(), from: mark, res: res.slice()}); mark = msgs.length; NEW = [null, null, null]; }
+  snap('Chưa có kết nối', 'Server đang chờ <code>accept()</code>. Ván này: X đi ' + g.X.map(function(m){ return '(' + m + ')'; }).join(', ') + '; O đi ' + g.O.map(function(m){ return '(' + m + ')'; }).join(', ') + '.');
+  msg(1, 0, 'PLAYER1 (1)');
+  snap('Ghép cặp: người chơi 1', 'Người kết nối trước nhận số <code>PLAYER1</code> = 1: bạn là người chơi 1, cầm X.');
+  msg(1, 2, 'PLAYER2 (2)');
+  snap('Ghép cặp: người chơi 2', 'Người kết nối thứ hai nhận <code>PLAYER2</code> = 2. Server tạo luồng <code>HandleASession</code> cho hai người.');
+  msg(1, 0, '1 (bắt đầu)');
+  snap('Bắt đầu', 'Phiên chơi gửi một số bất kỳ (ở đây là 1) cho người chơi 1: đủ người rồi, bạn đi trước. Người chơi 2 đang đứng chờ đọc.');
+  var xi = 0, oi = 0;
+  while (true) {
+    var m = g.X[xi++];
+    put(0, m[0], m[1], 'X'); put(1, m[0], m[1], 'X');
+    msg(0, 1, m[0] + ', ' + m[1]);
+    snap('Người chơi 1 đi (' + m + ')', 'Người chơi 1 gửi hai số: hàng ' + m[0] + ', cột ' + m[1] + '. Server đọc hai số đó và đánh X vào bàn cờ của mình. Người chơi 2 chưa biết gì.');
+    var C = B[1];
+    if (isWon(C, 'X')) {
+      msg(1, 0, 'PLAYER1_WON (1)'); msg(1, 2, 'PLAYER1_WON (1)'); res[0] = 'Tôi thắng! (X)';
+      snap('X thắng', 'Server xét <code>isWon(\'X\')</code>: đúng. Nó gửi <code>PLAYER1_WON</code> cho <b>cả hai</b> người chơi.', 'ok');
+      msg(1, 2, m[0] + ', ' + m[1], 'nước X'); put(2, m[0], m[1], 'X'); res[1] = 'Người chơi 1 (X) thắng!';
+      snap('Gửi nước cuối cho người chơi 2', 'Sau trạng thái, server gửi thêm nước đi cuối của X để người chơi 2 vẽ lên bàn cờ của mình. Ván kết thúc, vòng lặp <code>break</code>.', 'ok');
+      break;
+    } else if (isFull(C)) {
+      msg(1, 0, 'DRAW (3)'); msg(1, 2, 'DRAW (3)'); res[0] = res[1] = 'Hoà';
+      snap('Hoà', 'X không thắng nhưng <code>isFull()</code> đúng: bàn đã đủ 9 ô. Server gửi <code>DRAW</code> cho cả hai.', 'ok');
+      msg(1, 2, m[0] + ', ' + m[1], 'nước X'); put(2, m[0], m[1], 'X');
+      snap('Gửi nước cuối cho người chơi 2', 'Server gửi nước cuối của X cho người chơi 2 rồi kết thúc phiên. Người chơi 1 không cần nhận lại nước của chính mình.', 'ok');
+      break;
+    }
+    msg(1, 2, 'CONTINUE (4)');
+    snap('Chơi tiếp', 'X chưa thắng, bàn chưa đầy. Server gửi <code>CONTINUE</code> cho người chơi 2.');
+    msg(1, 2, m[0] + ', ' + m[1], 'nước X'); put(2, m[0], m[1], 'X');
+    snap('Báo nước của X cho người chơi 2', 'Server gửi tiếp hàng và cột của X. Giờ người chơi 2 mới vẽ được X lên bàn của mình và tới lượt chọn ô.');
+    var o = g.O[oi++];
+    put(2, o[0], o[1], 'O'); put(1, o[0], o[1], 'O');
+    msg(2, 1, o[0] + ', ' + o[1]);
+    snap('Người chơi 2 đi (' + o + ')', 'Người chơi 2 gửi hàng ' + o[0] + ', cột ' + o[1] + '. Server đánh O. Người chơi 1 đang chờ đọc.');
+    if (isWon(B[1], 'O')) {
+      msg(1, 0, 'PLAYER2_WON (2)'); msg(1, 2, 'PLAYER2_WON (2)'); res[1] = 'Tôi thắng! (O)';
+      snap('O thắng', 'Server xét <code>isWon(\'O\')</code>: đúng. Nó gửi <code>PLAYER2_WON</code> cho cả hai.', 'ok');
+      msg(1, 0, o[0] + ', ' + o[1], 'nước O'); put(0, o[0], o[1], 'O'); res[0] = 'Người chơi 2 (O) thắng!';
+      snap('Gửi nước cuối cho người chơi 1', 'Server gửi nước cuối của O cho người chơi 1 rồi kết thúc phiên.', 'ok');
+      break;
+    }
+    msg(1, 0, 'CONTINUE (4)');
+    snap('Chơi tiếp', 'O chưa thắng. Server gửi <code>CONTINUE</code> cho người chơi 1. (Không cần xét hoà sau nước của O.)');
+    msg(1, 0, o[0] + ', ' + o[1], 'nước O'); put(0, o[0], o[1], 'O');
+    snap('Báo nước của O cho người chơi 1', 'Server gửi hàng và cột của O. Người chơi 1 vẽ O lên bàn của mình và tới lượt đi.');
+  }
+  return S;
+}
+//SIM-END
+var G = GAMES[qs('vd')] ? qs('vd') : 'x';
+tabs($('tabs'), [['x', 'X thắng'], ['o', 'O thắng'], ['h', 'Hoà']], G, function(k){ G = k; st.reset(); });
+var CX = [100 / 6, 50, 500 / 6];
+function boardHtml(b, nw){ var h = ''; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) { var v = b[r][c]; h += '<div class="' + (v !== ' ' ? v : '') + (nw && nw[0] === r && nw[1] === c ? ' new' : '') + '">' + (v === ' ' ? '' : v) + '</div>'; } return h; }
+var st = Stepper({
+  build: function(){ return simTTT(GAMES[G]); },
+  render: function(sn){
+    [0, 1, 2].forEach(function(k){ $('b' + ['1', '0', '2'][k]).innerHTML = boardHtml(sn.B[k], sn.NEW[k]); });
+    $('r1').textContent = sn.res[0] || 'cầm X'; $('r2').textContent = sn.res[1] || 'cầm O';
+    $('log').innerHTML = sn.msgs.map(function(m, i){
+      var a = Math.min(CX[m.f], CX[m.t]), b = Math.max(CX[m.f], CX[m.t]), mid = (a + b) / 2;
+      return '<div class="msg' + (i >= sn.from ? ' cur' : '') + '"><div class="ar ' + (m.t > m.f ? 'toR' : 'toL') + (m.f !== 1 ? ' fromP' : '') + '" style="left:' + a + '%;width:' + (b - a) + '%"></div>' +
+        '<div class="lb" style="left:' + mid + '%">' + esc(m.l + (m.n ? ' · ' + m.n : '')) + '</div></div>';
+    }).join('') || '<div class="msg"><div class="nt" style="left:50%">(chưa có thông điệp)</div></div>';
+    $('log').scrollTop = 1e6;
+  },
+  speed: 800
+});
+st.reset();
+})();
+</script>
+</body>
+</html>

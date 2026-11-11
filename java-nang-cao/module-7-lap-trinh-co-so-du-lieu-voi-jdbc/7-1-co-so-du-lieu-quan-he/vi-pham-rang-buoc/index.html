@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="590">
+<title>Vi phạm ràng buộc toàn vẹn</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --c1:#2563eb; --c1s:#e7eefc; --c2:#c2410c; --c2s:#fdeedd; --c3:#15803d; --c3s:#e3f4e8; --c4:#7c3aed; --c4s:#f0e9fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --c1:#6ea0ff; --c1s:#1e2a44; --c2:#fdba74; --c2s:#3a2614; --c3:#4ade80; --c3s:#13301f; --c4:#c4a1ff; --c4s:#2a1f40;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .er{color:#fca5a5}
+  .console .ok{color:#86efac}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line);transition:background .3s,opacity .3s}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl tr.bad td{background:var(--false-soft);color:var(--false)}
+  .tbl tr.new td{background:var(--true-soft)}
+  .tbl tr.dim td{opacity:.3}
+  .scroll{overflow:auto}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @keyframes flash{0%,100%{background:var(--cur)}50%{background:var(--cur-bar)}}
+  .tbl tr.flash td{animation:flash .5s 3;background:var(--cur)}
+  /* Biểu đồ thời gian (Gantt) */
+  .gantt{display:grid;grid-template-columns:var(--gl,96px) 1fr;row-gap:5px;font-size:12px}
+  .gantt .gl{color:var(--muted);font-weight:600;align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+  .gantt .track{position:relative;height:22px;background:var(--code-bg);border-radius:5px;overflow:hidden}
+  .gantt .bar{position:absolute;top:0;bottom:0;border-radius:4px;display:flex;align-items:center;justify-content:center;
+    font:600 11px system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;transition:width .3s}
+  .gantt .bar.wait{background:repeating-linear-gradient(45deg,var(--cur-bar) 0 4px,transparent 4px 8px);color:var(--text);opacity:.75}
+  .gantt .bar.k1{background:var(--c1)} .gantt .bar.k2{background:var(--c2)} .gantt .bar.k3{background:var(--c3)} .gantt .bar.k4{background:var(--c4)}
+  .gantt .bar.acc{background:var(--muted)}
+  .gantt .now{position:absolute;top:0;bottom:0;width:2px;background:var(--false);z-index:2}
+  .gantt .axis{position:relative;height:16px;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted)}
+  .gantt .axis span{position:absolute;transform:translateX(-50%)}
+  @media (prefers-color-scheme: dark){.gantt .bar{color:#0f1218}}
+
+  .ops{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .op{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;font-size:13px}
+  .op:hover{border-color:var(--accent);color:var(--accent)}
+  .op[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .sqlbox{margin-bottom:8px}
+  .sqlbox .code{padding:6px 0}
+  .sqlbox .ln{white-space:pre-wrap}
+  .console{min-height:0;margin-bottom:8px}
+  .tabs2{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+  @media (max-width:620px){.tabs2{grid-template-columns:1fr}}
+  .tbl{font-size:12px}
+  .tbl td{padding:2px 5px;white-space:nowrap}
+  .tbl tr.ghost td{background:var(--false-soft);color:var(--false);text-decoration:line-through}
+  .tbl .pk{text-decoration:underline}
+  .more{font-size:12px;color:var(--muted);margin-top:4px}
+  .rules{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .rules code{font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm từng thao tác để gửi câu lệnh cho DBMS (SQLite) và xem nó chấp nhận hay từ chối. Bấm <b>Làm lại</b> để khôi phục dữ liệu ban đầu.</p>
+  <div class="ops" id="ops"></div>
+  <div class="sqlbox"><div class="code" id="sql"></div></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="console" id="con"></div>
+  <div class="tabs2">
+    <div class="card scroll"><p class="panel-title">Course</p><table class="tbl" id="tc"></table></div>
+    <div class="card scroll"><p class="panel-title">Enrollment (các hàng có courseId 11111)</p><table class="tbl" id="te"></table><div class="more" id="more"></div></div>
+  </div>
+  <div class="rules">Ràng buộc: <code>Course.courseId</code> là khoá chính; <code>numOfCredits</code> có <code>CHECK (numOfCredits &gt; 0 AND numOfCredits &lt;= 5)</code>; <code>Enrollment.courseId</code> tham chiếu <code>Course(courseId)</code> (SQLite cần <code>PRAGMA foreign_keys = ON</code>).</div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var JAVA_KW = 'import|public|private|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|try|catch|throws|throw|final|null|this';
+  var SQL_KW = 'SELECT|FROM|WHERE|AND|OR|NOT|ORDER|BY|ASC|DESC|DISTINCT|GROUP|HAVING|COUNT|SUM|AVG|MIN|MAX|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|TABLE|CREATE|AS|LIKE|IS|NULL|true|false';
+  function hlWith(src, kws){
+    var re = new RegExp('("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\')|(//.*$|--.*$)|\\b(' + kws + ')\\b|(\\b\\d+(?:\\.\\d+)?\\b)', 'g'), out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function hl(src){ return hlWith(src, JAVA_KW); }
+  function hlSql(src){ return hlWith(src, SQL_KW); }
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, cur = o.cur, f = o.sql ? hlSql : hl;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + f(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}; snap.title, snap.body, snap.kind ('bad'|'ok')
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var s = $('status');
+      s.className = 'status' + (sn.kind ? ' ' + sn.kind : '');
+      s.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 650);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, step: function(){ return step; }};
+  }
+  function tabs(box, items, cur, onPick){
+    box.innerHTML = items.map(function(it){ return '<button class="tab" role="tab" data-k="' + it[0] + '" aria-selected="' + (it[0] === cur) + '">' + it[1] + '</button>'; }).join('');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.tab'); if (!b) return;
+      Array.prototype.forEach.call(box.children, function(x){ x.setAttribute('aria-selected', String(x === b)); });
+      onPick(b.getAttribute('data-k'));
+    });
+  }
+  // Double.toString của Java (JDK 19+): chữ số ngắn nhất như JS, khác ở dạng hiển thị
+  function jd(x){
+    if (x === 0) return 1 / x < 0 ? '-0.0' : '0.0';
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? 'Infinity' : '-Infinity';
+    var a = Math.abs(x), sg = x < 0 ? '-' : '';
+    if (a === 5e-324) return sg + '4.9E-324';
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var m = x.toExponential().split('e'), man = m[0];
+    if (man.indexOf('.') < 0) man += '.0';
+    return man + 'E' + (+m[1]);
+  }
+  // rows: [{label, bars: [{s, e, cls, text}]}]; T: độ dài trục; t: thời điểm hiện tại (cắt thanh tại t)
+  function ganttHtml(rows, T, t){
+    function pc(x){ return (x / T * 100) + '%'; }
+    var h = rows.map(function(r){
+      var bars = r.bars.filter(function(b){ return b.s < t || (b.s === b.e && b.s <= t); }).map(function(b){
+        var e = Math.min(b.e, t), w = b.s === b.e ? 0.12 : e - b.s;
+        return '<div class="bar ' + b.cls + '" style="left:' + pc(b.s) + ';width:' + pc(w) + '" title="' + esc(b.text || '') + '">' + (e - b.s >= 1 ? esc(b.text || '') : '') + '</div>';
+      }).join('');
+      return '<div class="gl" title="' + esc(r.label) + '">' + esc(r.label) + '</div><div class="track">' + bars + '<div class="now" style="left:calc(' + pc(t) + ' - 1px)"></div></div>';
+    }).join('');
+    var ax = '';
+    for (var i = 0; i <= T; i++) ax += '<span style="left:' + pc(i) + '">' + i + (i === T ? 's' : '') + '</span>';
+    return h + '<div></div><div class="axis">' + ax + '</div>';
+  }
+
+  // Dữ liệu mẫu của Module 7 (chép từ seed của các sql-playground trong bài đọc)
+  var COURSE = [
+    ['11111','CSCI',1301,'Lap trinh Java 1',4], ['11112','CSCI',1302,'Lap trinh Java 2',3],
+    ['11113','CSCI',3720,'Co so du lieu',3], ['11114','CSCI',4750,'Phat trien ung dung Java',3],
+    ['11115','MATH',2750,'Giai tich 1',5], ['11116','MATH',3750,'Giai tich 2',5],
+    ['11117','EDUC',1111,'Ky nang doc',3], ['11118','ITEC',1344,'Quan tri co so du lieu',3]];
+  var STUDENT = [
+    ['SV001','An','Van','Nguyen','0912345671','2005-04-09','Ha Noi','BIOL'],
+    ['SV002','Binh','Duc','Tran','0912345672',null,'Hai Phong','BIOL'],
+    ['SV003','Cuong','Manh','Nguyen','0912345673','2004-10-10','Da Nang','CS'],
+    ['SV004','Dung','Thi','Le','0912345674','2003-09-09','Hai Phong','BIOL'],
+    ['SV005','Giang','Thu','Nguyen','0912345675','2003-02-09','Hai Phong','CHEM'],
+    ['SV006','Hai','Quang','Vu','0987654321','2003-02-09','Hai Phong','CHEM'],
+    ['SV007','Hoa','Thi','Nguyen','0912345677','2004-02-09','Hai Phong','BIOL'],
+    ['SV008','Khanh','Minh','Pham','0912345678','2004-03-19','Hue','CS'],
+    ['SV009','Lan','Ngoc','Hoang','0912345679','2002-04-29','Hue','MATH'],
+    ['SV010','Minh','Duc','Dang','0912345680','2002-04-29','Ha Noi','MATH'],
+    ['SV011','Nam','Hoang','Bui','0912345681','2006-04-09','Hai Phong','BIOL'],
+    ['SV012','Phuong','Thanh','Tran','0912345682','2005-07-15','Ha Noi','CS']];
+  var ENROLL = [
+    ['SV001','11111','2025-09-05','A'], ['SV001','11112','2025-09-05','B'], ['SV001','11113','2025-09-05','C'],
+    ['SV002','11111','2025-09-05','D'], ['SV002','11112','2025-09-05','F'], ['SV002','11113','2025-09-05','A'],
+    ['SV003','11114','2025-09-05','B'], ['SV003','11115','2025-09-05','C'], ['SV003','11116','2025-09-05','D'],
+    ['SV004','11111','2025-09-05','A'], ['SV004','11113','2025-09-05','A'], ['SV005','11115','2025-09-05','B'],
+    ['SV006','11115','2025-09-05','F'], ['SV006','11116','2025-09-05','F'], ['SV007','11111','2025-09-05','D'],
+    ['SV008','11111','2025-09-05','D'], ['SV009','11111','2025-09-05','A'], ['SV009','11112','2025-09-05','D'],
+    ['SV009','11113','2025-09-05','B']];
+
+//SIM-START
+// DB nhỏ: kiểm tra ràng buộc như SQLite (thông báo lỗi đối chiếu với sqlite3 3.51)
+function newDb(){ return {course: COURSE.map(function(r){ return r.slice(); }), enroll: ENROLL.map(function(r){ return r.slice(); }), student: STUDENT.map(function(r){ return r[0]; })}; }
+function insertCourse(db, row){
+  if (db.course.some(function(c){ return c[0] === row[0]; })) return {err: 'UNIQUE constraint failed: Course.courseId', bad: {course: [row[0]]}};
+  if (!(row[4] > 0 && row[4] <= 5)) return {err: 'CHECK constraint failed: numOfCredits > 0 AND numOfCredits <= 5', ghost: {course: row}};
+  db.course.push(row); return {ok: 'Thêm 1 hàng vào Course.', fresh: {course: [row[0]]}};
+}
+function insertEnroll(db, row){
+  if (db.enroll.some(function(e){ return e[0] === row[0] && e[1] === row[1]; })) return {err: 'UNIQUE constraint failed: Enrollment.studentId, Enrollment.courseId'};
+  if (db.student.indexOf(row[0]) < 0 || !db.course.some(function(c){ return c[0] === row[1]; })) return {err: 'FOREIGN KEY constraint failed', ghost: {enroll: row}};
+  db.enroll.push(row); return {ok: 'Thêm 1 hàng vào Enrollment.', fresh: {enroll: [row[0] + row[1]]}};
+}
+function deleteCourse(db, id){
+  var refs = db.enroll.filter(function(e){ return e[1] === id; });
+  if (refs.length) return {err: 'FOREIGN KEY constraint failed', bad: {course: [id], enroll: refs.map(function(e){ return e[0] + e[1]; })}};
+  var n = db.course.length; db.course = db.course.filter(function(c){ return c[0] !== id; });
+  return {ok: n === db.course.length ? 'Không có hàng nào khớp WHERE: 0 hàng bị xoá (không phải lỗi).' : 'Xoá 1 hàng khỏi Course.'};
+}
+var OPS = [
+  {k: 'pk', label: 'Thêm môn trùng mã 11111', sql: "INSERT INTO Course VALUES ('11111', 'CSCI', 1400, 'Lap trinh Python', 3);", run: function(db){ return insertCourse(db, ['11111', 'CSCI', 1400, 'Lap trinh Python', 3]); },
+   why: {err: 'Course đã có môn <code>11111</code>. Khoá chính phải duy nhất nên DBMS từ chối: đây là vi phạm <b>khoá chính</b>.'}},
+  {k: 'fk', label: 'Đăng ký môn 99999', sql: "INSERT INTO Enrollment VALUES ('SV001', '99999', '2025-09-05', NULL);", run: function(db){ return insertEnroll(db, ['SV001', '99999', '2025-09-05', null]); },
+   why: {err: 'Không có môn nào trong Course có mã <code>99999</code>, nên giá trị khoá ngoại không khớp khoá chính nào: vi phạm <b>khoá ngoại</b>.'}},
+  {k: 'del', label: 'Xoá môn 11111', sql: "DELETE FROM Course WHERE courseId = '11111';", run: function(db){ return deleteCourse(db, '11111'); },
+   why: {err: 'Các hàng tô đỏ trong Enrollment vẫn tham chiếu môn <code>11111</code>. Xoá môn đó sẽ để lại khoá ngoại "mồ côi", nên DBMS từ chối: vi phạm <b>khoá ngoại</b>.', ok: 'Không còn lượt đăng ký nào tham chiếu tới môn này nên xoá được.'}},
+  {k: 'chk', label: 'Thêm môn 0 tín chỉ', sql: "INSERT INTO Course VALUES ('11119', 'CSCI', 3800, 'Lap trinh mang', 0);", run: function(db){ return insertCourse(db, ['11119', 'CSCI', 3800, 'Lap trinh mang', 0]); },
+   why: {err: 'Mã <code>11119</code> chưa có nên khoá chính không sao, nhưng 0 tín chỉ nằm ngoài miền cho phép (lớn hơn 0, không quá 5): vi phạm <b>miền</b>.'}},
+  {k: 'ok1', label: 'Thêm môn 11119 (3 tín chỉ)', sql: "INSERT INTO Course VALUES ('11119', 'CSCI', 3800, 'Lap trinh mang', 3);", run: function(db){ return insertCourse(db, ['11119', 'CSCI', 3800, 'Lap trinh mang', 3]); },
+   why: {ok: 'Mã mới, số tín chỉ hợp lệ: mọi ràng buộc đều thoả nên DBMS chấp nhận. Bấm lại lần nữa để xem điều gì xảy ra khi mã 11119 đã có.', err: 'Môn <code>11119</code> vừa được thêm ở lần trước, nên lần này trùng khoá chính.'}},
+  {k: 'ok2', label: 'Xoá môn 11117', sql: "DELETE FROM Course WHERE courseId = '11117';", run: function(db){ return deleteCourse(db, '11117'); },
+   why: {ok: 'Không có lượt đăng ký nào tham chiếu môn <code>11117</code>, nên xoá không vi phạm khoá ngoại.'}}
+];
+//SIM-END
+var db, last = null, res = null;
+function reset(){ db = newDb(); last = null; res = null; draw(); }
+function cell(v){ return v === null ? '<i style="color:var(--muted)">NULL</i>' : esc(v); }
+function draw(){
+  $('ops').innerHTML = OPS.map(function(o, i){ return '<button class="op" data-i="' + i + '" aria-pressed="' + (last === i) + '">' + esc(o.label) + '</button>'; }).join('') + '<button class="btn ghost" id="reset">Làm lại</button>';
+  var s = $('status');
+  if (last === null) { $('sql').innerHTML = codeHtml(['-- chọn một thao tác ở trên'], {sql: true}); s.className = 'status'; s.innerHTML = '<b>Dữ liệu ban đầu</b><span>Course có 8 môn; Enrollment có 19 lượt đăng ký, trong đó 6 lượt học môn <code>11111</code>.</span>'; $('con').innerHTML = '<span class="ph">sqlite&gt;</span>'; }
+  else {
+    var o = OPS[last];
+    $('sql').innerHTML = codeHtml([o.sql], {sql: true});
+    if (res.err) { s.className = 'status bad'; s.innerHTML = '<b>DBMS từ chối</b><span>' + (o.why.err || '') + ' Dữ liệu không thay đổi.</span>'; $('con').innerHTML = '<span class="er">Error: ' + esc(res.err) + '</span>'; }
+    else { s.className = 'status ok'; s.innerHTML = '<b>DBMS chấp nhận</b><span>' + (o.why.ok || '') + '</span>'; $('con').innerHTML = '<span class="ok">' + esc(res.ok) + '</span>'; }
+  }
+  var bad = (res && res.bad) || {}, fresh = (res && res.fresh) || {}, ghost = (res && res.ghost) || {};
+  var cr = db.course.map(function(r){ var c = (bad.course || []).indexOf(r[0]) >= 0 ? 'bad' : (fresh.course || []).indexOf(r[0]) >= 0 ? 'new' : '';
+    return '<tr class="' + c + '"><td class="pk">' + r[0] + '</td><td>' + esc(r[3]) + '</td><td>' + r[4] + '</td></tr>'; });
+  if (ghost.course) { var g = ghost.course; cr.push('<tr class="ghost"><td>' + g[0] + '</td><td>' + esc(g[3]) + '</td><td>' + g[4] + '</td></tr>'); }
+  $('tc').innerHTML = '<tr><th>courseId</th><th>title</th><th>numOfCredits</th></tr>' + cr.join('');
+  var shown = db.enroll.filter(function(e){ return e[1] === '11111' || (fresh.enroll || []).indexOf(e[0] + e[1]) >= 0; });
+  var er = shown.map(function(e){ var k = e[0] + e[1], c = (bad.enroll || []).indexOf(k) >= 0 ? 'bad' : (fresh.enroll || []).indexOf(k) >= 0 ? 'new' : '';
+    return '<tr class="' + c + '"><td>' + e[0] + '</td><td>' + e[1] + '</td><td>' + cell(e[3]) + '</td></tr>'; });
+  if (ghost.enroll) { var h = ghost.enroll; er.push('<tr class="ghost"><td>' + h[0] + '</td><td>' + h[1] + '</td><td>NULL</td></tr>'); }
+  $('te').innerHTML = '<tr><th>studentId</th><th>courseId</th><th>grade</th></tr>' + er.join('');
+  $('more').textContent = '... và ' + (db.enroll.length - shown.length) + ' hàng khác của các môn khác.';
+}
+$('ops').addEventListener('click', function(e){
+  if (e.target.id === 'reset') { reset(); return; }
+  var b = e.target.closest('.op'); if (!b) return;
+  last = +b.getAttribute('data-i'); res = OPS[last].run(db); draw();
+});
+reset();
+var pre = qs('vd'); OPS.forEach(function(o, i){ if (o.k === pre) { last = i; res = o.run(db); draw(); } });
+})();
+</script>
+</body>
+</html>

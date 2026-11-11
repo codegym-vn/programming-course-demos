@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Hai ngăn xếp GenericStack&lt;String&gt; và GenericStack&lt;Integer&gt;</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --run:#e3f4e8; --run-bar:#15803d;
+  --b2:#0e7490; --b2-soft:#e0f4f8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --run:#13301f; --run-bar:#4ade80;
+    --b2:#67e8f9; --b2-soft:#0f2e36;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs:empty{display:none}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+  border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.op{background:var(--card);color:var(--text);border-color:var(--node-line);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:6px 12px;margin-bottom:8px;min-height:64px;font-size:13.5px}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 0 4px;flex-wrap:wrap}
+.head .panel-title{margin:0}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s;width:max-content;min-width:100%}
+.ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+.ln.run{background:var(--run);border-left-color:var(--run-bar)}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.curf{background:var(--false-soft);border-left-color:var(--false)}
+.ln .tagln{position:sticky;right:4px;margin-left:auto;padding:0 6px;border-radius:5px;background:var(--card);border:1px solid var(--line);font:600 11px/1.3 system-ui,sans-serif;color:var(--muted);align-self:center;white-space:nowrap}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+.tag.n{background:var(--code-bg);color:var(--muted)}
+.vars{display:flex;gap:6px;flex-wrap:wrap}
+.var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:62px;text-align:center;transition:all .25s}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px;white-space:nowrap}
+.var.chg{border-color:var(--cur-bar);background:var(--cur)}
+.var.bad{border-color:var(--false);background:var(--false-soft)}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+.console .new{color:#fde68a}
+.console .er{color:#fca5a5}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.exbox{border:2px solid var(--false);background:var(--false-soft);border-radius:8px;padding:3px 10px;animation:pop .3s ease-out;overflow-wrap:anywhere}
+.exbox small{display:block;font:600 11px system-ui,sans-serif;color:var(--false)}
+.exbox b{display:block;font:700 13px ui-monospace,Menlo,Consolas,monospace}
+.exbox.caught{border-color:var(--true);background:var(--true-soft)}
+.exbox.caught small{color:var(--true)}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:600px){.code{max-height:250px !important}}
+
+/* dải byte có con trỏ */
+.bytes{display:flex;flex-wrap:wrap;row-gap:16px;padding:14px 2px 2px;align-items:flex-end}
+.bc{position:relative;min-width:27px;height:38px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--code-bg);border:1px solid var(--node-line);margin-right:-1px;transition:background .2s,opacity .2s;
+  font:600 12.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:0 3px}
+.bc small{font:10px/1 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400;margin-top:2px}
+.bc.g0{background:var(--accent-soft)}
+.bc.g1{background:var(--b2-soft)}
+.bc.done{opacity:.5}
+.bc.gap{background:transparent;border-style:dashed;color:var(--muted);min-width:26px}
+.bc.eof{background:transparent;border-style:dashed;color:var(--muted)}
+.bc.hit{background:var(--cur);border-color:var(--cur-bar);opacity:1;z-index:1}
+.bc.wr{background:var(--true-soft);border-color:var(--true);color:var(--true);opacity:1;z-index:1}
+.bc.bad{background:var(--false-soft);border-color:var(--false);color:var(--false);opacity:1;z-index:1}
+.bc.at{box-shadow:-3px 0 0 var(--accent);z-index:2}
+.bc.at::before{content:"";position:absolute;left:-8px;top:-12px;border:6px solid transparent;border-top:8px solid var(--accent);border-bottom:0}
+.bnote{font-size:11.5px;color:var(--muted);margin-top:6px}
+.bnote b{color:var(--accent)}
+
+#code{max-height:410px}
+.stacks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stk{min-width:0}
+.stk .nm{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;text-align:center;overflow-wrap:anywhere}
+.stk .nm small{display:block;font:600 11px system-ui,sans-serif;color:var(--muted)}
+.stk.off{opacity:.4}
+.col-st{display:flex;flex-direction:column-reverse;gap:4px;min-height:132px;padding:5px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px;margin-top:4px}
+.col-st .empty{color:var(--muted);font-size:12px;text-align:center;margin:auto}
+.it{position:relative;border:2px solid var(--node-line);border-radius:7px;background:var(--node);padding:2px 6px;text-align:center;font:700 13px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+.it.top{padding:2px 34px}
+.it.top::after{content:"đỉnh";position:absolute;right:4px;top:50%;transform:translateY(-50%);font:600 10px system-ui,sans-serif;color:var(--muted)}
+.it.in{border-color:var(--true);background:var(--true-soft);animation:pop .3s ease-out}
+.it.out{border-color:var(--false);background:var(--false-soft);border-style:dashed;color:var(--false)}
+.it.look{border-color:var(--cur-bar);background:var(--cur)}
+.lst{margin-top:5px;font:11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>): cùng một lớp <code>GenericStack&lt;E&gt;</code>, hai ngăn xếp với hai kiểu phần tử khác nhau.</p>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">GenericStackDemo.java</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><div class="stacks" id="stacks"></div></div>
+      <div class="card"><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|package|public|private|protected|class|interface|extends|implements|super|abstract|static|final|void|int|long|double|char|boolean|byte|if|else|while|do|for|try|catch|finally|throw|throws|return|new|true|false|null|this)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+// o: {start: số dòng đầu, cur: số dòng hoặc [từ, đến], bad: tô đỏ, cls: {dòng: lớp}, tags: {dòng: nhãn}}
+function codeHtml(lines, o){
+  o = o || {}; var cls = o.cls || {}, tags = o.tags || {}, cur = o.cur, st = o.start || 1;
+  var none = cur === undefined || cur === null;
+  var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    var n = i + st, c = 'ln' + (cls[n] ? ' ' + cls[n] : '') + (n >= a && n <= b ? (o.bad ? ' curf' : ' cur') : '');
+    return '<div class="' + c + '"><span class="no">' + n + '</span><span>' + (hl(l) || ' ') + '</span>' +
+      (tags[n] ? '<span class="tagln">' + esc(tags[n]) + '</span>' : '') + '</div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+// cfg: build() -> snaps; render(sn, i, n)
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10);
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step], run = timer !== null;
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+    if (cfg.after) cfg.after(sn, step, snaps.length, run);
+  }
+  function reset(toEnd){
+    stop(); snaps = cfg.build(); step = toEnd ? snaps.length - 1 : 0;
+    if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; }
+    draw();
+  }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, 500);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, step: function(){ return step; }, atEnd: function(){ return step >= snaps.length - 1; }, running: function(){ return timer !== null; }};
+}
+// opts: [{k, label}]; trả về khoá đang chọn (mở sẵn theo ?vd=).
+function setupTabs(opts, onChange){
+  var box = $('tabs'), sel = opts[0].k, want = qs('vd');
+  opts.forEach(function(o){ if (o.k === want) sel = o.k; });
+  box.setAttribute('role', 'tablist');
+  opts.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.innerHTML = o.label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', o.k === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      [].forEach.call(box.children, function(c){ c.setAttribute('aria-selected', 'false'); });
+      b.setAttribute('aria-selected', 'true'); onChange(o.k);
+    });
+    box.appendChild(b);
+  });
+  return sel;
+}
+// out: [[chuỗi, lớp]]
+function drawCon(box, out, ph){
+  box.innerHTML = out.length ? out.map(function(s){ return s[1] ? '<span class="' + s[1] + '">' + esc(s[0]) + '</span>' : esc(s[0]); }).join('') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>';
+  box.scrollTop = box.scrollHeight;
+}
+// list: [[tên, giá trị, lớp]]
+function varsHtml(list){
+  return list.map(function(v){ return '<div class="var' + (v[2] ? ' ' + v[2] : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+}
+// Dải byte có con trỏ. cells: [{v, sub, cls}]; o: {pos: chỉ số ô con trỏ đứng trước (bằng cells.length: sau ô cuối), eof: nhãn ô cuối tệp}
+function bytesHtml(cells, o){
+  o = o || {}; var h = '';
+  cells.forEach(function(c, i){
+    h += '<span class="bc' + (c.cls ? ' ' + c.cls : '') + (i === o.pos ? ' at' : '') + '">' + esc(c.v) + (c.sub !== undefined ? '<small>' + esc(c.sub) + '</small>' : '') + '</span>';
+  });
+  if (o.pos === cells.length || o.eof) h += '<span class="bc eof' + (o.pos === cells.length ? ' at' : '') + '">' + (o.eof ? '<small>' + esc(o.eof) + '</small>' : '') + '</span>';
+  return '<div class="bytes">' + h + '</div>';
+}
+function hex2(n){ return (n < 16 ? '0' : '') + n.toString(16).toUpperCase(); }
+// Tìm số dòng (đếm từ 1) của dòng đầu tiên chứa chuỗi s, bắt đầu tìm từ dòng from.
+function lineOf(lines, s, from){ for (var i = (from || 1) - 1; i < lines.length; i++) if (lines[i].indexOf(s) >= 0) return i + 1; throw new Error('Không thấy dòng: ' + s); }
+function clone(o){ return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+
+//SIM-START
+var LINES = [
+'public class GenericStackDemo {',
+'  public static void main(String[] args) {',
+'    GenericStack<String> stack1 =',
+'      new GenericStack<>();',
+'    stack1.push("London");',
+'    stack1.push("Paris");',
+'    stack1.push("Berlin");',
+'    System.out.println(stack1);',
+'    String top = stack1.pop(); // khong ep kieu',
+'    System.out.println(top.length());',
+'',
+'    GenericStack<Integer> stack2 =',
+'      new GenericStack<>();',
+'    stack2.push(1); // tu dong dong hop',
+'    stack2.push(2);',
+'    stack2.push(3);',
+'    int sum = stack2.pop() + stack2.peek();',
+'    System.out.println(sum);',
+'    System.out.println(stack2);',
+'  }',
+'}'];
+function listStr(a){ return '[' + a.join(', ') + ']'; }
+function sim(){
+  var S = [], st = [null, null], out = [], v = {}, fx = null, newOut = -1;
+  function L(s){ return lineOf(LINES, s); }
+  function s(cur, title, body){
+    S.push({cur: cur, title: title, body: body, st: clone(st), out: clone(out), v: clone(v), fx: fx, newOut: newOut});
+    fx = null; newOut = -1;
+  }
+  function println(t){ out.push([t + '\n', '']); newOut = out.length - 1; }
+  st[0] = [];
+  s([3, 4], 'Tạo stack1: E = String', 'Viết <code>new GenericStack&lt;&gt;()</code>, trình biên dịch tự suy ra <code>E</code> là <code>String</code> từ kiểu biến bên trái.');
+  ['London', 'Paris', 'Berlin'].forEach(function(x){
+    st[0].push(x); fx = {k: 0, cls: 'in'};
+    s(L('push("' + x + '")'), 'stack1.push("' + x + '")', '<code>push(E o)</code> thành <code>push(String o)</code>: thêm <code>"' + x + '"</code> vào cuối <code>list</code>, tức là đỉnh ngăn xếp.');
+  });
+  println('stack: ' + listStr(st[0]));
+  s(L('System.out.println(stack1)'), 'In stack1', '<code>println</code> gọi <code>toString()</code>: <code>"stack: " + list.toString()</code>. Phần tử đầu danh sách là đáy, cuối danh sách là đỉnh.');
+  fx = {k: 0, cls: 'out'}; v.top = '"Berlin"';
+  s(L('String top = stack1.pop()'), 'stack1.pop() → "Berlin"', '<code>pop()</code> trả về kiểu <code>E</code>, ở đây là <code>String</code>, nên gán thẳng cho <code>top</code> mà <b>không ép kiểu</b>.');
+  st[0].pop();
+  println(String(6));
+  s(L('top.length()'), 'top.length() → 6', '<code>top</code> có kiểu <code>String</code> nên gọi được <code>length()</code>: "Berlin" có 6 ký tự.');
+  st[1] = [];
+  s([12, 13], 'Tạo stack2: E = Integer', 'Cùng lớp <code>GenericStack</code>, lần này <code>E</code> là <code>Integer</code>. Tham số kiểu không nhận kiểu nguyên thuỷ <code>int</code>.');
+  [1, 2, 3].forEach(function(x){
+    st[1].push(x); fx = {k: 1, cls: 'in'};
+    s(L('stack2.push(' + x + ')'), 'stack2.push(' + x + ')', x === 1 ? 'Số <code>1</code> kiểu <code>int</code> được <b>tự động đóng hộp</b> thành <code>Integer</code> rồi mới đưa vào.' : 'Đóng hộp ' + x + ' thành <code>Integer</code> và đặt lên đỉnh.');
+  });
+  fx = {k: 1, cls: 'out'}; v.pop = 3;
+  s(L('int sum'), 'stack2.pop() → 3', 'Vế trái của phép cộng chạy trước: <code>pop()</code> lấy 3 ra khỏi đỉnh.');
+  st[1].pop(); fx = {k: 1, cls: 'look'}; v.peek = 2; v.sum = 5;
+  s(L('int sum'), 'stack2.peek() → 2, sum = 5', '<code>peek()</code> chỉ xem đỉnh (bây giờ là 2), không xoá. Hai <code>Integer</code> tự mở hộp: 3 + 2 = 5.');
+  println('5');
+  s(L('System.out.println(sum)'), 'In sum', 'In 5.');
+  println('stack: ' + listStr(st[1]));
+  s(L('System.out.println(stack2)'), 'In stack2', 'Còn hai phần tử: 3 đã bị <code>pop</code>, 2 chỉ bị <code>peek</code> nên vẫn ở đỉnh.');
+  return S;
+}
+function TEST(){ var S = sim(); S.forEach(function(sn, i){ console.log(i + 1, JSON.stringify(sn.cur), sn.title, JSON.stringify(sn.st)); }); console.log(JSON.stringify(S[S.length - 1].out.map(function(o){ return o[0]; }).join(''))); }
+//SIM-END
+var TYPES = ['String', 'Integer'];
+Stepper({
+  build: sim,
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, sn); scrollToCur($('code'));
+    $('stacks').innerHTML = [0, 1].map(function(k){
+      var a = sn.st[k], h;
+      if (!a) h = '<div class="empty">chưa tạo</div>';
+      else if (!a.length) h = '<div class="empty">rỗng</div>';
+      else h = a.map(function(x, i){
+        var c = 'it' + (i === a.length - 1 ? ' top' : '') + (sn.fx && sn.fx.k === k && i === a.length - 1 ? ' ' + sn.fx.cls : '');
+        return '<div class="' + c + '">' + esc(k === 0 ? '"' + x + '"' : x) + '</div>';
+      }).join('');
+      return '<div class="stk' + (a ? '' : ' off') + '"><div class="nm">stack' + (k + 1) + '<small>GenericStack&lt;' + TYPES[k] + '&gt;</small></div><div class="col-st">' + h + '</div>' +
+        '<div class="lst">' + (a ? 'list: [' + esc(a.map(function(x){ return k === 0 ? '"' + x + '"' : x; }).join(', ')) + ']' : '') + '</div></div>';
+    }).join('');
+    var v = sn.v, list = [];
+    if ('top' in v) list.push(['String top', v.top, sn.title.indexOf('pop() → "') >= 0 ? 'chg' : '']);
+    if ('pop' in v) list.push(['stack2.pop()', v.pop, '']);
+    if ('peek' in v) list.push(['stack2.peek()', v.peek, '']);
+    if ('sum' in v) list.push(['int sum', v.sum, sn.title.indexOf('sum = 5') >= 0 ? 'chg' : '']);
+    $('vars').innerHTML = list.length ? varsHtml(list) : '<span class="bnote">Chưa có biến cục bộ nào ngoài hai ngăn xếp.</span>';
+    drawCon($('con'), sn.out.map(function(o, i){ return [o[0], i === sn.newOut ? 'new' : '']; }));
+  }
+}).reset();
+})();
+</script>
+</body>
+</html>

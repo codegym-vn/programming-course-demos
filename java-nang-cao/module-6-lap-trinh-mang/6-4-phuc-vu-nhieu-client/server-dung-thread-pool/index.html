@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Server dùng thread pool</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --c1:#2563eb; --c1s:#e7eefc; --c2:#c2410c; --c2s:#fdeedd; --c3:#15803d; --c3s:#e3f4e8; --c4:#7c3aed; --c4s:#f0e9fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --c1:#6ea0ff; --c1s:#1e2a44; --c2:#fdba74; --c2s:#3a2614; --c3:#4ade80; --c3s:#13301f; --c4:#c4a1ff; --c4s:#2a1f40;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .vars{display:flex;gap:8px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:3px 12px;min-width:70px;text-align:center;transition:all .25s}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:7px 10px;min-height:52px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .er{color:#fca5a5}
+  .console .ok{color:#86efac}
+  .tbl{width:100%;border-collapse:collapse;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:3px 6px;border-bottom:1px solid var(--line);transition:background .3s,opacity .3s}
+  .tbl tr.cur td{background:var(--cur)}
+  .tbl tr.bad td{background:var(--false-soft);color:var(--false)}
+  .tbl tr.new td{background:var(--true-soft)}
+  .tbl tr.dim td{opacity:.3}
+  .scroll{overflow:auto}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  @keyframes flash{0%,100%{background:var(--cur)}50%{background:var(--cur-bar)}}
+  .tbl tr.flash td{animation:flash .5s 3;background:var(--cur)}
+  /* Biểu đồ thời gian (Gantt) */
+  .gantt{display:grid;grid-template-columns:var(--gl,96px) 1fr;row-gap:5px;font-size:12px}
+  .gantt .gl{color:var(--muted);font-weight:600;align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+  .gantt .track{position:relative;height:22px;background:var(--code-bg);border-radius:5px;overflow:hidden}
+  .gantt .bar{position:absolute;top:0;bottom:0;border-radius:4px;display:flex;align-items:center;justify-content:center;
+    font:600 11px system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;transition:width .3s}
+  .gantt .bar.wait{background:repeating-linear-gradient(45deg,var(--cur-bar) 0 4px,transparent 4px 8px);color:var(--text);opacity:.75}
+  .gantt .bar.k1{background:var(--c1)} .gantt .bar.k2{background:var(--c2)} .gantt .bar.k3{background:var(--c3)} .gantt .bar.k4{background:var(--c4)}
+  .gantt .bar.acc{background:var(--muted)}
+  .gantt .now{position:absolute;top:0;bottom:0;width:2px;background:var(--false);z-index:2}
+  .gantt .axis{position:relative;height:16px;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted)}
+  .gantt .axis span{position:absolute;transform:translateX(-50%)}
+  @media (prefers-color-scheme: dark){.gantt .bar{color:#0f1218}}
+
+  .top{display:grid;grid-template-columns:1.3fr 1fr auto;gap:10px;align-items:stretch;margin-bottom:8px}
+  @media (max-width:600px){.top{grid-template-columns:1fr 1fr}.top .cnt{grid-column:1 / -1}}
+  .workers{display:flex;gap:8px;flex-wrap:wrap}
+  .wk{flex:1;min-width:90px;border:2px solid var(--node-line);border-radius:10px;padding:4px 8px;background:var(--node);transition:all .3s}
+  .wk small{display:block;color:var(--muted);font:600 11px system-ui,sans-serif}
+  .wk b{font:700 14px ui-monospace,Menlo,Consolas,monospace}
+  .wk.busy{border-color:var(--accent)}
+  .wk .prog{font-size:11.5px;color:var(--muted)}
+  .queue{display:flex;gap:6px;flex-wrap:wrap;min-height:34px;align-items:center}
+  .queue .empty{color:var(--muted);font-size:12.5px}
+  .cl{border-radius:8px;padding:3px 9px;font:700 12.5px ui-monospace,Menlo,Consolas,monospace;color:#fff}
+  .cl.k1{background:var(--c1)}.cl.k2{background:var(--c2)}.cl.k3{background:var(--c3)}.cl.k4{background:var(--c4)}
+  @media (prefers-color-scheme: dark){.cl{color:#0f1218}}
+  .cnt{text-align:center;min-width:110px}
+  .cnt strong{display:block;font:700 26px ui-monospace,Menlo,Consolas,monospace}
+  .cnt.chg{background:var(--cur)}
+  .gantt{--gl:70px}
+  .note{font-size:12px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bốn client kết nối cùng lúc; client <i>i</i> gửi <i>i</i> bán kính, mỗi yêu cầu mất 1 giây. Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem pool giao việc cho các luồng.</p>
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Kích thước pool"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+      <button class="btn ghost" id="shuf">Đổi thứ tự kết nối</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="top">
+    <div class="card"><p class="panel-title">Các luồng của pool</p><div class="workers" id="wk"></div></div>
+    <div class="card"><p class="panel-title">Hàng đợi (đã kết nối, chờ tới lượt)</p><div class="queue" id="q"></div></div>
+    <div class="card cnt" id="cnt"><p class="panel-title">requests</p><strong id="req">0</strong></div>
+  </div>
+  <div class="card"><p class="panel-title">Diễn biến theo thời gian</p><div class="gantt" id="g"></div>
+    <p class="note" id="note"></p></div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var JAVA_KW = 'import|public|private|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false|try|catch|throws|throw|final|null|this';
+  var SQL_KW = 'SELECT|FROM|WHERE|AND|OR|NOT|ORDER|BY|ASC|DESC|DISTINCT|GROUP|HAVING|COUNT|SUM|AVG|MIN|MAX|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|TABLE|CREATE|AS|LIKE|IS|NULL|true|false';
+  function hlWith(src, kws){
+    var re = new RegExp('("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\')|(//.*$|--.*$)|\\b(' + kws + ')\\b|(\\b\\d+(?:\\.\\d+)?\\b)', 'g'), out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function hl(src){ return hlWith(src, JAVA_KW); }
+  function hlSql(src){ return hlWith(src, SQL_KW); }
+  function codeHtml(lines, o){
+    o = o || {}; var cls = o.cls || {}, cur = o.cur, f = o.sql ? hlSql : hl;
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (i >= a && i <= b ? ' cur' : '');
+      return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + f(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void}; snap.title, snap.body, snap.kind ('bad'|'ok')
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var s = $('status');
+      s.className = 'status' + (sn.kind ? ' ' + sn.kind : '');
+      s.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 650);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, step: function(){ return step; }};
+  }
+  function tabs(box, items, cur, onPick){
+    box.innerHTML = items.map(function(it){ return '<button class="tab" role="tab" data-k="' + it[0] + '" aria-selected="' + (it[0] === cur) + '">' + it[1] + '</button>'; }).join('');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.tab'); if (!b) return;
+      Array.prototype.forEach.call(box.children, function(x){ x.setAttribute('aria-selected', String(x === b)); });
+      onPick(b.getAttribute('data-k'));
+    });
+  }
+  // Double.toString của Java (JDK 19+): chữ số ngắn nhất như JS, khác ở dạng hiển thị
+  function jd(x){
+    if (x === 0) return 1 / x < 0 ? '-0.0' : '0.0';
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? 'Infinity' : '-Infinity';
+    var a = Math.abs(x), sg = x < 0 ? '-' : '';
+    if (a === 5e-324) return sg + '4.9E-324';
+    if (a >= 1e-3 && a < 1e7) { var s = String(x); return s.indexOf('.') < 0 ? s + '.0' : s; }
+    var m = x.toExponential().split('e'), man = m[0];
+    if (man.indexOf('.') < 0) man += '.0';
+    return man + 'E' + (+m[1]);
+  }
+  // rows: [{label, bars: [{s, e, cls, text}]}]; T: độ dài trục; t: thời điểm hiện tại (cắt thanh tại t)
+  function ganttHtml(rows, T, t){
+    function pc(x){ return (x / T * 100) + '%'; }
+    var h = rows.map(function(r){
+      var bars = r.bars.filter(function(b){ return b.s < t || (b.s === b.e && b.s <= t); }).map(function(b){
+        var e = Math.min(b.e, t), w = b.s === b.e ? 0.12 : e - b.s;
+        return '<div class="bar ' + b.cls + '" style="left:' + pc(b.s) + ';width:' + pc(w) + '" title="' + esc(b.text || '') + '">' + (e - b.s >= 1 ? esc(b.text || '') : '') + '</div>';
+      }).join('');
+      return '<div class="gl" title="' + esc(r.label) + '">' + esc(r.label) + '</div><div class="track">' + bars + '<div class="now" style="left:calc(' + pc(t) + ' - 1px)"></div></div>';
+    }).join('');
+    var ax = '';
+    for (var i = 0; i <= T; i++) ax += '<span style="left:' + pc(i) + '">' + i + (i === T ? 's' : '') + '</span>';
+    return h + '<div></div><div class="axis">' + ax + '</div>';
+  }
+
+//SIM-START
+// order: thứ tự kết nối (mảng số client 1..4), P: số luồng của pool. Client k gửi k yêu cầu, mỗi yêu cầu 1 giây.
+function simPool(order, P){
+  var queue = order.slice(), workers = [], done = {}, served = {}, start = {}, who = {}, req = 0, t = 0, S = [];
+  for (var i = 0; i < P; i++) workers.push(null);
+  function assign(evs){
+    workers.forEach(function(w, i){ if (w === null && queue.length) { var c = queue.shift(); workers[i] = c; served[c] = 0; start[c] = t; who[c] = i; evs.push('luồng ' + (i + 1) + ' nhận client ' + c); } });
+  }
+  function snap(title, body, chg, kind){
+    S.push({title: title, body: body, kind: kind, t: t, req: req, chg: chg, workers: workers.slice(), queue: queue.slice(),
+      served: JSON.parse(JSON.stringify(served)), start: JSON.parse(JSON.stringify(start)), done: JSON.parse(JSON.stringify(done)), who: JSON.parse(JSON.stringify(who))});
+  }
+  var ev = [];
+  assign(ev);
+  snap('Giây 0', 'Cả bốn client đã kết nối theo thứ tự ' + order.join(', ') + '; server gọi <code>pool.execute</code> cho từng socket. Pool có ' + P + ' luồng: ' + ev.join(', ') + '.' + (queue.length ? ' Client ' + queue.join(', ') + ' nằm trong hàng đợi của pool.' : ''), false);
+  while (Object.keys(done).length < order.length) {
+    t++; ev = []; var fin = [];
+    workers.forEach(function(c, i){ if (c !== null) { served[c]++; req++; if (served[c] === c) { done[c] = t; fin.push(c); workers[i] = null; } } });
+    fin.forEach(function(c){ ev.push('client ' + c + ' xong và đóng kết nối'); });
+    assign(ev);
+    var last = Object.keys(done).length === order.length;
+    snap('Giây ' + t + (last ? ' · xong' : ''), (ev.length ? ev.join('; ') + '. ' : 'Các luồng đang bận phục vụ, mỗi giây trả lời một yêu cầu. ') +
+      'Biến <code>requests</code> = ' + req + '.' + (last ? ' Mọi client đã xong; <code>pool.shutdown()</code> và <code>awaitTermination</code> cho phép server kết thúc.' : ''), true, last ? 'ok' : null);
+  }
+  return S;
+}
+//SIM-END
+var ORDER = [1, 2, 3, 4], P = 2;
+var t0 = parseInt(qs('pool'), 10); if ([1, 2, 4].indexOf(t0) >= 0) P = t0;
+tabs($('tabs'), [['1', 'Pool 1 luồng'], ['2', 'Pool 2 luồng'], ['4', 'Pool 4 luồng']], String(P), function(k){ P = +k; st.reset(); });
+function rows(sn, T){
+  return ORDER.map(function(c){
+    var bars = [], s = sn.start[c] === undefined ? null : sn.start[c], e = sn.done[c] === undefined ? (s === null ? null : s + c) : sn.done[c];
+    if (s === null) bars.push({s: 0, e: T, cls: 'wait', text: 'chờ trong hàng đợi'});
+    else { if (s > 0) bars.push({s: 0, e: s, cls: 'wait', text: 'chờ'}); bars.push({s: s, e: e, cls: 'k' + c, text: 'luồng ' + (sn.who[c] + 1)}); }
+    return {label: 'Client ' + c, bars: bars};
+  });
+}
+var st = Stepper({
+  build: function(){ var S = simPool(ORDER, P); var T = S[S.length - 1].t; S.forEach(function(x){ x.T = T; }); return S; },
+  render: function(sn){
+    $('wk').innerHTML = sn.workers.map(function(c, i){
+      return '<div class="wk' + (c !== null ? ' busy' : '') + '"><small>luồng ' + (i + 1) + '</small>' + (c !== null ? '<b>client ' + c + '</b><div class="prog">đã trả lời ' + sn.served[c] + '/' + c + '</div>' : '<b style="color:var(--muted)">rảnh</b><div class="prog">&nbsp;</div>') + '</div>'; }).join('');
+    $('q').innerHTML = sn.queue.length ? sn.queue.map(function(c){ return '<span class="cl k' + c + '">C' + c + '</span>'; }).join('') : '<span class="empty">(trống)</span>';
+    $('req').textContent = sn.req; $('cnt').classList.toggle('chg', sn.chg);
+    $('g').innerHTML = ganttHtml(rows(sn, sn.T), sn.T, sn.t);
+    $('note').textContent = 'Thứ tự kết nối ' + ORDER.join(', ') + ' chỉ là một trong nhiều thứ tự có thể; trên máy thật các luồng chạy xen kẽ nên mỗi lần chạy có thể khác, nhưng tổng requests luôn là 10 nhờ synchronized.';
+  },
+  speed: 750
+});
+$('shuf').addEventListener('click', function(){
+  var a = ORDER.slice(), s = a.join();
+  while (a.join() === s) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } }
+  ORDER = a; st.reset();
+});
+var oq = qs('thutu'); if (/^[1-4]{4}$/.test(oq) && oq.split('').sort().join('') === '1234') ORDER = oq.split('').map(Number);
+st.reset();
+})();
+</script>
+</body>
+</html>

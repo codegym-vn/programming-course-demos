@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="610">
+<title>Condition: tác vụ rút chờ tác vụ nạp</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fdf0d9;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --t1:#2563eb; --t1-soft:#e0eafd; --t2:#c2410c; --t2-soft:#fbe7dc; --t3:#7c3aed; --t3-soft:#efe7fd;
+    --t4:#0f766e; --t4-soft:#dcf3f0; --t5:#be185d; --t5-soft:#fbe3ee; --t6:#4d7c0f; --t6-soft:#e9f5d8;
+    --c1:#93c5fd; --c2:#fdba74; --c3:#c4b5fd; --c4:#5eead4; --c5:#f9a8d4; --c6:#bef264;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fbbf24; --warn-soft:#3a2c0e;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --t1:#6ea0ff; --t1-soft:#1b2740; --t2:#fb923c; --t2-soft:#3a2312; --t3:#b794ff; --t3-soft:#2a2040;
+      --t4:#2dd4bf; --t4-soft:#0f2e2a; --t5:#f472b6; --t5-soft:#3a1729; --t6:#a3e635; --t6-soft:#22300f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+  .tab.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px}
+  .field label{font-weight:600}
+  .field label.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input[type=range]{accent-color:var(--accent);width:130px}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .status.good{border-left-color:var(--true);background:var(--true-soft)}
+  .status.good>b{color:var(--true)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .marks{margin-left:8px;display:inline-flex;gap:3px;align-self:center}
+  .mk{display:inline-block;padding:0 5px;border-radius:5px;font:700 10.5px/1.5 system-ui,sans-serif;color:#fff}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.n{background:var(--code-bg);color:var(--muted);font-family:system-ui,sans-serif;font-weight:500}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:64px;text-align:center;transition:all .25s;display:inline-block}
+  .var small{display:block;color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 18px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:26px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .var.bad{border-color:var(--false);background:var(--false-soft)}
+  .var.good{border-color:var(--true);background:var(--true-soft)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;white-space:pre-wrap;word-break:break-word;overflow:auto;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+  .console .new{background:rgba(250,204,21,.22);border-radius:3px}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .note{color:var(--muted);font-size:12px;margin:6px 0 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.93em}
+
+  /* Thẻ luồng */
+  .threads{display:grid;gap:6px}
+  .th{border:2px solid var(--node-line);border-radius:9px;background:var(--node);padding:4px 8px;transition:border-color .25s,box-shadow .25s,opacity .25s;min-width:0}
+  .th .hd{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+  .th .nm{font:700 13px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;gap:5px}
+  .th .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .th .sub{font-size:12px;color:var(--muted);margin-top:2px;min-height:18px}
+  .th .sub code{font-size:11.5px}
+  .th.run{border-color:var(--true);box-shadow:0 0 0 3px var(--true-soft)}
+  .th.wait{border-color:var(--warn);border-style:dashed}
+  .th.block{border-color:var(--false);border-style:dashed}
+  .th.done{opacity:.6}
+  .st{display:inline-block;padding:0 7px;border-radius:999px;font:600 11.5px/1.6 system-ui,sans-serif;white-space:nowrap}
+  .st.run{background:var(--true-soft);color:var(--true)}
+  .st.ready{background:var(--accent-soft);color:var(--accent)}
+  .st.wait{background:var(--warn-soft);color:var(--warn)}
+  .st.block{background:var(--false-soft);color:var(--false)}
+  .st.done,.st.new{background:var(--code-bg);color:var(--muted)}
+  .cells{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+  .cell{background:var(--code-bg);border:2px solid transparent;border-radius:6px;padding:0 7px;font:12.5px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .cell b{font-weight:700}
+  .cell.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .cell.blank b{color:var(--muted);font-weight:400}
+  .lock{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--node-line);border-radius:8px;padding:2px 9px;font-size:12.5px;background:var(--node)}
+  .lock.held{border-color:var(--cur-bar);background:var(--cur)}
+  .lock svg{width:15px;height:15px;flex:none}
+  .q{display:flex;gap:4px;flex-wrap:wrap;align-items:center;min-height:26px;padding:3px 6px;border:2px dashed var(--line);border-radius:8px;font-size:12px;color:var(--muted)}
+  .chipT{display:inline-block;padding:0 7px;border-radius:6px;font:700 12px/1.7 ui-monospace,Menlo,Consolas,monospace;color:#fff}
+  .fresh{animation:pop .35s ease-out}
+  @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .lbl{font-size:12px;color:var(--muted)}
+
+
+  .grid{grid-template-columns:1.05fr 1fr}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  #con{height:104px}
+  .amts{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
+  .amts span{font:600 12px/1.6 ui-monospace,Menlo,monospace;padding:0 6px;border-radius:5px;background:var(--code-bg);color:var(--muted)}
+  .amts span.dn{text-decoration:line-through;opacity:.6}
+  .amts span.cu{background:var(--cur);color:var(--text);box-shadow:inset 0 0 0 1px var(--cur-bar)}
+  .shared{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem ai đang giữ khoá, khi nào tác vụ rút phải <code>await()</code> và khi nào được đánh thức.</p>
+<div class="controls">
+  <div class="tabs" id="first">
+    <button class="tab" data-v="D">Tác vụ nạp chạy trước</button><button class="tab" data-v="W">Tác vụ rút chạy trước</button>
+  </div>
+  <div class="btns">
+    <button class="btn" id="next">Bước tiếp</button>
+    <button class="btn ghost" id="prev">Lùi lại</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+</div>
+<div class="status" id="status" aria-live="polite"></div>
+<div class="grid">
+  <div class="col">
+    <div class="card"><p class="panel-title">Phần chính của withdraw và deposit</p><div class="code" id="code"></div></div>
+    <p class="note" style="margin:0">Đây là <b>một</b> thứ tự có thể (kịch bản "nạp trước" khớp với output thường gặp khi bấm Run). Thứ tự dòng có thể khác, nhưng số dư cuối luôn là 3.</p>
+  </div>
+  <div class="col">
+    <div class="card"><p class="panel-title">Tài khoản dùng chung</p><div class="shared" id="shared"></div>
+      <div class="row" style="margin-top:6px"><span class="lbl">Hàng chờ của <code>newDeposit</code>:</span><div class="q" id="ws" style="flex:1"></div></div></div>
+    <div class="card"><p class="panel-title">Hai luồng của pool</p><div class="threads" id="threads"></div></div>
+    <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+  </div>
+</div>
+</div>
+<script>
+(function(){
+/* PRNG có hạt giống (mulberry32), dùng chung cho trình duyệt và node */
+function makeRng(seed){
+  var a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0; var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function pick(rng, arr){ return arr[Math.floor(rng() * arr.length)]; }
+
+/* Engine dùng chung cho các trang minh hoạ đa luồng (Module 5, khoá 112).
+   Mô hình: mỗi trang sinh một dãy "ảnh chụp" (snapshot) trạng thái các luồng + tài nguyên dùng chung;
+   Stepper hiển thị từng ảnh; trang tương tác có thể nối thêm ảnh (push/more). */
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|(@\w+)|\b(import|public|private|protected|class|static|final|void|int|long|char|boolean|String|Integer|Object|if|else|return|for|while|new|true|false|null|try|catch|finally|throws|throw|synchronized|implements|extends|this)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+    else out += '<span class="num">' + m[5] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+/* lines: mảng chuỗi; o.cur: chỉ số | [từ, đến] | mảng chỉ số (o.curList); o.cls: {i: 'run'|'skip'};
+   o.marks: {i: [[nhãn, màu CSS]]} – nhãn luồng đang đứng ở dòng i */
+function codeHtml(lines, o){
+  o = o || {}; var cls = o.cls || {}, marks = o.marks || {}, cur = o.cur, set = {};
+  if (Array.isArray(o.curList)) o.curList.forEach(function(i){ set[i] = 1; });
+  else if (Array.isArray(cur)) { for (var k = cur[0]; k <= cur[1]; k++) set[k] = 1; }
+  else if (cur !== undefined && cur !== null) set[cur] = 1;
+  return lines.map(function(l, i){
+    var c = 'ln' + (cls[i] ? ' ' + cls[i] : '') + (set[i] ? ' cur' : '');
+    var mk = marks[i] ? '<span class="marks">' + marks[i].map(function(m){ return '<span class="mk" style="background:' + m[1] + '">' + esc(m[0]) + '</span>'; }).join('') + '</span>' : '';
+    return '<div class="' + c + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span>' + mk + '</div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur') || box.querySelector('.ln .marks');
+  if (!el) return; if (!el.classList.contains('ln')) el = el.parentNode;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+  box.scrollTop = Math.max(0, top);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+function newSeed(){ return (Math.random() * 4294967296) >>> 0; }
+/* Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void,
+   more?: (snaps) => snap | null (sinh thêm bước khi đang ở cuối), interval?: (n) => ms} */
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null, ended = false;
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function canNext(){
+    if (step < snaps.length - 1) return true;
+    if (!cfg.more || ended) return false;
+    var s = cfg.more(snaps); if (s) { snaps.push(s); return true; }
+    ended = true; return false;
+  }
+  function draw(){
+    var sn = snaps[step];
+    var st = $('status');
+    st.className = 'status' + (sn.tone ? ' ' + sn.tone : '');
+    st.innerHTML = '<b>Bước ' + (step + 1) + (cfg.more ? '' : '/' + snaps.length) + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    var run = timer !== null, hasNext = step < snaps.length - 1 || (cfg.more && !ended);
+    $('next').disabled = !hasNext || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || !hasNext;
+    if (cfg.after) cfg.after(run);
+  }
+  var jump = parseInt(qs('buoc'), 10);
+  function reset(){
+    stop(); snaps = cfg.build(); step = 0; ended = false;
+    if (jump > 0) { while (step < jump - 1 && canNext()) step++; jump = 0; }
+    draw();
+  }
+  function next(){ if (canNext()) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  /* Nối một bước do người dùng chọn (bỏ các bước "tương lai" đã sinh trước đó) */
+  function push(sn){ stop(); snaps.length = step + 1; snaps.push(sn); ended = false; step++; draw(); }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', reset);
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    var ms = cfg.interval ? cfg.interval(snaps.length) : 550;
+    timer = setInterval(function(){ if (!canNext()) { stop(); draw(); return; } step++; draw(); }, ms);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, push: push, cur: function(){ return snaps[step]; }, all: function(){ return snaps.slice(0, step + 1); }, running: function(){ return timer !== null; }, stop: function(){ stop(); draw(); }};
+}
+/* Tabs: nhóm nút .tab trong phần tử id; onChange(value) */
+function Tabs(id, init, onChange){
+  var box = $(id), btns = box.querySelectorAll('.tab');
+  function set(v){ for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-selected', btns[i].getAttribute('data-v') === String(v) ? 'true' : 'false'); }
+  for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', function(){ var v = this.getAttribute('data-v'); set(v); onChange(v); });
+  set(init);
+  return {set: set};
+}
+var ST_TEXT = {run: 'đang chạy', ready: 'sẵn sàng', wait: 'đang chờ', block: 'chờ khoá', done: 'đã xong', 'new': 'chưa chạy'};
+/* t = {name, color, state, stateText?, sub?, vars?: [[k, v]], chg?: [k]} */
+function threadHtml(t){
+  var cells = t.vars && t.vars.length ? '<div class="cells">' + t.vars.map(function(v){
+    var blank = v[1] === null || v[1] === undefined;
+    return '<span class="cell' + (blank ? ' blank' : '') + ((t.chg || []).indexOf(v[0]) >= 0 ? ' chg' : '') + '">' + esc(v[0]) + ' = <b>' + (blank ? '?' : esc(v[1])) + '</b></span>';
+  }).join('') + '</div>' : '';
+  return '<div class="th ' + t.state + '"><div class="hd"><span class="nm"><span class="dot" style="background:' + t.color + '"></span>' + esc(t.name) + '</span>' +
+    '<span class="st ' + t.state + '">' + esc(t.stateText || ST_TEXT[t.state]) + '</span></div>' +
+    (t.sub !== undefined ? '<div class="sub">' + t.sub + '</div>' : '') + cells + '</div>';
+}
+var LOCK_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+function lockHtml(name, holder, holderColor){
+  return '<span class="lock' + (holder ? ' held' : '') + '">' + LOCK_SVG + '<span>' + name + ': ' +
+    (holder ? '<b style="color:' + (holderColor || 'inherit') + '">' + esc(holder) + '</b> giữ' : '<span class="lbl">đang rảnh</span>') + '</span></span>';
+}
+function chipT(label, color){ return '<span class="chipT" style="background:' + color + '">' + esc(label) + '</span>'; }
+/* lines: mảng chuỗi; nNew: số dòng cuối mới thêm (tô nhẹ) */
+function consoleHtml(lines, nNew, ph){
+  if (!lines.length) return '<span class="ph">' + (ph || 'Chưa có output.') + '</span>';
+  return lines.map(function(l, i){ return i >= lines.length - (nNew || 0) ? '<span class="new">' + esc(l) + '</span>' : esc(l); }).join('\n');
+}
+function scrollBottom(el){ el.scrollTop = el.scrollHeight; }
+
+/* A13181: ThreadCooperation – một khoá, điều kiện newDeposit */
+var COOP_LINES = [
+  '// Tac vu rut: withdraw(amount)',
+  'lock.lock();',
+  'while (balance < amount)',
+  '  newDeposit.await();',
+  'balance -= amount;',
+  'lock.unlock();',
+  '',
+  '// Tac vu nap: deposit(amount)',
+  'lock.lock();',
+  'balance += amount;',
+  'newDeposit.signalAll();',
+  'lock.unlock();',
+  'Thread.sleep(200); // nghi 200 ms'
+];
+var COOP_DEP = [5, 3, 8, 6, 4], COOP_WD = [7, 2, 9, 5];
+/* first: 'D' (tác vụ nạp chạy trước) | 'W' */
+function coopBuild(first){
+  var bal = 0, lock = null, waitSet = [], out = [], S = [];
+  var D = {pc: 'L', st: 'ready', i: 0}, W = {pc: 'L', st: 'ready', i: 0};
+  var cur = first === 'W' ? W : D, other = function(t){ return t === D ? W : D; };
+  var nm = function(t){ return t === D ? 'Tác vụ nạp' : 'Tác vụ rút'; };
+  function line(t){
+    if (t.st === 'done') return null;
+    if (t === W) return {L: 1, C: 2, R: 3, S: 4}[t.pc];
+    return t.st === 'wait' ? 12 : {L: 8, A: 9, G: 10, U: 11}[t.pc];
+  }
+  function snap(title, body, o){
+    o = o || {};
+    S.push({title: title, body: body, tone: o.tone, bal: bal, lock: lock, waitSet: waitSet.slice(), out: out.slice(), nNew: o.nNew || 0, chg: o.chg || false,
+      D: {st: D.st, i: D.i, ln: line(D), pc: D.pc}, W: {st: W.st, i: W.i, ln: line(W), pc: W.pc}, act: o.act || null, span: o.span || 0});
+  }
+  function runnable(t){ return t.st === 'ready' || t.st === 'run' || (t.st === 'block' && lock === null); }
+  snap('Bắt đầu', 'Tài khoản có số dư 0. Pool hai luồng nhận hai tác vụ: nạp 5, 3, 8, 6, 4 và rút 7, 2, 9, 5. Ở kịch bản này <b>' + (first === 'W' ? 'tác vụ rút' : 'tác vụ nạp') + '</b> được chạy trước.');
+  for (var guard = 0; guard < 200; guard++) {
+    if (!runnable(cur)) {
+      var o = other(cur);
+      if (runnable(o)) cur = o;
+      else if (D.st === 'wait') { D.st = 'ready'; cur = D; }
+      else break;
+    }
+    var t = cur; if (t.st === 'ready') t.st = 'run';
+    if (t === W) {
+      var a = COOP_WD[W.i];
+      if (W.pc === 'L') {
+        if (lock === null) { lock = 'W'; W.st = 'run'; W.pc = 'C'; snap('Rút ' + a + ': giành khoá', 'Tác vụ rút gọi <code>withdraw(' + a + ')</code> và giành được khoá.', {act: 'W'}); }
+        else { W.st = 'block'; snap('Rút ' + a + ': chờ khoá', 'Khoá đang bị tác vụ nạp giữ, tác vụ rút phải chờ.', {act: 'W'}); }
+      } else if (W.pc === 'C') {
+        if (bal < a) {
+          out.push('    Rut ' + a + ': cho nap tien'); lock = null; W.st = 'wait'; W.pc = 'R'; waitSet = ['W'];
+          snap('Rút ' + a + ': không đủ tiền, await()', 'Kiểm tra <code>' + bal + ' &lt; ' + a + '</code> đúng, nên in dòng chờ rồi gọi <code>newDeposit.await()</code>: tác vụ rút vào hàng chờ của điều kiện và <b>tự trả khoá</b> để bên nạp vào được.', {act: 'W', nNew: 1});
+        } else { W.pc = 'S'; snap('Rút ' + a + ': đủ tiền', 'Kiểm tra lại <code>' + bal + ' &lt; ' + a + '</code> sai, nên thoát vòng <code>while</code>.', {act: 'W'}); }
+      } else if (W.pc === 'R') {
+        lock = 'W'; W.st = 'run'; W.pc = 'C';
+        snap('Rút ' + a + ': giành lại khoá', 'Khoá đã rảnh. Tác vụ rút <b>giành lại khoá</b>, <code>await()</code> trả về, và nó quay lên đầu vòng <code>while</code> để <b>kiểm tra lại</b> điều kiện.', {act: 'W'});
+      } else if (W.pc === 'S') {
+        bal -= a; out.push('    Rut ' + a + ' -> so du ' + bal); lock = null; W.i++;
+        if (W.i >= COOP_WD.length) { W.st = 'done'; } else { W.pc = 'L'; }
+        snap('Rút ' + a + ' xong', 'Trừ tiền: số dư còn <b>' + bal + '</b>, in kết quả rồi <code>unlock()</code>.' + (W.st === 'done' ? ' Tác vụ rút đã rút đủ 4 khoản và kết thúc.' : ' Tác vụ rút chuyển sang khoản tiếp theo.'), {act: 'W', nNew: 1, chg: true, span: 1});
+      }
+    } else {
+      var d = COOP_DEP[D.i];
+      if (D.pc === 'L') {
+        if (lock === null) { lock = 'D'; D.st = 'run'; D.pc = 'A'; snap('Nạp ' + d + ': giành khoá', 'Tác vụ nạp gọi <code>deposit(' + d + ')</code> và giành được khoá.', {act: 'D'}); }
+        else { D.st = 'block'; snap('Nạp ' + d + ': chờ khoá', 'Khoá đang bị tác vụ rút giữ, tác vụ nạp phải chờ.', {act: 'D'}); }
+      } else if (D.pc === 'A') {
+        bal += d; out.push('Nap ' + d + ' -> so du ' + bal); D.pc = 'G';
+        snap('Nạp ' + d, 'Cộng tiền: số dư thành <b>' + bal + '</b>.', {act: 'D', nNew: 1, chg: true});
+      } else if (D.pc === 'G') {
+        var woke = waitSet.length > 0;
+        if (woke) { waitSet = []; W.st = 'block'; }
+        D.pc = 'U';
+        snap('signalAll()', woke ? 'Đánh thức tác vụ rút đang chờ. Nó rời hàng chờ của điều kiện nhưng <b>chưa chạy được</b>: khoá vẫn do tác vụ nạp giữ.' : 'Không có luồng nào đang chờ <code>newDeposit</code>, nên lời báo hiệu này không đánh thức ai.', {act: 'D'});
+      } else if (D.pc === 'U') {
+        lock = null; D.i++; D.pc = 'L';
+        if (D.i >= COOP_DEP.length) { D.st = 'done'; snap('Nạp xong cả 5 khoản', '<code>unlock()</code>. Tác vụ nạp đã nạp đủ 5 khoản và kết thúc.', {act: 'D', span: 1}); }
+        else { D.st = 'wait'; snap('unlock() rồi nghỉ 200 ms', 'Tác vụ nạp trả khoá rồi ngủ 200 ms. CPU chuyển cho luồng còn lại (nếu nó chạy được).', {act: 'D', span: 1}); }
+      }
+    }
+    if (D.st === 'done' && W.st === 'done') break;
+  }
+  var ok = D.st === 'done' && W.st === 'done';
+  snap(ok ? 'Cả hai tác vụ kết thúc' : 'Còn luồng chờ mãi', ok ? 'Số dư cuối cùng là <b>' + bal + '</b>. Số dư không lúc nào âm: luồng rút chỉ trừ tiền khi đã kiểm tra lại thấy đủ.' : 'Không ai báo hiệu nữa.', {tone: ok ? 'good' : 'bad'});
+  return S;
+}
+if (typeof module !== 'undefined') module.exports = {coopBuild: coopBuild};
+
+
+var CW = 'var(--t1)', CD = 'var(--t2)';
+var first = qs('vd') === 'W' ? 'W' : 'D';
+function amts(list, i, st){
+  return '<div class="amts">' + list.map(function(v, k){ return '<span class="' + (k < i ? 'dn' : k === i && st !== 'done' ? 'cu' : '') + '">' + v + '</span>'; }).join('') + '</div>';
+}
+function render(sn){
+  var marks = {}, curL = [];
+  // dòng vừa chạy: với bước "xong" của rút là dòng 4-5; của nạp là 11-12
+  if (sn.act === 'W') curL = sn.span ? [4, 5] : [S_prevLine('W', sn)];
+  if (sn.act === 'D') curL = sn.span ? [11, 12] : [S_prevLine('D', sn)];
+  var wl = sn.act === 'W' && curL[0] !== null ? curL[0] : sn.W.ln, dl = sn.act === 'D' && curL[0] !== null ? curL[0] : sn.D.ln;
+  if (wl !== null && wl !== undefined) (marks[wl] = marks[wl] || []).push(['Rút', CW]);
+  if (dl !== null && dl !== undefined) (marks[dl] = marks[dl] || []).push(['Nạp', CD]);
+  $('code').innerHTML = codeHtml(COOP_LINES, {curList: curL, marks: marks});
+  $('shared').innerHTML = '<div class="var' + (sn.chg ? ' chg' : '') + (sn.tone === 'good' ? ' good' : '') + '"><small>balance</small><strong>' + sn.bal + '</strong></div>' +
+    lockHtml('lock', sn.lock === 'W' ? 'Tác vụ rút' : sn.lock === 'D' ? 'Tác vụ nạp' : null, sn.lock === 'W' ? CW : CD);
+  $('ws').innerHTML = sn.waitSet.length ? chipT('Tác vụ rút', CW) : '<span>trống</span>';
+  var stTxt = function(t, isW){ return t.st === 'wait' ? (isW ? 'chờ newDeposit' : 'đang ngủ') : t.st === 'block' ? (sn.lock === null ? 'khoá đã rảnh' : 'chờ khoá') : undefined; };
+  $('threads').innerHTML =
+    threadHtml({name: 'Tác vụ nạp', color: CD, state: sn.D.st, stateText: stTxt(sn.D, false), sub: amts(COOP_DEP, sn.D.i, sn.D.st)}) +
+    threadHtml({name: 'Tác vụ rút', color: CW, state: sn.W.st, stateText: stTxt(sn.W, true), sub: amts(COOP_WD, sn.W.i, sn.W.st)});
+  $('con').innerHTML = consoleHtml(sn.out, sn.nNew); scrollBottom($('con'));
+}
+/* dòng code ứng với thao tác vừa làm: suy từ pc của bước trước */
+var SN = [];
+function S_prevLine(who, sn){
+  var i = SN.indexOf(sn), p = i > 0 ? SN[i - 1][who] : null;
+  if (!p) return null;
+  if (who === 'W') return ({L: 1, C: sn.W.st === 'wait' ? 3 : 2, R: 3})[p.pc];
+  return ({L: 8, A: 9, G: 10, U: 11})[p.pc];
+}
+var st = Stepper({build: function(){ SN = coopBuild(first); return SN; }, render: render, interval: function(){ return 450; }});
+Tabs('first', first, function(v){ first = v; st.reset(); });
+st.reset();
+
+})();
+</script>
+</body>
+</html>
