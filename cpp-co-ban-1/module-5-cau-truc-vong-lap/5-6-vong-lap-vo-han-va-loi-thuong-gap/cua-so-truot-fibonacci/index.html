@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng cửa sổ trượt tính dãy Fibonacci</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --prev-c:#2563eb; --prev-bg:#dbeafe;
+    --curr-c:#059669; --curr-bg:#d1fae5;
+    --next-c:#d97706; --next-bg:#fef3c7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --prev-c:#60a5fa; --prev-bg:#1e3a8a;
+      --curr-c:#34d399; --curr-bg:#064e3b;
+      --next-c:#fbbf24; --next-bg:#78350f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .field select{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;min-height:180px;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .right-col{display:flex;flex-direction:column;gap:10px}
+
+  /* Fibonacci Tape */
+  .tape-wrap{background:var(--code-bg);border-radius:8px;padding:10px 12px}
+  .tape{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:6px 2px}
+  .fib-cell{min-width:44px;height:48px;border:2px solid var(--line);border-radius:8px;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .25s;position:relative}
+  .fib-cell small{font:10px ui-monospace,monospace;color:var(--muted)}
+  .fib-cell strong{font:700 15px ui-monospace,monospace;color:var(--text)}
+  
+  .fib-cell.is-prev{border-color:var(--prev-c);background:var(--prev-bg);color:var(--prev-c)}
+  .fib-cell.is-prev strong{color:var(--prev-c)}
+  .fib-cell.is-curr{border-color:var(--curr-c);background:var(--curr-bg);color:var(--curr-c)}
+  .fib-cell.is-curr strong{color:var(--curr-c)}
+  .fib-cell.is-next{border-color:var(--next-c);background:var(--next-bg);color:var(--next-c);animation:pulse 0.4s infinite alternate}
+  .fib-cell.dim{opacity:0.3}
+
+  .tag-label{position:absolute;top:-8px;font:700 9px ui-monospace,monospace;padding:1px 4px;border-radius:3px;color:#fff}
+  .tag-label.prev{background:var(--prev-c)}
+  .tag-label.curr{background:var(--curr-c)}
+  .tag-label.next{background:var(--next-c)}
+
+  /* Variables */
+  .vars{display:grid;grid-template-columns:repeat(4, 1fr);gap:6px}
+  .var-box{background:var(--code-bg);border:1.5px solid var(--line);border-radius:8px;padding:5px 6px;text-align:center;transition:all .2s}
+  .var-box small{display:block;color:var(--muted);font:10.5px ui-monospace,monospace}
+  .var-box strong{font:700 16px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .var-box.prev-box{border-color:var(--prev-c);background:var(--prev-bg)}
+  .var-box.curr-box{border-color:var(--curr-c);background:var(--curr-bg)}
+  .var-box.next-box{border-color:var(--next-c);background:var(--next-bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Theo dõi khung trượt hai biến trạng thái <code>prev</code> và <code>curr</code> dịch chuyển qua từng bước lặp để sinh số hạng Fibonacci tiếp theo.</p>
+  
+  <div class="controls">
+    <div class="field">
+      <label for="n_sel">Tính số hạng thứ N =</label>
+      <select id="n_sel">
+        <option value="4">F(4) = 3</option>
+        <option value="5">F(5) = 5</option>
+        <option value="6" selected>F(6) = 8 (mẫu bài học)</option>
+        <option value="7">F(7) = 13</option>
+        <option value="8">F(8) = 21</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++ (Kỹ thuật cửa sổ trượt)</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <p class="panel-title">Băng số Fibonacci & Cửa sổ trượt</p>
+        <div class="tape-wrap">
+          <div class="tape" id="tape"></div>
+        </div>
+
+        <p class="panel-title" style="margin-top:10px">Các biến trạng thái trong vòng lặp</p>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|long|for|return|cout|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var N = 6;
+
+function getLines(){
+  return [
+    'int n = ' + N + ';',
+    'long long prev = 0, curr = 1; // F0 = 0, F1 = 1',
+    'for (int i = 2; i <= n; ++i) {',
+    '  long long next = prev + curr; // 1. Tinh so hang moi',
+    '  prev = curr;                  // 2. Truot prev sang curr',
+    '  curr = next;                  // 3. Truot curr sang next',
+    '}',
+    'cout << curr << "\\n";            // In ra F(' + N + ')'
+  ];
+}
+
+function buildSnaps(){
+  var snaps = [];
+  var p = 0;
+  var c = 1;
+  var fibs = [0, 1];
+
+  // Bước 0: Sẵn sàng
+  snaps.push({
+    ln: 1, i: '—',
+    prev: 0, curr: 1, next: '?',
+    pIdx: 0, cIdx: 1, nIdx: -1,
+    fibs: [0, 1],
+    chg: '',
+    statusTag: 'Khởi tạo hai số hạng đầu',
+    statusCls: '',
+    statusMsg: 'Khởi tạo hai số hạng đầu tiên: <code>prev = 0</code> (F₀) và <code>curr = 1</code> (F₁).'
+  });
+
+  for (var i = 2; i <= N; i++) {
+    // Dòng 2: kiểm tra i <= n
+    snaps.push({
+      ln: 2, i: i,
+      prev: p, curr: c, next: '?',
+      pIdx: i - 2, cIdx: i - 1, nIdx: -1,
+      fibs: fibs.slice(),
+      chg: 'i',
+      statusTag: 'Lượt i = ' + i + ': Kiểm tra i <= ' + N,
+      statusCls: 'ok',
+      statusMsg: '<code>' + i + ' <= ' + N + '</code> → <b>true</b>. Tiến hành tính số hạng thứ ' + i + '.'
+    });
+
+    // Dòng 3: next = prev + curr
+    var nxt = p + c;
+    fibs.push(nxt);
+    snaps.push({
+      ln: 3, i: i,
+      prev: p, curr: c, next: nxt,
+      pIdx: i - 2, cIdx: i - 1, nIdx: i,
+      fibs: fibs.slice(),
+      chg: 'next',
+      statusTag: 'Lượt i = ' + i + ': Tính next = prev + curr',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>long long next = ' + p + ' + ' + c + ' = <b>' + nxt + '</b></code> (F' + i + ').'
+    });
+
+    // Dòng 4: prev = curr
+    var oldP = p;
+    p = c;
+    snaps.push({
+      ln: 4, i: i,
+      prev: p, curr: c, next: nxt,
+      pIdx: i - 1, cIdx: i - 1, nIdx: i,
+      fibs: fibs.slice(),
+      chg: 'prev',
+      statusTag: 'Lượt i = ' + i + ': Dịch chuyển prev',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>prev = curr;</code> (' + oldP + ' → <b>' + p + '</b>). Cửa sổ bắt đầu trượt sang phải.'
+    });
+
+    // Dòng 5: curr = next
+    var oldC = c;
+    c = nxt;
+    snaps.push({
+      ln: 5, i: i,
+      prev: p, curr: c, next: nxt,
+      pIdx: i - 1, cIdx: i, nIdx: -1,
+      fibs: fibs.slice(),
+      chg: 'curr',
+      statusTag: 'Lượt i = ' + i + ': Dịch chuyển curr',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>curr = next;</code> (' + oldC + ' → <b>' + c + '</b>). Hoàn tất trượt cửa sổ cho lượt kế tiếp!'
+    });
+  }
+
+  // Kết thúc: in curr
+  snaps.push({
+    ln: 7, i: N + 1,
+    prev: p, curr: c, next: c,
+    pIdx: N - 1, cIdx: N, nIdx: -1,
+    fibs: fibs.slice(),
+    chg: '',
+    statusTag: 'Hoàn thành tính toán',
+    statusCls: 'ok',
+    statusMsg: 'Thực thi <code>cout << curr;</code>. Kết quả số Fibonacci thứ ' + N + ' là <b>F(' + N + ') = ' + c + '</b>.'
+  });
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(curLine){
+  var lines = getLines();
+  $('code').innerHTML = lines.map(function(l, i){
+    var on = (i === curLine);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function renderTape(s){
+  var html = '';
+  for (var k = 0; k <= N; k++) {
+    var hasVal = k < s.fibs.length;
+    var val = hasVal ? s.fibs[k] : '?';
+    var isP = (k === s.pIdx);
+    var isC = (k === s.cIdx);
+    var isN = (k === s.nIdx);
+
+    var cls = 'fib-cell';
+    var tag = '';
+    if (isN) {
+      cls += ' is-next';
+      tag = '<span class="tag-label next">next</span>';
+    } else if (isC) {
+      cls += ' is-curr';
+      tag = '<span class="tag-label curr">curr</span>';
+    } else if (isP) {
+      cls += ' is-prev';
+      tag = '<span class="tag-label prev">prev</span>';
+    } else if (!hasVal) {
+      cls += ' dim';
+    }
+
+    html += '<div class="' + cls + '">' + tag + '<small>F' + k + '</small><strong>' + val + '</strong></div>';
+  }
+  $('tape').innerHTML = html;
+}
+
+function render(s){
+  renderCode(s.ln);
+  renderTape(s);
+
+  $('vars').innerHTML = 
+    '<div class="var-box"><small>biến i</small><strong>' + esc(s.i) + '</strong></div>' +
+    '<div class="var-box prev-box' + (s.chg === 'prev' ? ' chg' : '') + '"><small>prev (F<sub>i-2</sub>)</small><strong>' + esc(s.prev) + '</strong></div>' +
+    '<div class="var-box curr-box' + (s.chg === 'curr' ? ' chg' : '') + '"><small>curr (F<sub>i-1</sub>)</small><strong>' + esc(s.curr) + '</strong></div>' +
+    '<div class="var-box next-box' + (s.chg === 'next' ? ' chg' : '') + '"><small>next (mới)</small><strong>' + esc(s.next) + '</strong></div>';
+
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function initSim(){
+  stopTimer();
+  N = parseInt($('n_sel').value, 10) || 6;
+  snaps = buildSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 550);
+  render(snaps[curIdx]);
+};
+
+$('n_sel').onchange = initSim;
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+initSim();
+</script>
+</body>
+</html>

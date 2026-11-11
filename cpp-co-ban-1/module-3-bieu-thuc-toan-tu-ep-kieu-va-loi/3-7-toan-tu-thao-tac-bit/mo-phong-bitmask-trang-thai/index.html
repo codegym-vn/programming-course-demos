@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng Mặt nạ bit (Bitmask): Quản lý trạng thái cờ trong C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .presets{display:flex;gap:5px;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:12.5px system-ui,sans-serif;transition:all .15s}
+  .preset-btn:hover{border-color:var(--accent)}
+  .preset-btn[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:5px 8px;margin-bottom:8px;min-height:46px;font-size:13px}
+  .status b{display:block;font-size:11.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+
+  /* Register Banner */
+  .reg-banner{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .reg-left{display:flex;align-items:center;gap:6px}
+  .reg-var-name{font:700 15px ui-monospace,monospace;color:var(--text)}
+  .reg-val-badge{font:700 16px ui-monospace,monospace;background:var(--accent);color:#fff;padding:2px 8px;border-radius:6px}
+  
+  .reg-bits{display:flex;gap:3px;align-items:center}
+  .r-bit{width:26px;height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--line);border-radius:4px;font:700 14px ui-monospace,monospace;transition:all .2s}
+  .r-bit.on{background:var(--true);color:#fff;border-color:var(--true);box-shadow:0 0 6px rgba(21,128,61,0.3)}
+  .r-bit small{font-size:8.5px;opacity:.7;font-weight:400}
+
+  /* 8 Students Grid */
+  .students-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-bottom:8px}
+  @media (max-width:640px){.students-grid{grid-template-columns:repeat(2, 1fr)}}
+  
+  .s-card{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:6px;transition:all .2s}
+  .s-card.passed{border-color:var(--true);background:var(--true-soft)}
+  .s-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .s-name{font:700 12px ui-monospace,monospace;color:var(--text)}
+  .s-badge{font-size:10.5px;padding:1px 5px;border-radius:4px;font-weight:600}
+  .s-badge.p{background:var(--true);color:#fff}
+  .s-badge.f{background:var(--line);color:var(--muted)}
+  
+  .s-meta{font:10.5px ui-monospace,monospace;color:var(--muted);margin-bottom:4px}
+  
+  .s-actions{display:flex;gap:3px}
+  .s-btn{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 2px;
+    border-radius:4px;cursor:pointer;font-size:10.5px;text-align:center;font-weight:600;transition:all .15s}
+  .s-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .s-btn.on-btn:hover{border-color:var(--true);color:var(--true)}
+  .s-btn.off-btn:hover{border-color:var(--false);color:var(--false)}
+
+  /* 2-Column Details Grid */
+  .details-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:8px}
+  @media (max-width:640px){.details-grid{grid-template-columns:1fr}}
+
+  .code-box{background:var(--code-bg);border-radius:6px;padding:6px 8px;font:11.5px/1.55 ui-monospace,monospace;height:120px;overflow-y:auto}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .math-inspector{background:var(--code-bg);border-radius:6px;padding:6px 8px;font:11.5px/1.45 ui-monospace,monospace;height:120px;overflow-y:auto}
+  .math-line{display:flex;justify-content:space-between;padding:1px 0}
+  .m-lbl{color:var(--muted)}
+  .m-val{color:var(--text);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Nhấp vào nút <b>Bật (|=)</b>, <b>Tắt (&amp;= ~)</b>, <b>Đảo (^=)</b> ở mỗi học sinh để theo dõi cách bitmask biến đổi từng bit của biến <code>quiz_passed</code>.</p>
+
+  <div class="controls">
+    <div class="presets" role="tablist">
+      <button class="preset-btn" id="p-def" role="tab" aria-selected="true" onclick="applyPreset('def')">Ví dụ bài đọc (HS 0 &amp; 3 đạt = 9)</button>
+      <button class="preset-btn" id="p-all" role="tab" aria-selected="false" onclick="applyPreset('all')">Tất cả đạt (255)</button>
+      <button class="preset-btn" id="p-none" role="tab" aria-selected="false" onclick="applyPreset('none')">Tất cả chưa đạt (0)</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <!-- Băng hiển thị biến quiz_passed -->
+  <div class="card reg-banner">
+    <div class="reg-left">
+      <span class="reg-var-name">int quiz_passed =</span>
+      <span class="reg-val-badge" id="reg-dec">9</span>
+      <span style="font-size:12px;color:var(--muted);font-family:ui-monospace,monospace" id="reg-hex">(0x09)</span>
+    </div>
+
+    <div class="reg-bits" id="reg-bits-view"></div>
+  </div>
+
+  <!-- 8 thẻ học viên -->
+  <div class="students-grid" id="students-grid"></div>
+
+  <!-- Khung chi tiết toán tử & mã nguồn -->
+  <div class="details-grid">
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++ thực thi</p>
+        <span class="badge" id="last-action-tag">Khởi tạo</span>
+      </div>
+      <div class="code-box" id="code-box"></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Bóc tách nhị phân phép toán</p>
+        <span class="badge" style="background:#f1f5f9;color:#475569">Mặt nạ Bitmask</span>
+      </div>
+      <div class="math-inspector" id="math-inspector"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var quizPassed = 9; // bit 0 and bit 3 set (1001_2 = 9)
+var lastOpInfo = {
+  action: 'Khởi tạo',
+  k: -1,
+  cmd: 'int quiz_passed = 9; // bit 0 và 3 bật',
+  oldVal: 0,
+  mask: 0,
+  newVal: 9,
+  desc: 'Ban đầu: Học sinh 0 và Học sinh 3 đã vượt qua bài kiểm tra.'
+};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad8(n){ var s = (n & 255).toString(2); while(s.length < 8) s = '0' + s; return s; }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function updateUI(){
+  // Update register banner
+  document.getElementById('reg-dec').textContent = quizPassed;
+  document.getElementById('reg-hex').textContent = '(0x' + (quizPassed < 16 ? '0' : '') + quizPassed.toString(16).toUpperCase() + ')';
+
+  var binStr = pad8(quizPassed);
+  var bHtml = '';
+  for(var i=0; i<8; i++){
+    var bitVal = binStr[i];
+    var bitIdx = 7 - i;
+    bHtml += '<div class="r-bit' + (bitVal === '1' ? ' on' : '') + '"><span>' + bitVal + '</span><small>b' + bitIdx + '</small></div>';
+  }
+  document.getElementById('reg-bits-view').innerHTML = bHtml;
+
+  // Render 8 student cards
+  var sHtml = '';
+  for(var k=0; k<8; k++){
+    var isPassed = (quizPassed >> k) & 1;
+    sHtml += '<div class="s-card' + (isPassed ? ' passed' : '') + '">' +
+      '<div class="s-head">' +
+        '<span class="s-name">Học sinh ' + k + '</span>' +
+        '<span class="s-badge ' + (isPassed ? 'p' : 'f') + '">' + (isPassed ? 'ĐẠT' : 'CHƯA') + '</span>' +
+      '</div>' +
+      '<div class="s-meta">Bit ' + k + ' (1&lt;&lt;' + k + '=' + Math.pow(2, k) + ')</div>' +
+      '<div class="s-actions">' +
+        '<button class="s-btn on-btn" title="Bật bit k" onclick="setBit(' + k + ')">Bật (|=)</button>' +
+        '<button class="s-btn off-btn" title="Tắt bit k" onclick="clearBit(' + k + ')">Tắt (&amp;=)</button>' +
+        '<button class="s-btn" title="Đảo bit k" onclick="toggleBit(' + k + ')">Đảo (^=)</button>' +
+      '</div>' +
+    '</div>';
+  }
+  document.getElementById('students-grid').innerHTML = sHtml;
+
+  // Status box
+  var st = document.getElementById('status');
+  st.className = 'status' + (quizPassed > 0 ? ' ok' : '');
+  st.innerHTML = '<b>' + esc(lastOpInfo.action) + ':</b> ' + lastOpInfo.desc;
+
+  // Code box
+  document.getElementById('last-action-tag').textContent = lastOpInfo.action;
+  document.getElementById('code-box').innerHTML = 
+    '<span class="cm">// Thao tác vừa thực hiện:</span><br>' +
+    '<code>' + esc(lastOpInfo.cmd) + '</code><br><br>' +
+    '<span class="cm">// Kiểm tra trạng thái học sinh k bất kỳ:</span><br>' +
+    '<span class="kw">bool</span> passed = (quiz_passed &gt;&gt; <span class="num">' + (lastOpInfo.k >= 0 ? lastOpInfo.k : 0) + '</span>) &amp; <span class="num">1</span>; <span class="cm">// trả về ' + (((quizPassed >> (lastOpInfo.k >= 0 ? lastOpInfo.k : 0)) & 1) ? 'true' : 'false') + '</span>';
+
+  // Math inspector
+  if(lastOpInfo.k >= 0){
+    var k = lastOpInfo.k;
+    var maskVal = (1 << k);
+    var notMaskVal = (~maskVal) & 255;
+    document.getElementById('math-inspector').innerHTML = 
+      '<div class="math-line"><span class="m-lbl">quiz_passed (cũ):</span><span class="m-val">' + pad8(lastOpInfo.oldVal) + ' (' + lastOpInfo.oldVal + ')</span></div>' +
+      '<div class="math-line"><span class="m-lbl">Mặt nạ (1 &lt;&lt; ' + k + '):</span><span class="m-val">' + pad8(maskVal) + ' (' + maskVal + ')</span></div>' +
+      (lastOpInfo.action.indexOf('Tắt') >= 0 ? '<div class="math-line"><span class="m-lbl">Đảo mặt nạ ~(1&lt;&lt;' + k + '):</span><span class="m-val">' + pad8(notMaskVal) + '</span></div>' : '') +
+      '<div class="math-line" style="border-top:1px dashed var(--line);margin-top:2px;padding-top:2px">' +
+        '<span class="m-lbl">quiz_passed (mới):</span><span class="m-val" style="color:var(--accent)">' + pad8(lastOpInfo.newVal) + ' (' + lastOpInfo.newVal + ')</span>' +
+      '</div>';
+  } else {
+    document.getElementById('math-inspector').innerHTML = 
+      '<div style="color:var(--muted);padding-top:12px">Bấm vào các nút <b>Bật</b>, <b>Tắt</b>, <b>Đảo</b> của từng học sinh để xem chi tiết đặt tính mặt nạ nhị phân.</div>';
+  }
+}
+
+function setBit(k){
+  var old = quizPassed;
+  quizPassed |= (1 << k);
+  lastOpInfo = {
+    action: 'Bật bit thứ ' + k + ' (Học sinh ' + k + ' ĐẠT)',
+    k: k,
+    cmd: 'quiz_passed |= (1 << ' + k + '); // ' + old + ' ➜ ' + quizPassed,
+    oldVal: old,
+    mask: 1 << k,
+    newVal: quizPassed,
+    desc: 'Phép <code>|= (1 &lt;&lt; ' + k + ')</code> bật bit thứ ' + k + ' lên 1, giữ nguyên toàn bộ 7 học sinh còn lại.'
+  };
+  updateUI();
+}
+
+function clearBit(k){
+  var old = quizPassed;
+  quizPassed &= ~(1 << k);
+  lastOpInfo = {
+    action: 'Tắt bit thứ ' + k + ' (Học sinh ' + k + ' CHƯA ĐẠT)',
+    k: k,
+    cmd: 'quiz_passed &= ~(1 << ' + k + '); // ' + old + ' ➜ ' + quizPassed,
+    oldVal: old,
+    mask: 1 << k,
+    newVal: quizPassed,
+    desc: 'Phép <code>&amp;= ~(1 &lt;&lt; ' + k + ')</code> đưa bit thứ ' + k + ' về 0 mà không làm ảnh hưởng các bit khác.'
+  };
+  updateUI();
+}
+
+function toggleBit(k){
+  var old = quizPassed;
+  quizPassed ^= (1 << k);
+  var nowPassed = (quizPassed >> k) & 1;
+  lastOpInfo = {
+    action: 'Đảo bit thứ ' + k + ' (' + (nowPassed ? 'ĐẠT' : 'CHƯA ĐẠT') + ')',
+    k: k,
+    cmd: 'quiz_passed ^= (1 << ' + k + '); // ' + old + ' ➜ ' + quizPassed,
+    oldVal: old,
+    mask: 1 << k,
+    newVal: quizPassed,
+    desc: 'Phép <code>^= (1 &lt;&lt; ' + k + ')</code> đảo trạng thái bit thứ ' + k + ' từ ' + (nowPassed ? '0 ➜ 1' : '1 ➜ 0') + '.'
+  };
+  updateUI();
+}
+
+function applyPreset(p){
+  document.getElementById('p-def').setAttribute('aria-selected', p === 'def' ? 'true' : 'false');
+  document.getElementById('p-all').setAttribute('aria-selected', p === 'all' ? 'true' : 'false');
+  document.getElementById('p-none').setAttribute('aria-selected', p === 'none' ? 'true' : 'false');
+
+  if(p === 'def'){
+    quizPassed = 9;
+    lastOpInfo = { action: 'Ví dụ bài đọc (HS 0 & 3 đạt)', k: -1, cmd: 'int quiz_passed = 9;', oldVal: 0, mask: 0, newVal: 9, desc: 'Học sinh 0 và 3 đạt: 1001_2 = 9.' };
+  } else if(p === 'all'){
+    quizPassed = 255;
+    lastOpInfo = { action: 'Tất cả 8 học sinh đều đạt', k: -1, cmd: 'quiz_passed = 255;', oldVal: 0, mask: 0, newVal: 255, desc: 'Tất cả 8 bit đều bật lên 1: 11111111_2 = 255.' };
+  } else {
+    quizPassed = 0;
+    lastOpInfo = { action: 'Đặt lại về 0', k: -1, cmd: 'quiz_passed = 0;', oldVal: 0, mask: 0, newVal: 0, desc: 'Tất cả 8 bit đều bằng 0: 00000000_2 = 0.' };
+  }
+  updateUI();
+}
+
+// Support query parameter
+var qval = parseInt(qparam('val'), 10);
+if(!isNaN(qval) && qval >= 0 && qval <= 255){
+  quizPassed = qval;
+}
+updateUI();
+</script>
+</body>
+</html>

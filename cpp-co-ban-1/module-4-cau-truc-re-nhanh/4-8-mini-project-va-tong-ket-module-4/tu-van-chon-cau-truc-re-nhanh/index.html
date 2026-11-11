@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Widget Tư vấn lựa chọn cấu trúc điều khiển rẽ nhánh C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .presets{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .preset-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 8px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:system-ui,sans-serif;transition:all .15s}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  
+  /* Questions card */
+  .q-group{margin-bottom:8px}
+  .q-title{font-size:12px;font-weight:700;color:var(--text);margin:0 0 4px}
+  .q-options{display:flex;flex-direction:column;gap:3px}
+  .q-opt{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);cursor:pointer;transition:all .15s}
+  .q-opt:hover{border-color:var(--accent)}
+  .q-opt.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .q-opt input{margin:0;cursor:pointer}
+
+  /* Result card */
+  .result-card{display:flex;flex-direction:column;gap:8px}
+  .rec-header{border-left:4px solid var(--true);background:var(--true-soft);border-radius:6px;padding:6px 10px}
+  .rec-tag{font-size:10.5px;font-weight:700;color:var(--true);text-transform:uppercase;letter-spacing:.04em}
+  .rec-name{font:700 16px system-ui,sans-serif;color:var(--text);margin-top:2px}
+  .rec-reason{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:140px;overflow-y:auto;
+    font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0}
+  .ln .no{width:20px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.7;user-select:none}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .warn-box{border:1px solid #fca5a5;border-radius:6px;padding:5px 8px;background:rgba(239,68,68,0.05);font-size:11.5px}
+  .warn-box b{color:var(--false);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn 3 tiêu chí của bài toán hoặc bấm các <b>tình huống mẫu</b> để nhận tư vấn cấu trúc điều khiển tối ưu nhất trong C++.</p>
+
+  <div class="presets">
+    <span style="font-size:11px;color:var(--muted);font-weight:600">Tình huống thực tế:</span>
+    <button class="preset-btn" onclick="applyPreset('grade')">1. Xếp loại điểm thi (double 0..10)</button>
+    <button class="preset-btn" onclick="applyPreset('menu')">2. Phím điều khiển ('w','a','s','d')</button>
+    <button class="preset-btn" onclick="applyPreset('plural')">3. Chọn từ "hour" / "hours" trong cout</button>
+    <button class="preset-btn" onclick="applyPreset('abs')">4. Lấy giá trị tuyệt đối (đổi dấu số âm)</button>
+    <button class="preset-btn" onclick="applyPreset('even_odd')">5. Kiểm tra chẵn hay lẻ</button>
+  </div>
+
+  <div class="grid">
+    <!-- Cột 1: 3 Câu hỏi chẩn đoán -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Tiêu chí thiết kế bài toán</p>
+      </div>
+
+      <!-- Q1 -->
+      <div class="q-group">
+        <div class="q-title">1. Số lượng nhánh rẽ của bài toán?</div>
+        <div class="q-options" id="grp-q1">
+          <label class="q-opt" id="opt-q1-1" onclick="setQ(1, '1')">
+            <input type="radio" name="q1" value="1"> 1 nhánh phụ (chỉ làm khi điều kiện đúng)
+          </label>
+          <label class="q-opt" id="opt-q1-2" onclick="setQ(1, '2')">
+            <input type="radio" name="q1" value="2"> Đúng 2 nhánh loại trừ nhau (A hoặc B)
+          </label>
+          <label class="q-opt" id="opt-q1-3" onclick="setQ(1, '3')">
+            <input type="radio" name="q1" value="3"> Từ 3 nhánh trở lên (nhiều lựa chọn)
+          </label>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="q-group">
+        <div class="q-title">2. Kiểu dữ liệu / Điều kiện kiểm tra?</div>
+        <div class="q-options" id="grp-q2">
+          <label class="q-opt" id="opt-q2-logic" onclick="setQ(2, 'logic')">
+            <input type="radio" name="q2" value="logic"> Khoảng giá trị / số thực double / chuỗi string
+          </label>
+          <label class="q-opt" id="opt-q2-const" onclick="setQ(2, 'const')">
+            <input type="radio" name="q2" value="const"> 1 biến nguyên / char so với các hằng rời rạc
+          </label>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="q-group" style="margin-bottom:0">
+        <div class="q-title">3. Hành động thực hiện là gì?</div>
+        <div class="q-options" id="grp-q3">
+          <label class="q-opt" id="opt-q3-block" onclick="setQ(3, 'block')">
+            <input type="radio" name="q3" value="block"> Thực thi khối câu lệnh / tính toán nhiều bước
+          </label>
+          <label class="q-opt" id="opt-q3-val" onclick="setQ(3, 'val')">
+            <input type="radio" name="q3" value="val"> Chọn 1 giá trị biểu thức để gán hoặc in
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột 2: Kết quả đề xuất -->
+    <div class="card result-card">
+      <div class="rec-header" id="rec-header">
+        <div class="rec-tag" id="rec-tag">Đề xuất tối ưu</div>
+        <div class="rec-name" id="rec-name">Câu lệnh if đơn</div>
+        <div class="rec-reason" id="rec-reason">Thích hợp khi chỉ cần một hành động phụ trợ.</div>
+      </div>
+
+      <div>
+        <p class="panel-title" style="margin-bottom:4px">Khung code C++ mẫu</p>
+        <div class="code" id="rec-code"></div>
+      </div>
+
+      <div class="warn-box" id="rec-warn">
+        <b>⚠️ Cạm bẫy cần tránh:</b> <span id="warn-txt">Nhớ dùng ngoặc nhọn { } nếu có từ 2 lệnh trở lên.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ans = {
+  q1: '3',     // '1' | '2' | '3'
+  q2: 'logic', // 'logic' | 'const'
+  q3: 'block'  // 'block' | 'val'
+};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|char|string|if|else|switch|case|default|break|cout|return)\b|(\b\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCodeBlock(lines){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    html += '<div class="ln"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('rec-code').innerHTML = html;
+}
+
+function evaluateRecommendation(){
+  var q1 = ans.q1;
+  var q2 = ans.q2;
+  var q3 = ans.q3;
+
+  // Case 1: 1 branch only
+  if (q1 === '1') {
+    return {
+      name: 'Câu lệnh if đơn (Một nhánh)',
+      tag: 'CẤU TRÚC ĐƠN GIẢN NHẤT',
+      reason: 'Chỉ cần thực hiện một thao tác phụ trợ khi điều kiện thoả mãn (ví dụ: đổi dấu khi số âm, cập nhật kỷ lục max_val, hoặc hoán đổi khi a > b).',
+      code: [
+        'if (condition) {',
+        '  // Thao tác phụ trợ khi đúng',
+        '  statement;',
+        '}',
+        '// Tiếp tục luồng chính'
+      ],
+      warn: 'Tránh dấu chấm phẩy thừa ngay sau if (...) và luôn bao khối bằng { } nếu có nhiều hơn 1 dòng lệnh!'
+    };
+  }
+
+  // Case 2: 2 branches, expression value
+  if (q1 === '2' && q3 === 'val') {
+    return {
+      name: 'Toán tử điều kiện 3 ngôi ?: (Ternary Operator)',
+      tag: 'TINH GỌN CHO BIỂU THỨC',
+      reason: 'Cực kỳ tinh gọn khi chỉ cần chọn 1 trong 2 giá trị để gán cho biến hoặc nhúng thẳng vào lệnh in cout <<.',
+      code: [
+        '// Gán gọn hoặc in trực tiếp:',
+        'string unit = (hours == 1 ? "hour" : "hours");',
+        'cout << hours << " " << (hours == 1 ? "hour" : "hours");'
+      ],
+      warn: 'Luôn bọc cặp ngoặc tròn (cond ? v1 : v2) khi dùng bên trong cout << do toán tử << có độ ưu tiên cao hơn ?:'
+    };
+  }
+
+  // Case 3: 2 branches, block statements
+  if (q1 === '2' && q3 === 'block') {
+    return {
+      name: 'Câu lệnh rẽ nhánh if-else (Hai nhánh)',
+      tag: 'CHUẨN LOẠI TRỪ 1-TRONG-2',
+      reason: 'Phù hợp khi có đúng 2 hướng hành động loại trừ lẫn nhau: hoặc làm việc A, hoặc làm việc B (ví dụ chẵn/lẻ, hợp lệ/không hợp lệ).',
+      code: [
+        'if (n % 2 == 0) {',
+        '  cout << "Chan\\n";',
+        '} else {',
+        '  cout << "Le\\n";',
+        '}'
+      ],
+      warn: 'Dùng { } đầy đủ cho cả hai nhánh if và else để tránh lỗi else treo (dangling-else) khi lồng nhau!'
+    };
+  }
+
+  // Case 4: >= 3 branches with single integer/char discrete constants
+  if (q1 === '3' && q2 === 'const') {
+    return {
+      name: 'Câu lệnh switch-case',
+      tag: 'TỐI ƯU CHO MENU & HẰNG RỜI RẠC',
+      reason: 'Mã nguồn sáng sủa, hiệu năng tối ưu (bảng nhảy jump-table) khi đối sánh 1 biến nguyên / char duy nhất với tập hằng số cố định.',
+      code: [
+        'switch (key) {',
+        '  case \'w\': moveUp();    break;',
+        '  case \'s\': moveDown();  break;',
+        '  case \'a\': moveLeft();  break;',
+        '  case \'d\': moveRight(); break;',
+        '  default:   cout << "Phim khong hop le\\n"; break;',
+        '}'
+      ],
+      warn: 'Bắt buộc phải có từ khoá break; ở cuối mỗi nhánh case để tránh lỗi rơi xuyên qua (fall-through) ngoài ý muốn!'
+    };
+  }
+
+  // Case 5: >= 3 branches with range/double/string/complex
+  return {
+    name: 'Chuỗi if - else if - else (Nhiều nhánh)',
+    tag: 'ĐA NĂNG & MẠNH MẼ NHẤT',
+    reason: 'Bắt buộc sử dụng khi phân loại theo khoảng giá trị (điểm thi, cước luỹ tiến), số thực double, chuỗi string hoặc kết hợp nhiều biến logic qua && và ||.',
+    code: [
+      'if (score >= 90.0) {',
+      '  cout << "Gioi\\n";',
+      '} else if (score >= 70.0) {',
+      '  cout << "Kha\\n";',
+      '} else if (score >= 50.0) {',
+      '  cout << "Trung binh\\n";',
+      '} else {',
+      '  cout << "Yeu\\n";',
+      '}'
+    ],
+    warn: 'Nhánh đúng đầu tiên sẽ chiến thắng và ngắt toàn bộ phía dưới; hãy sắp xếp các điều kiện theo thứ tự thu hẹp dần từ trên xuống!'
+  };
+}
+
+function updateUI(){
+  // Update radios and active classes
+  ['1', '2', '3'].forEach(function(v){
+    var el = document.getElementById('opt-q1-' + v);
+    var checked = (ans.q1 === v);
+    el.classList.toggle('selected', checked);
+    el.querySelector('input').checked = checked;
+  });
+
+  ['logic', 'const'].forEach(function(v){
+    var el = document.getElementById('opt-q2-' + v);
+    var checked = (ans.q2 === v);
+    el.classList.toggle('selected', checked);
+    el.querySelector('input').checked = checked;
+  });
+
+  ['block', 'val'].forEach(function(v){
+    var el = document.getElementById('opt-q3-' + v);
+    var checked = (ans.q3 === v);
+    el.classList.toggle('selected', checked);
+    el.querySelector('input').checked = checked;
+  });
+
+  var rec = evaluateRecommendation();
+  document.getElementById('rec-name').textContent = rec.name;
+  document.getElementById('rec-tag').textContent = rec.tag;
+  document.getElementById('rec-reason').textContent = rec.reason;
+  document.getElementById('warn-txt').textContent = rec.warn;
+
+  renderCodeBlock(rec.code);
+}
+
+function setQ(qNum, val){
+  if(qNum === 1) ans.q1 = val;
+  if(qNum === 2) ans.q2 = val;
+  if(qNum === 3) ans.q3 = val;
+
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){ b.classList.remove('active'); });
+
+  updateUI();
+}
+
+function applyPreset(p){
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){ b.classList.remove('active'); });
+  if(event && event.target) event.target.classList.add('active');
+
+  if (p === 'grade') {
+    ans = { q1: '3', q2: 'logic', q3: 'block' };
+  } else if (p === 'menu') {
+    ans = { q1: '3', q2: 'const', q3: 'block' };
+  } else if (p === 'plural') {
+    ans = { q1: '2', q2: 'const', q3: 'val' };
+  } else if (p === 'abs') {
+    ans = { q1: '1', q2: 'logic', q3: 'block' };
+  } else if (p === 'even_odd') {
+    ans = { q1: '2', q2: 'const', q3: 'block' };
+  }
+  updateUI();
+}
+
+// Query params: ?scenario=...
+var qs = qparam('scenario');
+if(qs) applyPreset(qs);
+else updateUI();
+</script>
+</body>
+</html>

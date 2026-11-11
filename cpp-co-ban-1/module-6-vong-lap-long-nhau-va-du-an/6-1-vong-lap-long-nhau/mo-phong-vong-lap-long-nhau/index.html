@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng vòng lặp lồng nhau 2D</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff;
+    --true:#16a34a; --true-soft:#f0fdf4; --false:#dc2626; --false-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef3c7; --cur-bar:#f59e0b;
+    --con-bg:#0f172a; --con-text:#f8fafc;
+    --kw:#7c3aed; --str:#059669; --num:#d97706; --cm:#94a3b8;
+    --cell-empty:#f1f5f9; --cell-done:#dcfce7; --cell-done-b:#86efac;
+    --cell-cur:#fef08a; --cell-cur-b:#eab308;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#090d16; --card:#131b2e; --text:#f1f5f9; --muted:#94a3b8; --line:#1e293b;
+      --accent:#3b82f6; --accent-soft:#172554;
+      --true:#22c55e; --true-soft:#052e16; --false:#ef4444; --false-soft:#450a0a;
+      --code-bg:#0c1222; --cur:#451a03; --cur-bar:#f59e0b;
+      --con-bg:#020617; --con-text:#f1f5f9;
+      --kw:#c084fc; --str:#34d399; --num:#fbbf24; --cm:#64748b;
+      --cell-empty:#1e293b; --cell-done:#064e3b; --cell-done-b:#059669;
+      --cell-cur:#713f12; --cell-cur-b:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:8px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px}
+  .lead b{color:var(--text)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;transition:all .15s}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btns{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;transition:all .15s}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 10px;margin-bottom:8px;min-height:52px;font-size:13px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .grid-3{display:grid;grid-template-columns:1.05fr 0.95fr 1fr;gap:8px}
+  @media (max-width:680px){.grid-3{grid-template-columns:1fr}}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:11.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+  .vars{display:flex;gap:6px;margin-bottom:6px}
+  .var{background:var(--code-bg);border-radius:8px;padding:3px 6px;flex:1;text-align:center;border:1.5px solid transparent;transition:all .2s}
+  .var small{display:block;color:var(--muted);font:10.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 15px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 8px;min-height:92px;
+    font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;border:1px solid var(--line)}
+  .console-cursor{display:inline-block;width:6px;height:13px;background:#38bdf8;vertical-align:-2px;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:0}}
+  
+  /* Matrix styling */
+  .matrix-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0}
+  .matrix-col-headers{display:flex;margin-left:42px;gap:5px;margin-bottom:3px}
+  .col-head{width:48px;text-align:center;font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .matrix-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+  .row-head{width:36px;text-align:right;font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);padding-right:4px}
+  .matrix-cell{width:48px;height:38px;border:1.5px solid var(--line);border-radius:6px;background:var(--cell-empty);
+    display:flex;align-items:center;justify-content:center;font:700 11px ui-monospace,Menlo,Consolas,monospace;
+    color:var(--muted);transition:all .25s ease}
+  .matrix-cell.cur{background:var(--cell-cur);border-color:var(--cell-cur-b);color:var(--text);
+    transform:scale(1.05);box-shadow:0 0 0 2px rgba(245,158,11,0.25);z-index:2}
+  .matrix-cell.done{background:var(--cell-done);border-color:var(--cell-done-b);color:var(--true);font-weight:700}
+  .matrix-cell.disabled{opacity:.2;border-style:dashed}
+  .matrix-legend{display:flex;gap:8px;justify-content:center;font-size:11px;color:var(--muted);margin-top:6px}
+  .leg-item{display:flex;align-items:center;gap:3px}
+  .leg-dot{width:9px;height:9px;border-radius:2px}
+  .leg-empty{background:var(--cell-empty);border:1px solid var(--line)}
+  .leg-cur{background:var(--cell-cur);border:1px solid var(--cell-cur-b)}
+  .leg-done{background:var(--cell-done);border:1px solid var(--cell-done-b)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi vòng ngoài và vòng trong phối hợp duyệt lưới toạ độ.</p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-coords" role="tab" aria-selected="true">Toạ độ 2D (2 × 3)</button>
+      <button class="tab" id="tab-triangle" role="tab" aria-selected="false">Tam giác sao (j &le; i)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid-3">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Mô hình Lưới 2D</p>
+      <div class="matrix-wrap" id="matrix"></div>
+      <div class="matrix-legend">
+        <span class="leg-item"><span class="leg-dot leg-empty"></span> Chưa duyệt</span>
+        <span class="leg-item"><span class="leg-dot leg-cur"></span> Đang duyệt</span>
+        <span class="leg-item"><span class="leg-dot leg-done"></span> Đã in</span>
+      </div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Biến điều khiển</p>
+      <div class="vars" id="vars"></div>
+      <p class="panel-title" style="margin-top:10px">Màn hình Console ảo</p>
+      <div class="console" id="console"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|char|for|while|if|else|return|cout|cin|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur){
+  return lines.map(function(l, i){
+    var on = Array.isArray(cur) ? cur.indexOf(i) >= 0 : cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function varsHtml(vs){
+  return vs.map(function(v){
+    return '<div class="var' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>';
+  }).join('');
+}
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var mode = qparam('vd') === 'tam-giac' ? 'triangle' : 'coords';
+
+var COORDS_LINES = [
+  'for (int row = 1; row <= 2; row++) {',
+  '  for (int col = 1; col <= 3; col++) {',
+  '    cout << "(" << row << "," << col << ") ";',
+  '  }',
+  '  cout << "\\n";',
+  '}'
+];
+
+var TRIANGLE_LINES = [
+  'for (int i = 1; i <= 3; i++) {',
+  '  for (int j = 1; j <= i; j++) {',
+  '    cout << "* ";',
+  '  }',
+  '  cout << "\\n";',
+  '}'
+];
+
+function buildCoordsSnaps(){
+  var S = [], printed = [], out = '';
+  var R = 2, C = 3;
+
+  S.push({
+    ln: 0, r: null, c: null,
+    t: 'Bắt đầu vòng lặp ngoài',
+    b: 'Chuẩn bị khởi tạo biến đếm row = 1 của vòng lặp ngoài.',
+    curCell: null, printed: [], out: ''
+  });
+
+  for (var r = 1; r <= R; r++) {
+    S.push({
+      ln: 0, r: r, c: null, ch: 'r',
+      t: 'Lượt ' + r + ' của vòng ngoài (row = ' + r + ')',
+      b: 'Kiểm tra điều kiện row <= ' + R + ' (' + r + ' <= ' + R + ': Đúng). Bắt đầu lượt duyệt hàng ' + r + '.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+
+    for (var c = 1; c <= C; c++) {
+      S.push({
+        ln: 1, r: r, c: c, ch: 'c',
+        t: 'Vòng trong: col = ' + c,
+        b: (c === 1 ? 'Vòng trong được khởi tạo lại từ col = 1. ' : '') + 'Kiểm tra col <= ' + C + ' (' + c + ' <= ' + C + ': Đúng). Vào thân vòng trong.',
+        curCell: null, printed: printed.slice(), out: out
+      });
+
+      var key = r + '-' + c;
+      printed.push(key);
+      out += '(' + r + ',' + c + ') ';
+
+      S.push({
+        ln: 2, r: r, c: c,
+        t: 'In toạ độ (' + r + ',' + c + ')',
+        b: 'Lệnh cout in ("' + r + '","' + c + '") ra màn hình. Ô hàng ' + r + ', cột ' + c + ' phát sáng trên lưới ma trận.',
+        curCell: key, printed: printed.slice(), out: out
+      });
+    }
+
+    S.push({
+      ln: 1, r: r, c: C + 1, ch: 'c',
+      t: 'Thoát vòng trong (col = ' + (C + 1) + ')',
+      b: 'col tăng lên ' + (C + 1) + ' > ' + C + '. Điều kiện vòng trong sai, kết thúc lượt duyệt các cột của hàng ' + r + '.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+
+    out += '\n';
+    S.push({
+      ln: 4, r: r, c: C + 1,
+      t: 'Xuống dòng (cout << "\\n")',
+      b: 'Lệnh cout << "\\n" kết thúc hàng ' + r + ' trên console và đưa con trỏ xuống hàng tiếp theo.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+  }
+
+  S.push({
+    ln: 0, r: R + 1, c: C + 1, ch: 'r',
+    t: 'Thoát vòng ngoài (row = ' + (R + 1) + ')',
+    b: 'row tăng lên ' + (R + 1) + ' > ' + R + '. Điều kiện vòng ngoài sai, thoát hoàn toàn vòng lặp lồng nhau.',
+    curCell: null, printed: printed.slice(), out: out, st: 'ok'
+  });
+
+  S.push({
+    ln: null, r: R + 1, c: C + 1,
+    t: 'Hoàn tất vòng lặp lồng nhau',
+    b: 'Thân vòng trong đã chạy trọn vẹn ' + R + ' × ' + C + ' = ' + (R * C) + ' lần. Lưới 2 hàng 3 cột đã được in đầy đủ.',
+    curCell: null, printed: printed.slice(), out: out, st: 'ok', end: true
+  });
+
+  return S;
+}
+
+function buildTriangleSnaps(){
+  var S = [], printed = [], out = '';
+  var N = 3;
+
+  S.push({
+    ln: 0, r: null, c: null,
+    t: 'Bắt đầu vẽ tam giác sao',
+    b: 'Chuẩn bị khởi tạo biến đếm hàng i = 1 của vòng lặp ngoài.',
+    curCell: null, printed: [], out: ''
+  });
+
+  for (var i = 1; i <= N; i++) {
+    S.push({
+      ln: 0, r: i, c: null, ch: 'r',
+      t: 'Hàng i = ' + i,
+      b: 'Kiểm tra i <= ' + N + ' (' + i + ' <= ' + N + ': Đúng). Ở hàng ' + i + ', vòng trong sẽ chạy j từ 1 đến ' + i + '.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+
+    for (var j = 1; j <= i; j++) {
+      S.push({
+        ln: 1, r: i, c: j, ch: 'c',
+        t: 'Vòng trong: j = ' + j,
+        b: 'Kiểm tra j <= i (' + j + ' <= ' + i + ': Đúng). Điều kiện phụ thuộc chỉ số hàng!',
+        curCell: null, printed: printed.slice(), out: out
+      });
+
+      var key = i + '-' + j;
+      printed.push(key);
+      out += '* ';
+
+      S.push({
+        ln: 2, r: i, c: j,
+        t: 'In dấu sao thứ ' + j + ' của hàng ' + i,
+        b: 'Lệnh cout << "* " in thêm 1 ngôi sao trên hàng ' + i + '.',
+        curCell: key, printed: printed.slice(), out: out
+      });
+    }
+
+    S.push({
+      ln: 1, r: i, c: i + 1, ch: 'c',
+      t: 'j = ' + (i + 1) + ' > i (' + i + ') -> Thoát vòng trong',
+      b: 'j vượt quá i, đã in đủ ' + i + ' dấu sao cho hàng ' + i + '. Thoát vòng trong.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+
+    out += '\n';
+    S.push({
+      ln: 4, r: i, c: i + 1,
+      t: 'Xuống dòng (cout << "\\n")',
+      b: 'Xuống dòng mới để chuẩn bị cho hàng kế tiếp.',
+      curCell: null, printed: printed.slice(), out: out
+    });
+  }
+
+  S.push({
+    ln: null, r: N + 1, c: N + 1,
+    t: 'Hoàn thành tam giác sao',
+    b: 'Tổng số dấu sao đã in: 1 + 2 + 3 = 6 dấu sao.',
+    curCell: null, printed: printed.slice(), out: out, st: 'ok', end: true
+  });
+
+  return S;
+}
+
+function renderMatrix(s){
+  var isTri = mode === 'triangle';
+  var R = isTri ? 3 : 2;
+  var C = 3;
+  var html = '';
+
+  html += '<div class="matrix-col-headers">';
+  for (var c = 1; c <= C; c++) {
+    html += '<div class="col-head">' + (isTri ? 'j = ' : 'col ') + c + '</div>';
+  }
+  html += '</div>';
+
+  for (var r = 1; r <= R; r++) {
+    html += '<div class="matrix-row">';
+    html += '<div class="row-head">' + (isTri ? 'i = ' : 'row ') + r + '</div>';
+    for (var c = 1; c <= C; c++) {
+      var key = r + '-' + c;
+      var isCur = s.curCell === key;
+      var isDone = s.printed.indexOf(key) >= 0;
+      var isDisabled = isTri && c > r;
+      var cls = 'matrix-cell';
+      if (isDisabled) cls += ' disabled';
+      else if (isCur) cls += ' cur';
+      else if (isDone) cls += ' done';
+
+      var text = '';
+      if (isDisabled) text = '·';
+      else if (isTri) text = isDone ? '★' : ' ';
+      else text = '(' + r + ',' + c + ')';
+
+      html += '<div class="' + cls + '">' + text + '</div>';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 550);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){
+    return mode === 'triangle' ? buildTriangleSnaps() : buildCoordsSnaps();
+  },
+  render: function(s, k, total){
+    var lines = mode === 'triangle' ? TRIANGLE_LINES : COORDS_LINES;
+    $('code').innerHTML = codeHtml(lines, s.ln);
+    $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+    $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.b);
+    $('matrix').innerHTML = renderMatrix(s);
+    var varR = mode === 'triangle' ? 'i' : 'row';
+    var varC = mode === 'triangle' ? 'j' : 'col';
+    $('vars').innerHTML = varsHtml([
+      [varR, s.r === null ? '–' : s.r, s.ch === 'r'],
+      [varC, s.c === null ? '–' : s.c, s.ch === 'c']
+    ]);
+    $('console').innerHTML = (s.out ? esc(s.out) : '') + (s.end ? '' : '<span class="console-cursor"></span>');
+  }
+});
+
+$('tab-coords').onclick = function(){
+  if (mode === 'coords') return;
+  mode = 'coords';
+  $('tab-coords').setAttribute('aria-selected', 'true');
+  $('tab-triangle').setAttribute('aria-selected', 'false');
+  sim.rebuild();
+};
+
+$('tab-triangle').onclick = function(){
+  if (mode === 'triangle') return;
+  mode = 'triangle';
+  $('tab-triangle').setAttribute('aria-selected', 'true');
+  $('tab-coords').setAttribute('aria-selected', 'false');
+  sim.rebuild();
+};
+
+if (mode === 'triangle') {
+  $('tab-triangle').setAttribute('aria-selected', 'true');
+  $('tab-coords').setAttribute('aria-selected', 'false');
+}
+
+sim.rebuild();
+</script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng máy ATM chia mệnh giá tiền tối ưu</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff;
+    --true:#16a34a; --true-soft:#f0fdf4; --false:#dc2626; --false-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef3c7; --cur-bar:#f59e0b;
+    --con-bg:#0f172a; --con-text:#f8fafc;
+    --kw:#7c3aed; --str:#059669; --num:#d97706; --cm:#94a3b8;
+    
+    /* Polymer bank note colors */
+    --m500:#0284c7; --m500-bg:#e0f2fe; --m500-b:#38bdf8;
+    --m200:#ea580c; --m200-bg:#ffedd5; --m200-b:#fb923c;
+    --m100:#16a34a; --m100-bg:#dcfce7; --m100-b:#4ade80;
+    --m50:#9333ea; --m50-bg:#f3e8ff; --m50-b:#c084fc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#090d16; --card:#131b2e; --text:#f1f5f9; --muted:#94a3b8; --line:#1e293b;
+      --accent:#3b82f6; --accent-soft:#172554;
+      --true:#22c55e; --true-soft:#052e16; --false:#ef4444; --false-soft:#450a0a;
+      --code-bg:#0c1222; --cur:#451a03; --cur-bar:#f59e0b;
+      --con-bg:#020617; --con-text:#f1f5f9;
+      --kw:#c084fc; --str:#34d399; --num:#fbbf24; --cm:#64748b;
+      
+      --m500:#38bdf8; --m500-bg:#082f49; --m500-b:#0284c7;
+      --m200:#fb923c; --m200-bg:#431407; --m200-b:#ea580c;
+      --m100:#4ade80; --m100-bg:#052e16; --m100-b:#16a34a;
+      --m50:#c084fc; --m50-bg:#3b0764; --m50-b:#9333ea;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:8px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px}
+  .lead b{color:var(--text)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:13px}
+  .field input{width:75px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:700 13.5px ui-monospace,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pill-lbl{font-size:11.5px;color:var(--muted)}
+  .pill{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 8px;
+    border-radius:6px;cursor:pointer;font:600 12px ui-monospace,Menlo,Consolas,monospace;transition:all .15s}
+  .pill:hover{border-color:var(--accent);color:var(--accent)}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btns{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;transition:all .15s}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .grid-2{display:grid;grid-template-columns:1.1fr 1fr;gap:8px}
+  @media (max-width:640px){.grid-2{grid-template-columns:1fr}}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:11.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+
+  /* ATM Machine */
+  .atm-screen{background:#042f2e;color:#5eead4;border-radius:8px;padding:8px 10px;margin-bottom:8px;
+    font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;border:1.5px solid #134e4a}
+  .atm-screen.err{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+  .atm-screen-row{display:flex;justify-content:space-between;margin-bottom:2px}
+  .atm-screen-lbl{color:#99f6e4;opacity:.8}
+  .atm-screen.err .atm-screen-lbl{color:#fca5a5}
+  .atm-screen-val{font-weight:700;font-size:13.5px}
+
+  /* Cash Tray */
+  .cash-tray{display:flex;flex-direction:column;gap:5px}
+  .note-row{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:8px;
+    border:1.5px solid var(--line);background:var(--code-bg);transition:all .25s ease}
+  .note-row.cur{border-color:var(--cur-bar);background:var(--cur);transform:scale(1.02);
+    box-shadow:0 0 0 2px rgba(245,158,11,0.25)}
+  .note-info{display:flex;align-items:center;gap:6px}
+  .note-pill{padding:2px 8px;border-radius:4px;font:700 11.5px ui-monospace,Menlo,Consolas,monospace;
+    color:#fff;display:inline-block;letter-spacing:.02em}
+  .note-pill.n500{background:var(--m500)}
+  .note-pill.n200{background:var(--m200)}
+  .note-pill.n100{background:var(--m100)}
+  .note-pill.n50{background:var(--m50)}
+  .note-calc{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .note-count{font:700 15px ui-monospace,Menlo,Consolas,monospace;color:var(--text);display:flex;align-items:center;gap:3px}
+  .note-count.has{color:var(--true)}
+
+  .atm-summary{margin-top:8px;padding:6px 10px;border-radius:8px;background:var(--true-soft);
+    border:1px solid var(--true);font-size:12px;color:var(--true);display:none}
+  .atm-summary.show{display:block}
+  .atm-summary b{display:block;font-size:12.5px;margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi thuật toán tham lam chia số tờ tiền từng mệnh giá.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="val-amount">Số tiền (k):</label>
+      <input id="val-amount" type="number" step="50" min="50" max="50000" value="1350">
+    </div>
+    <div class="pills">
+      <span class="pill-lbl">Mẫu:</span>
+      <button class="pill" data-amt="500">500k</button>
+      <button class="pill" data-amt="850">850k</button>
+      <button class="pill active" data-amt="1350">1.350k</button>
+      <button class="pill" data-amt="2850">2.850k</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++ chia mệnh giá</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Mô phỏng Máy ATM</p>
+      <div class="atm-screen" id="atm-screen">
+        <div class="atm-screen-row">
+          <span class="atm-screen-lbl">TIỀN CẦN RÚT:</span>
+          <span class="atm-screen-val" id="disp-initial">1.350.000 đ</span>
+        </div>
+        <div class="atm-screen-row">
+          <span class="atm-screen-lbl">SỐ DƯ CÒN LẠI (amount):</span>
+          <span class="atm-screen-val" id="disp-rem">1.350k</span>
+        </div>
+      </div>
+
+      <div class="cash-tray">
+        <div class="note-row" id="row-500">
+          <div class="note-info">
+            <span class="note-pill n500">500k</span>
+            <span class="note-calc" id="calc-500">–</span>
+          </div>
+          <div class="note-count" id="cnt-500">0 tờ</div>
+        </div>
+        <div class="note-row" id="row-200">
+          <div class="note-info">
+            <span class="note-pill n200">200k</span>
+            <span class="note-calc" id="calc-200">–</span>
+          </div>
+          <div class="note-count" id="cnt-200">0 tờ</div>
+        </div>
+        <div class="note-row" id="row-100">
+          <div class="note-info">
+            <span class="note-pill n100">100k</span>
+            <span class="note-calc" id="calc-100">–</span>
+          </div>
+          <div class="note-count" id="cnt-100">0 tờ</div>
+        </div>
+        <div class="note-row" id="row-50">
+          <div class="note-info">
+            <span class="note-pill n50">50k</span>
+            <span class="note-calc" id="calc-50">–</span>
+          </div>
+          <div class="note-count" id="cnt-50">0 tờ</div>
+        </div>
+      </div>
+
+      <div class="atm-summary" id="atm-summary">
+        <b>Đã nhả đủ tiền!</b>
+        <span id="atm-summary-text"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|if|else|return|cout|cin)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur){
+  return lines.map(function(l, i){
+    var on = Array.isArray(cur) ? cur.indexOf(i) >= 0 : cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var amount = 1350;
+var qa = qparam('amount');
+if (qa !== null && !isNaN(Number(qa))) { amount = parseInt(qa, 10); $('val-amount').value = amount; }
+
+var LINES = [
+  'if (amount <= 0 || amount % 50 != 0) {',
+  '  cout << "Tien khong hop le!\\n"; return 0;',
+  '}',
+  'int c500 = amount / 500; amount %= 500;',
+  'int c200 = amount / 200; amount %= 200;',
+  'int c100 = amount / 100; amount %= 100;',
+  'int c50  = amount / 50;  amount %= 50;'
+];
+
+function buildSnaps(){
+  var S = [];
+  var amt = amount;
+
+  if (amt <= 0 || amt % 50 !== 0) {
+    var errReason = amt <= 0
+      ? 'Số tiền rút phải lớn hơn 0 nghìn đồng (bạn nhập ' + amt + 'k).'
+      : 'Số tiền ' + amt + 'k không chia hết cho 50k (mệnh giá nhỏ nhất ATM nhả).';
+    S.push({
+      ln: 0, rem: amt, c500: 0, c200: 0, c100: 0, c50: 0, curDenom: null,
+      t: 'Kiểm tra tiền điều kiện: THẤT BẠI',
+      b: errReason + ' Điều kiện (amount <= 0 || amount % 50 != 0) là ĐÚNG -> Vào khối báo lỗi!',
+      st: 'bad', isErr: true
+    });
+    S.push({
+      ln: 1, rem: amt, c500: 0, c200: 0, c100: 0, c50: 0, curDenom: null,
+      t: 'Chặn giao dịch (Fail Fast)',
+      b: 'In thông báo "Tien khong hop le!\\n" và lập tức return 0 thoát chương trình. Bảo vệ ATM an toàn!',
+      st: 'bad', isErr: true, end: true
+    });
+    return S;
+  }
+
+  var rem = amt;
+  var c500 = 0, c200 = 0, c100 = 0, c50 = 0;
+
+  S.push({
+    ln: 0, rem: rem, c500: 0, c200: 0, c100: 0, c50: 0, curDenom: null,
+    t: 'Kiểm tra tiền điều kiện: HỢP LỆ',
+    b: 'Số tiền ' + amt + 'k > 0 và chia hết cho 50k (' + amt + ' % 50 == 0). Tiền điều kiện thoả mãn, bắt đầu chia tiền!',
+    st: 'ok'
+  });
+
+  // Step 500
+  var n500 = Math.floor(rem / 500);
+  var rem500 = rem % 500;
+  S.push({
+    ln: 3, rem: rem500, c500: n500, c200: 0, c100: 0, c50: 0, curDenom: 500,
+    calc500: rem + ' / 500 = ' + n500 + ' (dư ' + rem500 + 'k)',
+    t: 'Bước 1: Chia mệnh giá 500k',
+    b: 'Lấy phần nguyên c500 = ' + rem + ' / 500 = ' + n500 + ' tờ. Cập nhật phần dư còn lại amount %= 500 -> amount = ' + rem500 + 'k.'
+  });
+  rem = rem500;
+  c500 = n500;
+
+  // Step 200
+  var n200 = Math.floor(rem / 200);
+  var rem200 = rem % 200;
+  S.push({
+    ln: 4, rem: rem200, c500: c500, c200: n200, c100: 0, c50: 0, curDenom: 200,
+    calc500: c500 > 0 ? (amount + ' / 500 = ' + c500) : '0 tờ',
+    calc200: rem + ' / 200 = ' + n200 + ' (dư ' + rem200 + 'k)',
+    t: 'Bước 2: Chia mệnh giá 200k',
+    b: 'Lấy phần nguyên c200 = ' + rem + ' / 200 = ' + n200 + ' tờ. Cập nhật phần dư còn lại amount %= 200 -> amount = ' + rem200 + 'k.'
+  });
+  rem = rem200;
+  c200 = n200;
+
+  // Step 100
+  var n100 = Math.floor(rem / 100);
+  var rem100 = rem % 100;
+  S.push({
+    ln: 5, rem: rem100, c500: c500, c200: c200, c100: n100, c50: 0, curDenom: 100,
+    calc500: c500 > 0 ? (amount + ' / 500 = ' + c500) : '0 tờ',
+    calc200: c200 > 0 ? ((amount % 500) + ' / 200 = ' + c200) : '0 tờ',
+    calc100: rem + ' / 100 = ' + n100 + ' (dư ' + rem100 + 'k)',
+    t: 'Bước 3: Chia mệnh giá 100k',
+    b: 'Lấy phần nguyên c100 = ' + rem + ' / 100 = ' + n100 + ' tờ. Cập nhật phần dư còn lại amount %= 100 -> amount = ' + rem100 + 'k.'
+  });
+  rem = rem100;
+  c100 = n100;
+
+  // Step 50
+  var n50 = Math.floor(rem / 50);
+  var rem50 = rem % 50;
+  S.push({
+    ln: 6, rem: rem50, c500: c500, c200: c200, c100: c100, c50: n50, curDenom: 50,
+    calc500: c500 > 0 ? (amount + ' / 500 = ' + c500) : '0 tờ',
+    calc200: c200 > 0 ? ((amount % 500) + ' / 200 = ' + c200) : '0 tờ',
+    calc100: c100 > 0 ? ((amount % 200) + ' / 100 = ' + c100) : '0 tờ',
+    calc50: rem + ' / 50 = ' + n50 + ' (dư 0k)',
+    t: 'Bước 4: Chia mệnh giá 50k',
+    b: 'Lấy phần nguyên c50 = ' + rem + ' / 50 = ' + n50 + ' tờ. Phần dư còn lại = 0k. Hoàn tất!'
+  });
+  rem = rem50;
+  c50 = n50;
+
+  var totalNotes = c500 + c200 + c100 + c50;
+  S.push({
+    ln: null, rem: 0, c500: c500, c200: c200, c100: c100, c50: c50, curDenom: null,
+    calc500: c500 + ' tờ', calc200: c200 + ' tờ', calc100: c100 + ' tờ', calc50: c50 + ' tờ',
+    t: 'Giao dịch hoàn tất! Tổng cộng ' + totalNotes + ' tờ tiền',
+    b: 'Máy ATM nhả đủ ' + (amt * 1000).toLocaleString('vi-VN') + ' đ với số lượng tờ ít nhất: ' + c500 + ' tờ 500k, ' + c200 + ' tờ 200k, ' + c100 + ' tờ 100k, ' + c50 + ' tờ 50k.',
+    st: 'ok', end: true, totalNotes: totalNotes
+  });
+
+  return S;
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 550);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: buildSnaps,
+  render: function(s, k, total){
+    $('code').innerHTML = codeHtml(LINES, s.ln);
+    $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+    $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.b);
+
+    // ATM screen
+    var screen = $('atm-screen');
+    if (s.isErr) {
+      screen.className = 'atm-screen err';
+      $('disp-initial').textContent = (amount * 1000).toLocaleString('vi-VN') + ' đ (LỖI)';
+      $('disp-rem').textContent = 'VI PHẠM TIỀN ĐIỀU KIỆN';
+    } else {
+      screen.className = 'atm-screen';
+      $('disp-initial').textContent = (amount * 1000).toLocaleString('vi-VN') + ' đ';
+      $('disp-rem').textContent = s.rem + 'k VNĐ';
+    }
+
+    // Cash rows
+    var denoms = [500, 200, 100, 50];
+    denoms.forEach(function(d){
+      var row = $('row-' + d);
+      row.className = 'note-row' + (s.curDenom === d ? ' cur' : '');
+      var cntEl = $('cnt-' + d);
+      var cntVal = s['c' + d];
+      cntEl.textContent = cntVal + ' tờ';
+      cntEl.className = 'note-count' + (cntVal > 0 ? ' has' : '');
+      var calcEl = $('calc-' + d);
+      calcEl.textContent = s['calc' + d] || '–';
+    });
+
+    // Summary box
+    var sumEl = $('atm-summary');
+    if (s.end && !s.isErr) {
+      sumEl.classList.add('show');
+      $('atm-summary-text').textContent = s.c500 + '×500k + ' + s.c200 + '×200k + ' + s.c100 + '×100k + ' + s.c50 + '×50k = ' + (amount * 1000).toLocaleString('vi-VN') + ' đ (Tổng ' + s.totalNotes + ' tờ tiền)';
+    } else {
+      sumEl.classList.remove('show');
+    }
+  }
+});
+
+$('val-amount').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if (isNaN(v)) return;
+  amount = v;
+  document.querySelectorAll('.pill').forEach(function(p){
+    p.classList.toggle('active', parseInt(p.getAttribute('data-amt'), 10) === amount);
+  });
+  sim.rebuild();
+});
+
+document.querySelectorAll('.pill').forEach(function(p){
+  p.onclick = function(){
+    var v = parseInt(this.getAttribute('data-amt'), 10);
+    $('val-amount').value = v;
+    amount = v;
+    document.querySelectorAll('.pill').forEach(function(el){ el.classList.remove('active'); });
+    this.classList.add('active');
+    sim.rebuild();
+  };
+});
+
+sim.rebuild();
+</script>
+</body>
+</html>

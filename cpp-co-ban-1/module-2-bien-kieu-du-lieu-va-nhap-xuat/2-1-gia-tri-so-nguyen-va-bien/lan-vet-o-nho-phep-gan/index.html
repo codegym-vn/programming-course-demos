@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Lần vết ô nhớ RAM và phép gán trong C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff; --cell-a:#3b82f6; --cell-b:#10b981;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b; --cell-a:#60a5fa; --cell-b:#34d399;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code panel */
+  .code{background:var(--code-bg);border-radius:6px;padding:8px 0;height:240px;overflow-y:auto;
+    font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* RAM Memory Cells Layout */
+  .ram-panel{height:240px;display:flex;flex-direction:column;justify-content:space-between}
+  .ram-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+  
+  .mem-cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:8px;padding:8px;
+    text-align:center;position:relative;transition:all .25s}
+  .mem-cell.active-a{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .mem-cell.active-b{border-color:var(--cell-b);box-shadow:0 0 0 2px rgba(16,185,129,0.15)}
+  .mem-cell.copy-dest{border-color:var(--accent);background:var(--cur)}
+  
+  .cell-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;
+    font-size:11px;color:var(--muted)}
+  .cell-addr{font-family:ui-monospace,monospace;opacity:.8}
+  .cell-name{font:700 15px ui-monospace,monospace;display:inline-block;padding:0 6px;border-radius:4px}
+  .name-a{color:var(--accent);background:var(--accent-soft)}
+  .name-b{color:var(--cell-b);background:rgba(16,185,129,0.12)}
+  
+  .cell-val{font:700 32px ui-monospace,monospace;margin:6px 0;transition:transform .2s,color .2s;color:var(--text)}
+  .cell-val.uninit{color:var(--muted);font-style:italic;opacity:.5}
+  .cell-val.changed{transform:scale(1.15);color:var(--warn)}
+  .cell-footer{font-size:11px;color:var(--muted)}
+
+  /* Copy Flow Bar / Banner */
+  .copy-banner{background:var(--code-bg);border:1px dashed var(--line);border-radius:6px;padding:6px 8px;
+    font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px}
+  .arrow-flow{font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:4px}
+
+  /* History Table */
+  .history-tbl{width:100%;border-collapse:collapse;font:11.5px ui-monospace,monospace;margin-top:6px}
+  .history-tbl th{text-align:left;padding:2px 6px;color:var(--muted);border-bottom:1px solid var(--line);font-weight:600}
+  .history-tbl td{padding:2px 6px;border-bottom:1px solid var(--line)}
+  .history-tbl tr.cur td{background:var(--cur);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để lần vết giá trị của hai ô nhớ <code>a</code> và <code>b</code> trong bộ nhớ RAM qua từng câu lệnh gán.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Bộ dữ liệu">
+      <button class="tab" id="tab-def" role="tab" aria-selected="true" onclick="setDataPreset('def')">Ví dụ bài đọc (2, 5, 4)</button>
+      <button class="tab" id="tab-custom" role="tab" aria-selected="false" onclick="setDataPreset('custom')">Bộ số thử nghiệm (10, 30, 99)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/6</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Bộ nhớ RAM và Lịch sử gán -->
+    <div class="card ram-panel">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Không gian bộ nhớ RAM</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">Stack Memory</span>
+        </div>
+
+        <div class="ram-grid">
+          <!-- Ô nhớ a -->
+          <div class="mem-cell" id="box-a">
+            <div class="cell-header">
+              <span class="cell-name name-a">a</span>
+              <span class="cell-addr">0x7ffee4</span>
+            </div>
+            <div class="cell-val" id="val-a">?</div>
+            <div class="cell-footer">int · 4 bytes</div>
+          </div>
+
+          <!-- Ô nhớ b -->
+          <div class="mem-cell" id="box-b">
+            <div class="cell-header">
+              <span class="cell-name name-b">b</span>
+              <span class="cell-addr">0x7ffee8</span>
+            </div>
+            <div class="cell-val" id="val-b">?</div>
+            <div class="cell-footer">int · 4 bytes</div>
+          </div>
+        </div>
+
+        <div class="copy-banner" id="banner">
+          <span style="color:var(--muted)">Chưa có thao tác nào trong bộ nhớ.</span>
+        </div>
+      </div>
+
+      <div>
+        <table class="history-tbl">
+          <thead>
+            <tr>
+              <th>Dòng lệnh</th>
+              <th>Ô nhớ a</th>
+              <th>Ô nhớ b</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|return)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur){
+  return lines.map(function(l, i){
+    var on = cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var currentPreset = 'def';
+
+function getValues(preset){
+  if (preset === 'custom') {
+    return {v1: 10, v2: 30, v3: 99};
+  }
+  return {v1: 2, v2: 5, v3: 4};
+}
+
+function buildSnaps(preset){
+  var vals = getValues(preset);
+  var v1 = vals.v1, v2 = vals.v2, v3 = vals.v3;
+
+  var lines = [
+    'int a, b;',
+    'a = ' + v1 + ';',
+    'b = ' + v2 + ';',
+    'a = b;  // Sao chep gia tri b sang a',
+    'b = ' + v3 + ';  // Thay doi b, a co doi khong?'
+  ];
+
+  var S = [];
+
+  // Step 0: Cấp phát ô nhớ
+  S.push({
+    ln: 0, lines: lines, varA: '?', varB: '?',
+    activeBox: null, changed: null,
+    t: 'int a, b; (Khai báo hai biến)',
+    desc: 'Trình biên dịch dành ra hai vùng nhớ độc lập trong RAM: ô "a" và ô "b" (mỗi ô 4 bytes). Vì chưa gán giá trị, dữ liệu bên trong là dấu ? (giá trị rác sót lại).',
+    banner: 'Đã cấp phát 2 ô nhớ <code>a</code> và <code>b</code> trong RAM (chưa khởi tạo)',
+    rows: [
+      {cmd: 'int a, b;', a: '?', b: '?', note: 'Cấp phát ô nhớ (giá trị rác)'}
+    ]
+  });
+
+  // Step 1: a = v1;
+  S.push({
+    ln: 1, lines: lines, varA: v1, varB: '?',
+    activeBox: 'a', changed: 'a',
+    t: 'a = ' + v1 + '; (Gán giá trị cho a)',
+    desc: 'Toán tử gán = lấy con số ' + v1 + ' ở vế phải đặt vào ô nhớ a. Ô nhớ b vẫn chưa được gán nên vẫn là ?.',
+    banner: 'Ô nhớ <code>a</code> nhận giá trị số <b>' + v1 + '</b>',
+    rows: [
+      {cmd: 'int a, b;', a: '?', b: '?', note: 'Cấp phát ô nhớ (giá trị rác)'},
+      {cmd: 'a = ' + v1 + ';', a: v1, b: '?', note: 'a nhận ' + v1}
+    ]
+  });
+
+  // Step 2: b = v2;
+  S.push({
+    ln: 2, lines: lines, varA: v1, varB: v2,
+    activeBox: 'b', changed: 'b',
+    t: 'b = ' + v2 + '; (Gán giá trị cho b)',
+    desc: 'Toán tử gán = lấy con số ' + v2 + ' cất vào ô nhớ b. Hiện tại ô a chứa ' + v1 + ' và ô b chứa ' + v2 + '.',
+    banner: 'Ô nhớ <code>b</code> nhận giá trị số <b>' + v2 + '</b>',
+    rows: [
+      {cmd: 'int a, b;', a: '?', b: '?', note: 'Cấp phát ô nhớ (giá trị rác)'},
+      {cmd: 'a = ' + v1 + ';', a: v1, b: '?', note: 'a nhận ' + v1},
+      {cmd: 'b = ' + v2 + ';', a: v1, b: v2, note: 'b nhận ' + v2}
+    ]
+  });
+
+  // Step 3: a = b;
+  S.push({
+    ln: 3, lines: lines, varA: v2, varB: v2,
+    activeBox: 'a', changed: 'a', copy: true,
+    t: 'a = b; (Sao chép giá trị từ b sang a)',
+    desc: 'Toán tử = đọc giá trị ' + v2 + ' trong ô b rồi GHI ĐÈ vào ô a. Giá trị ' + v1 + ' cũ trong a bị xoá vĩnh viễn! Ô b vẫn giữ nguyên ' + v2 + '. Hai ô nhớ hoàn toàn độc lập!',
+    st: 'warn',
+    banner: '<span class="arrow-flow">Sao chép giá trị ' + v2 + ' từ b sang a &rarr; (ghi đè lên ' + v1 + ')</span>',
+    rows: [
+      {cmd: 'int a, b;', a: '?', b: '?', note: 'Cấp phát ô nhớ (giá trị rác)'},
+      {cmd: 'a = ' + v1 + ';', a: v1, b: '?', note: 'a nhận ' + v1},
+      {cmd: 'b = ' + v2 + ';', a: v1, b: v2, note: 'b nhận ' + v2},
+      {cmd: 'a = b;', a: v2, b: v2, note: 'Sao chép b sang a; đè lên ' + v1}
+    ]
+  });
+
+  // Step 4: b = v3;
+  S.push({
+    ln: 4, lines: lines, varA: v2, varB: v3,
+    activeBox: 'b', changed: 'b',
+    t: 'b = ' + v3 + '; (Thay đổi b — a có đổi không?)',
+    desc: 'Ô b nhận giá trị mới là ' + v3 + '. Hãy quan sát: ô a VẪN GIỮ NGUYÊN ' + v2 + '! Phép gán trước đó chỉ sao chép giá trị chứ không hề nối hai biến với nhau.',
+    st: 'ok',
+    banner: 'Ô <code>b</code> đổi thành <b>' + v3 + '</b> &mdash; Ô <code>a</code> vẫn giữ nguyên <b>' + v2 + '</b>!',
+    rows: [
+      {cmd: 'int a, b;', a: '?', b: '?', note: 'Cấp phát ô nhớ (giá trị rác)'},
+      {cmd: 'a = ' + v1 + ';', a: v1, b: '?', note: 'a nhận ' + v1},
+      {cmd: 'b = ' + v2 + ';', a: v1, b: v2, note: 'b nhận ' + v2},
+      {cmd: 'a = b;', a: v2, b: v2, note: 'Sao chép b sang a; đè lên ' + v1},
+      {cmd: 'b = ' + v3 + ';', a: v2, b: v3, note: 'b đổi sang ' + v3 + '; a KHÔNG đổi'}
+    ]
+  });
+
+  return S;
+}
+
+function render(s, k, n){
+  $('code-view').innerHTML = renderCode(s.lines, s.ln);
+  $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+  // Update RAM Cells
+  var valA = $('val-a');
+  var valB = $('val-b');
+  valA.textContent = s.varA;
+  valB.textContent = s.varB;
+  valA.className = 'cell-val' + (s.varA === '?' ? ' uninit' : '') + (s.changed === 'a' ? ' changed' : '');
+  valB.className = 'cell-val' + (s.varB === '?' ? ' uninit' : '') + (s.changed === 'b' ? ' changed' : '');
+
+  var boxA = $('box-a');
+  var boxB = $('box-b');
+  boxA.className = 'mem-cell' + (s.activeBox === 'a' ? ' active-a' : '') + (s.copy ? ' copy-dest' : '');
+  boxB.className = 'mem-cell' + (s.activeBox === 'b' ? ' active-b' : '');
+
+  $('banner').innerHTML = s.banner;
+
+  // History table
+  var h = s.rows.map(function(r, idx){
+    var isCur = idx === s.rows.length - 1;
+    return '<tr' + (isCur ? ' class="cur"' : '') + '>' +
+      '<td><code>' + esc(r.cmd) + '</code></td>' +
+      '<td><b>' + esc(r.a) + '</b></td>' +
+      '<td><b>' + esc(r.b) + '</b></td>' +
+      '<td style="color:var(--muted)">' + esc(r.note) + '</td>' +
+      '</tr>';
+  }).join('');
+  $('history-body').innerHTML = h;
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 700);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){ return buildSnaps(currentPreset); },
+  render: render
+});
+
+function setDataPreset(p){
+  currentPreset = p;
+  $('tab-def').setAttribute('aria-selected', p === 'def');
+  $('tab-custom').setAttribute('aria-selected', p === 'custom');
+  sim.rebuild();
+}
+
+var urlVd = qparam('vd');
+if (urlVd === 'custom') {
+  setDataPreset('custom');
+} else {
+  sim.rebuild();
+}
+</script>
+</body>
+</html>

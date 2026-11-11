@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Định giá biểu thức theo từng bước trong C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .presets{display:flex;gap:4px;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:12.5px ui-monospace,monospace;transition:all .15s}
+  .preset-btn:hover{border-color:var(--accent)}
+  .preset-btn[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:5px 8px;margin-bottom:6px;min-height:44px;font-size:13px}
+  .status b{display:block;font-size:11.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.35fr 1.05fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .rules-card{height:auto}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,monospace;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Tokenized Expression Stage */
+  .stage-card{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;margin-bottom:6px;text-align:center}
+  .stage-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:700}
+  .expr-tokens{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;justify-content:center;
+    font:700 16px ui-monospace,monospace;padding:4px 8px;background:var(--card);border-radius:6px;border:1px solid var(--line)}
+  
+  .tok{padding:1px 5px;border-radius:4px;transition:all .2s}
+  .tok.op{color:var(--kw)}
+  .tok.num{color:var(--num)}
+  .tok.paren{color:var(--accent);font-weight:800}
+  .tok.active{background:var(--cur);border:1px solid var(--cur-bar);box-shadow:0 0 0 2px rgba(224,168,0,0.25);transform:translateY(-1px)}
+  .tok.subst{background:var(--true-soft);color:var(--true);border:1px solid var(--true);animation:pop .25s ease-out}
+  @keyframes pop{ 0%{transform:scale(0.85)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+
+  .eval-indicator{font:11.5px system-ui,sans-serif;color:var(--warn);font-weight:600;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px}
+
+  /* History Ladder */
+  .ladder{height:130px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:2px 0;
+    font:12px ui-monospace,monospace}
+  .ladder-row{display:flex;align-items:center;justify-content:space-between;padding:3px 8px;border-bottom:1px solid var(--line)}
+  .ladder-row:last-child{border-bottom:none}
+  .ladder-row.cur{background:var(--cur);font-weight:700}
+  .ladder-idx{color:var(--muted);font-size:10.5px;width:50px;flex:none}
+  .ladder-expr{flex:1;overflow-x:auto;white-space:nowrap}
+  .ladder-tag{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent);margin-left:6px}
+
+  /* Priority Rules Card */
+  .rules-card{display:flex;flex-direction:column;justify-content:space-between;height:245px}
+  .rule-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;margin-bottom:2px;border:1px solid transparent;font-size:12px}
+  .rule-item.hi{background:var(--cur);border-color:var(--cur-bar);font-weight:700}
+  .rule-rank{font:700 11px ui-monospace,monospace;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);color:var(--accent);flex:none}
+  .rule-desc{flex:1;line-height:1.3}
+  .rule-assoc{font-size:10.5px;color:var(--muted);font-family:ui-monospace,monospace}
+
+  .golden-tip{background:var(--warn-soft);border:1px dashed var(--warn);border-radius:6px;padding:5px 8px;font-size:11.5px;color:var(--warn);line-height:1.35}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi trình biên dịch C++ chọn phép toán theo <b>độ ưu tiên</b> và <b>tính kết hợp</b>.</p>
+
+  <div class="controls">
+    <div class="presets" role="tablist" aria-label="Biểu thức mẫu">
+      <button class="preset-btn" id="p0" role="tab" aria-selected="true" onclick="setPreset(0)">8 + 4 * 6 / 3 - 5</button>
+      <button class="preset-btn" id="p1" role="tab" aria-selected="false" onclick="setPreset(1)">(8 + 4) * (6 / 3 + 5)</button>
+      <button class="preset-btn" id="p2" role="tab" aria-selected="false" onclick="setPreset(2)">50 - 20 - 10 - 5 (kết hợp trái)</button>
+      <button class="preset-btn" id="p3" role="tab" aria-selected="false" onclick="setPreset(3)">(15 - 5 * 2) * 4 + 18 / 6</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Quá trình định giá biểu thức -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Biểu thức đang định giá</p>
+        <span class="badge" id="step-badge">Bước 1/5</span>
+      </div>
+
+      <div class="stage-card">
+        <div class="stage-label">Trạng thái biểu thức hiện tại</div>
+        <div class="expr-tokens" id="tokens-view"></div>
+        <div class="eval-indicator" id="eval-indicator"></div>
+      </div>
+
+      <div class="panel-head" style="margin-top:6px">
+        <p class="panel-title">Lịch sử thu gọn biểu thức</p>
+        <span style="font-size:11px;color:var(--muted)">Từng bước thay thế</span>
+      </div>
+      <div class="ladder" id="ladder-view"></div>
+    </div>
+
+    <!-- Cột 2: Bảng quy tắc độ ưu tiên C++ -->
+    <div class="card rules-card">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Quy tắc độ ưu tiên toán tử</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">C++ Standard</span>
+        </div>
+
+        <div class="rule-item" id="rule-p1">
+          <div class="rule-rank">1</div>
+          <div class="rule-desc"><b>Cặp ngoặc tròn ( )</b><br><span class="rule-assoc">Trong ngoặc tính trước, từ trong ra ngoài</span></div>
+        </div>
+
+        <div class="rule-item" id="rule-p2">
+          <div class="rule-rank">2</div>
+          <div class="rule-desc"><b>Nhân, chia, chia dư (*, /, %)</b><br><span class="rule-assoc">Kết hợp trái: Trái sang Phải</span></div>
+        </div>
+
+        <div class="rule-item" id="rule-p3">
+          <div class="rule-rank">3</div>
+          <div class="rule-desc"><b>Cộng, trừ hai ngôi (+, -)</b><br><span class="rule-assoc">Kết hợp trái: Trái sang Phải</span></div>
+        </div>
+
+        <div class="rule-item" id="rule-p4">
+          <div class="rule-rank">4</div>
+          <div class="rule-desc"><b>Gán và gán mở rộng (=, +=, ...)</b><br><span class="rule-assoc">Độ ưu tiên thấp nhất, kết hợp Phải sang Trái</span></div>
+        </div>
+      </div>
+
+      <div class="golden-tip">
+        <b>💡 Quy tắc vàng:</b> Nếu còn phân vân về thứ tự ưu tiên, hãy luôn đặt cặp ngoặc tròn <code>( )</code> để biểu thức rõ ràng, dễ đọc!
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var PRESETS = [
+  {
+    name: '8 + 4 * 6 / 3 - 5',
+    steps: [
+      {
+        tokens: [
+          {t:'8',c:'num'},{t:'+',c:'op'},{t:'4',c:'num active'},{t:'*',c:'op active'},{t:'6',c:'num active'},
+          {t:'/',c:'op'},{t:'3',c:'num'},{t:'-',c:'op'},{t:'5',c:'num'}
+        ],
+        exprStr: '8 + 4 * 6 / 3 - 5',
+        activeRule: 'rule-p2',
+        title: 'Bước 1: Tìm toán tử có độ ưu tiên cao nhất',
+        msg: 'Trong biểu thức có <code>+</code>, <code>*</code>, <code>/</code>, <code>-</code>. Toán tử <code>*</code> và <code>/</code> có độ ưu tiên cao hơn <code>+</code> và <code>-</code>. Vì cùng mức ưu tiên và kết hợp từ trái sang phải, phép nhân <code>4 * 6</code> được tính trước tiên.',
+        indicator: '👉 Đang tính: 4 * 6 = 24'
+      },
+      {
+        tokens: [
+          {t:'8',c:'num'},{t:'+',c:'op'},{t:'24',c:'num active subst'},{t:'/',c:'op active'},{t:'3',c:'num active'},
+          {t:'-',c:'op'},{t:'5',c:'num'}
+        ],
+        exprStr: '8 + 24 / 3 - 5',
+        activeRule: 'rule-p2',
+        title: 'Bước 2: Tiếp tục với toán tử nhân/chia còn lại',
+        msg: 'Toán tử chia <code>/</code> có độ ưu tiên cao hơn <code>+</code> và <code>-</code>: tính <code>24 / 3 = 8</code>.',
+        indicator: '👉 Đang tính: 24 / 3 = 8'
+      },
+      {
+        tokens: [
+          {t:'8',c:'num active'},{t:'+',c:'op active'},{t:'8',c:'num active subst'},{t:'-',c:'op'},{t:'5',c:'num'}
+        ],
+        exprStr: '8 + 8 - 5',
+        activeRule: 'rule-p3',
+        title: 'Bước 3: Các toán tử cộng/trừ kết hợp từ trái sang phải',
+        msg: 'Cả <code>+</code> và <code>-</code> có cùng độ ưu tiên cấp 3, tính theo thứ tự từ TRÁI sang PHẢI: tính <code>8 + 8 = 16</code>.',
+        indicator: '👉 Đang tính: 8 + 8 = 16'
+      },
+      {
+        tokens: [
+          {t:'16',c:'num active subst'},{t:'-',c:'op active'},{t:'5',c:'num active'}
+        ],
+        exprStr: '16 - 5',
+        activeRule: 'rule-p3',
+        title: 'Bước 4: Thực hiện phép toán cuối cùng',
+        msg: 'Tính phép trừ cuối cùng: <code>16 - 5 = 11</code>.',
+        indicator: '👉 Đang tính: 16 - 5 = 11'
+      },
+      {
+        tokens: [
+          {t:'11',c:'num active subst'}
+        ],
+        exprStr: '11',
+        activeRule: null,
+        title: 'Bước 5: Hoàn tất định giá!',
+        msg: 'Biểu thức <code>8 + 4 * 6 / 3 - 5</code> cho kết quả cuối cùng là <b>11</b>.',
+        indicator: '✅ Kết quả cuối cùng: 11'
+      }
+    ]
+  },
+  {
+    name: '(8 + 4) * (6 / 3 + 5)',
+    steps: [
+      {
+        tokens: [
+          {t:'(',c:'paren active'},{t:'8',c:'num active'},{t:'+',c:'op active'},{t:'4',c:'num active'},{t:')',c:'paren active'},
+          {t:'*',c:'op'},
+          {t:'(',c:'paren'},{t:'6',c:'num'},{t:'/',c:'op'},{t:'3',c:'num'},{t:'+',c:'op'},{t:'5',c:'num'},{t:')',c:'paren'}
+        ],
+        exprStr: '(8 + 4) * (6 / 3 + 5)',
+        activeRule: 'rule-p1',
+        title: 'Bước 1: Ngoặc tròn ( ) có độ ưu tiên cao nhất',
+        msg: 'Cặp ngoặc tròn <code>(8 + 4)</code> ghi đè độ ưu tiên thông thường, buộc tính phép cộng bên trong trước: <code>8 + 4 = 12</code>.',
+        indicator: '👉 Đang tính trong ngoặc thứ nhất: (8 + 4) = 12'
+      },
+      {
+        tokens: [
+          {t:'12',c:'num subst'},{t:'*',c:'op'},
+          {t:'(',c:'paren'},{t:'6',c:'num active'},{t:'/',c:'op active'},{t:'3',c:'num active'},{t:'+',c:'op'},{t:'5',c:'num'},{t:')',c:'paren'}
+        ],
+        exprStr: '12 * (6 / 3 + 5)',
+        activeRule: 'rule-p2',
+        title: 'Bước 2: Xử lý bên trong cặp ngoặc thứ hai',
+        msg: 'Bên trong <code>(6 / 3 + 5)</code>, toán tử <code>/</code> ưu tiên hơn <code>+</code>: tính <code>6 / 3 = 2</code> trước.',
+        indicator: '👉 Đang tính trong ngoặc thứ hai: 6 / 3 = 2'
+      },
+      {
+        tokens: [
+          {t:'12',c:'num'},{t:'*',c:'op'},
+          {t:'(',c:'paren active'},{t:'2',c:'num active subst'},{t:'+',c:'op active'},{t:'5',c:'num active'},{t:')',c:'paren active'}
+        ],
+        exprStr: '12 * (2 + 5)',
+        activeRule: 'rule-p1',
+        title: 'Bước 3: Hoàn thành cặp ngoặc thứ hai',
+        msg: 'Tính phép cộng trong ngoặc: <code>2 + 5 = 7</code>. Cặp ngoặc biến mất.',
+        indicator: '👉 Đang tính trong ngoặc: (2 + 5) = 7'
+      },
+      {
+        tokens: [
+          {t:'12',c:'num active'},{t:'*',c:'op active'},{t:'7',c:'num active subst'}
+        ],
+        exprStr: '12 * 7',
+        activeRule: 'rule-p2',
+        title: 'Bước 4: Nhân kết quả của hai cặp ngoặc',
+        msg: 'Thực hiện phép nhân còn lại: <code>12 * 7 = 84</code>.',
+        indicator: '👉 Đang tính: 12 * 7 = 84'
+      },
+      {
+        tokens: [
+          {t:'84',c:'num active subst'}
+        ],
+        exprStr: '84',
+        activeRule: null,
+        title: 'Bước 5: Hoàn tất định giá!',
+        msg: 'Biểu thức <code>(8 + 4) * (6 / 3 + 5)</code> cho kết quả cuối cùng là <b>84</b>.',
+        indicator: '✅ Kết quả cuối cùng: 84'
+      }
+    ]
+  },
+  {
+    name: '50 - 20 - 10 - 5',
+    steps: [
+      {
+        tokens: [
+          {t:'50',c:'num active'},{t:'-',c:'op active'},{t:'20',c:'num active'},{t:'-',c:'op'},{t:'10',c:'num'},{t:'-',c:'op'},{t:'5',c:'num'}
+        ],
+        exprStr: '50 - 20 - 10 - 5',
+        activeRule: 'rule-p3',
+        title: 'Bước 1: Tính kết hợp trái (Left-Associativity)',
+        msg: 'Cả 3 toán tử <code>-</code> có cùng độ ưu tiên. Do có tính kết hợp trái, C++ bắt buộc tính từ TRÁI sang PHẢI: tính <code>(50 - 20) = 30</code> trước (không bao giờ tính từ phải sang!).',
+        indicator: '👉 Đang tính từ trái qua: (50 - 20) = 30'
+      },
+      {
+        tokens: [
+          {t:'30',c:'num active subst'},{t:'-',c:'op active'},{t:'10',c:'num active'},{t:'-',c:'op'},{t:'5',c:'num'}
+        ],
+        exprStr: '30 - 10 - 5',
+        activeRule: 'rule-p3',
+        title: 'Bước 2: Tiếp tục từ trái sang phải',
+        msg: 'Tiếp tục nhóm từ trái: <code>30 - 10 = 20</code>.',
+        indicator: '👉 Đang tính: (30 - 10) = 20'
+      },
+      {
+        tokens: [
+          {t:'20',c:'num active subst'},{t:'-',c:'op active'},{t:'5',c:'num active'}
+        ],
+        exprStr: '20 - 5',
+        activeRule: 'rule-p3',
+        title: 'Bước 3: Phép trừ cuối cùng',
+        msg: 'Thực hiện phép trừ cuối: <code>20 - 5 = 15</code>.',
+        indicator: '👉 Đang tính: 20 - 5 = 15'
+      },
+      {
+        tokens: [
+          {t:'15',c:'num active subst'}
+        ],
+        exprStr: '15',
+        activeRule: null,
+        title: 'Bước 4: Hoàn tất!',
+        msg: 'Kết quả là <b>15</b>. Nếu tính nhầm từ phải sang trái <code>50 - (20 - (10 - 5))</code> kết quả sẽ sai thành <code>35</code>!',
+        indicator: '✅ Kết quả cuối cùng: 15'
+      }
+    ]
+  },
+  {
+    name: '(15 - 5 * 2) * 4 + 18 / 6',
+    steps: [
+      {
+        tokens: [
+          {t:'(',c:'paren'},{t:'15',c:'num'},{t:'-',c:'op'},{t:'5',c:'num active'},{t:'*',c:'op active'},{t:'2',c:'num active'},{t:')',c:'paren'},
+          {t:'*',c:'op'},{t:'4',c:'num'},{t:'+',c:'op'},{t:'18',c:'num'},{t:'/',c:'op'},{t:'6',c:'num'}
+        ],
+        exprStr: '(15 - 5 * 2) * 4 + 18 / 6',
+        activeRule: 'rule-p2',
+        title: 'Bước 1: Ngoặc trước, và bên trong ngoặc nhân chia trước',
+        msg: 'Trong cặp ngoặc <code>(15 - 5 * 2)</code>, toán tử nhân <code>*</code> có độ ưu tiên cao hơn trừ <code>-</code>: tính <code>5 * 2 = 10</code>.',
+        indicator: '👉 Đang tính trong ngoặc: 5 * 2 = 10'
+      },
+      {
+        tokens: [
+          {t:'(',c:'paren active'},{t:'15',c:'num active'},{t:'-',c:'op active'},{t:'10',c:'num active subst'},{t:')',c:'paren active'},
+          {t:'*',c:'op'},{t:'4',c:'num'},{t:'+',c:'op'},{t:'18',c:'num'},{t:'/',c:'op'},{t:'6',c:'num'}
+        ],
+        exprStr: '(15 - 10) * 4 + 18 / 6',
+        activeRule: 'rule-p1',
+        title: 'Bước 2: Hoàn tất biểu thức trong ngoặc',
+        msg: 'Tính <code>15 - 10 = 5</code>, cặp ngoặc được giải phóng.',
+        indicator: '👉 Đang tính: (15 - 10) = 5'
+      },
+      {
+        tokens: [
+          {t:'5',c:'num active subst'},{t:'*',c:'op active'},{t:'4',c:'num active'},{t:'+',c:'op'},{t:'18',c:'num'},{t:'/',c:'op'},{t:'6',c:'num'}
+        ],
+        exprStr: '5 * 4 + 18 / 6',
+        activeRule: 'rule-p2',
+        title: 'Bước 3: Nhân chia từ trái sang phải',
+        msg: 'Toán tử <code>*</code> và <code>/</code> ưu tiên hơn <code>+</code>. Tính phép nhân bên trái: <code>5 * 4 = 20</code>.',
+        indicator: '👉 Đang tính: 5 * 4 = 20'
+      },
+      {
+        tokens: [
+          {t:'20',c:'num subst'},{t:'+',c:'op'},{t:'18',c:'num active'},{t:'/',c:'op active'},{t:'6',c:'num active'}
+        ],
+        exprStr: '20 + 18 / 6',
+        activeRule: 'rule-p2',
+        title: 'Bước 4: Thực hiện phép chia tiếp theo',
+        msg: 'Toán tử chia <code>/</code> ưu tiên hơn <code>+</code>: tính <code>18 / 6 = 3</code>.',
+        indicator: '👉 Đang tính: 18 / 6 = 3'
+      },
+      {
+        tokens: [
+          {t:'20',c:'num active'},{t:'+',c:'op active'},{t:'3',c:'num active subst'}
+        ],
+        exprStr: '20 + 3',
+        activeRule: 'rule-p3',
+        title: 'Bước 5: Phép cộng cuối cùng',
+        msg: 'Tính phép cộng cuối: <code>20 + 3 = 23</code>.',
+        indicator: '👉 Đang tính: 20 + 3 = 23'
+      },
+      {
+        tokens: [
+          {t:'23',c:'num active subst'}
+        ],
+        exprStr: '23',
+        activeRule: null,
+        title: 'Bước 6: Hoàn tất định giá!',
+        msg: 'Biểu thức <code>(15 - 5 * 2) * 4 + 18 / 6</code> cho kết quả cuối cùng là <b>23</b>.',
+        indicator: '✅ Kết quả cuối cùng: 23'
+      }
+    ]
+  }
+];
+
+var curPresetIdx = 0;
+var curStepIdx = 0;
+var timer = null;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function updateUI(){
+  var p = PRESETS[curPresetIdx];
+  var steps = p.steps;
+  var step = steps[curStepIdx];
+  var total = steps.length;
+
+  document.getElementById('step-badge').textContent = 'Bước ' + (curStepIdx + 1) + '/' + total;
+
+  // Status
+  var st = document.getElementById('status');
+  st.className = 'status' + (curStepIdx === total - 1 ? ' ok' : '');
+  st.innerHTML = '<b>' + esc(step.title) + '</b>' + step.msg;
+
+  // Tokens
+  var tokHtml = '';
+  for(var i=0; i<step.tokens.length; i++){
+    var tk = step.tokens[i];
+    tokHtml += '<span class="tok ' + tk.c + '">' + esc(tk.t) + '</span>';
+  }
+  document.getElementById('tokens-view').innerHTML = tokHtml;
+  document.getElementById('eval-indicator').textContent = step.indicator;
+
+  // Ladder History
+  var ladHtml = '';
+  for(var s=0; s<=curStepIdx; s++){
+    var isCur = (s === curStepIdx);
+    ladHtml += '<div class="ladder-row' + (isCur ? ' cur' : '') + '">' +
+      '<span class="ladder-idx">Bước ' + (s + 1) + '</span>' +
+      '<span class="ladder-expr">' + esc(steps[s].exprStr) + '</span>' +
+      (s === total - 1 ? '<span class="ladder-tag" style="background:var(--true-soft);color:var(--true)">Kết quả</span>' : '') +
+    '</div>';
+  }
+  var ladEl = document.getElementById('ladder-view');
+  ladEl.innerHTML = ladHtml;
+  ladEl.scrollTop = ladEl.scrollHeight;
+
+  // Highlight rule
+  var rules = ['rule-p1', 'rule-p2', 'rule-p3', 'rule-p4'];
+  for(var r=0; r<rules.length; r++){
+    var el = document.getElementById(rules[r]);
+    if(el){
+      if(rules[r] === step.activeRule) el.classList.add('hi');
+      else el.classList.remove('hi');
+    }
+  }
+
+  // Buttons state
+  var running = (timer !== null);
+  document.getElementById('next').disabled = (curStepIdx >= total - 1) || running;
+  document.getElementById('prev').disabled = (curStepIdx <= 0) || running;
+  document.getElementById('all').textContent = running ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!running && curStepIdx >= total - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setPreset(idx){
+  stopTimer();
+  curPresetIdx = idx;
+  curStepIdx = 0;
+  for(var i=0; i<PRESETS.length; i++){
+    var btn = document.getElementById('p' + i);
+    if(btn) btn.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+  }
+  updateUI();
+}
+
+document.getElementById('next').onclick = function(){
+  var total = PRESETS[curPresetIdx].steps.length;
+  if(curStepIdx < total - 1){ curStepIdx++; updateUI(); }
+};
+document.getElementById('prev').onclick = function(){
+  if(curStepIdx > 0){ curStepIdx--; updateUI(); }
+};
+document.getElementById('reset').onclick = function(){
+  stopTimer(); curStepIdx = 0; updateUI();
+};
+document.getElementById('all').onclick = function(){
+  if(timer){ stopTimer(); updateUI(); return; }
+  timer = setInterval(function(){
+    var total = PRESETS[curPresetIdx].steps.length;
+    if(curStepIdx >= total - 1){ stopTimer(); updateUI(); return; }
+    curStepIdx++;
+    updateUI();
+    if(curStepIdx >= total - 1){ stopTimer(); updateUI(); }
+  }, 750);
+  updateUI();
+};
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Check query params
+var qvd = parseInt(qparam('vd'), 10);
+if(!isNaN(qvd) && qvd >= 0 && qvd < PRESETS.length) setPreset(qvd);
+else setPreset(0);
+
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1 && qb <= PRESETS[curPresetIdx].steps.length){
+  curStepIdx = qb - 1;
+  updateUI();
+}
+</script>
+</body>
+</html>

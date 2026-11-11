@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Bộ đệm bàn phím &amp; cin &gt;&gt; a &gt;&gt; b</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --var:#0284c7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --var:#38bdf8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  /* Grid Layout */
+  .grid{display:grid;grid-template-columns:1fr 1.25fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code panel */
+  .code{background:var(--code-bg);border-radius:6px;padding:8px 0;height:120px;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.fn{color:var(--var);font-weight:600}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Buffer conveyor belt */
+  .buf-belt-card{margin-bottom:8px}
+  .buf-belt{display:flex;align-items:center;background:var(--code-bg);border:1px solid var(--line);
+    border-radius:8px;padding:8px 6px 12px;overflow-x:auto;position:relative}
+  .buf-slot{display:flex;flex-direction:column;align-items:center;position:relative;margin:0 2px;min-width:32px}
+  
+  .char-cell{width:32px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+    font:700 14px ui-monospace,monospace;background:var(--card);border:2px solid var(--line);
+    color:var(--text);transition:all .2s;position:relative;z-index:2}
+  .char-cell.ws{color:var(--muted);background:rgba(148,163,184,0.1);border-style:dashed}
+  .char-cell.reading{background:var(--cur);border-color:var(--cur-bar);transform:scale(1.08);box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+  .char-cell.skipped{opacity:.35;background:var(--code-bg);border-color:var(--line);text-decoration:line-through}
+  .char-cell.extracted{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+  .char-cell.error{background:var(--false-soft);border-color:var(--false);color:var(--false);animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+  .char-tag{font:10px ui-monospace,monospace;color:var(--muted);margin-top:2px}
+  .pointer-arr{position:absolute;bottom:-18px;font-size:12px;color:var(--accent);font-weight:900;
+    line-height:1;transition:all .2s;display:none}
+  .buf-slot.active .pointer-arr{display:block}
+
+  /* Lower info: Variables and Stream Flags */
+  .lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .var-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;text-align:center}
+  .var-name{font:700 12px ui-monospace,monospace;color:var(--muted);display:block;margin-bottom:2px}
+  .var-val{font:700 24px ui-monospace,monospace;color:var(--text);transition:all .2s}
+  .var-val.chg{color:var(--warn);transform:scale(1.1)}
+  .var-val.ok{color:var(--true)}
+
+  /* Stream flags */
+  .flag-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  .flag-row{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-bottom:3px}
+  .flag-row:last-child{margin-bottom:0}
+  .flag-name{font-family:ui-monospace,monospace;font-weight:600}
+  .flag-dot{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:11px;padding:1px 6px;border-radius:4px}
+  .dot-good{background:var(--true-soft);color:var(--true)}
+  .dot-fail{background:var(--false-soft);color:var(--false);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.6}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi con trỏ đọc của <code>cin &gt;&gt; a &gt;&gt; b</code> trích xuất số nguyên và bỏ qua khoảng trắng trong bộ đệm bàn phím.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Kịch bản">
+      <button class="tab" id="tab-k1" role="tab" aria-selected="true" onclick="setScenario('k1')">Kịch bản 1: Khoảng trắng &amp; Tab</button>
+      <button class="tab" id="tab-k2" role="tab" aria-selected="false" onclick="setScenario('k2')">Kịch bản 2: Xuống dòng Enter</button>
+      <button class="tab" id="tab-k3" role="tab" aria-selected="false" onclick="setScenario('k3')">Kịch bản 3: Nhập sai chữ (Failbit)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <!-- Băng chuyền Bộ đệm nhập (Input Buffer) -->
+  <div class="card buf-belt-card">
+    <div class="panel-head">
+      <p class="panel-title">Bộ đệm luồng nhập (std::cin Input Buffer)</p>
+      <span class="badge" id="buf-info">Dữ liệu bàn phím nạp sẵn</span>
+    </div>
+    <div class="buf-belt" id="buf-belt"></div>
+  </div>
+
+  <!-- Phần dưới: Code bên trái, Trạng thái biến & Luồng bên phải -->
+  <div class="grid">
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/6</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Trạng thái biến &amp; Cờ trạng thái luồng</p>
+        <span class="badge" id="stream-state-badge">goodbit</span>
+      </div>
+      <div class="lower-grid">
+        <!-- Biến a & b -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="var-box">
+            <span class="var-name">Biến int a</span>
+            <span class="var-val" id="val-a">0</span>
+          </div>
+          <div class="var-box">
+            <span class="var-name">Biến int b</span>
+            <span class="var-val" id="val-b">0</span>
+          </div>
+        </div>
+
+        <!-- Bảng cờ Stream Flags -->
+        <div class="flag-box">
+          <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Cờ trạng thái std::cin</p>
+          <div class="flag-row">
+            <span class="flag-name">cin.good()</span>
+            <span id="flag-good" class="flag-dot dot-good">TRUE (1)</span>
+          </div>
+          <div class="flag-row">
+            <span class="flag-name">cin.fail()</span>
+            <span id="flag-fail" class="flag-dot" style="background:#e2e8f0;color:#64748b">FALSE (0)</span>
+          </div>
+          <div class="flag-row">
+            <span class="flag-name">cin.eof()</span>
+            <span id="flag-eof" class="flag-dot" style="background:#e2e8f0;color:#64748b">FALSE (0)</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.3" id="flag-note">
+            Luồng mở bình thường.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|return)\b|(\bcin\b|\bcout\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="fn">' + esc(m[4]) + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur){
+  return lines.map(function(l, i){
+    var on = cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var currentK = 'k1';
+
+var LINES = [
+  'int a = 0, b = 0;',
+  'cin >> a >> b;',
+  '// Tiep tuc xu ly tong: a + b'
+];
+
+function buildSnaps(k){
+  var S = [];
+  if (k === 'k1') {
+    // Input: '   12    5\n'
+    // slots: [ ' ', ' ', ' ', '1', '2', ' ', ' ', '\t', '5', '\n' ]
+    var slots = [
+      {c:' ', l:'space', ws:true},
+      {c:' ', l:'space', ws:true},
+      {c:' ', l:'space', ws:true},
+      {c:'1', l:'digit'},
+      {c:'2', l:'digit'},
+      {c:' ', l:'space', ws:true},
+      {c:' ', l:'space', ws:true},
+      {c:'\\t', l:'tab', ws:true},
+      {c:'5', l:'digit'},
+      {c:'\\n', l:'enter', ws:true}
+    ];
+
+    // Step 0: Initial
+    S.push({
+      ln: 0, ptr: 0, a: 0, b: 0, good: true, fail: false,
+      slots: slots.map(function(s){ return Object.assign({}, s, {st: ''}); }),
+      t: "Khởi tạo biến: a = 0, b = 0",
+      desc: "Người dùng gõ '   12    5' kèm phím Enter. Chuỗi ký tự xếp hàng sẵn trong bộ đệm bàn phím. Con trỏ đọc đang ở đầu bộ đệm."
+    });
+
+    // Step 1: cin >> a skips leading whitespace
+    S.push({
+      ln: 1, ptr: 2, a: 0, b: 0, good: true, fail: false,
+      slots: slots.map(function(s, idx){
+        var st = idx < 3 ? 'skipped' : '';
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> a: Bỏ qua khoảng trắng đầu dòng",
+      desc: "Toán tử >> tự động lướt qua 3 dấu cách đầu dòng. Không có biến nào bị ảnh hưởng bởi các dấu cách này."
+    });
+
+    // Step 2: reads '1', '2'
+    S.push({
+      ln: 1, ptr: 4, a: 12, b: 0, chgA: true, good: true, fail: false,
+      slots: slots.map(function(s, idx){
+        var st = idx < 3 ? 'skipped' : (idx <= 4 ? 'extracted' : '');
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> a: Trích xuất số nguyên 12",
+      desc: "Gặp ký tự '1' và '2', cin thu thập và ghép thành số nguyên 12, cất vào biến a. Khi gặp dấu cách tiếp theo, cin dừng lại. Biến a = 12!",
+      st: 'ok'
+    });
+
+    // Step 3: cin >> b skips whitespace
+    S.push({
+      ln: 1, ptr: 7, a: 12, b: 0, good: true, fail: false,
+      slots: slots.map(function(s, idx){
+        var st = idx < 3 ? 'skipped' : (idx <= 4 ? 'extracted' : (idx <= 7 ? 'skipped' : ''));
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> b: Bỏ qua khoảng trắng và Tab ở giữa",
+      desc: "Lệnh tiếp theo cin >> b bắt đầu đọc: nó tự động bỏ qua 2 dấu cách và 1 ký tự Tab '\\t' nằm giữa hai số."
+    });
+
+    // Step 4: reads '5'
+    S.push({
+      ln: 1, ptr: 8, a: 12, b: 5, chgB: true, good: true, fail: false,
+      slots: slots.map(function(s, idx){
+        var st = idx < 3 ? 'skipped' : (idx <= 4 ? 'extracted' : (idx <= 7 ? 'skipped' : (idx === 8 ? 'extracted' : '')));
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> b: Trích xuất số nguyên 5",
+      desc: "Gặp chữ số '5', cin cất giá trị 5 vào biến b. Gặp ký tự xuống dòng '\\n', cin hoàn thành việc đọc. Biến b = 5!",
+      st: 'ok'
+    });
+
+    // Step 5: Done
+    S.push({
+      ln: 2, ptr: 9, a: 12, b: 5, good: true, fail: false,
+      slots: slots.map(function(s, idx){
+        var st = idx < 3 ? 'skipped' : (idx <= 4 ? 'extracted' : (idx <= 7 ? 'skipped' : (idx === 8 ? 'extracted' : '')));
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "Hoàn tất: Cả hai biến nhận dữ liệu chính xác",
+      desc: "Câu lệnh kết thúc thành công: a = 12, b = 5, tổng a + b = 17. Khoảng trắng thừa và tab không hề làm sai lệch kết quả!",
+      st: 'ok'
+    });
+
+  } else if (k === 'k2') {
+    // Input: '12\n5\n'
+    var slots2 = [
+      {c:'1', l:'digit'},
+      {c:'2', l:'digit'},
+      {c:'\\n', l:'enter', ws:true},
+      {c:'5', l:'digit'},
+      {c:'\\n', l:'enter', ws:true}
+    ];
+
+    S.push({
+      ln: 0, ptr: 0, a: 0, b: 0, good: true, fail: false,
+      slots: slots2.map(function(s){ return Object.assign({}, s, {st: ''}); }),
+      t: "Nhập hai số trên hai dòng riêng biệt",
+      desc: "Người dùng gõ '12' rồi Enter xuống dòng, sau đó gõ '5' rồi Enter. Bộ đệm lưu ký tự '\\n' giữa hai số."
+    });
+
+    S.push({
+      ln: 1, ptr: 1, a: 12, b: 0, chgA: true, good: true, fail: false,
+      slots: slots2.map(function(s, idx){
+        var st = idx <= 1 ? 'extracted' : '';
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> a: Đọc 12 và dừng tại ký tự '\\n'",
+      desc: "cin >> a đọc '1' và '2', gán 12 vào biến a. Ký tự '\\n' được giữ nguyên trong đệm làm dấu phân cách.",
+      st: 'ok'
+    });
+
+    S.push({
+      ln: 1, ptr: 2, a: 12, b: 0, good: true, fail: false,
+      slots: slots2.map(function(s, idx){
+        var st = idx <= 1 ? 'extracted' : (idx === 2 ? 'skipped' : '');
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> b: Phím Enter '\\n' được bỏ qua như dấu cách!",
+      desc: "Toán tử >> coi phím Enter '\\n' như một ký tự khoảng trắng thông thường, tự động bỏ qua để tìm chữ số tiếp theo."
+    });
+
+    S.push({
+      ln: 1, ptr: 3, a: 12, b: 5, chgB: true, good: true, fail: false,
+      slots: slots2.map(function(s, idx){
+        var st = idx <= 1 ? 'extracted' : (idx === 2 ? 'skipped' : (idx === 3 ? 'extracted' : ''));
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "cin >> b: Đọc 5 vào biến b",
+      desc: "cin đọc số 5 cất vào biến b. Kết quả hoàn toàn tương đương như khi gõ trên cùng một dòng!",
+      st: 'ok'
+    });
+
+  } else if (k === 'k3') {
+    // Input: 'abc 5\n' -> Failbit!
+    var slots3 = [
+      {c:'a', l:'letter'},
+      {c:'b', l:'letter'},
+      {c:'c', l:'letter'},
+      {c:' ', l:'space', ws:true},
+      {c:'5', l:'digit'},
+      {c:'\\n', l:'enter', ws:true}
+    ];
+
+    S.push({
+      ln: 0, ptr: 0, a: 0, b: 0, good: true, fail: false,
+      slots: slots3.map(function(s){ return Object.assign({}, s, {st: ''}); }),
+      t: "Kịch bản nhập sai kiểu dữ liệu",
+      desc: "Biến a là kiểu int (số nguyên), nhưng người dùng lại gõ chuỗi chữ 'abc 5'. Hãy xem cơ chế bảo vệ của cin."
+    });
+
+    S.push({
+      ln: 1, ptr: 0, a: 0, b: 0, good: false, fail: true,
+      slots: slots3.map(function(s, idx){
+        var st = idx === 0 ? 'error' : '';
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "LỖI: cin >> a gặp ký tự chữ cái 'a'!",
+      desc: "Ký tự đầu tiên 'a' không phải là chữ số hoặc dấu (+/-). Phép đọc số nguyên THẤT BẠI HOÀN TOÀN!",
+      st: 'bad'
+    });
+
+    S.push({
+      ln: 1, ptr: 0, a: 0, b: 0, good: false, fail: true,
+      slots: slots3.map(function(s, idx){
+        var st = idx === 0 ? 'error' : '';
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "Kích hoạt cờ lỗi: failbit = 1",
+      desc: "Luồng cin lập tức bật đèn cảnh báo failbit (trạng thái lỗi). Ký tự 'a' KHÔNG bị lấy ra mà vẫn mắc kẹt lại trong đệm. Biến a giữ nguyên giá trị ban đầu là 0.",
+      st: 'bad'
+    });
+
+    S.push({
+      ln: 1, ptr: 0, a: 0, b: 0, good: false, fail: true,
+      slots: slots3.map(function(s, idx){
+        var st = idx === 0 ? 'error' : '';
+        return Object.assign({}, s, {st: st});
+      }),
+      t: "Lệnh tiếp theo cin >> b BỊ KHÓA HOÀN TOÀN!",
+      desc: "Vì cin đang ở trạng thái failbit, mọi câu lệnh cin >> tiếp theo sẽ BỊ BỎ QUA NGAY LẬP TỨC mà không thực hiện đọc! Biến b vẫn giữ nguyên 0.",
+      st: 'bad'
+    });
+  }
+  return S;
+}
+
+function render(s, k, n){
+  $('code-view').innerHTML = renderCode(LINES, s.ln);
+  $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+  // Render Buffer Belt
+  var h = s.slots.map(function(slot, idx){
+    var isReading = idx === s.ptr;
+    var cls = 'char-cell' + (slot.ws ? ' ws' : '') + (slot.st ? ' ' + slot.st : '') + (isReading ? ' reading' : '');
+    var slotCls = 'buf-slot' + (isReading ? ' active' : '');
+    return '<div class="' + slotCls + '">' +
+      '<div class="' + cls + '">' + esc(slot.c) + '</div>' +
+      '<span class="char-tag">' + esc(slot.l) + '</span>' +
+      '<span class="pointer-arr">&#9650;</span>' +
+      '</div>';
+  }).join('');
+  $('buf-belt').innerHTML = h;
+
+  // Variables
+  var elA = $('val-a');
+  var elB = $('val-b');
+  elA.textContent = s.a;
+  elB.textContent = s.b;
+  elA.className = 'var-val' + (s.chgA ? ' ok' : '');
+  elB.className = 'var-val' + (s.chgB ? ' ok' : '');
+
+  // Flags
+  var flagGood = $('flag-good');
+  var flagFail = $('flag-fail');
+  var note = $('flag-note');
+  var streamBadge = $('stream-state-badge');
+
+  if (s.fail) {
+    flagGood.className = 'flag-dot';
+    flagGood.style.background = '#e2e8f0';
+    flagGood.style.color = '#64748b';
+    flagGood.textContent = 'FALSE (0)';
+
+    flagFail.className = 'flag-dot dot-fail';
+    flagFail.style.background = '';
+    flagFail.style.color = '';
+    flagFail.textContent = 'TRUE (1) - LỖI!';
+
+    streamBadge.textContent = 'failbit';
+    streamBadge.style.background = 'var(--false-soft)';
+    streamBadge.style.color = 'var(--false)';
+    note.innerHTML = '<b style="color:var(--false)">Luồng đã bị khóa do failbit!</b> Cần dùng <code>cin.clear()</code> và xoá đệm trước khi đọc tiếp.';
+  } else {
+    flagGood.className = 'flag-dot dot-good';
+    flagGood.style.background = '';
+    flagGood.style.color = '';
+    flagGood.textContent = 'TRUE (1)';
+
+    flagFail.className = 'flag-dot';
+    flagFail.style.background = '#e2e8f0';
+    flagFail.style.color = '#64748b';
+    flagFail.textContent = 'FALSE (0)';
+
+    streamBadge.textContent = 'goodbit';
+    streamBadge.style.background = 'var(--true-soft)';
+    streamBadge.style.color = 'var(--true)';
+    note.textContent = 'Luồng mở bình thường, sẵn sàng trích xuất.';
+  }
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 750);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){ return buildSnaps(currentK); },
+  render: render
+});
+
+function setScenario(k){
+  currentK = k;
+  $('tab-k1').setAttribute('aria-selected', k === 'k1');
+  $('tab-k2').setAttribute('aria-selected', k === 'k2');
+  $('tab-k3').setAttribute('aria-selected', k === 'k3');
+  sim.rebuild();
+}
+
+var urlK = qparam('vd') || qparam('k');
+if (urlK === 'k2' || urlK === 'k3') {
+  setScenario(urlK);
+} else {
+  sim.rebuild();
+}
+</script>
+</body>
+</html>

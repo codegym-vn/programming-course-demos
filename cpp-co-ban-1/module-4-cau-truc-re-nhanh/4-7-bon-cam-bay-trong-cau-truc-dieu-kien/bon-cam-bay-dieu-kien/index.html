@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Phòng thí nghiệm Gỡ 4 cạm bẫy kinh điển trong cấu trúc điều kiện</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:11.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .toggle-fix{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+  .fix-btn{border:1px solid var(--line);background:var(--bg);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:11.5px;font-weight:700}
+  .fix-btn.trap{background:var(--false-soft);color:var(--false);border-color:var(--false)}
+  .fix-btn.fixed{background:var(--true-soft);color:var(--true);border-color:var(--true)}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.15fr 1.15fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:265px;overflow-y:auto;
+    font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.trap{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:265px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  .analysis-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--code-bg);display:flex;flex-direction:column;gap:6px}
+  .analysis-title{font-size:11px;font-weight:700;text-transform:uppercase;margin:0;color:var(--muted)}
+  .detail-box{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px}
+  .detail-box b{color:var(--text)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 10px;min-height:36px;
+    font:12.5px/1.5 ui-monospace,monospace;display:flex;align-items:center;justify-content:space-between}
+  .con-label{font-size:11px;color:#94a3b8;font-weight:600}
+  .con-out{font-weight:700;font-size:14px;color:#38bdf8}
+  .con-out.trap{color:#f87171}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để mổ xẻ nguyên nhân và cách gỡ <b>4 cạm bẫy kinh điển</b> trong cấu trúc điều kiện C++.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-assign" role="tab" aria-selected="true" onclick="setTab('assign')">1. Nhầm = với ==</button>
+      <button class="tab" id="tab-semi" role="tab" aria-selected="false" onclick="setTab('semi')">2. Dấu ; thừa sau if</button>
+      <button class="tab" id="tab-dangling" role="tab" aria-selected="false" onclick="setTab('dangling')">3. Dangling Else</button>
+      <button class="tab" id="tab-float" role="tab" aria-selected="false" onclick="setTab('float')">4. So sánh số thực ==</button>
+    </div>
+
+    <div class="toggle-fix">
+      <button class="fix-btn trap" id="btn-fix-toggle" onclick="toggleFix()">Chế độ: ĐANG CÓ LỖI BẪY</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title" id="code-head">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Giải phẫu bộ nhớ & Luồng chạy -->
+    <div class="card right-panel">
+      <div class="analysis-card">
+        <p class="analysis-title" id="analysis-title">Phân tích cạm bẫy</p>
+        
+        <div class="detail-box" id="detail-box-1">
+          <span id="detail-t1">Trạng thái bộ nhớ:</span>
+          <div id="detail-v1" style="font-family:ui-monospace;margin-top:2px;font-weight:700"></div>
+        </div>
+
+        <div class="detail-box" id="detail-box-2">
+          <span id="detail-t2">Nguyên nhân cốt lõi:</span>
+          <div id="detail-v2" style="margin-top:2px"></div>
+        </div>
+      </div>
+
+      <!-- Console output -->
+      <div class="console">
+        <span class="con-label">Console Output:</span>
+        <span class="con-out" id="con-out">Chưa xuất</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentTab = 'assign'; // 'assign' | 'semi' | 'dangling' | 'float'
+var isFixed = false;
+var curStep = 0;
+var timer = null;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|if|else|cout|return|using|namespace|include|fabs)\b|(\b\d+(?:\.\d+)?(?:e-?\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(tab, fixed){
+  if (tab === 'assign') {
+    if (!fixed) {
+      return [
+        'int input = 5;',
+        '// BẪY: Dùng phép gán = thay vì ==',
+        'if (input = 2) {',
+        '  cout << "two\\n";',
+        '}',
+        'cout << "input = " << input << "\\n";'
+      ];
+    } else {
+      return [
+        'int input = 5;',
+        '// ĐÃ SỬA: Dùng toán tử so sánh ==',
+        'if (input == 2) {',
+        '  cout << "two\\n";',
+        '}',
+        'cout << "input = " << input << "\\n";'
+      ];
+    }
+  } else if (tab === 'semi') {
+    if (!fixed) {
+      return [
+        'int x = 5;',
+        '// BẪY: Dấu ; kết thúc câu lệnh if!',
+        'if (x < 0);',
+        '  cout << "So am\\n";',
+        'cout << "Done\\n";'
+      ];
+    } else {
+      return [
+        'int x = 5;',
+        '// ĐÃ SỬA: Xoá dấu ; và bọc { }',
+        'if (x < 0) {',
+        '  cout << "So am\\n";',
+        '}',
+        'cout << "Done\\n";'
+      ];
+    }
+  } else if (tab === 'dangling') {
+    if (!fixed) {
+      return [
+        'int grade = 75;',
+        '// BẪY: else treo tự động gắn với if trong!',
+        'if (grade >= 60)',
+        '  if (grade >= 90)',
+        '    cout << "Xuat sac\\n";',
+        'else',
+        '  cout << "Truot\\n";'
+      ];
+    } else {
+      return [
+        'int grade = 75;',
+        '// ĐÃ SỬA: Bọc if trong bằng { }',
+        'if (grade >= 60) {',
+        '  if (grade >= 90) cout << "Xuat sac\\n";',
+        '} else {',
+        '  cout << "Truot\\n";',
+        '}'
+      ];
+    }
+  } else {
+    // float
+    if (!fixed) {
+      return [
+        'double d1 = 1.11 - 1.10;',
+        'double d2 = 2.11 - 2.10;',
+        '// BẪY: So sánh số thực bằng ==',
+        'if (d1 == d2) {',
+        '  cout << "Bang nhau\\n";',
+        '} else {',
+        '  cout << "Khac nhau\\n";',
+        '}'
+      ];
+    } else {
+      return [
+        'double d1 = 1.11 - 1.10;',
+        'double d2 = 2.11 - 2.10;',
+        '// ĐÃ SỬA: Kiểm tra độ lệch với epsilon',
+        'if (fabs(d1 - d2) < 1e-9) {',
+        '  cout << "Xap xi bang nhau\\n";',
+        '} else {',
+        '  cout << "Khac nhau\\n";',
+        '}'
+      ];
+    }
+  }
+}
+
+function renderCode(lines, curLine, isTrap){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    var cls = 'ln';
+    if(isCur) cls += ' cur';
+    if(isCur && isTrap) cls += ' trap';
+    html += '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(tab, fixed){
+  if (tab === 'assign') {
+    if (!fixed) {
+      return [
+        {
+          line: 0, badge: 'Bước 1/4', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo input = 5',
+          stMsg: 'Biến <code>input</code> nhận giá trị ban đầu là 5.',
+          v1: 'input = 5',
+          v2: 'Chuẩn bị thực thi câu lệnh if...',
+          out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/4', stClass: 'bad', isTrap: true,
+          stTitle: 'Bước 2: CẠM BẪY! input bị gán thành 2!',
+          stMsg: 'Biểu thức <code>input = 2</code> là <b>phép gán</b>! Biến <code>input</code> bị ghi đè từ 5 thành <b>2</b>. Kết quả trả về số 2 (khác 0) được ép kiểu thành <b>true</b>!',
+          v1: 'input: 5 → <span style="color:var(--false)">2 (BỊ ĐÈ!)</span>',
+          v2: 'Biểu thức trả về 2 (khác 0) → <b>true</b>. Luôn luôn đúng bất kể số cũ!',
+          out: '–'
+        },
+        {
+          line: 3, badge: 'Bước 3/4', stClass: 'bad',
+          stTitle: 'Bước 3: Thân if bị ép chạy',
+          stMsg: 'Do điều kiện là true, nhánh if chạy và in ra <code>"two"</code> dù giá trị ban đầu là 5!',
+          v1: 'input = 2',
+          v2: 'Thân if được thực thi.',
+          out: 'two'
+        },
+        {
+          line: 5, badge: 'Bước 4/4', stClass: 'bad',
+          stTitle: 'Bước 4: Biến input bị biến đổi vĩnh viễn',
+          stMsg: 'In <code>"input = 2"</code>! Lỗi <code>=</code> vừa làm sai luồng rẽ nhánh, vừa phá huỷ dữ liệu ban đầu của biến!',
+          v1: 'input = 2 (hư hỏng dữ liệu)',
+          v2: 'Khắc phục: Luôn dùng <code>==</code> hoặc viết dạng Yoda <code>2 == input</code>.',
+          out: 'two\ninput = 2'
+        }
+      ];
+    } else {
+      return [
+        {
+          line: 0, badge: 'Bước 1/3', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo input = 5',
+          stMsg: 'Khởi tạo <code>input = 5</code>.',
+          v1: 'input = 5', v2: 'Dùng toán tử so sánh == chuẩn.', out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/3', stClass: 'ok',
+          stTitle: 'Bước 2: So sánh input == 2',
+          stMsg: 'Tính <code>5 == 2</code> → <b>false</b>. Không có biến nào bị thay đổi. Thân if được bỏ qua an toàn!',
+          v1: 'input = 5 (nguyên vẹn)', v2: '5 == 2 là false → Bỏ qua thân if.', out: '–'
+        },
+        {
+          line: 5, badge: 'Bước 3/3', stClass: 'ok',
+          stTitle: 'Bước 3: Tiếp tục sau if',
+          stMsg: 'In <code>"input = 5"</code>. Đúng chuẩn!',
+          v1: 'input = 5', v2: 'Chương trình hoàn tất an toàn.', out: 'input = 5'
+        }
+      ];
+    }
+  } else if (tab === 'semi') {
+    if (!fixed) {
+      return [
+        {
+          line: 0, badge: 'Bước 1/4', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo x = 5',
+          stMsg: 'Khởi tạo <code>x = 5</code>. Mục tiêu là chỉ in "So am" khi x &lt; 0.',
+          v1: 'x = 5', v2: 'Chú ý dấu chấm phẩy ; ngay sau if!', out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/4', stClass: 'bad', isTrap: true,
+          stTitle: 'Bước 2: CẠM BẪY! Dấu ; rỗng kết thúc luôn if!',
+          stMsg: 'Dấu <code>;</code> đứng một mình là <b>câu lệnh rỗng</b> (null statement). Trình biên dịch xem dấu <code>;</code> chính là thân của <code>if</code>, kết thúc luôn câu lệnh điều kiện tại đây!',
+          v1: 'x = 5', v2: 'Thân if là câu lệnh rỗng ;', out: '–'
+        },
+        {
+          line: 3, badge: 'Bước 3/4', stClass: 'bad',
+          stTitle: 'Bước 3: Dòng cout nằm ngoài if, LUÔN CHẠY!',
+          stMsg: 'Dù <code>x = 5 &gt;= 0</code>, dòng <code>cout &lt;&lt; "So am\\n"</code> KHÔNG HỀ THUỘC IF và vẫn bị thực thi!',
+          v1: 'x = 5', v2: 'In oan chữ "So am" dù số là số dương 5!', out: 'So am'
+        },
+        {
+          line: 4, badge: 'Bước 4/4', stClass: 'bad',
+          stTitle: 'Bước 4: Hoàn tất',
+          stMsg: 'Console in ra cả <code>"So am\\nDone"</code>. Khắc phục: Tuyệt đối không đặt dấu chấm phẩy sau <code>if (...)</code>!',
+          v1: 'x = 5', v2: 'Lỗi cú pháp đánh lừa thị giác người đọc.', out: 'So am\nDone'
+        }
+      ];
+    } else {
+      return [
+        {
+          line: 0, badge: 'Bước 1/3', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo x = 5',
+          stMsg: 'Khởi tạo <code>x = 5</code>, bọc thân if trong khối <code>{ }</code>.',
+          v1: 'x = 5', v2: 'Không có dấu ; sau if (x < 0).', out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/3', stClass: 'ok',
+          stTitle: 'Bước 2: Đánh giá if (x < 0)',
+          stMsg: '<code>5 &lt; 0</code> → <b>false</b>. Toàn bộ khối <code>{ }</code> bị bỏ qua.',
+          v1: 'x = 5', v2: 'Dòng "So am" không chạy.', out: '–'
+        },
+        {
+          line: 5, badge: 'Bước 3/3', stClass: 'ok',
+          stTitle: 'Bước 3: Kết thúc',
+          stMsg: 'In <code>"Done"</code>. Chính xác!',
+          v1: 'x = 5', v2: 'Không bị in nhầm.', out: 'Done'
+        }
+      ];
+    }
+  } else if (tab === 'dangling') {
+    if (!fixed) {
+      return [
+        {
+          line: 0, badge: 'Bước 1/4', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo grade = 75',
+          stMsg: 'Điểm 75 là điểm Đạt (&gt;= 60), không phải Xuất sắc (&gt;= 90), nhưng chắc chắn KHÔNG PHẢI TRƯỢT.',
+          v1: 'grade = 75', v2: 'Hai if lồng nhau không dùng ngoặc nhọn { }.', out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/4', stClass: 'ok',
+          stTitle: 'Bước 2: Tầng ngoài if (grade >= 60)',
+          stMsg: '<code>75 &gt;= 60</code> → <b>true</b>. Luồng chạy đi vào câu lệnh if bên trong.',
+          v1: 'grade = 75', v2: 'Lọt vào if ngoài.', out: '–'
+        },
+        {
+          line: 3, badge: 'Bước 3/4', stClass: 'bad', isTrap: true,
+          stTitle: 'Bước 3: CẠM BẪY! else gắn với if trong!',
+          stMsg: 'Kiểm tra <code>75 &gt;= 90</code> → <b>false</b>. Theo quy tắc C++, từ khoá <code>else</code> <b>tự động kết cặp với if gần nhất chưa có else</b> (là <code>grade >= 90</code>)! Vì vậy nhánh else bị kích hoạt!',
+          v1: 'grade = 75', v2: 'else thuộc về if (grade >= 90), KHÔNG PHẢI if ngoài!', out: '–'
+        },
+        {
+          line: 6, badge: 'Bước 4/4', stClass: 'bad',
+          stTitle: 'Bước 4: Điểm 75 bị in "Truot"!',
+          stMsg: 'Chương trình in ra <code>"Truot"</code>! Thụt lề thẳng hàng với if ngoài không có tác dụng gì đối với trình biên dịch C++.',
+          v1: 'grade = 75', v2: 'Khắc phục: Luôn bọc if trong bằng cặp ngoặc nhọn { }!', out: 'Truot'
+        }
+      ];
+    } else {
+      return [
+        {
+          line: 0, badge: 'Bước 1/3', stClass: '',
+          stTitle: 'Bước 1: Khởi tạo grade = 75',
+          stMsg: 'Cấu trúc đã được bọc ngoặc nhọn <code>{ }</code> rõ ràng.',
+          v1: 'grade = 75', v2: 'Khối if trong được cô lập.', out: '–'
+        },
+        {
+          line: 2, badge: 'Bước 2/3', stClass: 'ok',
+          stTitle: 'Bước 2: Lọt vào khối if (grade >= 60)',
+          stMsg: '<code>75 &gt;= 60</code> là true. Kiểm tra <code>75 &gt;= 90</code> là false, nhưng nhánh <code>else</code> ngoài không bao giờ bị kích hoạt vì if ngoài đã thoả mãn!',
+          v1: 'grade = 75', v2: 'Không bị rơi vào nhánh Truot.', out: '–'
+        },
+        {
+          line: 6, badge: 'Bước 3/3', stClass: 'ok',
+          stTitle: 'Bước 3: Thoát an toàn',
+          stMsg: 'Chương trình kết thúc mà không in "Truot". Logic được bảo toàn đúng ý đồ.',
+          v1: 'grade = 75', v2: 'Cấu trúc phân tầng an toàn.', out: '(Không in Truot)'
+        }
+      ];
+    }
+  } else {
+    // float precision
+    if (!fixed) {
+      return [
+        {
+          line: 0, badge: 'Bước 1/4', stClass: '',
+          stTitle: 'Bước 1: Tính d1 = 1.11 - 1.10 và d2 = 2.11 - 2.10',
+          stMsg: 'Về toán học: $1.11 - 1.10 = 0.01$ và $2.11 - 2.10 = 0.01$. Nhưng trong máy tính thì sao?',
+          v1: 'Toán học: d1 == d2 == 0.01', v2: 'Máy tính lưu trữ dưới dạng nhị phân IEEE 754.', out: '–'
+        },
+        {
+          line: 1, badge: 'Bước 2/4', stClass: 'bad', isTrap: true,
+          stTitle: 'Bước 2: CẠM BẪY! Lệch ở chữ số thập phân thứ 16!',
+          stMsg: 'Soi độ chính xác 18 chữ số:<br><code>d1 = 0.0100000000000000089</code><br><code>d2 = 0.0099999999999997868</code><br>Hai số này <b>HOÀN TOÀN KHÁC NHAU</b> trong thanh ghi máy tính!',
+          v1: 'd1 = 0.010000000000000009', v2: 'd2 = 0.009999999999999787', out: '–'
+        },
+        {
+          line: 3, badge: 'Bước 3/4', stClass: 'bad',
+          stTitle: 'Bước 3: So sánh trực tiếp bằng ==',
+          stMsg: 'Phép so sánh <code>d1 == d2</code> trả về <b>false (0)</b>! Chương trình rẽ nhánh vào <code>else</code>!',
+          v1: 'd1 == d2 → false (0)', v2: 'Sai số làm sai kết quả so sánh bằng.', out: '–'
+        },
+        {
+          line: 6, badge: 'Bước 4/4', stClass: 'bad',
+          stTitle: 'Bước 4: In ra kết quả sai',
+          stMsg: 'In <code>"Khac nhau"</code> dù toán học là bằng nhau. Khắc phục: Không bao giờ dùng <code>==</code> với số thực!',
+          v1: 'Kết quả: Khac nhau', v2: 'Quy tắc: So sánh với epsilon |a - b| < 1e-9.', out: 'Khac nhau'
+        }
+      ];
+    } else {
+      return [
+        {
+          line: 0, badge: 'Bước 1/3', stClass: '',
+          stTitle: 'Bước 1: Tính hiệu tuyệt đối |d1 - d2|',
+          stMsg: 'Tính <code>|d1 - d2| = 0.000000000000000222... = 2.22e-16</code>.',
+          v1: '|d1 - d2| ≈ 2.22e-16', v2: 'Khoảng cách cực nhỏ giữa 2 số thực.', out: '–'
+        },
+        {
+          line: 3, badge: 'Bước 2/3', stClass: 'ok',
+          stTitle: 'Bước 2: So sánh với ngưỡng sai số epsilon (1e-9)',
+          stMsg: '<code>2.22e-16 &lt; 1e-9</code> → <b>true</b>. Hai số được xem là xấp xỉ bằng nhau an toàn!',
+          v1: 'fabs(d1 - d2) < 1e-9 → true', v2: 'Vùng dung sai epsilon bảo vệ phép so sánh.', out: '–'
+        },
+        {
+          line: 4, badge: 'Bước 3/3', stClass: 'ok',
+          stTitle: 'Bước 3: In ra kết quả đúng',
+          stMsg: 'In <code>"Xap xi bang nhau"</code>. Tuyệt đối chuẩn xác!',
+          v1: 'Kết quả: Xap xi bang nhau', v2: 'Giải quyết triệt để vấn đề sai số dấu phẩy động.', out: 'Xap xi bang nhau'
+        }
+      ];
+    }
+  }
+}
+
+function render(){
+  var lines = getLines(currentTab, isFixed);
+  var steps = getSteps(currentTab, isFixed);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line, s.isTrap);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  
+  var btnFix = document.getElementById('btn-fix-toggle');
+  btnFix.className = 'fix-btn ' + (isFixed ? 'fixed' : 'trap');
+  btnFix.textContent = isFixed ? 'Chế độ: ĐÃ SỬA ĐÚNG' : 'Chế độ: ĐANG CÓ LỖI BẪY';
+
+  document.getElementById('detail-v1').innerHTML = s.v1;
+  document.getElementById('detail-v2').innerHTML = s.v2;
+
+  var conOut = document.getElementById('con-out');
+  conOut.className = 'con-out' + (s.isTrap ? ' trap' : '');
+  conOut.textContent = s.out;
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setTab(t){
+  stopTimer();
+  currentTab = t;
+  document.getElementById('tab-assign').setAttribute('aria-selected', t === 'assign');
+  document.getElementById('tab-semi').setAttribute('aria-selected', t === 'semi');
+  document.getElementById('tab-dangling').setAttribute('aria-selected', t === 'dangling');
+  document.getElementById('tab-float').setAttribute('aria-selected', t === 'float');
+  curStep = 0;
+  render();
+}
+
+function toggleFix(){
+  stopTimer();
+  isFixed = !isFixed;
+  curStep = 0;
+  render();
+}
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(currentTab, isFixed);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(currentTab, isFixed);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?tab=... & ?fixed=1 & ?buoc=N
+var qt = qparam('tab');
+if(qt && ['assign','semi','dangling','float'].indexOf(qt) >= 0) setTab(qt);
+var qf = qparam('fixed');
+if(qf === '1' || qf === 'true') isFixed = true;
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

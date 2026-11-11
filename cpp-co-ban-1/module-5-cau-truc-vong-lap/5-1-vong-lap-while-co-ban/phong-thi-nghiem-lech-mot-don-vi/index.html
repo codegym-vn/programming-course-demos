@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Phòng thí nghiệm lỗi lệch một đơn vị (Off-by-one)</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .field select,.field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad .st-title{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn .st-title{color:var(--warn)}
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .right-col{display:flex;flex-direction:column;gap:10px}
+  
+  /* Ruler Track */
+  .ruler-wrap{background:var(--code-bg);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+  .ruler-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)}
+  .track{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .slot{flex:1;min-width:44px;height:48px;border:2px dashed var(--line);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--card);transition:all .2s;position:relative}
+  .slot .slot-idx{font:10.5px ui-monospace,monospace;color:var(--muted)}
+  .slot .slot-val{font:700 15px ui-monospace,monospace;color:var(--text)}
+  .slot.visited{background:var(--true-soft);border-color:var(--true);border-style:solid}
+  .slot.visited .slot-val{color:var(--true)}
+  .slot.active{background:var(--cur);border-color:var(--cur-bar);border-style:solid;transform:translateY(-2px);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+  .slot.missed{background:var(--false-soft);border-color:var(--false);border-style:solid}
+  .slot.missed .slot-val{color:var(--false)}
+  .slot.overflow{background:#fee2e2;border-color:#ef4444;border-style:solid}
+
+  .stat-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12.5px}
+  .stat-badge.ok{background:var(--true-soft);color:var(--true)}
+  .stat-badge.err{background:var(--false-soft);color:var(--false)}
+  .stat-badge.warn{background:var(--warn-soft);color:var(--warn)}
+
+  .summary-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--card);border:1px solid var(--line);border-radius:6px;font-size:13px}
+  .summary-row b{font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Tuỳ chỉnh giá trị khởi đầu, điều kiện biên và bước nhảy để quan sát hiện tượng lặp đủ, thiếu hoặc thừa trên thước số.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="n_val">Mong muốn N =</label>
+      <select id="n_val">
+        <option value="3">3 lần</option>
+        <option value="4">4 lần</option>
+        <option value="5" selected>5 lần (chuẩn)</option>
+        <option value="6">6 lần</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="i_init">Khởi tạo i =</label>
+      <select id="i_init">
+        <option value="0">0 (chuẩn chỉ số mảng)</option>
+        <option value="1" selected>1 (chuẩn số đếm người)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="op_cond">Điều kiện</label>
+      <select id="op_cond">
+        <option value="<">&lt; N</option>
+        <option value="<=" selected>&lt;= N</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="op_step">Bước nhảy</label>
+      <select id="op_step">
+        <option value="++" selected>i++ (tăng 1)</option>
+        <option value="+=2">i += 2 (nhảy 2)</option>
+        <option value="--">i-- (đếm lùi)</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++ đang thử nghiệm</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <div class="ruler-wrap">
+          <div class="ruler-header">
+            <span>Thước đo lượt lặp (Mong muốn: <span id="lbl_target">5</span> ô mốc)</span>
+            <span id="lbl_badge"></span>
+          </div>
+          <div class="track" id="track"></div>
+        </div>
+        <div class="summary-row">
+          <span>Số lần lặp thực tế: <b id="lbl_actual">0</b> / <span id="lbl_target2">5</span></span>
+          <span>Giá trị cuối cùng của <code>i</code>: <b id="lbl_final_i">?</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|return|cout|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var N = 5;
+var initI = 1;
+var condOp = '<=';
+var stepOp = '++';
+
+function getLines(){
+  var stepLine = (stepOp === '++') ? '  i++;' : (stepOp === '+=2' ? '  i += 2;' : '  i--;');
+  return [
+    'int i = ' + initI + ';',
+    'int count = 0;',
+    'while (i ' + condOp + ' ' + N + ') {',
+    '  count++;',
+    stepLine,
+    '}',
+    '// Thoat vong lap voi i = ...'
+  ];
+}
+
+function evalCond(val){
+  if (condOp === '<') return val < N;
+  return val <= N;
+}
+
+function nextVal(val){
+  if (stepOp === '++') return val + 1;
+  if (stepOp === '+=2') return val + 2;
+  return val - 1;
+}
+
+function buildSnaps(){
+  var snaps = [];
+  var stepLineCode = (stepOp === '++') ? 'i++' : (stepOp === '+=2' ? 'i += 2' : 'i--');
+  
+  // Bước 0: Sẵn sàng
+  snaps.push({
+    ln: 0,
+    i: initI,
+    count: 0,
+    visited: [],
+    activeSlot: null,
+    statusTag: 'Sẵn sàng khởi tạo',
+    statusCls: '',
+    statusMsg: 'Khởi tạo biến <code>int i = ' + initI + ';</code> và <code>count = 0;</code>.'
+  });
+
+  var curI = initI;
+  var curCount = 0;
+  var visited = [];
+  var maxIters = 12;
+  var iter = 0;
+
+  while (evalCond(curI)) {
+    iter++;
+    if (iter > maxIters) {
+      snaps.push({
+        ln: 2,
+        i: curI,
+        count: curCount,
+        visited: visited.slice(),
+        activeSlot: null,
+        isInfinite: true,
+        statusTag: 'Cảnh báo: Lặp vô hạn!',
+        statusCls: 'bad',
+        statusMsg: 'Vòng lặp không dừng vì bước nhảy <code>' + stepLineCode + '</code> làm giá trị <code>i</code> ngày càng xa điều kiện dừng! Đã tự động ngắt sau ' + maxIters + ' lượt.'
+      });
+      return snaps;
+    }
+
+    // Kiểm tra điều kiện: Đúng
+    snaps.push({
+      ln: 2,
+      i: curI,
+      count: curCount,
+      visited: visited.slice(),
+      activeSlot: null,
+      statusTag: 'Lượt ' + (curCount + 1) + ': Kiểm tra i ' + condOp + ' ' + N,
+      statusCls: 'ok',
+      statusMsg: 'Đánh giá <code>' + curI + ' ' + condOp + ' ' + N + '</code> → <b>true</b>. Tiến vào thân vòng lặp.'
+    });
+
+    // Tăng count và tô sáng ô
+    curCount++;
+    visited.push(curI);
+    snaps.push({
+      ln: 3,
+      i: curI,
+      count: curCount,
+      visited: visited.slice(),
+      activeSlot: curI,
+      statusTag: 'Lượt ' + curCount + ': Thực thi thân lặp',
+      statusCls: '',
+      statusMsg: 'Thân vòng lặp thực thi lần thứ <b>' + curCount + '</b>. Giá trị <code>i = ' + curI + '</code>.'
+    });
+
+    // Cập nhật bước nhảy
+    var oldI = curI;
+    curI = nextVal(curI);
+    snaps.push({
+      ln: 4,
+      i: curI,
+      count: curCount,
+      visited: visited.slice(),
+      activeSlot: oldI,
+      statusTag: 'Lượt ' + curCount + ': Cập nhật bước nhảy',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>' + stepLineCode + '</code>: <code>i</code> chuyển từ ' + oldI + ' sang <b>' + curI + '</b>.'
+    });
+  }
+
+  // Kết thúc vòng lặp
+  var isExact = (curCount === N);
+  var diff = curCount - N;
+  var endTag = isExact ? 'CHÍNH XÁC!' : (diff < 0 ? 'LỖI LỆCH MỘT: Thiếu ' + Math.abs(diff) + ' lần!' : 'LỖI LỆCH MỘT: Thừa ' + diff + ' lần!');
+  var endCls = isExact ? 'ok' : 'bad';
+  var endMsg = 'Điều kiện <code>' + curI + ' ' + condOp + ' ' + N + '</code> → <b>false</b>. Vòng lặp dừng lại. Số lần chạy thực tế: <b>' + curCount + ' lần</b> (Mong muốn: ' + N + ' lần). Thoát vòng lặp với <code>i = ' + curI + '</code>.';
+
+  snaps.push({
+    ln: 6,
+    i: curI,
+    count: curCount,
+    visited: visited.slice(),
+    activeSlot: null,
+    isEnd: true,
+    isExact: isExact,
+    diff: diff,
+    statusTag: endTag,
+    statusCls: endCls,
+    statusMsg: endMsg
+  });
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(curLine){
+  var lines = getLines();
+  $('code').innerHTML = lines.map(function(l, i){
+    var on = (i === curLine);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function renderRuler(s){
+  $('lbl_target').textContent = N;
+  $('lbl_target2').textContent = N;
+  $('lbl_actual').textContent = s.count;
+  $('lbl_final_i').textContent = s.i;
+
+  var slotsHtml = '';
+  for (var k = 1; k <= N; k++) {
+    // k là số thứ tự lượt mong muốn: 1..N
+    var isDone = s.count >= k;
+    var isActive = s.activeSlot !== null && s.count === k;
+    var cls = 'slot';
+    if (isActive) cls += ' active';
+    else if (isDone) cls += ' visited';
+    
+    slotsHtml += '<div class="' + cls + '"><span class="slot-idx">Lần ' + k + '</span><span class="slot-val">' + (isDone ? '✓' : '—') + '</span></div>';
+  }
+
+  // Nếu thực tế thừa ra ngoài N
+  if (s.count > N) {
+    for (var extra = N + 1; extra <= s.count; extra++) {
+      slotsHtml += '<div class="slot overflow active"><span class="slot-idx">Thừa ' + (extra - N) + '</span><span class="slot-val">!</span></div>';
+    }
+  }
+
+  $('track').innerHTML = slotsHtml;
+
+  var badge = $('lbl_badge');
+  if (s.isEnd) {
+    if (s.isExact) {
+      badge.className = 'stat-badge ok';
+      badge.textContent = 'CHÍNH XÁC (' + s.count + '/' + N + ')';
+    } else {
+      badge.className = 'stat-badge err';
+      badge.textContent = (s.diff < 0 ? 'THIẾU ' + Math.abs(s.diff) + ' LẦN' : 'THỪA ' + s.diff + ' LẦN');
+    }
+  } else if (s.isInfinite) {
+    badge.className = 'stat-badge err';
+    badge.textContent = 'LẶP VÔ HẠN!';
+  } else {
+    badge.className = 'stat-badge warn';
+    badge.textContent = 'Đang chạy: ' + s.count + '/' + N;
+  }
+}
+
+function render(s){
+  renderCode(s.ln);
+  renderRuler(s);
+
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function initSim(){
+  stopTimer();
+  snaps = buildSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 450);
+  render(snaps[curIdx]);
+};
+
+$('n_val').onchange = function(){ N = parseInt(this.value, 10); initSim(); };
+$('i_init').onchange = function(){ initI = parseInt(this.value, 10); initSim(); };
+$('op_cond').onchange = function(){ condOp = this.value; initSim(); };
+$('op_step').onchange = function(){ stepOp = this.value; initSim(); };
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+initSim();
+</script>
+</body>
+</html>

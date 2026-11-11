@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Bàn thí nghiệm: Các toán tử thao tác bit 8-bit trong C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .presets{display:flex;gap:4px;align-items:center}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:5px 8px;margin-bottom:8px;min-height:46px;font-size:13px}
+  .status b{display:block;font-size:11.5px;color:var(--accent);margin-bottom:1px}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.35fr 1.05fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .right-card{height:auto}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,monospace;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Bitwise Table Stack */
+  .stack-card{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+  
+  .stack-row{display:flex;align-items:center;margin:3px 0}
+  .stack-lbl{width:60px;font:700 12px ui-monospace,monospace;color:var(--muted);flex:none}
+  .stack-bits{display:flex;gap:3px;flex:1;justify-content:center}
+  .stack-val{width:46px;text-align:right;font:700 13px ui-monospace,monospace;color:var(--text);flex:none;margin-left:4px}
+
+  .b-cell{width:28px;height:32px;display:flex;align-items:center;justify-content:center;
+    font:700 16px ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    cursor:pointer;user-select:none;transition:all .15s}
+  .b-cell:hover{border-color:var(--accent)}
+  .b-cell.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .b-cell.ro{cursor:default}
+  .b-cell.res{background:var(--true-soft);color:var(--true);border-color:var(--true)}
+  .b-cell.res.off{background:var(--card);color:var(--muted);border-color:var(--line)}
+  .b-cell.col-hi{outline:2px solid var(--cur-bar);box-shadow:0 0 6px var(--cur-bar)}
+
+  .divider{height:2px;background:var(--line);margin:6px 0}
+  .op-sign{font:700 14px ui-monospace,monospace;color:var(--kw);width:16px;text-align:center;display:inline-block}
+
+  /* Slider field */
+  .shift-ctrl{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:6px;padding:6px 10px;margin-top:6px}
+  .shift-ctrl label{font:600 12px system-ui,sans-serif;color:var(--text)}
+  .shift-ctrl input[type=range]{flex:1}
+  .shift-val{font:700 14px ui-monospace,monospace;color:var(--accent);min-width:20px}
+
+  /* Right Card (Code & Rules) */
+  .right-card{display:flex;flex-direction:column;justify-content:space-between;height:265px}
+  .code-box{background:var(--code-bg);border-radius:6px;padding:6px 8px;font:12px/1.55 ui-monospace,monospace;
+    height:140px;overflow-y:auto}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .rule-pill{background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn toán tử bit, nhấp chuột trực tiếp vào từng bit để bật/tắt <code>0/1</code> và quan sát kết quả tính cột dọc.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-and" role="tab" aria-selected="true" onclick="setOp('&')">&amp; (AND)</button>
+      <button class="tab" id="tab-or" role="tab" aria-selected="false" onclick="setOp('|')">| (OR)</button>
+      <button class="tab" id="tab-xor" role="tab" aria-selected="false" onclick="setOp('^')">^ (XOR)</button>
+      <button class="tab" id="tab-not" role="tab" aria-selected="false" onclick="setOp('~')">~ (NOT A)</button>
+      <button class="tab" id="tab-shl" role="tab" aria-selected="false" onclick="setOp('<<')">&lt;&lt; (Dịch trái)</button>
+      <button class="tab" id="tab-shr" role="tab" aria-selected="false" onclick="setOp('>>')">&gt;&gt; (Dịch phải)</button>
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted)">Mẫu:</span>
+      <button class="preset-btn" onclick="applyPreset(21, 11)">21 &amp; 11</button>
+      <button class="preset-btn" onclick="applyPreset(13, 14)">13 &amp; 14</button>
+      <button class="preset-btn" onclick="applyPreset(53, 26)">53 &amp; 26</button>
+      <button class="preset-btn" onclick="applyPreset(255, 0)">255 &amp; 0</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Đặt tính nhị phân cột dọc -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Đặt tính cột dọc 8-bit</p>
+        <span class="badge" id="col-info">Di chuột vào cột bit để soi</span>
+      </div>
+
+      <div class="stack-card">
+        <!-- Hàng A -->
+        <div class="stack-row">
+          <div class="stack-lbl"><span class="op-sign"> </span> A:</div>
+          <div class="stack-bits" id="row-a"></div>
+          <div class="stack-val" id="val-a"></div>
+        </div>
+
+        <!-- Hàng B (chỉ có khi hai ngôi) -->
+        <div class="stack-row" id="row-b-wrap">
+          <div class="stack-lbl"><span class="op-sign" id="cur-op-sign">&amp;</span> B:</div>
+          <div class="stack-bits" id="row-b"></div>
+          <div class="stack-val" id="val-b"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Hàng Kết quả Res -->
+        <div class="stack-row">
+          <div class="stack-lbl"><span class="op-sign">=</span> Res:</div>
+          <div class="stack-bits" id="row-res"></div>
+          <div class="stack-val" id="val-res"></div>
+        </div>
+      </div>
+
+      <div class="shift-ctrl" id="shift-wrap" style="display:none">
+        <label for="shift-k">Số vị trí dịch k:</label>
+        <input type="range" id="shift-k" min="0" max="7" value="2" oninput="onShiftChange(this.value)">
+        <span class="shift-val" id="shift-val-lbl">2</span>
+      </div>
+    </div>
+
+    <!-- Cột 2: Mã C++ và Diễn giải -->
+    <div class="card right-card">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Mã nguồn C++ &amp; Quy tắc</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">Bitwise Math</span>
+        </div>
+
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="rule-pill" id="rule-pill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var valA = 21; // 00010101
+var valB = 11; // 00001011
+var curOp = '&';
+var shiftK = 2;
+var hoverCol = -1;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad8(n){ var s = (n & 255).toString(2); while(s.length < 8) s = '0' + s; return s; }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function calcResult(){
+  if(curOp === '&') return (valA & valB) & 255;
+  if(curOp === '|') return (valA | valB) & 255;
+  if(curOp === '^') return (valA ^ valB) & 255;
+  if(curOp === '~') return (~valA) & 255;
+  if(curOp === '<<') return (valA << shiftK) & 255;
+  if(curOp === '>>') return (valA >> shiftK) & 255;
+  return 0;
+}
+
+function updateUI(){
+  var res = calcResult();
+  var binA = pad8(valA);
+  var binB = pad8(valB);
+  var binR = pad8(res);
+
+  // Render row A
+  var hA = '';
+  for(var i=0; i<8; i++){
+    var bitA = binA[i];
+    var colIdx = 7 - i;
+    var isHi = (colIdx === hoverCol);
+    hA += '<div class="b-cell' + (bitA === '1' ? ' on' : '') + (isHi ? ' col-hi' : '') + '" onclick="toggleA(' + colIdx + ')" onmouseenter="setHover(' + colIdx + ')" onmouseleave="setHover(-1)">' + bitA + '</div>';
+  }
+  document.getElementById('row-a').innerHTML = hA;
+  document.getElementById('val-a').textContent = valA;
+
+  // Render row B (hide for unary NOT or shifts)
+  var bWrap = document.getElementById('row-b-wrap');
+  var sWrap = document.getElementById('shift-wrap');
+
+  if(curOp === '~' || curOp === '<<' || curOp === '>>'){
+    bWrap.style.display = 'none';
+  } else {
+    bWrap.style.display = 'flex';
+    document.getElementById('cur-op-sign').textContent = curOp;
+    var hB = '';
+    for(var j=0; j<8; j++){
+      var bitB = binB[j];
+      var colIdxB = 7 - j;
+      var isHiB = (colIdxB === hoverCol);
+      hB += '<div class="b-cell' + (bitB === '1' ? ' on' : '') + (isHiB ? ' col-hi' : '') + '" onclick="toggleB(' + colIdxB + ')" onmouseenter="setHover(' + colIdxB + ')" onmouseleave="setHover(-1)">' + bitB + '</div>';
+    }
+    document.getElementById('row-b').innerHTML = hB;
+    document.getElementById('val-b').textContent = valB;
+  }
+
+  // Shift slider visibility
+  if(curOp === '<<' || curOp === '>>'){
+    sWrap.style.display = 'flex';
+  } else {
+    sWrap.style.display = 'none';
+  }
+
+  // Render Res
+  var hR = '';
+  for(var k=0; k<8; k++){
+    var bitR = binR[k];
+    var colIdxR = 7 - k;
+    var isHiR = (colIdxR === hoverCol);
+    hR += '<div class="b-cell ro ' + (bitR === '1' ? 'res' : 'res off') + (isHiR ? ' col-hi' : '') + '" onmouseenter="setHover(' + colIdxR + ')" onmouseleave="setHover(-1)">' + bitR + '</div>';
+  }
+  document.getElementById('row-res').innerHTML = hR;
+  document.getElementById('val-res').textContent = res;
+
+  // Status & Code
+  var st = document.getElementById('status');
+  var cBox = document.getElementById('code-box');
+  var rPill = document.getElementById('rule-pill');
+
+  if(curOp === '&'){
+    st.innerHTML = '<b>Phép toán Bitwise AND (&amp;):</b> Bit kết quả = 1 khi <b>cả hai</b> bit A và B đều bằng 1; ngược lại = 0.';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> b = <span class="num">' + valB + '</span>; <span class="cm">// ' + binB + '</span><br>' +
+      '<span class="kw">int</span> res = a &amp; b; <span class="cm">// ' + binR + '</span><br>' +
+      'cout &lt;&lt; (a &amp; b); <span class="cm">// in ra ' + res + '</span>';
+    rPill.innerHTML = '📌 <b>Bảng chân trị AND:</b> 1 &amp; 1 = 1; còn lại 0 &amp; 1 = 0, 1 &amp; 0 = 0, 0 &amp; 0 = 0.';
+  } else if(curOp === '|'){
+    st.innerHTML = '<b>Phép toán Bitwise OR (|):</b> Bit kết quả = 1 khi có <b>ít nhất một</b> trong hai bit bằng 1; chỉ = 0 khi cả hai cùng bằng 0.';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> b = <span class="num">' + valB + '</span>; <span class="cm">// ' + binB + '</span><br>' +
+      '<span class="kw">int</span> res = a | b; <span class="cm">// ' + binR + '</span><br>' +
+      'cout &lt;&lt; (a | b); <span class="cm">// in ra ' + res + '</span>';
+    rPill.innerHTML = '📌 <b>Bảng chân trị OR:</b> 0 | 0 = 0; còn lại 1 | 0 = 1, 0 | 1 = 1, 1 | 1 = 1.';
+  } else if(curOp === '^'){
+    st.innerHTML = '<b>Phép toán Bitwise XOR (^):</b> Bit kết quả = 1 khi hai bit <b>khác nhau</b>; bằng 0 khi hai bit <b>giống nhau</b>.';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> b = <span class="num">' + valB + '</span>; <span class="cm">// ' + binB + '</span><br>' +
+      '<span class="kw">int</span> res = a ^ b; <span class="cm">// ' + binR + '</span><br>' +
+      'cout &lt;&lt; (a ^ b); <span class="cm">// in ra ' + res + '</span>';
+    rPill.innerHTML = '📌 <b>Bảng chân trị XOR:</b> Khác nhau ra 1 (0^1=1, 1^0=1); Giống nhau ra 0 (0^0=0, 1^1=0).';
+  } else if(curOp === '~'){
+    var sNot = (~valA); // int signed
+    st.innerHTML = '<b>Phép đảo bit NOT (~):</b> Đảo ngược toàn bộ bit (0 ➜ 1, 1 ➜ 0). Với số int có dấu, <code>~x = -x - 1</code>.';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> res = ~a; <span class="cm">// đảo bit: ' + binR + ' (8-bit)</span><br>' +
+      'cout &lt;&lt; (~a); <span class="cm">// in ra ' + sNot + '</span>';
+    rPill.innerHTML = '📌 <b>Toán tử một ngôi:</b> ~0 = 1, ~1 = 0. Với số nguyên int 32-bit: ~' + valA + ' = ' + sNot + '.';
+  } else if(curOp === '<<'){
+    st.innerHTML = '<b>Dịch bit trái (&lt;&lt;):</b> Đẩy tất cả các bit sang trái ' + shiftK + ' vị trí, chèn ' + shiftK + ' bit 0 vào bên phải (nhân ' + valA + ' với 2<sup>' + shiftK + '</sup>).';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> res = a &lt;&lt; <span class="num">' + shiftK + '</span>; <span class="cm">// ' + binR + '</span><br>' +
+      'cout &lt;&lt; (a &lt;&lt; <span class="num">' + shiftK + '</span>); <span class="cm">// in ra ' + (valA << shiftK) + '</span>';
+    rPill.innerHTML = '📌 <b>Nhân luỹ thừa 2:</b> ' + valA + ' &times; 2<sup>' + shiftK + '</sup> = ' + (valA * Math.pow(2, shiftK)) + '.';
+  } else if(curOp === '>>'){
+    st.innerHTML = '<b>Dịch bit phải (&gt;&gt;):</b> Đẩy tất cả các bit sang phải ' + shiftK + ' vị trí, ' + shiftK + ' bit tận cùng bên phải bị rơi mất (chia nguyên ' + valA + ' cho 2<sup>' + shiftK + '</sup>).';
+    cBox.innerHTML = '<span class="kw">int</span> a = <span class="num">' + valA + '</span>; <span class="cm">// ' + binA + '</span><br>' +
+      '<span class="kw">int</span> res = a &gt;&gt; <span class="num">' + shiftK + '</span>; <span class="cm">// ' + binR + '</span><br>' +
+      'cout &lt;&lt; (a &gt;&gt; <span class="num">' + shiftK + '</span>); <span class="cm">// in ra ' + (valA >> shiftK) + '</span>';
+    rPill.innerHTML = '📌 <b>Chia nguyên luỹ thừa 2:</b> ' + valA + ' / 2<sup>' + shiftK + '</sup> = ' + Math.floor(valA / Math.pow(2, shiftK)) + '.';
+  }
+
+  // Column inspection info
+  if(hoverCol >= 0){
+    var bA = (valA >> hoverCol) & 1;
+    var bB = (valB >> hoverCol) & 1;
+    var bR = (res >> hoverCol) & 1;
+    document.getElementById('col-info').textContent = 'Bit ' + hoverCol + ' (trọng số ' + Math.pow(2, hoverCol) + '): ' + bA + ' ' + curOp + ' ' + (curOp === '~' || curOp === '<<' || curOp === '>>' ? '' : bB + ' ') + '= ' + bR;
+  } else {
+    document.getElementById('col-info').textContent = 'Di chuột vào cột bit để soi';
+  }
+}
+
+function setOp(op){
+  curOp = op;
+  var ops = ['&', '|', '^', '~', '<<', '>>'];
+  var ids = ['tab-and', 'tab-or', 'tab-xor', 'tab-not', 'tab-shl', 'tab-shr'];
+  for(var i=0; i<ops.length; i++){
+    var btn = document.getElementById(ids[i]);
+    if(btn) btn.setAttribute('aria-selected', ops[i] === op ? 'true' : 'false');
+  }
+  updateUI();
+}
+
+function toggleA(bitIdx){
+  valA ^= (1 << bitIdx);
+  updateUI();
+}
+
+function toggleB(bitIdx){
+  valB ^= (1 << bitIdx);
+  updateUI();
+}
+
+function setHover(col){
+  hoverCol = col;
+  updateUI();
+}
+
+function onShiftChange(k){
+  shiftK = parseInt(k, 10);
+  document.getElementById('shift-val-lbl').textContent = shiftK;
+  updateUI();
+}
+
+function applyPreset(a, b){
+  valA = a;
+  valB = b;
+  updateUI();
+}
+
+// Support query parameters
+var qop = qparam('op');
+if(qop && ['&', '|', '^', '~', '<<', '>>'].indexOf(qop) >= 0) setOp(qop);
+else setOp('&');
+
+var qa = parseInt(qparam('a'), 10);
+if(!isNaN(qa) && qa >= 0 && qa <= 255) valA = qa;
+
+var qb = parseInt(qparam('b'), 10);
+if(!isNaN(qb) && qb >= 0 && qb <= 255) valB = qb;
+
+updateUI();
+</script>
+</body>
+</html>

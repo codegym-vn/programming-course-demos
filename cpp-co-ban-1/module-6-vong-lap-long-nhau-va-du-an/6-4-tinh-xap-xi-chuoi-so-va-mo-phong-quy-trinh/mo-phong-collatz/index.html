@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng quy trình biến đổi Collatz (3n + 1)</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff;
+    --true:#16a34a; --true-soft:#f0fdf4; --false:#dc2626; --false-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef3c7; --cur-bar:#f59e0b;
+    --con-bg:#0f172a; --con-text:#f8fafc;
+    --kw:#7c3aed; --str:#059669; --num:#d97706; --cm:#94a3b8;
+    --svg-grid:#e2e8f0; --svg-line:#2563eb; --svg-even:#3b82f6; --svg-odd:#f59e0b; --svg-peak:#ef4444;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#090d16; --card:#131b2e; --text:#f1f5f9; --muted:#94a3b8; --line:#1e293b;
+      --accent:#3b82f6; --accent-soft:#172554;
+      --true:#22c55e; --true-soft:#052e16; --false:#ef4444; --false-soft:#450a0a;
+      --code-bg:#0c1222; --cur:#451a03; --cur-bar:#f59e0b;
+      --con-bg:#020617; --con-text:#f1f5f9;
+      --kw:#c084fc; --str:#34d399; --num:#fbbf24; --cm:#64748b;
+      --svg-grid:#1e293b; --svg-line:#60a5fa; --svg-even:#60a5fa; --svg-odd:#fbbf24; --svg-peak:#f87171;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:8px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px}
+  .lead b{color:var(--text)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:13px}
+  .field input{width:64px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:700 13.5px ui-monospace,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pill-lbl{font-size:11.5px;color:var(--muted)}
+  .pill{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 8px;
+    border-radius:6px;cursor:pointer;font:600 12px ui-monospace,Menlo,Consolas,monospace;transition:all .15s}
+  .pill:hover{border-color:var(--accent);color:var(--accent)}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btns{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;transition:all .15s}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 10px;margin-bottom:6px;min-height:48px;font-size:13px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* Stats grid */
+  .stats{display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-bottom:6px}
+  @media (max-width:560px){.stats{grid-template-columns:repeat(2, 1fr)}}
+  .stat-card{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;text-align:center}
+  .stat-card small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
+  .stat-card strong{font:700 15px ui-monospace,Menlo,Consolas,monospace;color:var(--text)}
+  .stat-card.peak strong{color:var(--svg-peak)}
+  .stat-card.rule strong{font-size:12px;font-family:inherit}
+
+  /* SVG Chart */
+  .chart-card{margin-bottom:6px;padding:6px 8px}
+  .chart-svg{width:100%;height:160px;display:block}
+  .chart-legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:var(--muted);margin-top:2px}
+  .cleg-item{display:flex;align-items:center;gap:4px}
+  .cleg-dot{width:8px;height:8px;border-radius:50%}
+
+  /* Sequence and Code */
+  .grid-bottom{display:grid;grid-template-columns:1.3fr 1fr;gap:6px}
+  @media (max-width:640px){.grid-bottom{grid-template-columns:1fr}}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px}
+  .seq-scroll{display:flex;gap:5px;overflow-x:auto;padding:4px 2px;background:var(--code-bg);border-radius:8px;border:1px solid var(--line)}
+  .seq-pill{padding:3px 7px;border-radius:5px;border:1px solid var(--line);background:var(--card);
+    font:700 11.5px ui-monospace,Menlo,Consolas,monospace;flex:none;display:inline-flex;align-items:center;gap:3px;transition:all .2s}
+  .seq-pill.cur{background:var(--cur);border-color:var(--cur-bar);box-shadow:0 0 0 2px rgba(245,158,11,0.3);transform:scale(1.05)}
+  .seq-pill.odd{color:var(--svg-odd)}
+  .seq-pill.even{color:var(--svg-even)}
+  .seq-pill.peak{border-color:var(--svg-peak);color:var(--svg-peak)}
+  .seq-arrow{color:var(--muted);font-size:10px}
+
+  .code{background:var(--code-bg);border-radius:8px;padding:4px 0;overflow-x:auto;
+    font:11.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent}
+  .ln .no{width:20px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi đường đi của số <code>n</code> về 1 qua đồ thị và từng phép tính.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="val-n">n =</label>
+      <input id="val-n" type="number" min="1" max="1000" value="3">
+    </div>
+    <div class="pills">
+      <span class="pill-lbl">Gợi ý:</span>
+      <button class="pill active" data-n="3">3 (7 bước)</button>
+      <button class="pill" data-n="6">6 (8 bước)</button>
+      <button class="pill" data-n="7">7 (16 bước)</button>
+      <button class="pill" data-n="27">27 (111 bước)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <small>Bước hiện tại</small>
+      <strong id="stat-step">0 / 7</strong>
+    </div>
+    <div class="stat-card">
+      <small>Giá trị n</small>
+      <strong id="stat-val">3</strong>
+    </div>
+    <div class="stat-card peak">
+      <small>Đỉnh cao nhất (Peak)</small>
+      <strong id="stat-peak">16</strong>
+    </div>
+    <div class="stat-card rule">
+      <small>Quy tắc áp dụng</small>
+      <strong id="stat-rule">Khởi đầu</strong>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <p class="panel-title">Đồ thị quỹ đạo Collatz</p>
+    <svg class="chart-svg" id="svg" viewBox="0 0 680 160"></svg>
+    <div class="chart-legend">
+      <span class="cleg-item"><span class="cleg-dot" style="background:var(--svg-odd)"></span> Số lẻ (3n + 1)</span>
+      <span class="cleg-item"><span class="cleg-dot" style="background:var(--svg-even)"></span> Số chẵn (n / 2)</span>
+      <span class="cleg-item"><span class="cleg-dot" style="background:var(--svg-peak)"></span> Đỉnh cao nhất (Peak)</span>
+      <span class="cleg-item"><span class="cleg-dot" style="background:var(--true)"></span> Điểm đích (1)</span>
+    </div>
+  </div>
+
+  <div class="grid-bottom">
+    <div class="card">
+      <p class="panel-title">Dãy số đã đi qua</p>
+      <div class="seq-scroll" id="seq-scroll"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++</p>
+      <div class="code" id="code"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|for|while|if|else|return|cout|cin)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur){
+  return lines.map(function(l, i){
+    var on = Array.isArray(cur) ? cur.indexOf(i) >= 0 : cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var N = 3;
+var qn = qparam('n');
+if (qn !== null && !isNaN(Number(qn))) { N = Math.max(1, Math.min(1000, parseInt(qn, 10))); $('val-n').value = N; }
+
+var LINES = [
+  'while (n > 1) {',
+  '  if (n % 2 == 0)',
+  '    n /= 2;',
+  '  else',
+  '    n = 3 * n + 1;',
+  '  steps++;',
+  '}'
+];
+
+function calcCollatzSequence(startN){
+  var seq = [{step: 0, val: startN, rule: 'Bắt đầu với n = ' + startN}];
+  var cur = startN;
+  var step = 0;
+  var limit = 1000;
+  while (cur > 1 && step < limit) {
+    var nextVal;
+    var ruleText;
+    var wasEven = (cur % 2 === 0);
+    if (wasEven) {
+      nextVal = cur / 2;
+      ruleText = cur + ' là số chẵn → n = ' + cur + ' / 2 = ' + nextVal;
+    } else {
+      nextVal = 3 * cur + 1;
+      ruleText = cur + ' là số lẻ → n = 3 * ' + cur + ' + 1 = ' + nextVal;
+    }
+    step++;
+    cur = nextVal;
+    seq.push({step: step, val: cur, wasEven: wasEven, rule: ruleText});
+  }
+  return seq;
+}
+
+var fullSeq = [];
+var overallPeak = 0;
+
+function buildSnaps(){
+  fullSeq = calcCollatzSequence(N);
+  overallPeak = fullSeq[0].val;
+  for (var j = 0; j < fullSeq.length; j++) {
+    if (fullSeq[j].val > overallPeak) overallPeak = fullSeq[j].val;
+  }
+
+  var S = [];
+  for (var k = 0; k < fullSeq.length; k++) {
+    var item = fullSeq[k];
+    var isStart = (k === 0);
+    var isEnd = (k === fullSeq.length - 1);
+    var ln = 0;
+    if (!isStart) {
+      ln = item.wasEven ? [1, 2, 5] : [3, 4, 5];
+    }
+    if (isEnd && item.val === 1) {
+      ln = null;
+    }
+
+    var title = isStart
+      ? 'Khởi đầu: n = ' + N
+      : 'Bước ' + k + ': ' + (item.wasEven ? 'Chia đôi (chẵn)' : '3n + 1 (lẻ)');
+    
+    var desc = isStart
+      ? 'Giá trị ban đầu n = ' + N + '. Kiểm tra điều kiện lặp while (n > 1): Đúng. Tiến vào vòng lặp.'
+      : item.rule + '. Biến đếm bước steps tăng lên ' + k + '.';
+    
+    if (isEnd) {
+      desc += ' Đã đạt giá trị n = 1. Điều kiện while (n > 1) thành false, quy trình kết thúc hoàn hảo!';
+    }
+
+    S.push({
+      step: k,
+      val: item.val,
+      rule: isStart ? 'Khởi đầu' : (item.wasEven ? 'n / 2 (chẵn)' : '3n + 1 (lẻ)'),
+      ln: ln,
+      t: title,
+      b: desc,
+      st: isEnd ? 'ok' : ''
+    });
+  }
+  return S;
+}
+
+function renderChart(stepIdx){
+  var W = 680, H = 160;
+  var padL = 45, padR = 25, padT = 16, padB = 24;
+  var drawW = W - padL - padR;
+  var drawH = H - padT - padB;
+
+  var totalSteps = Math.max(1, fullSeq.length - 1);
+  var maxVal = Math.max(2, overallPeak);
+
+  function getX(s){ return padL + (s / totalSteps) * drawW; }
+  function getY(v){ return padT + drawH - (v / maxVal) * drawH; }
+
+  var svg = '';
+  // Grid lines
+  var yLines = [1, Math.round(maxVal / 2), maxVal];
+  for (var i = 0; i < yLines.length; i++) {
+    var yVal = yLines[i];
+    var yPos = getY(yVal);
+    svg += '<line x1="' + padL + '" y1="' + yPos + '" x2="' + (W - padR) + '" y2="' + yPos + '" stroke="var(--svg-grid)" stroke-width="1" stroke-dasharray="3,3" />';
+    svg += '<text x="' + (padL - 6) + '" y="' + (yPos + 4) + '" fill="var(--muted)" font-size="10" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace">' + yVal + '</text>';
+  }
+
+  // X Axis labels
+  svg += '<text x="' + padL + '" y="' + (H - 6) + '" fill="var(--muted)" font-size="10" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">0</text>';
+  svg += '<text x="' + (padL + drawW) + '" y="' + (H - 6) + '" fill="var(--muted)" font-size="10" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">' + totalSteps + '</text>';
+
+  // Inactive full line (mờ)
+  if (fullSeq.length > 1) {
+    var fullD = 'M ' + getX(0) + ' ' + getY(fullSeq[0].val);
+    for (var j = 1; j < fullSeq.length; j++) {
+      fullD += ' L ' + getX(j) + ' ' + getY(fullSeq[j].val);
+    }
+    svg += '<path d="' + fullD + '" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />';
+  }
+
+  // Active line up to stepIdx
+  if (stepIdx > 0) {
+    var actD = 'M ' + getX(0) + ' ' + getY(fullSeq[0].val);
+    for (var k = 1; k <= stepIdx; k++) {
+      actD += ' L ' + getX(k) + ' ' + getY(fullSeq[k].val);
+    }
+    svg += '<path d="' + actD + '" fill="none" stroke="var(--svg-line)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />';
+  }
+
+  // Points up to stepIdx
+  for (var p = 0; p <= stepIdx; p++) {
+    var pt = fullSeq[p];
+    var px = getX(p);
+    var py = getY(pt.val);
+    var isCur = (p === stepIdx);
+    var isPeak = (pt.val === overallPeak);
+    var isFinal = (pt.val === 1 && p === fullSeq.length - 1);
+
+    var color = pt.val % 2 === 0 ? 'var(--svg-even)' : 'var(--svg-odd)';
+    if (isPeak) color = 'var(--svg-peak)';
+    if (isFinal) color = 'var(--true)';
+
+    if (isCur) {
+      svg += '<circle cx="' + px + '" cy="' + py + '" r="8" fill="' + color + '" opacity="0.3" />';
+    }
+    svg += '<circle cx="' + px + '" cy="' + py + '" r="' + (isCur ? 5 : (isPeak ? 4.5 : 3)) + '" fill="' + color + '" stroke="#fff" stroke-width="1.5" />';
+    
+    // Label for Peak
+    if (isPeak && p <= stepIdx) {
+      svg += '<text x="' + px + '" y="' + (py - 8) + '" fill="var(--svg-peak)" font-size="10.5" font-weight="700" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">Đỉnh ' + pt.val + '</text>';
+    }
+  }
+
+  $('svg').innerHTML = svg;
+}
+
+function renderSeq(stepIdx){
+  var html = '';
+  for (var i = 0; i <= stepIdx; i++) {
+    var item = fullSeq[i];
+    var isCur = (i === stepIdx);
+    var isPeak = (item.val === overallPeak);
+    var cls = 'seq-pill ' + (item.val % 2 === 0 ? 'even' : 'odd');
+    if (isPeak) cls += ' peak';
+    if (isCur) cls += ' cur';
+
+    if (i > 0) {
+      html += '<span class="seq-arrow">→</span>';
+    }
+    html += '<span class="' + cls + '">' + item.val + (isPeak ? ' ★' : '') + '</span>';
+  }
+  var container = $('seq-scroll');
+  container.innerHTML = html;
+  // Auto scroll to right
+  container.scrollLeft = container.scrollWidth;
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 450);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: buildSnaps,
+  render: function(s, k, total){
+    $('code').innerHTML = codeHtml(LINES, s.ln);
+    $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+    $('status').innerHTML = '<b>' + esc(s.t) + '</b>' + esc(s.b);
+
+    $('stat-step').textContent = s.step + ' / ' + (fullSeq.length - 1);
+    $('stat-val').textContent = s.val + (s.val % 2 === 0 ? ' (chẵn)' : ' (lẻ)');
+    $('stat-peak').textContent = overallPeak;
+    $('stat-rule').textContent = s.rule;
+
+    renderChart(s.step);
+    renderSeq(s.step);
+  }
+});
+
+$('val-n').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if (isNaN(v) || v < 1 || v > 1000) {
+    this.classList.add('bad');
+    return;
+  }
+  this.classList.remove('bad');
+  N = v;
+  document.querySelectorAll('.pill').forEach(function(p){
+    p.classList.toggle('active', parseInt(p.getAttribute('data-n'), 10) === N);
+  });
+  sim.rebuild();
+});
+
+document.querySelectorAll('.pill').forEach(function(p){
+  p.onclick = function(){
+    var v = parseInt(this.getAttribute('data-n'), 10);
+    $('val-n').value = v;
+    N = v;
+    document.querySelectorAll('.pill').forEach(function(el){ el.classList.remove('active'); });
+    this.classList.add('active');
+    sim.rebuild();
+  };
+});
+
+sim.rebuild();
+</script>
+</body>
+</html>

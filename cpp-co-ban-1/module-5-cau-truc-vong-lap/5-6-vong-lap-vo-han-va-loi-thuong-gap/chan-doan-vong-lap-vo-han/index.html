@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="620">
+<title>Chẩn đoán 4 bẫy vòng lặp vô hạn</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:600}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.danger{background:var(--false);border-color:var(--false)}
+  .btn.success{background:var(--true);border-color:var(--true)}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad .st-title{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn .st-title{color:var(--warn)}
+
+  .grid{display:grid;grid-template-columns:1.15fr 1.15fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;min-height:165px;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .ln.fixed-line{background:var(--true-soft);border-left-color:var(--true)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .right-col{display:flex;flex-direction:column;gap:10px}
+
+  /* CPU & Loop Meter */
+  .meter-box{background:var(--code-bg);border-radius:8px;padding:8px 12px;margin-bottom:6px}
+  .meter-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-bottom:4px}
+  .meter-bar{height:12px;background:var(--line);border-radius:6px;overflow:hidden;position:relative}
+  .meter-fill{height:100%;width:0%;background:var(--true);transition:all .3s}
+  .meter-fill.overload{background:var(--false);width:100%!important;animation:pulse .5s infinite alternate}
+  @keyframes pulse{from{opacity:.6}to{opacity:1}}
+
+  .diag-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);font-size:13px}
+  .diag-card.err{border-color:var(--false);background:var(--false-soft)}
+  .diag-card.ok{border-color:var(--true);background:var(--true-soft)}
+  .diag-title{font-size:12px;font-weight:700;margin-bottom:3px}
+  .diag-card.err .diag-title{color:var(--false)}
+  .diag-card.ok .diag-title{color:var(--true)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 10px;min-height:46px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+  .console .ph{color:#64748b;font-family:system-ui,sans-serif;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Khám phá 4 cạm bẫy vòng lặp thường gặp nhất, bấm <b>Chạy thử</b> để thấy chương trình bị treo và <b>Chẩn đoán</b> để sửa lỗi.</p>
+  
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab active" id="tab_b1">Bẫy 1: Quên cập nhật</button>
+      <button class="tab" id="tab_b2">Bẫy 2: Dấu ; thừa</button>
+      <button class="tab" id="tab_b3">Bẫy 3: Luôn đúng (||)</button>
+      <button class="tab" id="tab_b4">Bẫy 4: Ngược bước nhảy</button>
+    </div>
+    <div class="btns">
+      <button class="btn danger" id="btn_run">Chạy thử (Mã lỗi)</button>
+      <button class="btn success" id="btn_fix">Chẩn đoán & Sửa</button>
+      <button class="btn ghost" id="btn_reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title" id="code_title">Mã nguồn C++</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <p class="panel-title">Giám sát tải hệ thống & Vòng lặp</p>
+        <div class="meter-box">
+          <div class="meter-row">
+            <span>Tải CPU mô phỏng: <b id="cpu_lbl">0%</b></span>
+            <span>Số vòng lặp: <b id="iter_lbl">0</b></span>
+          </div>
+          <div class="meter-bar">
+            <div class="meter-fill" id="meter_fill"></div>
+          </div>
+        </div>
+
+        <div class="diag-card" id="diag_box">
+          <div class="diag-title" id="diag_title">Trạng thái chẩn đoán</div>
+          <div id="diag_msg">Bấm <b>Chạy thử</b> để quan sát hành vi khi mã nguồn chứa lỗi vòng lặp.</div>
+        </div>
+
+        <p class="panel-title" style="margin-top:10px">Màn hình Console Output</p>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|for|if|break|continue|return|cout|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var currentTrap = 1; // 1 | 2 | 3 | 4
+var isFixed = false;
+var timer = null;
+
+var traps = {
+  1: {
+    title: 'Bẫy 1: Đặt cập nhật d++ bên trong if (n % d == 0)',
+    badLines: [
+      'int n = 6, d = 1;',
+      'while (d <= n) {',
+      '  if (n % d == 0) {',
+      '    cout << d << " ";',
+      '    d++; // LOI: Chi tang khi d la uoc cua n!',
+      '  }',
+      '}'
+    ],
+    badErrLine: 4,
+    goodLines: [
+      'int n = 6, d = 1;',
+      'while (d <= n) {',
+      '  if (n % d == 0) {',
+      '    cout << d << " ";',
+      '  }',
+      '  d++; // DUNG: Luon tang o moi vong lap!',
+      '}'
+    ],
+    goodFixedLine: 5,
+    cause: 'Khi <code>d = 4</code>, <code>6 % 4 != 0</code> nên khối lệnh trong <code>if</code> không chạy. Dòng <code>d++</code> bị bỏ qua khiến <code>d</code> mãi bằng 4 → lặp vô hạn!',
+    solution: 'Đưa <code>d++</code> ra ngoài khối <code>if</code> để <code>d</code> luôn luôn được tăng sau mỗi lượt kiểm tra.',
+    outputFixed: '1 2 3 6'
+  },
+  2: {
+    title: 'Bẫy 2: Dấu chấm phẩy ; thừa sau while hoặc for',
+    badLines: [
+      'int a = 0;',
+      'while (a < 10); // LOI: Dau ; bien than vong lap thanh lenh rong!',
+      '{',
+      '  cout << a << " ";',
+      '  a++;',
+      '}'
+    ],
+    badErrLine: 1,
+    goodLines: [
+      'int a = 0;',
+      'while (a < 10) { // DUNG: Bo dau ; thua!',
+      '  cout << a << " ";',
+      '  a++;',
+      '}'
+    ],
+    goodFixedLine: 1,
+    cause: 'Dấu <code>;</code> ngay sau <code>while (a < 10);</code> tạo thành câu lệnh rỗng. Vòng lặp chạy đi chạy lại lệnh rỗng với <code>a = 0</code> mãi mãi; khối <code>{ a++; }</code> bên dưới không bao giờ được chạm tới!',
+    solution: 'Xoá bỏ dấu <code>;</code> sau ngoặc tròn của <code>while</code> hoặc <code>for</code>.',
+    outputFixed: '0 1 2 3 4 5 6 7 8 9 '
+  },
+  3: {
+    title: 'Bẫy 3: Điều kiện hằng đúng do nhầm || thay vì &&',
+    badLines: [
+      'int x = 5;',
+      'while (x >= 1 || x <= 10) { // LOI: Luon luon la true!',
+      '  cout << x << " ";',
+      '  x++;',
+      '}'
+    ],
+    badErrLine: 1,
+    goodLines: [
+      'int x = 5;',
+      'while (x >= 1 && x <= 10) { // DUNG: Dung toan tu &&',
+      '  cout << x << " ";',
+      '  x++;',
+      '}'
+    ],
+    goodFixedLine: 1,
+    cause: 'Mọi số nguyên trên trục số đều thoả mãn hoặc <code>>= 1</code> hoặc <code><= 10</code>. Biểu thức với <code>||</code> trở thành hằng đúng (Tautology) nên không bao giờ dừng!',
+    solution: 'Đổi toán tử logic <code>||</code> thành <code>&&</code> để giới hạn chính xác khoảng <code>[1, 10]</code>.',
+    outputFixed: '5 6 7 8 9 10 '
+  },
+  4: {
+    title: 'Bẫy 4: Bước nhảy ngược hướng với điều kiện dừng',
+    badLines: [
+      '// Muon dem lui tu 10 ve 1:',
+      'for (int i = 10; i > 0; ++i) { // LOI: Viet ++i thay vi --i!',
+      '  cout << i << " ";',
+      '}'
+    ],
+    badErrLine: 1,
+    goodLines: [
+      '// Muon dem lui tu 10 ve 1:',
+      'for (int i = 10; i > 0; --i) { // DUNG: Giam dan bang --i',
+      '  cout << i << " ";',
+      '}'
+    ],
+    goodFixedLine: 1,
+    cause: 'Muốn đếm lùi về 0 nhưng lại viết <code>++i</code>. Biến <code>i</code> tăng dần lên 11, 12, 13... ngày càng xa mốc 0, khiến điều kiện <code>i > 0</code> luôn đúng!',
+    solution: 'Đổi bước nhảy thành <code>--i</code> (hoặc <code>i--</code>) để biến <code>i</code> tiến dần về phía điều kiện dừng.',
+    outputFixed: '10 9 8 7 6 5 4 3 2 1 '
+  }
+};
+
+function renderCode(){
+  var t = traps[currentTrap];
+  var lines = isFixed ? t.goodLines : t.badLines;
+  var errLn = isFixed ? t.goodFixedLine : t.badErrLine;
+
+  $('code_title').textContent = t.title;
+  $('code').innerHTML = lines.map(function(l, i){
+    var isTarget = (i === errLn);
+    var cls = 'ln';
+    if (isTarget) cls += isFixed ? ' fixed-line' : ' err-line';
+    return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function stopSim(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function runBadSimulation(){
+  stopSim();
+  isFixed = false;
+  renderCode();
+
+  var t = traps[currentTrap];
+  var count = 0;
+  var mf = $('meter_fill');
+  var cpu = $('cpu_lbl');
+  var iter = $('iter_lbl');
+  var con = $('console');
+  var diag = $('diag_box');
+  var dt = $('diag_title');
+  var dm = $('diag_msg');
+  var st = $('status');
+
+  con.innerHTML = '1 2 3 ';
+  if (currentTrap === 3) con.innerHTML = '5 6 7 8 9 10 11 12 13...';
+  if (currentTrap === 4) con.innerHTML = '10 11 12 13 14 15 16...';
+
+  st.className = 'status bad';
+  st.innerHTML = '<span class="st-title">ĐANG CHẠY THỬ MÃ LỖI...</span>Bộ đếm vòng lặp đang tăng vọt! Chương trình không thể dừng lại.';
+
+  timer = setInterval(function(){
+    count += Math.floor(Math.random() * 8000) + 3000;
+    iter.textContent = count.toLocaleString('vi-VN');
+    var load = Math.min(100, Math.floor(count / 200));
+    cpu.textContent = load + '%';
+    mf.style.width = load + '%';
+
+    if (count > 80000) {
+      stopSim();
+      mf.className = 'meter-fill overload';
+      cpu.textContent = '100% (QUÁ TẢI)';
+      iter.textContent = '∞ (VÔ HẠN)';
+      st.className = 'status bad';
+      st.innerHTML = '<span class="st-title">⚠️ BÁO ĐỘNG: CHƯƠNG TRÌNH BỊ TREO (INFINITE LOOP)!</span>Không có điều kiện thoát vòng lặp. Bấm <b>Chẩn đoán & Sửa</b> để khắc phục.';
+      
+      diag.className = 'diag-card err';
+      dt.textContent = 'Chẩn đoán nguyên nhân lỗi:';
+      dm.innerHTML = t.cause;
+    }
+  }, 100);
+}
+
+function fixCode(){
+  stopSim();
+  isFixed = true;
+  renderCode();
+
+  var t = traps[currentTrap];
+  var mf = $('meter_fill');
+  mf.className = 'meter-fill';
+  mf.style.width = '12%';
+  $('cpu_lbl').textContent = '4%';
+  $('iter_lbl').textContent = 'Hữu hạn (Bình thường)';
+  $('console').textContent = t.outputFixed;
+
+  var st = $('status');
+  st.className = 'status ok';
+  st.innerHTML = '<span class="st-title">ĐÃ SỬA LỖI THÀNH CÔNG!</span>Mã nguồn đã được khắc phục, vòng lặp dừng lại an toàn và in đúng kết quả.';
+
+  var diag = $('diag_box');
+  diag.className = 'diag-card ok';
+  $('diag_title').textContent = 'Giải pháp khắc phục:';
+  $('diag_msg').innerHTML = t.solution;
+}
+
+function resetSim(){
+  stopSim();
+  isFixed = false;
+  renderCode();
+
+  var mf = $('meter_fill');
+  mf.className = 'meter-fill';
+  mf.style.width = '0%';
+  $('cpu_lbl').textContent = '0%';
+  $('iter_lbl').textContent = '0';
+  $('console').innerHTML = '<span class="ph">(chưa chạy chương trình)</span>';
+
+  var st = $('status');
+  st.className = 'status';
+  st.innerHTML = '<span class="st-title">Sẵn sàng thử nghiệm</span>Chọn 1 trong 4 bẫy ở trên, sau đó bấm <b>Chạy thử</b> để xem chương trình bị treo hoặc <b>Chẩn đoán & Sửa</b> để xem giải pháp.';
+
+  var diag = $('diag_box');
+  diag.className = 'diag-card';
+  $('diag_title').textContent = 'Trạng thái chẩn đoán';
+  $('diag_msg').innerHTML = 'Chưa phát hiện lỗi. Bấm <b>Chạy thử</b> để tiến hành quét.';
+}
+
+function selectTrap(idx){
+  currentTrap = idx;
+  for (var k = 1; k <= 4; k++) {
+    $('tab_b' + k).className = (k === idx) ? 'tab active' : 'tab';
+  }
+  resetSim();
+}
+
+$('tab_b1').onclick = function(){ selectTrap(1); };
+$('tab_b2').onclick = function(){ selectTrap(2); };
+$('tab_b3').onclick = function(){ selectTrap(3); };
+$('tab_b4').onclick = function(){ selectTrap(4); };
+
+$('btn_run').onclick = runBadSimulation;
+$('btn_fix').onclick = fixCode;
+$('btn_reset').onclick = resetSim;
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var qVd = qparam('vd');
+if (qVd === 'bay2') selectTrap(2);
+else if (qVd === 'bay3') selectTrap(3);
+else if (qVd === 'bay4') selectTrap(4);
+else selectTrap(1);
+
+var qMode = qparam('mode');
+if (qMode === 'fixed') {
+  fixCode();
+} else if (qMode === 'run') {
+  runBadSimulation();
+}
+</script>
+</body>
+</html>

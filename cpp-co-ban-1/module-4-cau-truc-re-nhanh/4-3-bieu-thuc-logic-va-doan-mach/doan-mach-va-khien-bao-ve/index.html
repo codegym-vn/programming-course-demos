@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Phòng thí nghiệm Đoản mạch & Khiên bảo vệ chia cho 0</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .tab.crash[aria-selected="true"]{background:var(--false);border-color:var(--false)}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:60px}
+  
+  .presets{display:flex;gap:4px;align-items:center}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:260px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.crash{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:260px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  /* Circuit diagram */
+  .circuit-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--code-bg)}
+  .circuit-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:0 0 6px;display:flex;justify-content:space-between}
+  .circuit-track{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+  
+  .circuit-node{border:1.5px solid var(--line);border-radius:6px;padding:6px;background:var(--card);text-align:center;transition:all .2s}
+  .circuit-node .lbl{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .circuit-node .expr{font:700 12.5px ui-monospace,monospace}
+  .circuit-node .res{font:700 11px ui-monospace,monospace;margin-top:2px}
+  
+  .circuit-node.active{border-color:var(--accent);background:var(--accent-soft)}
+  .circuit-node.ok{border-color:var(--true);background:var(--true-soft)}
+  .circuit-node.bad{border-color:var(--false);background:var(--false-soft)}
+  .circuit-node.skipped{opacity:.35;border-style:dashed}
+
+  .circuit-op{font:700 16px ui-monospace,monospace;color:var(--kw);padding:0 2px}
+
+  .shield-banner{display:flex;align-items:center;gap:6px;border-radius:6px;padding:6px 8px;font-size:12px;font-weight:600}
+  .shield-banner.safe{background:var(--true-soft);color:var(--true);border:1px solid var(--true)}
+  .shield-banner.crash{background:var(--false-soft);color:var(--false);border:1px solid var(--false);animation:pulse .8s infinite alternate}
+  .shield-banner.wait{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+
+  @keyframes pulse{
+    from{opacity:.8} to{opacity:1;transform:scale(1.01)}
+  }
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 10px;min-height:36px;
+    font:12.5px/1.5 ui-monospace,monospace;display:flex;align-items:center;justify-content:space-between}
+  .con-label{font-size:11px;color:#94a3b8;font-weight:600}
+  .con-out{font-weight:700;font-size:14px;color:#38bdf8}
+  .con-out.err{color:#f87171}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để thử nghiệm cơ chế <b>đoản mạch</b>: vế trái bảo vệ vế phải khỏi lỗi chia cho 0 vs đảo ngược gây sập chương trình.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-safe-and" role="tab" aria-selected="true" onclick="setMode('safe_and')">1. &amp;&amp; Có khiên bảo vệ</button>
+      <button class="tab crash" id="tab-crash-and" role="tab" aria-selected="false" onclick="setMode('crash_and')">2. &amp;&amp; Mất khiên: CRASH!</button>
+      <button class="tab" id="tab-or" role="tab" aria-selected="false" onclick="setMode('or_mode')">3. || Đoản mạch khi vế 1 true</button>
+    </div>
+
+    <div class="field">
+      <label for="x-input">x =</label>
+      <input type="number" id="x-input" min="-100" max="100" value="0">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn active" onclick="setX(0)">0 (Hiểm hoạ)</button>
+      <button class="preset-btn" onclick="setX(4)">4 (100/4=25 &gt; 5)</button>
+      <button class="preset-btn" onclick="setX(25)">25 (100/25=4 &le; 5)</button>
+      <button class="preset-btn" onclick="setX(-10)">-10 (Âm)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Sơ đồ đoản mạch & Console -->
+    <div class="card right-panel">
+      <div class="circuit-card">
+        <div class="circuit-title">
+          <span>Dòng đánh giá biểu thức (Trái → Phải)</span>
+          <span id="circuit-badge" style="font-size:10px;color:var(--accent)">Đang chờ</span>
+        </div>
+        <div class="circuit-track">
+          <!-- Vế 1 -->
+          <div class="circuit-node" id="node-left">
+            <div class="lbl" id="lbl-left">VẾ TRÁI (e1)</div>
+            <div class="expr" id="expr-left">x != 0</div>
+            <div class="res" id="res-left">–</div>
+          </div>
+
+          <div class="circuit-op" id="circuit-op">&amp;&amp;</div>
+
+          <!-- Vế 2 -->
+          <div class="circuit-node" id="node-right">
+            <div class="lbl" id="lbl-right">VẾ PHẢI (e2)</div>
+            <div class="expr" id="expr-right">100 / x &gt; 5</div>
+            <div class="res" id="res-right">–</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner trạng thái khiên chắn -->
+      <div class="shield-banner wait" id="shield-banner">
+        <span id="shield-icon">🛡️</span>
+        <span id="shield-txt">Khiên bảo vệ: Chờ đánh giá vế trái...</span>
+      </div>
+
+      <!-- Console output -->
+      <div class="console">
+        <span class="con-label">Console:</span>
+        <span class="con-out" id="con-out">Chưa xuất</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var mode = 'safe_and'; // 'safe_and' | 'crash_and' | 'or_mode'
+var curStep = 0;
+var timer = null;
+var X = 0;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|if|else|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(m, x){
+  if (m === 'safe_and') {
+    return [
+      'int x = ' + x + ';',
+      '// Vế trái làm KHIÊN BẢO VỆ',
+      'if (x != 0 && 100 / x > 5) {',
+      '  cout << "Thuong lon hon 5\\n";',
+      '} else {',
+      '  cout << "An toan, khong bi chia cho 0\\n";',
+      '}'
+    ];
+  } else if (m === 'crash_and') {
+    return [
+      'int x = ' + x + ';',
+      '// NGUY HIỂM: Đảo thứ tự mất khiên chắn!',
+      'if (100 / x > 5 && x != 0) {',
+      '  cout << "Thuong lon hon 5\\n";',
+      '} else {',
+      '  cout << "Nhanh else\\n";',
+      '}'
+    ];
+  } else {
+    return [
+      'int x = ' + x + ';',
+      '// Toán tử ||: đoản mạch khi vế 1 là true',
+      'if (x == 0 || 100 / x > 5) {',
+      '  cout << "x bang 0 hoac thuong > 5\\n";',
+      '} else {',
+      '  cout << "Thuong <= 5\\n";',
+      '}'
+    ];
+  }
+}
+
+function renderCode(lines, curLine, isCrash){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    var cls = 'ln';
+    if(isCur) cls += ' cur';
+    if(isCur && isCrash) cls += ' crash';
+    html += '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(m, x){
+  if (m === 'safe_and') {
+    // Mode 1: x != 0 && 100 / x > 5
+    var v1 = (x !== 0);
+    var s = [
+      {
+        line: 0,
+        badge: 'Bước 1/4',
+        stClass: '',
+        stTitle: 'Bước 1: Khởi tạo biến x = ' + x,
+        stMsg: 'Chương trình bắt đầu với <code>x = ' + x + '</code>. Chuẩn bị đánh giá biểu thức <code>if</code> từ trái sang phải.',
+        leftCls: 'active', leftRes: 'Chờ tính',
+        op: '&&',
+        rightCls: '', rightRes: 'Chờ tính',
+        bannerCls: 'wait', bannerIcon: '🛡️', bannerTxt: 'Khiên bảo vệ: Chuẩn bị kiểm tra x != 0...',
+        out: '–'
+      },
+      {
+        line: 2,
+        badge: 'Bước 2/4',
+        stClass: v1 ? 'ok' : 'ok',
+        stTitle: 'Bước 2: Đánh giá vế trái (e1): x != 0',
+        stMsg: 'Tính vế trái <code>' + x + ' != 0</code> → <b>' + (v1 ? 'true' : 'false') + '</b>. ' + 
+               (!v1 ? '⚡ <b>KHIÊN ĐOẢN MẠCH KÍCH HOẠT!</b> Vì vế 1 là <code>false</code>, phép <code>&&</code> chắc chắn là <code>false</code>. C++ <b>BỎ QUA TOÀN BỘ VẾ PHẢI</b>!' : 'Vế trái đúng, C++ bắt buộc phải tính tiếp vế phải.'),
+        leftCls: v1 ? 'ok' : 'bad', leftRes: v1 ? 'true' : 'false',
+        op: '&&',
+        rightCls: !v1 ? 'skipped' : 'active', rightRes: !v1 ? 'BỎ QUA ⚡' : 'Đang tính...',
+        bannerCls: !v1 ? 'safe' : 'wait', bannerIcon: !v1 ? '⚡🛡️' : '⏳',
+        bannerTxt: !v1 ? 'ĐOẢN MẠCH AN TOÀN: Bỏ qua 100 / x, ngăn ngừa lỗi chia cho 0!' : 'Vế 1 đúng, tiếp tục tính vế 2...',
+        out: '–'
+      }
+    ];
+
+    if (!v1) {
+      // x == 0: short circuit to else!
+      s.push({
+        line: 4,
+        badge: 'Bước 3/4',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Nhảy thẳng sang nhánh else',
+        stMsg: 'Nhờ đoản mạch, phép chia <code>100 / 0</code> không bao giờ được thực hiện! Dòng điều khiển chuyển sang nhánh <code>else</code> an toàn.',
+        leftCls: 'bad', leftRes: 'false',
+        op: '&&',
+        rightCls: 'skipped', rightRes: 'BỎ QUA ⚡',
+        bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Chương trình an toàn 100%! Không phát sinh lỗi thời gian chạy.',
+        out: '–'
+      });
+      s.push({
+        line: 5,
+        badge: 'Bước 4/4',
+        stClass: 'ok',
+        stTitle: 'Bước 4: Xuất thông báo an toàn',
+        stMsg: 'In ra console: <code>"An toan, khong bi chia cho 0"</code>.',
+        leftCls: 'bad', leftRes: 'false',
+        op: '&&',
+        rightCls: 'skipped', rightRes: 'BỎ QUA ⚡',
+        bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Hoàn tất an toàn.',
+        out: 'An toan, khong bi chia cho 0'
+      });
+    } else {
+      // x != 0: evaluate right side
+      var q = Math.floor(100 / x);
+      var v2 = (q > 5);
+      s.push({
+        line: 2,
+        badge: 'Bước 3/4',
+        stClass: v2 ? 'ok' : '',
+        stTitle: 'Bước 3: Đánh giá vế phải (e2): 100 / x > 5',
+        stMsg: 'Do vế trái đúng, C++ tính tiếp: <code>100 / ' + x + ' = ' + q + '</code>. So sánh <code>' + q + ' &gt; 5</code> → <b>' + (v2 ? 'true' : 'false') + '</b>. Cả biểu thức <code>&&</code> là <b>' + (v2 ? 'true' : 'false') + '</b>.',
+        leftCls: 'ok', leftRes: 'true',
+        op: '&&',
+        rightCls: v2 ? 'ok' : 'bad', rightRes: v2 ? 'true (' + q + '>5)' : 'false (' + q + '<=5)',
+        bannerCls: 'wait', bannerIcon: 'ℹ️', bannerTxt: 'Cả 2 vế đều được tính do vế 1 không thể kết luận sớm.',
+        out: '–'
+      });
+
+      if (v2) {
+        s.push({
+          line: 3,
+          badge: 'Bước 4/4',
+          stClass: 'ok',
+          stTitle: 'Bước 4: Thực thi nhánh if',
+          stMsg: 'Cả 2 vế đều đúng → Nhánh if chạy: <code>"Thuong lon hon 5"</code>.',
+          leftCls: 'ok', leftRes: 'true',
+          op: '&&',
+          rightCls: 'ok', rightRes: 'true',
+          bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Nhánh if được thực thi.',
+          out: 'Thuong lon hon 5'
+        });
+      } else {
+        s.push({
+          line: 5,
+          badge: 'Bước 4/4',
+          stClass: 'ok',
+          stTitle: 'Bước 4: Thực thi nhánh else',
+          stMsg: 'Vế 2 sai → Nhánh else chạy.',
+          leftCls: 'ok', leftRes: 'true',
+          op: '&&',
+          rightCls: 'bad', rightRes: 'false',
+          bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Nhánh else được thực thi.',
+          out: 'An toan, khong bi chia cho 0'
+        });
+      }
+    }
+    return s;
+
+  } else if (m === 'crash_and') {
+    // Mode 2: 100 / x > 5 && x != 0
+    if (x === 0) {
+      return [
+        {
+          line: 0,
+          badge: 'Bước 1/3',
+          stClass: '',
+          stTitle: 'Bước 1: Khởi tạo biến x = 0',
+          stMsg: 'Cảnh báo: Thứ tự điều kiện bị đảo ngược! Biểu thức chia <code>100 / x</code> đứng trước.',
+          leftCls: 'active', leftRes: 'Chờ tính',
+          op: '&&',
+          rightCls: '', rightRes: 'Chờ tính',
+          bannerCls: 'wait', bannerIcon: '⚠️', bannerTxt: 'Cảnh báo: 100 / x đứng đầu tiên!',
+          out: '–'
+        },
+        {
+          line: 2,
+          badge: 'Bước 2/3',
+          isCrash: true,
+          stClass: 'bad',
+          stTitle: 'Bước 2: C++ thực thi vế trái: 100 / 0',
+          stMsg: '💥 <b>CRASH! FLOATING POINT EXCEPTION / LỖI CHIA CHO 0!</b><br>Do C++ đánh giá từ trái sang phải, phép tính <code>100 / 0</code> bị thực hiện NGAY LẬP TỨC trước khi kịp kiểm tra <code>x != 0</code>!',
+          leftCls: 'bad', leftRes: '100 / 0 💥',
+          op: '&&',
+          rightCls: 'skipped', rightRes: 'Không kịp tới',
+          bannerCls: 'crash', bannerIcon: '💥🚨', bannerTxt: 'CRASH: SIGFPE: Integer division by zero! Chương trình sụp đổ!',
+          out: '💥 [Program crashed: SIGFPE]',
+          isErr: true
+        },
+        {
+          line: 2,
+          badge: 'Bước 3/3',
+          isCrash: true,
+          stClass: 'bad',
+          stTitle: 'Bước 3: Bài học cốt tử về vị trí khiên chắn',
+          stMsg: 'Vế phải <code>x != 0</code> trở nên HOÀN TOÀN VÔ DỤNG khi đứng sau phép chia! <b>Quy tắc vàng: Luôn đặt điều kiện kiểm tra an toàn ở vế trái của &amp;&amp;.</b>',
+          leftCls: 'bad', leftRes: '💥 Sập nguồn',
+          op: '&&',
+          rightCls: 'skipped', rightRes: 'Vô dụng!',
+          bannerCls: 'crash', bannerIcon: '☠️', bannerTxt: 'Chương trình bị hệ điều hành tiêu diệt khẩn cấp!',
+          out: '💥 Process terminated with exit code 136',
+          isErr: true
+        }
+      ];
+    } else {
+      var q2 = Math.floor(100 / x);
+      var vLeft = (q2 > 5);
+      return [
+        {
+          line: 0,
+          badge: 'Bước 1/3',
+          stClass: '',
+          stTitle: 'Bước 1: Khởi tạo x = ' + x,
+          stMsg: 'Khi <code>x != 0</code>, chương trình không bị crash nhưng viết thế này rất nguy hiểm nếu sau này x nhận giá trị 0.',
+          leftCls: 'active', leftRes: 'Chờ tính',
+          op: '&&',
+          rightCls: '', rightRes: 'Chờ tính',
+          bannerCls: 'wait', bannerIcon: '⚠️', bannerTxt: 'Thiết kế nguy hiểm dù x khác 0.',
+          out: '–'
+        },
+        {
+          line: 2,
+          badge: 'Bước 2/3',
+          stClass: vLeft ? 'ok' : 'bad',
+          stTitle: 'Bước 2: Tính 100 / ' + x + ' = ' + q2,
+          stMsg: 'So sánh <code>' + q2 + ' &gt; 5</code> → <b>' + vLeft + '</b>.',
+          leftCls: vLeft ? 'ok' : 'bad', leftRes: String(vLeft),
+          op: '&&',
+          rightCls: 'active', rightRes: 'true',
+          bannerCls: 'wait', bannerIcon: 'ℹ️', bannerTxt: 'x khác 0 nên phép chia thực hiện được.',
+          out: '–'
+        },
+        {
+          line: vLeft ? 3 : 5,
+          badge: 'Bước 3/3',
+          stClass: 'ok',
+          stTitle: 'Bước 3: Kết thúc',
+          stMsg: 'Chương trình chạy tiếp vào nhánh ' + (vLeft ? 'if' : 'else') + '.',
+          leftCls: vLeft ? 'ok' : 'bad', leftRes: String(vLeft),
+          op: '&&',
+          rightCls: 'ok', rightRes: 'true',
+          bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Hoàn tất.',
+          out: vLeft ? 'Thuong lon hon 5' : 'Nhanh else'
+        }
+      ];
+    }
+  } else {
+    // Mode 3: x == 0 || 100 / x > 5
+    var orLeft = (x === 0);
+    var s3 = [
+      {
+        line: 0,
+        badge: 'Bước 1/3',
+        stClass: '',
+        stTitle: 'Bước 1: Khởi tạo x = ' + x,
+        stMsg: 'Toán tử <code>||</code> (HOẶC): Chỉ cần MỘT vế đúng là cả biểu thức đúng. Đoản mạch xảy ra khi vế trái là <b>true</b>.',
+        leftCls: 'active', leftRes: 'Chờ tính',
+        op: '||',
+        rightCls: '', rightRes: 'Chờ tính',
+        bannerCls: 'wait', bannerIcon: '💡', bannerTxt: 'Đoản mạch của ||: Nếu vế trái true → Bỏ qua vế phải!',
+        out: '–'
+      },
+      {
+        line: 2,
+        badge: 'Bước 2/3',
+        stClass: orLeft ? 'ok' : '',
+        stTitle: 'Bước 2: Đánh giá vế trái: x == 0',
+        stMsg: 'Tính <code>' + x + ' == 0</code> → <b>' + (orLeft ? 'true' : 'false') + '</b>. ' + 
+               (orLeft ? '⚡ <b>ĐOẢN MẠCH KÍCH HOẠT!</b> Vế trái đúng nên cả biểu thức <code>||</code> chắc chắn đúng! C++ <b>BỎ QUA VẾ PHẢI</b>, an toàn tránh được chia cho 0.' : 'Vế trái sai, C++ phải tính tiếp vế phải để quyết định.'),
+        leftCls: orLeft ? 'ok' : 'bad', leftRes: orLeft ? 'true' : 'false',
+        op: '||',
+        rightCls: orLeft ? 'skipped' : 'active', rightRes: orLeft ? 'BỎ QUA ⚡' : 'Đang tính...',
+        bannerCls: orLeft ? 'safe' : 'wait', bannerIcon: orLeft ? '⚡💡' : '⏳',
+        bannerTxt: orLeft ? 'Đoản mạch ||: Vế 1 đúng → Kết luận true ngay, an toàn tuyệt đối!' : 'Vế 1 sai → Phải kiểm tra tiếp vế 2.',
+        out: '–'
+      }
+    ];
+
+    if (orLeft) {
+      s3.push({
+        line: 3,
+        badge: 'Bước 3/3',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Nhảy vào nhánh if',
+        stMsg: 'In ra: <code>"x bang 0 hoac thuong &gt; 5"</code>.',
+        leftCls: 'ok', leftRes: 'true',
+        op: '||',
+        rightCls: 'skipped', rightRes: 'BỎ QUA ⚡',
+        bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Hoàn tất an toàn nhờ đoản mạch ||.',
+        out: 'x bang 0 hoac thuong > 5'
+      });
+    } else {
+      var q3 = Math.floor(100 / x);
+      var orRight = (q3 > 5);
+      s3.push({
+        line: orRight ? 3 : 5,
+        badge: 'Bước 3/3',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Tính vế phải: 100 / ' + x + ' > 5',
+        stMsg: 'Tính <code>100 / ' + x + ' = ' + q3 + ' &gt; 5</code> → <b>' + orRight + '</b>. Chạy nhánh ' + (orRight ? 'if' : 'else') + '.',
+        leftCls: 'bad', leftRes: 'false',
+        op: '||',
+        rightCls: orRight ? 'ok' : 'bad', rightRes: String(orRight),
+        bannerCls: 'safe', bannerIcon: '✅', bannerTxt: 'Hoàn tất.',
+        out: orRight ? 'x bang 0 hoac thuong > 5' : 'Thuong <= 5'
+      });
+    }
+    return s3;
+  }
+}
+
+function render(){
+  var lines = getLines(mode, X);
+  var steps = getSteps(mode, X);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line, s.isCrash);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  
+  // Circuit diagram update
+  var nodeL = document.getElementById('node-left');
+  nodeL.className = 'circuit-node ' + (s.leftCls || '');
+  document.getElementById('res-left').textContent = s.leftRes;
+  document.getElementById('expr-left').textContent = (mode === 'crash_and') ? '100 / x > 5' : (mode === 'or_mode' ? 'x == 0' : 'x != 0');
+  document.getElementById('lbl-left').textContent = (mode === 'crash_and') ? 'VẾ 1: PHÉP CHIA' : 'VẾ 1: KIỂM TRA';
+
+  document.getElementById('circuit-op').textContent = s.op;
+
+  var nodeR = document.getElementById('node-right');
+  nodeR.className = 'circuit-node ' + (s.rightCls || '');
+  document.getElementById('res-right').textContent = s.rightRes;
+  document.getElementById('expr-right').textContent = (mode === 'crash_and') ? 'x != 0' : '100 / x > 5';
+  document.getElementById('lbl-right').textContent = (mode === 'crash_and') ? 'VẾ 2: KIỂM TRA' : 'VẾ 2: PHÉP CHIA';
+
+  // Shield banner
+  var banner = document.getElementById('shield-banner');
+  banner.className = 'shield-banner ' + s.bannerCls;
+  document.getElementById('shield-icon').textContent = s.bannerIcon;
+  document.getElementById('shield-txt').textContent = s.bannerTxt;
+
+  // Console output
+  var conOut = document.getElementById('con-out');
+  conOut.className = 'con-out' + (s.isErr ? ' err' : '');
+  conOut.textContent = s.out;
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setMode(m){
+  stopTimer();
+  mode = m;
+  document.getElementById('tab-safe-and').setAttribute('aria-selected', m === 'safe_and');
+  document.getElementById('tab-crash-and').setAttribute('aria-selected', m === 'crash_and');
+  document.getElementById('tab-or').setAttribute('aria-selected', m === 'or_mode');
+  curStep = 0;
+  render();
+}
+
+function setX(val){
+  stopTimer();
+  X = parseInt(val, 10);
+  document.getElementById('x-input').value = X;
+  
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf('(' + X + ')') >= 0 || b.textContent.indexOf(X + ' ') === 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('x-input').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    X = v;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(mode, X);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(mode, X);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?mode=crash_and & ?x=N & ?buoc=N
+var qm = qparam('mode');
+if(qm === 'crash_and' || qm === 'or_mode' || qm === 'safe_and') setMode(qm);
+var qx = parseInt(qparam('x'), 10);
+if(!isNaN(qx)) { X = qx; document.getElementById('x-input').value = X; }
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

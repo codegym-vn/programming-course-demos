@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="570">
+<title>Thực thi từng bước câu lệnh if có vs không có { }</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .tab.bad[aria-selected="true"]{background:var(--false);border-color:var(--false)}
+  .tab.good[aria-selected="true"]{background:var(--true);border-color:var(--true)}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:64px}
+  
+  .presets{display:flex;gap:4px;align-items:center}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.15fr 1.1fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:250px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.trap{background:var(--false-soft);border-left-color:var(--false)}
+  .ln.inside{border-left-color:var(--true)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:250px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  .vars{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .var-box{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px;text-align:center}
+  .var-box small{display:block;color:var(--muted);font:11px ui-monospace,monospace}
+  .var-box strong{font:700 18px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+
+  .scope-box{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--card);font-size:12px}
+  .scope-box.warn{border-color:#fca5a5;background:rgba(239,68,68,0.05)}
+  .scope-box.safe{border-color:#86efac;background:rgba(34,197,94,0.05)}
+  .scope-title{font-size:11px;font-weight:700;text-transform:uppercase;margin:0 0 4px}
+  .scope-title.warn{color:var(--false)}
+  .scope-title.safe{color:var(--true)}
+  
+  .scope-list{margin:0;padding-left:16px;font:11.5px/1.45 system-ui,sans-serif}
+  .scope-list li{margin-bottom:2px}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 10px;min-height:38px;
+    font:12.5px/1.5 ui-monospace,monospace;display:flex;align-items:center;justify-content:space-between}
+  .con-label{font-size:11px;color:#94a3b8;font-weight:600}
+  .con-out{font-weight:700;font-size:15px;color:#38bdf8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để so sánh luồng chạy khi <b>không có { }</b> (bẫy thụt lề) vs khi <b>có { }</b> (khối lệnh chuẩn).</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab bad" id="tab-no-brace" role="tab" aria-selected="true" onclick="setMode('no_brace')">1. Không có { } (Cạm bẫy)</button>
+      <button class="tab good" id="tab-brace" role="tab" aria-selected="false" onclick="setMode('brace')">2. Có ngoặc nhọn { } (Chuẩn)</button>
+    </div>
+
+    <div class="field">
+      <label for="x-input">x =</label>
+      <input type="number" id="x-input" min="-50" max="100" value="15">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn active" onclick="setX(15)">15 (x &lt; 10: Sai)</button>
+      <button class="preset-btn" onclick="setX(5)">5 (x &lt; 10: Đúng)</button>
+      <button class="preset-btn" onclick="setX(8)">8 (Đúng)</button>
+      <button class="preset-btn" onclick="setX(25)">25 (Sai)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title" id="code-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/5</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Bộ nhớ RAM & Phân tích cấu trúc -->
+    <div class="card right-panel">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Biến bộ nhớ (RAM)</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">Variables</span>
+        </div>
+        <div class="vars">
+          <div class="var-box" id="box-x">
+            <small>int x</small>
+            <strong id="val-x">15</strong>
+          </div>
+          <div class="var-box" id="box-y">
+            <small>int y</small>
+            <strong id="val-y">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phân tích phạm vi -->
+      <div class="scope-box" id="scope-card">
+        <div class="scope-title" id="scope-title">Cấu trúc lệnh if</div>
+        <ul class="scope-list" id="scope-desc"></ul>
+      </div>
+
+      <!-- Màn hình Console -->
+      <div class="console">
+        <span class="con-label">Console Output:</span>
+        <span class="con-out" id="con-out">Chưa xuất</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var mode = 'no_brace'; // 'no_brace' | 'brace'
+var curStep = 0;
+var timer = null;
+var X = 15;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|if|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(m, x){
+  if (m === 'no_brace') {
+    return [
+      'int x = ' + x + ', y = 0;',
+      'if (x < 10)',
+      '  y = x;        // Chỉ dòng này thuộc if',
+      '  y = y + 5;    // LỖI: Ngoài if, LUÔN CHẠY!',
+      'cout << y;'
+    ];
+  } else {
+    return [
+      'int x = ' + x + ', y = 0;',
+      'if (x < 10) {',
+      '  y = x;',
+      '  y = y + 5;',
+      '}',
+      'cout << y;'
+    ];
+  }
+}
+
+function renderCode(lines, curLine, isTrap){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    var cls = 'ln';
+    if(isCur) cls += ' cur';
+    if(isCur && isTrap) cls += ' trap';
+    html += '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(m, x){
+  var cond = (x < 10);
+  if (m === 'no_brace') {
+    // Không có ngoặc nhọn:
+    // Line 0: init
+    // Line 1: eval if (x < 10)
+    // Line 2: if cond true: y = x, else skipped
+    // Line 3: y = y + 5 (ALWAY RUNS!)
+    // Line 4: cout << y
+    var s = [
+      {
+        line: 0,
+        badge: 'Bước 1/5',
+        stClass: '',
+        stTitle: 'Bước 1: Khởi tạo biến x và y',
+        stMsg: 'Khởi tạo <code>x = ' + x + '</code>, <code>y = 0</code> trong bộ nhớ.',
+        x: x, y: 0, chg: 'none',
+        out: '–',
+        scopeTitle: 'Cạm bẫy thụt lề: Không có { }',
+        scopeSafe: false,
+        scopeItems: [
+          'Thân <code>if</code> chỉ gồm đúng <b>1 dòng</b> ngay bên dưới (dòng 3).',
+          'Dòng 4 thụt lề cho thẳng hàng nhưng trình biên dịch C++ <b>hoàn toàn bỏ qua thụt lề</b>!'
+        ]
+      },
+      {
+        line: 1,
+        badge: 'Bước 2/5',
+        stClass: cond ? 'ok' : 'bad',
+        stTitle: 'Bước 2: Kiểm tra điều kiện if (x < 10)',
+        stMsg: 'Đánh giá <code>' + x + ' &lt; 10</code> → <b>' + (cond ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + (cond ? 'Chương trình chuẩn bị vào dòng lệnh của if.' : 'Điều kiện sai! Trình biên dịch sẽ bỏ qua câu lệnh duy nhất của if (dòng 3).'),
+        x: x, y: 0, chg: 'none',
+        out: '–',
+        scopeTitle: cond ? 'Điều kiện ĐÚNG' : 'Điều kiện SAI',
+        scopeSafe: cond,
+        scopeItems: cond ? [
+          'Điều kiện đúng nên dòng 3 (<code>y = x</code>) sẽ được thực thi.'
+        ] : [
+          'Dòng 3 (<code>y = x</code>) sẽ bị nhảy cóc qua.',
+          'Chú ý: Điều gì xảy ra với dòng 4 tiếp theo?'
+        ]
+      }
+    ];
+
+    var curY = 0;
+    if (cond) {
+      curY = x;
+      s.push({
+        line: 2,
+        badge: 'Bước 3/5',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Thực thi dòng thân if: y = x',
+        stMsg: 'Gán <code>y = ' + x + '</code>. Biến y nhận giá trị mới.',
+        x: x, y: curY, chg: 'y',
+        out: '–',
+        scopeTitle: 'Thân if được thực thi',
+        scopeSafe: true,
+        scopeItems: ['Dòng 3 thuộc if nên được chạy khi điều kiện đúng.']
+      });
+    } else {
+      s.push({
+        line: 1,
+        badge: 'Bước 3/5',
+        stClass: 'bad',
+        stTitle: 'Bước 3: Bỏ qua dòng 3: y = x',
+        stMsg: 'Do <code>' + x + ' &lt; 10</code> sai, dòng <code>y = x</code> bị bỏ qua. Giá trị <code>y</code> vẫn là 0.',
+        x: x, y: 0, chg: 'none',
+        out: '–',
+        scopeTitle: 'Bỏ qua dòng 3',
+        scopeSafe: false,
+        scopeItems: ['Thân if (dòng 3) đã bị bỏ qua, chuẩn bị chạy lệnh tiếp theo...']
+      });
+    }
+
+    curY = curY + 5;
+    s.push({
+      line: 3,
+      badge: 'Bước 4/5',
+      stClass: 'bad',
+      isTrap: true,
+      stTitle: 'Bước 4: CẠM BẪY! Dòng y = y + 5 LUÔN CHẠY!',
+      stMsg: 'Bẫy thị giác! Dòng <code>y = y + 5</code> <b>KHÔNG NẰM TRONG IF</b> dù được thụt lề! Nó luôn luôn thực thi khiến <code>y</code> tăng lên <b>' + curY + '</b>' + (cond ? '.' : ' (dù điều kiện if bị sai)!'),
+      x: x, y: curY, chg: 'y',
+      out: '–',
+      scopeTitle: 'CẠM BẪY THỰC THI SAI Ý ĐỒ',
+      scopeSafe: false,
+      scopeItems: [
+        'Dòng <code>y = y + 5</code> nằm NGOÀI câu lệnh if!',
+        'Nếu không có cặp ngoặc nhọn <code>{ }</code>, C++ chỉ gom 1 dòng duy nhất vào if.',
+        'Hậu quả: <code>y</code> luôn bị cộng thêm 5!'
+      ]
+    });
+
+    s.push({
+      line: 4,
+      badge: 'Bước 5/5',
+      stClass: 'bad',
+      stTitle: 'Bước 5: In giá trị y ra màn hình',
+      stMsg: 'In <code>cout &lt;&lt; y</code> → xuất ra màn hình <b>' + curY + '</b>' + (!cond ? ' (Sai hoàn toàn so với mong muốn y = 0 khi x không nhỏ hơn 10)!' : '.'),
+      x: x, y: curY, chg: 'none',
+      out: String(curY),
+      scopeTitle: 'Kết thúc',
+      scopeSafe: false,
+      scopeItems: [
+        'Kết quả in ra console: <b>' + curY + '</b>',
+        'Khắc phục: Luôn bọc thân if trong cặp ngoặc nhọn <code>{ }</code>!'
+      ]
+    });
+
+    return s;
+  } else {
+    // Có ngoặc nhọn:
+    // Line 0: init
+    // Line 1: eval if (x < 10) {
+    // If cond true: Line 2 (y = x) -> Line 3 (y = y + 5) -> Line 5 (cout << y)
+    // If cond false: Line 4/5 (skip whole block to cout << y)
+    var s = [
+      {
+        line: 0,
+        badge: 'Bước 1/' + (cond ? '5' : '3'),
+        stClass: '',
+        stTitle: 'Bước 1: Khởi tạo biến x và y',
+        stMsg: 'Khởi tạo <code>x = ' + x + '</code>, <code>y = 0</code>. Thân if được bọc trọn vẹn trong cặp ngoặc nhọn <code>{ }</code>.',
+        x: x, y: 0, chg: 'none',
+        out: '–',
+        scopeTitle: 'Khối lệnh { } chuẩn mực',
+        scopeSafe: true,
+        scopeItems: [
+          'Cả hai dòng <code>y = x;</code> và <code>y = y + 5;</code> nằm trọn vẹn trong khối <code>{ }</code>.',
+          'Khi điều kiện sai, TOÀN BỘ khối này sẽ được bỏ qua an toàn!'
+        ]
+      },
+      {
+        line: 1,
+        badge: 'Bước 2/' + (cond ? '5' : '3'),
+        stClass: cond ? 'ok' : 'ok',
+        stTitle: 'Bước 2: Kiểm tra điều kiện if (x < 10)',
+        stMsg: 'Đánh giá <code>' + x + ' &lt; 10</code> → <b>' + (cond ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + (cond ? 'Chương trình đi vào bên trong khối { }.' : 'Điều kiện sai! Trình biên dịch <b>nhảy cóc qua toàn bộ khối { }</b> để đến dòng 6.'),
+        x: x, y: 0, chg: 'none',
+        out: '–',
+        scopeTitle: cond ? 'Điều kiện ĐÚNG' : 'Điều kiện SAI - An toàn',
+        scopeSafe: true,
+        scopeItems: cond ? [
+          'Thực thi lần lượt các câu lệnh trong khối { }...'
+        ] : [
+          'Nhảy cóc từ dòng 1 qua dòng 4!',
+          'Toàn bộ các dòng bên trong khối ngoặc nhọn đều được bảo vệ và bỏ qua.'
+        ]
+      }
+    ];
+
+    if (cond) {
+      s.push({
+        line: 2,
+        badge: 'Bước 3/5',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Thực thi dòng 1 trong khối: y = x',
+        stMsg: 'Gán <code>y = ' + x + '</code>.',
+        x: x, y: x, chg: 'y',
+        out: '–',
+        scopeTitle: 'Thực thi khối { }',
+        scopeSafe: true,
+        scopeItems: ['Dòng <code>y = x</code> đã chạy, y = ' + x]
+      });
+
+      var endY = x + 5;
+      s.push({
+        line: 3,
+        badge: 'Bước 4/5',
+        stClass: 'ok',
+        stTitle: 'Bước 4: Thực thi dòng 2 trong khối: y = y + 5',
+        stMsg: 'Tính <code>y = ' + x + ' + 5 = ' + endY + '</code>.',
+        x: x, y: endY, chg: 'y',
+        out: '–',
+        scopeTitle: 'Thực thi khối { }',
+        scopeSafe: true,
+        scopeItems: ['Dòng <code>y = y + 5</code> đã chạy, y = ' + endY]
+      });
+
+      s.push({
+        line: 5,
+        badge: 'Bước 5/5',
+        stClass: 'ok',
+        stTitle: 'Bước 5: Thoát khối { } và in kết quả',
+        stMsg: 'In <code>cout &lt;&lt; y</code> → xuất ra màn hình <b>' + endY + '</b>. Đúng chuẩn logic!',
+        x: x, y: endY, chg: 'none',
+        out: String(endY),
+        scopeTitle: 'Hoàn tất an toàn',
+        scopeSafe: true,
+        scopeItems: ['In ra: ' + endY]
+      });
+    } else {
+      s.push({
+        line: 5,
+        badge: 'Bước 3/3',
+        stClass: 'ok',
+        stTitle: 'Bước 3: Thoát khối { } và in y giữ nguyên',
+        stMsg: 'Khối <code>{ }</code> đã bảo vệ dòng <code>y = y + 5</code> không bị chạy nhầm! Giá trị <code>y</code> được giữ nguyên là <b>0</b>. Kết quả in ra màn hình: <b>0</b>.',
+        x: x, y: 0, chg: 'none',
+        out: '0',
+        scopeTitle: 'Bảo vệ thành công',
+        scopeSafe: true,
+        scopeItems: [
+          'Nhờ có cặp ngoặc nhọn <code>{ }</code>, dòng <code>y = y + 5</code> không bao giờ bị chạy oan!',
+          'Biến y giữ nguyên giá trị 0 ban đầu.'
+        ]
+      });
+    }
+
+    return s;
+  }
+}
+
+function render(){
+  var lines = getLines(mode, X);
+  var steps = getSteps(mode, X);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line, s.isTrap);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  document.getElementById('val-x').textContent = s.x;
+  document.getElementById('val-y').textContent = s.y;
+  
+  var boxY = document.getElementById('box-y');
+  boxY.className = 'var-box' + (s.chg === 'y' ? ' chg' : '');
+
+  var scopeCard = document.getElementById('scope-card');
+  scopeCard.className = 'scope-box ' + (s.scopeSafe ? 'safe' : 'warn');
+  
+  var scopeTitle = document.getElementById('scope-title');
+  scopeTitle.className = 'scope-title ' + (s.scopeSafe ? 'safe' : 'warn');
+  scopeTitle.textContent = s.scopeTitle;
+
+  var ul = document.getElementById('scope-desc');
+  ul.innerHTML = s.scopeItems.map(function(item){ return '<li>' + item + '</li>'; }).join('');
+
+  document.getElementById('con-out').textContent = s.out;
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setMode(m){
+  stopTimer();
+  mode = m;
+  document.getElementById('tab-no-brace').setAttribute('aria-selected', m === 'no_brace');
+  document.getElementById('tab-brace').setAttribute('aria-selected', m === 'brace');
+  curStep = 0;
+  render();
+}
+
+function setX(val){
+  stopTimer();
+  X = parseInt(val, 10);
+  document.getElementById('x-input').value = X;
+  
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf('(' + X + ')') >= 0 || b.textContent.indexOf(X + ' ') === 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('x-input').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    X = v;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(mode, X);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(mode, X);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?mode=brace & ?x=N & ?buoc=N
+var qm = qparam('mode');
+if(qm === 'brace' || qm === 'no_brace') setMode(qm);
+var qx = parseInt(qparam('x'), 10);
+if(!isNaN(qx)) { X = qx; document.getElementById('x-input').value = X; }
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

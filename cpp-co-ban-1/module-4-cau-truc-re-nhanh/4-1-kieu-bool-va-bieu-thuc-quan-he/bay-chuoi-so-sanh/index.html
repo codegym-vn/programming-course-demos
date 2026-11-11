@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="570">
+<title>Bẫy chuỗi so sánh 1 <= x <= 10 vs Logic đúng</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input[type="number"]{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:68px}
+  .field input[type="range"]{width:110px}
+  
+  .presets{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace;transition:all .15s}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:170px}
+    .compare-wrap{height:auto}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:250px;overflow-y:auto;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Comparison Panels */
+  .compare-wrap{display:flex;flex-direction:column;gap:8px;height:250px;justify-content:space-between}
+  .columns-duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:480px){.columns-duo{grid-template-columns:1fr}}
+  
+  .col-box{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--code-bg);display:flex;flex-direction:column;justify-content:space-between}
+  .col-box.wrong{border-color:#fca5a5;background:rgba(239,68,68,0.04)}
+  .col-box.correct{border-color:#86efac;background:rgba(34,197,94,0.04)}
+  .col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px;display:flex;align-items:center;justify-content:space-between}
+  .col-title.err{color:var(--false)}
+  .col-title.ok{color:var(--true)}
+
+  .expr-step{font:12px/1.45 ui-monospace,monospace;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:4px 6px;margin-bottom:4px}
+  .expr-step .sub{color:var(--muted);font-size:10.5px}
+  .expr-step .calc{font-weight:700;color:var(--text)}
+  .tag{display:inline-block;padding:0 5px;border-radius:4px;font:700 11px ui-monospace,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}
+  .tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.warn{background:var(--false);color:#fff}
+
+  /* Axis graphic */
+  .axis-card{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--card)}
+  .axis-title{font-size:11px;font-weight:700;color:var(--muted);margin:0 0 4px}
+  .axis-bar{position:relative;height:22px;background:var(--false-soft);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .axis-zone{position:absolute;left:28%;width:22%;height:100%;background:var(--true-soft);border-left:2px solid var(--true);border-right:2px solid var(--true);display:flex;align-items:center;justify-content:center;font:700 10px ui-monospace,monospace;color:var(--true)}
+  .axis-pin{position:absolute;top:0;height:100%;width:3px;background:var(--accent);transition:left .2s}
+  .axis-pin::after{content:attr(data-val);position:absolute;top:-1px;left:4px;background:var(--accent);color:#fff;font:700 9.5px ui-monospace,monospace;padding:1px 3px;border-radius:3px;white-space:nowrap}
+  .axis-labels{display:flex;justify-content:space-between;font:10px ui-monospace,monospace;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để mổ xẻ vì sao <code>1 &lt;= x &lt;= 10</code> luôn <b>true</b>, đối chiếu với logic đúng <code>x &gt;= 1 &amp;&amp; x &lt;= 10</code>.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="x-val">x =</label>
+      <input type="number" id="x-val" min="-20" max="60" value="25">
+      <input type="range" id="x-range" min="-20" max="60" value="25">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn" onclick="setX(-5)">-5 (âm)</button>
+      <button class="preset-btn" onclick="setX(0)">0 (ngoài)</button>
+      <button class="preset-btn" onclick="setX(5)">5 (trong [1,10])</button>
+      <button class="preset-btn" onclick="setX(10)">10 (biên)</button>
+      <button class="preset-btn active" onclick="setX(25)">25 (lớn hơn 10)</button>
+      <button class="preset-btn" onclick="setX(50)">50 (rất lớn)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Đối chiếu trực quan -->
+    <div class="card compare-wrap">
+      <div class="columns-duo">
+        <!-- Cột SAI -->
+        <div class="col-box wrong" id="box-wrong">
+          <div>
+            <div class="col-title err">
+              <span>Bẫy C++: 1 &lt;= x &lt;= 10</span>
+              <span class="tag warn" id="tag-wrong-header">CẠM BẪY</span>
+            </div>
+            <div class="expr-step" id="step-w1">
+              <div class="sub">1. Tính từ trái sang phải:</div>
+              <div class="calc" id="calc-w1">1 &lt;= x</div>
+            </div>
+            <div class="expr-step" id="step-w2">
+              <div class="sub">2. Đổi sang số rồi so sánh tiếp:</div>
+              <div class="calc" id="calc-w2">(kết quả) &lt;= 10</div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--false);margin-top:4px" id="note-wrong"></div>
+        </div>
+
+        <!-- Cột ĐÚNG -->
+        <div class="col-box correct" id="box-correct">
+          <div>
+            <div class="col-title ok">
+              <span>Chuẩn C++: &amp;&amp;</span>
+              <span class="tag t" id="tag-correct-header">LOGIC ĐÚNG</span>
+            </div>
+            <div class="expr-step" id="step-r1">
+              <div class="sub">1. Vế trái (x &gt;= 1):</div>
+              <div class="calc" id="calc-r1">x &gt;= 1</div>
+            </div>
+            <div class="expr-step" id="step-r2">
+              <div class="sub">2. Vế phải (x &lt;= 10):</div>
+              <div class="calc" id="calc-r2">x &lt;= 10</div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--true);margin-top:4px" id="note-correct"></div>
+        </div>
+      </div>
+
+      <!-- Trục số toạ độ -->
+      <div class="axis-card">
+        <div class="axis-title">Trục số: x = <span id="axis-val-txt" style="color:var(--accent);font-family:ui-monospace">25</span> nằm ở đâu?</div>
+        <div class="axis-bar">
+          <div class="axis-zone" title="Đoạn hợp lệ [1, 10]">[1 .. 10] HỢP LỆ</div>
+          <div class="axis-pin" id="axis-pin" data-val="x=25" style="left:56%"></div>
+        </div>
+        <div class="axis-labels">
+          <span>-20</span>
+          <span>0</span>
+          <span style="font-weight:700;color:var(--true)">1</span>
+          <span style="font-weight:700;color:var(--true)">10</span>
+          <span>30</span>
+          <span>60</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var curStep = 0;
+var timer = null;
+var X = 25;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|bool|cout|return|using|namespace|include|true|false)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(x){
+  return [
+    'int x = ' + x + ';',
+    '// Cách SAI: bẫy chuỗi so sánh',
+    'bool trap = (1 <= x <= 10);',
+    '// Cách ĐÚNG: kết hợp 2 vế bằng &&',
+    'bool correct = (x >= 1 && x <= 10);',
+    'cout << trap << " vs " << correct << "\\n";'
+  ];
+}
+
+function renderCode(lines, curLine){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    html += '<div class="ln' + (isCur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(x){
+  var step1_bool = (1 <= x);
+  var step1_int = step1_bool ? 1 : 0;
+  var step2_trap = (step1_int <= 10); // always true since 0<=10 and 1<=10
+
+  var r_part1 = (x >= 1);
+  var r_part2 = (x <= 10);
+  var r_correct = (r_part1 && r_part2);
+  var inMath = (x >= 1 && x <= 10);
+
+  return [
+    {
+      line: 0,
+      badge: 'Bước 1/4',
+      statusClass: '',
+      statusTitle: 'Bước 1: Khởi tạo giá trị x = ' + x,
+      statusMsg: 'Theo toán học, x ' + (inMath ? 'NẰM TRONG' : 'NẰM NGOÀI') + ' đoạn [1, 10]. Kỳ vọng kết quả là ' + (inMath ? 'true' : 'false') + '.',
+      w1: '1 &lt;= ' + x + ' (chưa tính)',
+      w2: 'Chờ kết quả bước 1...',
+      r1: x + ' &gt;= 1 (chưa tính)',
+      r2: x + ' &lt;= 10 (chưa tính)',
+      wNote: 'Chưa chạy',
+      rNote: 'Chưa chạy'
+    },
+    {
+      line: 2,
+      badge: 'Bước 2/4',
+      statusClass: 'bad',
+      statusTitle: 'Bước 2: Giải phẫu bẫy (1 <= ' + x + ') <= 10',
+      statusMsg: 'Toán tử &lt;= kết hợp từ trái sang phải: Tính <code>1 &lt;= ' + x + '</code> trước, ra <b>' + (step1_bool ? 'true' : 'false') + '</b> (được C++ đổi ngầm định thành số nguyên <b>' + step1_int + '</b>).',
+      w1: '1 &lt;= ' + x + ' → <span class="tag ' + (step1_bool ? 't' : 'f') + '">' + step1_bool + ' (' + step1_int + ')</span>',
+      w2: step1_int + ' &lt;= 10 (đang chờ so sánh)',
+      r1: x + ' &gt;= 1 → <span class="tag ' + (r_part1 ? 't' : 'f') + '">' + r_part1 + '</span>',
+      r2: 'Chờ vế 2...',
+      wNote: '1 <= x đổi thành số ' + step1_int,
+      rNote: 'Vế trái: ' + (r_part1 ? 'Đạt (>= 1)' : 'Không đạt (< 1)')
+    },
+    {
+      line: 4,
+      badge: 'Bước 3/4',
+      statusClass: (inMath ? 'ok' : 'bad'),
+      statusTitle: 'Bước 3: Lấy kết quả (' + step1_int + ') đem so với 10',
+      statusMsg: 'Bẫy lộ diện! Lấy <code>' + step1_int + ' &lt;= 10</code>. Vì cả 0 và 1 đều &lt;= 10, biểu thức <b>LUÔN LUÔN LÀ TRUE (' + (step2_trap ? '1' : '0') + ')</b> dù x = ' + x + ' ' + (inMath ? 'trong đoạn' : 'ở ngoài đoạn') + '!',
+      w1: '1 &lt;= ' + x + ' → <span class="tag ' + (step1_bool ? 't' : 'f') + '">' + step1_int + '</span>',
+      w2: step1_int + ' &lt;= 10 → <span class="tag warn">LUÔN TRUE (' + (step2_trap ? '1' : '0') + ')</span>',
+      r1: x + ' &gt;= 1 → <span class="tag ' + (r_part1 ? 't' : 'f') + '">' + r_part1 + '</span>',
+      r2: x + ' &lt;= 10 → <span class="tag ' + (r_part2 ? 't' : 'f') + '">' + r_part2 + '</span>',
+      wNote: 'Cạm bẫy: Luôn trả về 1!',
+      rNote: '&& kết hợp: ' + (r_correct ? 'true (trong [1,10])' : 'false (ngoài [1,10])')
+    },
+    {
+      line: 5,
+      badge: 'Bước 4/4',
+      statusClass: 'ok',
+      statusTitle: 'Bước 4: Xuất kết quả so sánh',
+      statusMsg: 'In ra: <code>trap = 1</code> (SAI THỰC TẾ) vs <code>correct = ' + (r_correct ? '1' : '0') + '</code> (' + (r_correct ? 'ĐÚNG vì x thuộc [1,10]' : 'ĐÚNG vì x ngoài [1,10]') + '). Bài học: Tuyệt đối không viết nối 2 phép so sánh!',
+      w1: '1 &lt;= ' + x + ' → ' + step1_int,
+      w2: 'trap = <span class="tag warn">1 (BẤY KẸT)</span>',
+      r1: 'Vế 1: ' + r_part1 + ' | Vế 2: ' + r_part2,
+      r2: 'correct = <span class="tag ' + (r_correct ? 't' : 'f') + '">' + (r_correct ? '1 (true)' : '0 (false)') + '</span>',
+      wNote: 'KẾT QUẢ SAI LỆCH!',
+      rNote: 'KẾT QUẢ CHUẨN XÁC!'
+    }
+  ];
+}
+
+function updateAxis(x){
+  var minX = -20, maxX = 60;
+  var clamped = Math.max(minX, Math.min(maxX, x));
+  var pct = ((clamped - minX) / (maxX - minX)) * 100;
+  var pin = document.getElementById('axis-pin');
+  pin.style.left = pct + '%';
+  pin.setAttribute('data-val', 'x=' + x);
+  document.getElementById('axis-val-txt').textContent = x;
+}
+
+function render(){
+  var lines = getLines(X);
+  var steps = getSteps(X);
+  var s = steps[curStep];
+
+  renderCode(lines, s.line);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.statusClass ? ' ' + s.statusClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.statusTitle) + '</b>' + s.statusMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  document.getElementById('calc-w1').innerHTML = s.w1;
+  document.getElementById('calc-w2').innerHTML = s.w2;
+  document.getElementById('note-wrong').textContent = s.wNote;
+
+  document.getElementById('calc-r1').innerHTML = s.r1;
+  document.getElementById('calc-r2').innerHTML = s.r2;
+  document.getElementById('note-correct').textContent = s.rNote;
+
+  updateAxis(X);
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setX(val){
+  stopTimer();
+  X = parseInt(val, 10);
+  document.getElementById('x-val').value = X;
+  document.getElementById('x-range').value = X;
+  
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf('(' + X + ')') >= 0 || b.textContent.indexOf(X + ' ') === 0 || b.textContent.indexOf(' ' + X + ' ') >= 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('x-val').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    X = v;
+    document.getElementById('x-range').value = v;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('x-range').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  stopTimer();
+  X = v;
+  document.getElementById('x-val').value = v;
+  curStep = 0;
+  render();
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(X);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(X);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 700);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?buoc=N & ?x=N
+var qb = parseInt(qparam('buoc'), 10);
+var qx = parseInt(qparam('x'), 10);
+if(!isNaN(qx)) { X = qx; document.getElementById('x-val').value = X; document.getElementById('x-range').value = X; }
+if(!isNaN(qb) && qb >= 1) { curStep = Math.min(3, qb - 1); }
+
+render();
+</script>
+</body>
+</html>

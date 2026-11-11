@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng kiểm tra số nguyên tố tối ưu đến căn n</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff;
+    --true:#16a34a; --true-soft:#f0fdf4; --false:#dc2626; --false-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef3c7; --cur-bar:#f59e0b;
+    --con-bg:#0f172a; --con-text:#f8fafc;
+    --kw:#7c3aed; --str:#059669; --num:#d97706; --cm:#94a3b8;
+    --item-bg:#f8fafc; --item-b:#cbd5e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#090d16; --card:#131b2e; --text:#f1f5f9; --muted:#94a3b8; --line:#1e293b;
+      --accent:#3b82f6; --accent-soft:#172554;
+      --true:#22c55e; --true-soft:#052e16; --false:#ef4444; --false-soft:#450a0a;
+      --code-bg:#0c1222; --cur:#451a03; --cur-bar:#f59e0b;
+      --con-bg:#020617; --con-text:#f1f5f9;
+      --kw:#c084fc; --str:#34d399; --num:#fbbf24; --cm:#64748b;
+      --item-bg:#1e293b; --item-b:#334155;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:8px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px}
+  .lead b{color:var(--text)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:13px}
+  .field input{width:70px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:700 13.5px ui-monospace,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pill-lbl{font-size:11.5px;color:var(--muted)}
+  .pill{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 8px;
+    border-radius:6px;cursor:pointer;font:600 12px ui-monospace,Menlo,Consolas,monospace;transition:all .15s}
+  .pill:hover{border-color:var(--accent);color:var(--accent)}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btns{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;transition:all .15s}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .flag-banner{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;
+    border-radius:8px;margin-bottom:8px;border:1.5px solid var(--line);background:var(--card);transition:all .25s}
+  .flag-title{font-size:12px;color:var(--muted);font-weight:600}
+  .flag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;
+    font:700 13px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .flag-badge.true{background:var(--true-soft);color:var(--true);border:1.5px solid var(--true)}
+  .flag-badge.false{background:var(--false-soft);color:var(--false);border:1.5px solid var(--false)}
+  .flag-icon{font-size:15px}
+
+  .grid-2{display:grid;grid-template-columns:1.05fr 1fr;gap:8px}
+  @media (max-width:640px){.grid-2{grid-template-columns:1fr}}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+
+  .vars{display:flex;gap:6px;margin-bottom:8px}
+  .var{background:var(--code-bg);border-radius:8px;padding:3px 6px;flex:1;text-align:center;border:1.5px solid transparent;transition:all .2s}
+  .var small{display:block;color:var(--muted);font:10px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+
+  .test-list{display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto;padding-right:2px}
+  .test-row{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:6px;
+    border:1px solid var(--line);background:var(--item-bg);font:12px ui-monospace,Menlo,Consolas,monospace;transition:all .2s}
+  .test-row.cur{border-color:var(--cur-bar);background:var(--cur);box-shadow:0 0 0 2px rgba(245,158,11,0.25)}
+  .test-row.divides{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .test-row.nodivide{border-color:var(--true-soft);color:var(--true)}
+  .test-row.over{border-color:var(--line);background:var(--card);color:var(--muted);font-style:italic}
+  .test-badge{padding:1px 6px;border-radius:4px;font-weight:700;font-size:11px}
+  .test-badge.ok{background:var(--true-soft);color:var(--true)}
+  .test-badge.bad{background:var(--false-soft);color:var(--false)}
+  .test-badge.cur{background:var(--cur);color:var(--num)}
+
+  .break-tag{display:inline-block;padding:1px 6px;border-radius:4px;background:#ef4444;color:#fff;
+    font-weight:700;font-size:10.5px;letter-spacing:.04em;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi thuật toán thử ước <code>d</code> và cơ chế dừng sớm bằng <code>break</code>.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="val-n">n =</label>
+      <input id="val-n" type="number" min="0" max="10000" value="29">
+    </div>
+    <div class="pills">
+      <span class="pill-lbl">Mẫu:</span>
+      <button class="pill" data-n="2">2</button>
+      <button class="pill" data-n="9">9</button>
+      <button class="pill" data-n="28">28</button>
+      <button class="pill active" data-n="29">29</button>
+      <button class="pill" data-n="36">36</button>
+      <button class="pill" data-n="97">97</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="flag-banner">
+    <span class="flag-title">Cờ hiệu kiểm tra tính nguyên tố (is_prime)</span>
+    <span class="flag-badge true" id="flag">
+      <span class="flag-icon" id="flag-icon">⚑</span>
+      <span id="flag-text">is_prime = true</span>
+    </span>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++ tối ưu (d × d &le; n)</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Bảng biến theo dõi</p>
+      <div class="vars" id="vars"></div>
+      <p class="panel-title" style="margin-top:6px">Lần vết thử ước d</p>
+      <div class="test-list" id="test-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|char|for|while|if|else|return|cout|cin|break|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur){
+  return lines.map(function(l, i){
+    var on = Array.isArray(cur) ? cur.indexOf(i) >= 0 : cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function varsHtml(vs){
+  return vs.map(function(v){
+    return '<div class="var' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>';
+  }).join('');
+}
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var N = 29;
+var qn = qparam('n');
+if (qn !== null && !isNaN(Number(qn))) { N = Math.max(0, Math.min(10000, parseInt(qn, 10))); $('val-n').value = N; }
+
+var LINES = [
+  'bool is_prime = (n >= 2);',
+  'for (int d = 2; d * d <= n; d++) {',
+  '  if (n % d == 0) {',
+  '    is_prime = false;',
+  '    break;',
+  '  }',
+  '}'
+];
+
+function buildSnaps(){
+  var S = [];
+  var n = N;
+
+  if (n < 2) {
+    S.push({
+      ln: 0, d: null, d2: null, mod: null, is_prime: false,
+      t: 'Khởi tạo: n = ' + n + ' < 2',
+      b: 'Điều kiện (n >= 2) sai vì n = ' + n + '. Biến cờ is_prime nhận giá trị false ngay từ đầu.',
+      tested: [], st: 'bad', ch: 'is_prime'
+    });
+    S.push({
+      ln: null, d: null, d2: null, mod: null, is_prime: false,
+      t: 'Kết luận: n = ' + n + ' KHÔNG PHẢI số nguyên tố',
+      b: 'Theo định nghĩa, số nguyên tố phải lớn hơn 1. Vòng lặp thử ước không chạy.',
+      tested: [], st: 'bad', end: true
+    });
+    return S;
+  }
+
+  var is_prime = true;
+  var tested = [];
+
+  S.push({
+    ln: 0, d: null, d2: null, mod: null, is_prime: true,
+    t: 'Khởi tạo cờ hiệu: is_prime = true',
+    b: 'Với n = ' + n + ' >= 2, ta tạm giả định n là số nguyên tố (dựng cờ xanh). Chuẩn bị thử các ước d từ 2.',
+    tested: []
+  });
+
+  var d = 2;
+  while (true) {
+    var d2 = d * d;
+    var cond = d2 <= n;
+
+    S.push({
+      ln: 1, d: d, d2: d2, mod: null, is_prime: is_prime,
+      t: 'Kiểm tra điều kiện: d * d <= n (' + d + '² = ' + d2 + ' ' + (cond ? '≤' : '>') + ' ' + n + ')',
+      b: cond
+        ? d + ' * ' + d + ' = ' + d2 + ' ≤ ' + n + ' là Đúng. Ước d = ' + d + ' nằm trong khoảng cần quét [2, √n]. Tiến vào thân vòng lặp.'
+        : d + ' * ' + d + ' = ' + d2 + ' > ' + n + ' là Sai. Đã vượt quá √n ≈ ' + Math.sqrt(n).toFixed(2) + '. Thoát vòng lặp!',
+      tested: tested.slice(),
+      curD: d, cond: cond
+    });
+
+    if (!cond) {
+      tested.push({d: d, d2: d2, over: true});
+      break;
+    }
+
+    var rem = n % d;
+    var divides = (rem === 0);
+
+    S.push({
+      ln: 2, d: d, d2: d2, mod: rem, is_prime: is_prime,
+      t: 'Kiểm tra chia hết: n % d (' + n + ' % ' + d + ' == ' + rem + ')',
+      b: divides
+        ? n + ' chia hết cho ' + d + ' (dư 0). Đã tìm thấy một ước thực sự của ' + n + '!'
+        : n + ' chia cho ' + d + ' dư ' + rem + ' ≠ 0. Số ' + d + ' không phải ước của ' + n + '.',
+      tested: tested.concat([{d: d, d2: d2, rem: rem, divides: divides, cur: true}]),
+      curD: d, divides: divides
+    });
+
+    if (divides) {
+      is_prime = false;
+      tested.push({d: d, d2: d2, rem: rem, divides: true});
+
+      S.push({
+        ln: 3, d: d, d2: d2, mod: rem, is_prime: false, ch: 'is_prime',
+        t: 'Hạ cờ: is_prime = false',
+        b: 'Đã phát hiện ước d = ' + d + ', lập tức gán is_prime = false (hạ cờ đỏ).',
+        tested: tested.slice(), curD: d, st: 'bad'
+      });
+
+      S.push({
+        ln: 4, d: d, d2: d2, mod: rem, is_prime: false,
+        t: 'Lệnh break: Dừng sớm vòng lặp!',
+        b: 'Không cần thử thêm bất kỳ ước nào nữa! Lệnh break ngắt vòng lặp ngay lập tức để tối ưu hoá hiệu năng.',
+        tested: tested.slice(), curD: d, st: 'bad', isBreak: true
+      });
+      break;
+    } else {
+      tested.push({d: d, d2: d2, rem: rem, divides: false});
+      d++;
+    }
+  }
+
+  S.push({
+    ln: null, d: is_prime ? d : tested[tested.length - 1].d, d2: null, mod: null, is_prime: is_prime,
+    t: is_prime ? 'Kết luận: n = ' + n + ' LÀ SỐ NGUYÊN TỐ!' : 'Kết luận: n = ' + n + ' LÀ HỢP SỐ!',
+    b: is_prime
+      ? 'Đã quét hết mọi ước d trong đoạn [2, √' + n + '] mà không tìm thấy ước nào. Cờ is_prime vẫn giữ nguyên true -> ' + n + ' là số nguyên tố.'
+      : 'Số ' + n + ' chia hết cho ước d = ' + tested[tested.length - 1].d + ' -> ' + n + ' là hợp số.',
+    tested: tested.slice(), st: is_prime ? 'ok' : 'bad', end: true
+  });
+
+  return S;
+}
+
+function renderTests(tested, s){
+  if (!tested || tested.length === 0) {
+    return '<div class="test-row over"><span>Chưa có phép thử ước nào</span></div>';
+  }
+  return tested.map(function(t){
+    if (t.over) {
+      return '<div class="test-row over"><span>d = ' + t.d + ' (' + t.d + '² = ' + t.d2 + ' > ' + N + ')</span><span class="test-badge ok">Vượt √n → Dừng</span></div>';
+    }
+    var cls = 'test-row';
+    var badge = '';
+    if (t.cur) {
+      cls += ' cur';
+      badge = '<span class="test-badge cur">Đang tính...</span>';
+    } else if (t.divides) {
+      cls += ' divides';
+      badge = '<span class="test-badge bad">' + N + ' % ' + t.d + ' == 0 (Ước!)</span>';
+      if (s.isBreak) badge += ' <span class="break-tag">BREAK</span>';
+    } else {
+      cls += ' nodivide';
+      badge = '<span class="test-badge ok">' + N + ' % ' + t.d + ' == ' + t.rem + ' (≠ 0)</span>';
+    }
+    return '<div class="' + cls + '"><span>d = ' + t.d + ' (d² = ' + t.d2 + ' ≤ ' + N + ')</span><div>' + badge + '</div></div>';
+  }).join('');
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 550);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: buildSnaps,
+  render: function(s, k, total){
+    $('code').innerHTML = codeHtml(LINES, s.ln);
+    $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+    $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.b);
+    
+    // Flag banner
+    var fl = $('flag');
+    fl.className = 'flag-badge ' + (s.is_prime ? 'true' : 'false');
+    $('flag-icon').textContent = s.is_prime ? '⚑' : '⚐';
+    $('flag-text').textContent = 'is_prime = ' + (s.is_prime ? 'true (Nguyên tố)' : 'false (Hợp số)');
+
+    // Vars
+    var condText = s.cond === undefined ? '–' : (s.cond ? 'ĐÚNG' : 'SAI');
+    var remText = s.mod === null ? '–' : s.mod;
+    $('vars').innerHTML = varsHtml([
+      ['n', N],
+      ['d', s.d === null ? '–' : s.d, s.ch === 'd'],
+      ['d² ≤ n', condText],
+      ['n % d', remText],
+      ['is_prime', s.is_prime ? 'true' : 'false', s.ch === 'is_prime']
+    ]);
+
+    // Test list
+    $('test-list').innerHTML = renderTests(s.tested, s);
+  }
+});
+
+$('val-n').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if (isNaN(v) || v < 0 || v > 10000) {
+    this.classList.add('bad');
+    return;
+  }
+  this.classList.remove('bad');
+  N = v;
+  document.querySelectorAll('.pill').forEach(function(p){
+    p.classList.toggle('active', parseInt(p.getAttribute('data-n'), 10) === N);
+  });
+  sim.rebuild();
+});
+
+document.querySelectorAll('.pill').forEach(function(p){
+  p.onclick = function(){
+    var v = parseInt(this.getAttribute('data-n'), 10);
+    $('val-n').value = v;
+    N = v;
+    document.querySelectorAll('.pill').forEach(function(el){ el.classList.remove('active'); });
+    this.classList.add('active');
+    sim.rebuild();
+  };
+});
+
+sim.rebuild();
+</script>
+</body>
+</html>

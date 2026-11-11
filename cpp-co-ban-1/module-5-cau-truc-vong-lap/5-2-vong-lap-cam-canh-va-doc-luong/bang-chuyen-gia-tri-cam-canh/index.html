@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Băng chuyền dữ liệu & Giá trị cầm canh (Sentinel)</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad .st-title{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn .st-title{color:var(--warn)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .right-col{display:flex;flex-direction:column;gap:10px}
+
+  /* Conveyor Belt */
+  .conveyor-box{background:var(--code-bg);border-radius:8px;padding:10px 12px}
+  .belt{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:6px 2px 8px}
+  .item-box{min-width:44px;height:44px;border:2px solid var(--line);border-radius:8px;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 14px ui-monospace,monospace;transition:all .25s;position:relative}
+  .item-box small{font-size:9.5px;font-weight:normal;color:var(--muted);margin-bottom:1px}
+  .item-box.reading{border-color:var(--cur-bar);background:var(--cur);transform:scale(1.08);box-shadow:0 3px 8px rgba(0,0,0,0.12)}
+  .item-box.passed{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .item-box.sentinel{border-color:var(--false);background:var(--false-soft);color:var(--false);border-style:dashed}
+  .item-box.ignored{opacity:0.35}
+
+  .gate-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:6px 10px;background:var(--card);border:1px solid var(--line);border-radius:6px;font-size:12.5px}
+  .gate-badge{font-weight:700;padding:2px 8px;border-radius:4px;font-family:ui-monospace,monospace}
+  .gate-badge.open{background:var(--true-soft);color:var(--true)}
+  .gate-badge.blocked{background:var(--false-soft);color:var(--false)}
+  .gate-badge.idle{background:var(--line);color:var(--muted)}
+
+  /* Variables */
+  .vars{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px}
+  .var-box{background:var(--code-bg);border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;transition:all .2s}
+  .var-box small{display:block;color:var(--muted);font:11px ui-monospace,monospace}
+  .var-box strong{font:700 17px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Theo dõi luồng dữ liệu di chuyển qua cổng kiểm tra và cơ chế chặn giá trị cầm canh bằng mẫu đọc trước (Priming read).</p>
+  <div class="controls">
+    <div class="field">
+      <label for="stream_inp">Dãy số đầu vào:</label>
+      <input type="text" id="stream_inp" value="15 20 8 0 35 40" style="width:160px">
+    </div>
+    <div class="field">
+      <label for="sentinel_inp">Giá trị cầm canh:</label>
+      <input type="number" id="sentinel_inp" value="0" style="width:52px">
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++ (Mẫu Priming Read)</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <p class="panel-title">Băng chuyền dữ liệu đầu vào (std::cin)</p>
+        <div class="conveyor-box">
+          <div class="belt" id="belt"></div>
+          <div class="gate-row">
+            <span>Cổng kiểm tra điều kiện: <code>x != <span id="gate_sentinel">0</span></code></span>
+            <span class="gate-badge idle" id="gate_status">SẴN SÀNG</span>
+          </div>
+        </div>
+
+        <p class="panel-title" style="margin-top:10px">Các ô nhớ biến</p>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|return|cout|endl|cin)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var sentinelVal = 0;
+var inputTokens = [15, 20, 8, 0, 35, 40];
+
+function getLines(){
+  return [
+    'int x, sum = 0, count = 0;',
+    'cin >> x;            // 1. Priming read (doc truoc)',
+    'while (x != ' + sentinelVal + ') {     // 2. Kiem tra sentinel',
+    '  sum += x;          // 3. Cong don gia tri hop le',
+    '  count++;',
+    '  cin >> x;          // 4. Doc phan tu tiep theo',
+    '}',
+    'cout << sum << "\\n"; // Sentinel khong bi cong vao!'
+  ];
+}
+
+function buildSnaps(){
+  var snaps = [];
+  var sVal = sentinelVal;
+  var tokens = inputTokens.slice();
+
+  // Bước 0: Sẵn sàng
+  snaps.push({
+    ln: 0,
+    x: '?',
+    sum: 0,
+    count: 0,
+    readIdx: -1,
+    gate: 'idle',
+    chg: '',
+    statusTag: 'Sẵn sàng khởi tạo',
+    statusCls: '',
+    statusMsg: 'Khai báo biến <code>int x; sum = 0; count = 0;</code>. Chuẩn bị nạp số đầu tiên.'
+  });
+
+  if (tokens.length === 0) return snaps;
+
+  // Bước 1: Priming read (dòng 1)
+  var curX = tokens[0];
+  snaps.push({
+    ln: 1,
+    x: curX,
+    sum: 0,
+    count: 0,
+    readIdx: 0,
+    gate: 'idle',
+    chg: 'x',
+    statusTag: 'Mẫu đọc trước (Priming Read)',
+    statusCls: '',
+    statusMsg: 'Thực thi <code>cin >> x;</code> trước vòng lặp. Đọc giá trị đầu tiên <b>' + curX + '</b> từ băng chuyền vào biến <code>x</code>.'
+  });
+
+  var curSum = 0;
+  var curCount = 0;
+  var tokenIdx = 0;
+
+  while (tokenIdx < tokens.length) {
+    var val = tokens[tokenIdx];
+
+    // Kiểm tra điều kiện: dòng 2
+    if (val === sVal) {
+      // Gặp Sentinel! Cổng đóng màu đỏ
+      snaps.push({
+        ln: 2,
+        x: val,
+        sum: curSum,
+        count: curCount,
+        readIdx: tokenIdx,
+        gate: 'blocked',
+        chg: '',
+        statusTag: 'Chạm giá trị cầm canh (Sentinel)!',
+        statusCls: 'bad',
+        statusMsg: 'Đánh giá <code>x != ' + sVal + '</code> (' + val + ' != ' + sVal + ') → <b>false</b>! Cổng Sentinel chặn lại, thoát khỏi vòng lặp ngay lập tức.'
+      });
+      break;
+    }
+
+    // Giá trị hợp lệ: Cổng mở màu xanh
+    snaps.push({
+      ln: 2,
+      x: val,
+      sum: curSum,
+      count: curCount,
+      readIdx: tokenIdx,
+      gate: 'open',
+      chg: '',
+      statusTag: 'Kiểm tra điều kiện: Hợp lệ',
+      statusCls: 'ok',
+      statusMsg: 'Đánh giá <code>x != ' + sVal + '</code> (' + val + ' != ' + sVal + ') → <b>true</b>. Cổng mở cho số ' + val + ' rơi vào giỏ tính tổng.'
+    });
+
+    // Cộng sum += x: dòng 3
+    var oldSum = curSum;
+    curSum += val;
+    snaps.push({
+      ln: 3,
+      x: val,
+      sum: curSum,
+      count: curCount,
+      readIdx: tokenIdx,
+      gate: 'open',
+      chg: 'sum',
+      statusTag: 'Cộng dồn vào tổng',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>sum += x;</code> (' + oldSum + ' + ' + val + ' = <b>' + curSum + '</b>).'
+    });
+
+    // Tăng count++: dòng 4
+    curCount++;
+    snaps.push({
+      ln: 4,
+      x: val,
+      sum: curSum,
+      count: curCount,
+      readIdx: tokenIdx,
+      gate: 'open',
+      chg: 'count',
+      statusTag: 'Tăng biến đếm',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>count++;</code> (Đã nhận được <b>' + curCount + '</b> số hợp lệ).'
+    });
+
+    // Đọc phần tử tiếp theo: dòng 5
+    tokenIdx++;
+    if (tokenIdx < tokens.length) {
+      curX = tokens[tokenIdx];
+      snaps.push({
+        ln: 5,
+        x: curX,
+        sum: curSum,
+        count: curCount,
+        readIdx: tokenIdx,
+        gate: 'idle',
+        chg: 'x',
+        statusTag: 'Đọc phần tử tiếp theo',
+        statusCls: '',
+        statusMsg: 'Thực thi <code>cin >> x;</code> ở cuối thân lặp. Băng chuyền chuyển số tiếp theo <b>' + curX + '</b> vào biến <code>x</code> để kiểm tra ở vòng sau.'
+      });
+    } else {
+      // Hết token đầu vào mà chưa gặp sentinel
+      snaps.push({
+        ln: 5,
+        x: 'EOF',
+        sum: curSum,
+        count: curCount,
+        readIdx: tokenIdx,
+        gate: 'blocked',
+        chg: 'x',
+        statusTag: 'Hết luồng dữ liệu đầu vào',
+        statusCls: 'warn',
+        statusMsg: 'Đã đọc hết dữ liệu trên băng chuyền.'
+      });
+      break;
+    }
+  }
+
+  // Bước kết thúc: dòng 7
+  snaps.push({
+    ln: 7,
+    x: (tokenIdx < tokens.length ? tokens[tokenIdx] : 'EOF'),
+    sum: curSum,
+    count: curCount,
+    readIdx: tokenIdx,
+    gate: 'blocked',
+    chg: '',
+    statusTag: 'Hoàn thành vòng lặp',
+    statusCls: 'ok',
+    statusMsg: 'Thực thi <code>cout << sum;</code>. Tổng các số hợp lệ là <b>' + curSum + '</b> (gồm ' + curCount + ' số). Giá trị cầm canh <code>' + sVal + '</code> hoàn toàn <b>không bị cộng nhầm</b>!'
+  });
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(curLine){
+  var lines = getLines();
+  $('code').innerHTML = lines.map(function(l, i){
+    var on = (i === curLine);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function renderBelt(s){
+  var html = '';
+  var tokens = inputTokens;
+  for (var i = 0; i < tokens.length; i++) {
+    var val = tokens[i];
+    var isSentinel = (val === sentinelVal);
+    var cls = 'item-box';
+    if (i === s.readIdx) {
+      cls += isSentinel ? ' sentinel' : ' reading';
+    } else if (i < s.readIdx) {
+      cls += isSentinel ? ' sentinel' : ' passed';
+    } else if (s.readIdx !== -1 && s.gate === 'blocked' && i > s.readIdx) {
+      cls += ' ignored';
+    }
+    html += '<div class="' + cls + '"><small>#' + (i + 1) + '</small><span>' + esc(val) + '</span></div>';
+  }
+  $('belt').innerHTML = html;
+
+  $('gate_sentinel').textContent = sentinelVal;
+  var gb = $('gate_status');
+  if (s.gate === 'open') {
+    gb.className = 'gate-badge open';
+    gb.textContent = 'CỔNG MỞ (HỢP LỆ)';
+  } else if (s.gate === 'blocked') {
+    gb.className = 'gate-badge blocked';
+    gb.textContent = 'ĐÃ CHẶN (SENTINEL)';
+  } else {
+    gb.className = 'gate-badge idle';
+    gb.textContent = 'CHỜ KIỂM TRA';
+  }
+}
+
+function render(s){
+  renderCode(s.ln);
+  renderBelt(s);
+
+  $('vars').innerHTML = 
+    '<div class="var-box' + (s.chg === 'x' ? ' chg' : '') + '"><small>x</small><strong>' + esc(s.x) + '</strong></div>' +
+    '<div class="var-box' + (s.chg === 'sum' ? ' chg' : '') + '"><small>sum</small><strong>' + esc(s.sum) + '</strong></div>' +
+    '<div class="var-box' + (s.chg === 'count' ? ' chg' : '') + '"><small>count</small><strong>' + esc(s.count) + '</strong></div>';
+
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function parseInput(){
+  var raw = $('stream_inp').value.trim();
+  var parts = raw.split(/\s+/);
+  var arr = [];
+  for (var i = 0; i < parts.length; i++) {
+    var v = parseInt(parts[i], 10);
+    if (!isNaN(v)) arr.push(v);
+  }
+  inputTokens = (arr.length > 0) ? arr : [0];
+  sentinelVal = parseInt($('sentinel_inp').value, 10);
+  if (isNaN(sentinelVal)) sentinelVal = 0;
+}
+
+function initSim(){
+  stopTimer();
+  parseInput();
+  snaps = buildSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 500);
+  render(snaps[curIdx]);
+};
+
+$('stream_inp').onchange = initSim;
+$('sentinel_inp').onchange = initSim;
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+initSim();
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Luồng xuất dữ liệu và Bộ đệm màn hình Console</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#f3f4f6;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmd:#0284c7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#f3f4f6;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmd:#38bdf8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  /* 3-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1fr 0.95fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:620px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code panel */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:240px;overflow-y:auto;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .fn{color:var(--cmd);font-weight:600}
+
+  /* Interactive action buttons in free mode */
+  .free-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+  .fbtn{padding:6px 4px;font:11.5px ui-monospace,monospace;border:1px solid var(--line);
+    background:var(--card);border-radius:6px;cursor:pointer;text-align:center;color:var(--text);transition:all .15s}
+  .fbtn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .fbtn.flush{background:#fef3c7;border-color:#f59e0b;color:#92400e;font-weight:700}
+
+  /* RAM Buffer Panel */
+  .buffer-wrap{height:240px;display:flex;flex-direction:column;justify-content:space-between}
+  .buf-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+  .buf-cells{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;background:var(--code-bg);border-radius:6px;
+    padding:6px;min-height:92px;border:1px solid var(--line)}
+  .bcell{width:22px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:4px;
+    font:700 12.5px ui-monospace,monospace;background:var(--card);border:1px solid var(--line);
+    color:var(--text);transition:transform .2s,background .2s}
+  .bcell.new{background:var(--cur);border-color:var(--cur-bar);transform:scale(1.1)}
+  .bcell.nl{background:#fce7f3;color:#9d174d;border-color:#f472b6;font-size:10px}
+  .bcell.empty{opacity:.3;border-style:dashed;color:transparent}
+
+  /* Progress meter */
+  .meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0}
+  .meter-bar{height:100%;background:var(--accent);width:0%;transition:width .25s,background .25s}
+  .meter-bar.warn{background:var(--warn)}
+  .meter-bar.flush{background:var(--true)}
+
+  /* Valve / Flush Gate animation */
+  .gate{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;text-align:center;
+    font-size:12px;font-weight:600;transition:all .25s}
+  .gate.closed{color:var(--muted);background:var(--code-bg)}
+  .gate.open{border-color:var(--true);background:var(--true-soft);color:var(--true);font-weight:700;animation:pulse .5s}
+  @keyframes pulse{0%{transform:scale(0.97)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+  /* Console Panel */
+  .con-wrap{height:240px;display:flex;flex-direction:column}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:8px 10px;flex:1;
+    font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-y:auto;border:1px solid #1f2937}
+  .cursor{display:inline-block;width:7px;height:14px;background:#e5e7eb;vertical-align:middle;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi ký tự từ câu lệnh C++ được nạp vào <b>Bộ đệm RAM</b> và thời điểm được <b>xả (flush)</b> ra màn hình Console.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Kịch bản">
+      <button class="tab" id="tab-sc1" role="tab" aria-selected="true" onclick="setScenario('sc1')">Kịch bản 1: endl xả đệm</button>
+      <button class="tab" id="tab-sc2" role="tab" aria-selected="false" onclick="setScenario('sc2')">Kịch bản 2: \n và flush()</button>
+      <button class="tab" id="tab-free" role="tab" aria-selected="false" onclick="setScenario('free')">Tự do bấm lệnh (Playground)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã lệnh C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Câu lệnh C++</p>
+        <span class="badge" id="mode-badge">Tuần tự</span>
+      </div>
+      <div class="code" id="code-view"></div>
+      <div id="free-controls" style="display:none">
+        <div class="free-btns">
+          <button class="fbtn" onclick="execCmd('hello')">cout &lt;&lt; "Hello";</button>
+          <button class="fbtn" onclick="execCmd('world')">cout &lt;&lt; " World";</button>
+          <button class="fbtn" onclick="execCmd('slash_n')">cout &lt;&lt; "\\n";</button>
+          <button class="fbtn flush" onclick="execCmd('endl')">cout &lt;&lt; endl;</button>
+          <button class="fbtn flush" onclick="execCmd('flush')">cout.flush();</button>
+          <button class="fbtn" onclick="execCmd('clear')">Xoá sạch màn hình</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột 2: Bộ đệm xuất RAM -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Bộ đệm xuất (RAM Buffer)</p>
+        <span class="badge" id="buf-badge">0 / 20 bytes</span>
+      </div>
+      <div class="buffer-wrap">
+        <div>
+          <div class="buf-meta">
+            <span>Các ký tự đang nằm chờ:</span>
+            <span id="buf-status-txt">Đang rỗng</span>
+          </div>
+          <div class="buf-cells" id="buf-cells"></div>
+          <div class="meter"><div class="meter-bar" id="meter-bar"></div></div>
+        </div>
+
+        <div>
+          <div class="panel-title" style="margin-bottom:3px">Van xả bộ đệm (Flush Gate)</div>
+          <div class="gate closed" id="flush-gate">Trạng thái: Đóng (Dữ liệu giữ lại trong RAM)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột 3: Màn hình Console ảo -->
+    <div class="card con-wrap">
+      <div class="panel-head">
+        <p class="panel-title">Màn hình Console ảo</p>
+        <span class="badge" style="background:#1e293b;color:#94a3b8">stdout</span>
+      </div>
+      <div class="console" id="console-view"><span id="con-text"></span><span class="cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|return|using|namespace)\b|(#\w+|<\w+>)|(\bcout\b|\bendl\b|\bflush\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="kw">' + esc(m[4]) + '</span>';
+    else out += '<span class="fn">' + esc(m[5]) + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur){
+  return lines.map(function(l, i){
+    var on = cur === i;
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var CAPACITY = 20;
+
+function renderBuffer(chars, isFlushing){
+  var h = '';
+  for (var i = 0; i < CAPACITY; i++) {
+    if (i < chars.length) {
+      var c = chars[i];
+      var displayChar = c === '\n' ? '\\n' : (c === ' ' ? '␣' : c);
+      var cls = 'bcell' + (c === '\n' ? ' nl' : '');
+      if (isFlushing) cls += ' new';
+      h += '<div class="' + cls + '">' + esc(displayChar) + '</div>';
+    } else {
+      h += '<div class="bcell empty">·</div>';
+    }
+  }
+  $('buf-cells').innerHTML = h;
+  $('buf-badge').textContent = chars.length + ' / ' + CAPACITY + ' bytes';
+  
+  var pct = Math.min(100, Math.round((chars.length / CAPACITY) * 100));
+  var bar = $('meter-bar');
+  bar.style.width = pct + '%';
+  bar.className = 'meter-bar' + (isFlushing ? ' flush' : (pct >= 80 ? ' warn' : ''));
+  
+  $('buf-status-txt').textContent = chars.length === 0 ? 'Đang rỗng' : (chars.length + ' ký tự sẵn sàng');
+  
+  var gate = $('flush-gate');
+  if (isFlushing) {
+    gate.className = 'gate open';
+    gate.innerHTML = '⚡ ĐANG XẢ (FLUSH): Trút toàn bộ ký tự sang Console!';
+  } else {
+    gate.className = 'gate closed';
+    gate.innerHTML = 'Trạng thái: Đóng (Dữ liệu đang tích trữ trong RAM)';
+  }
+}
+
+// Scenarios data
+var curScenario = 'sc1';
+
+function buildScenario(sc){
+  var S = [];
+  if (sc === 'sc1') {
+    var lines = [
+      'cout << "Hello";',
+      'cout << " World";',
+      'cout << endl;',
+      'cout << "Tam biet!";'
+    ];
+    // Step 0: Start
+    S.push({
+      ln: -1, lines: lines, buf: [], con: '', flush: false,
+      t: "Khởi tạo chương trình",
+      b: "Bộ đệm RAM rỗng (0 bytes). Màn hình Console chưa có văn bản nào. Bấm Bước tiếp để chạy lệnh đầu tiên."
+    });
+    // Step 1: cout << "Hello";
+    S.push({
+      ln: 0, lines: lines, buf: ['H','e','l','l','o'], con: '', flush: false,
+      t: 'cout << "Hello";',
+      b: '5 ký tự H, e, l, l, o được đưa vào Bộ đệm xuất trong RAM. Màn hình Console vẫn CHƯA hiển thị gì vì chưa có lệnh xả đệm!'
+    });
+    // Step 2: cout << " World";
+    S.push({
+      ln: 1, lines: lines, buf: ['H','e','l','l','o',' ','W','o','r','l','d'], con: '', flush: false,
+      t: 'cout << " World";',
+      b: 'Ký tự khoảng trắng và World tiếp tục chui vào nối tiếp trong RAM Buffer (hiện có 11 bytes). Màn hình Console vẫn chưa có gì.'
+    });
+    // Step 3: cout << endl;
+    S.push({
+      ln: 2, lines: lines, buf: [], con: 'Hello World\n', flush: true, st: 'ok',
+      t: 'cout << endl; (Xuống dòng & Xả đệm)',
+      b: 'endl làm hai việc cùng lúc: trút sạch toàn bộ ký tự trong RAM Buffer ra màn hình Console, rồi đưa con trỏ xuống dòng mới! Bộ đệm RAM trở về rỗng (0 bytes).'
+    });
+    // Step 4: cout << "Tam biet!";
+    S.push({
+      ln: 3, lines: lines, buf: ['T','a','m',' ','b','i','e','t','!'], con: 'Hello World\n', flush: false,
+      t: 'cout << "Tam biet!";',
+      b: 'Chuỗi "Tam biet!" lại bắt đầu tích luỹ vào RAM Buffer mới ở dòng tiếp theo, chờ đợi lần xả đệm tiếp theo.'
+    });
+  } else if (sc === 'sc2') {
+    var lines = [
+      'cout << "Dang xu ly...";',
+      'cout.flush(); // Xa dem giua chung',
+      'cout << " Hoan thanh!";',
+      'cout << "\\n"; // Chi xuong dong'
+    ];
+    // Step 0
+    S.push({
+      ln: -1, lines: lines, buf: [], con: '', flush: false,
+      t: "So sánh \\n và cout.flush()",
+      b: "Khám phá cách xả đệm chủ động bằng cout.flush() mà không làm xuống dòng."
+    });
+    // Step 1
+    S.push({
+      ln: 0, lines: lines, buf: ['D','a','n','g',' ','x','u',' ','l','y','.','.','.'], con: '', flush: false,
+      t: 'cout << "Dang xu ly...";',
+      b: 'Chuỗi thông báo nạp vào RAM Buffer. Người dùng chưa nhìn thấy dòng này trên màn hình.'
+    });
+    // Step 2: cout.flush()
+    S.push({
+      ln: 1, lines: lines, buf: [], con: 'Dang xu ly...', flush: true, st: 'ok',
+      t: 'cout.flush(); ép xả đệm ngay lập tức!',
+      b: 'cout.flush() mở van xả, đẩy "Dang xu ly..." ra Console ngay mà KHÔNG xuống dòng. Con trỏ Console đứng ngay sau dấu ba chấm.'
+    });
+    // Step 3
+    S.push({
+      ln: 2, lines: lines, buf: [' ','H','o','a','n',' ','t','h','a','n','h','!'], con: 'Dang xu ly...', flush: false,
+      t: 'cout << " Hoan thanh!";',
+      b: 'Phần văn bản tiếp theo được xếp vào RAM Buffer, chờ in tiếp vào cùng dòng đó.'
+    });
+    // Step 4
+    S.push({
+      ln: 3, lines: lines, buf: [], con: 'Dang xu ly... Hoan thanh!\n', flush: true, st: 'ok',
+      t: 'cout << "\\n"; Đưa dữ liệu ra và xuống dòng',
+      b: 'Ký tự \\n kết thúc dòng văn bản và hiển thị trọn vẹn "Dang xu ly... Hoan thanh!" ra màn hình.'
+    });
+  }
+  return S;
+}
+
+function render(s, k, n){
+  if (curScenario !== 'free') {
+    $('code-view').innerHTML = renderCode(s.lines, s.ln);
+    $('code-view').style.display = 'block';
+    $('free-controls').style.display = 'none';
+    $('mode-badge').textContent = 'Kịch bản ' + (k + 1) + '/' + n;
+
+    $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+    $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.b);
+
+    renderBuffer(s.buf, s.flush);
+    $('con-text').textContent = s.con;
+  }
+}
+
+// Interactive Sim Runner
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    if (curScenario === 'free') return;
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    if (curScenario === 'free') {
+      initFreeMode();
+      return;
+    }
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 750);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){ return buildScenario(curScenario); },
+  render: render
+});
+
+// Free interactive playground mode
+var freeBuf = [];
+var freeCon = '';
+
+function initFreeMode(){
+  $('code-view').style.display = 'none';
+  $('free-controls').style.display = 'block';
+  $('mode-badge').textContent = 'Thử nghiệm tự do';
+  
+  $('next').disabled = true;
+  $('prev').disabled = true;
+  $('all').disabled = true;
+  $('reset').disabled = false;
+  $('reset').onclick = function(){
+    freeBuf = [];
+    freeCon = '';
+    renderFree('Đã làm lại', 'RAM Buffer và màn hình Console đã được làm sạch.');
+  };
+
+  renderFree('Chế độ thử nghiệm tự do', 'Bấm các nút lệnh C++ bên dưới để tự tay nạp dữ liệu và xả đệm theo ý bạn!');
+}
+
+function renderFree(title, desc, isFlush){
+  $('status').className = 'status' + (isFlush ? ' ok' : '');
+  $('status').innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  renderBuffer(freeBuf, isFlush);
+  $('con-text').textContent = freeCon;
+}
+
+function execCmd(cmd){
+  if (curScenario !== 'free') return;
+  if (cmd === 'hello') {
+    var add = ['H','e','l','l','o'];
+    freeBuf = freeBuf.concat(add);
+    renderFree('Lệnh: cout << "Hello";', 'Đã thêm 5 ký tự vào RAM Buffer. Console vẫn chưa thay đổi vì chưa xả đệm.');
+  } else if (cmd === 'world') {
+    var add = [' ','W','o','r','l','d'];
+    freeBuf = freeBuf.concat(add);
+    renderFree('Lệnh: cout << " World";', 'Đã thêm " World" nối tiếp vào RAM Buffer.');
+  } else if (cmd === 'slash_n') {
+    freeCon += freeBuf.join('') + '\n';
+    freeBuf = [];
+    renderFree('Lệnh: cout << "\\n";', 'Xuống dòng mới và đẩy các ký tự trong dòng ra màn hình Console.', true);
+  } else if (cmd === 'endl') {
+    freeCon += freeBuf.join('') + '\n';
+    freeBuf = [];
+    renderFree('Lệnh: cout << endl;', '⚡ endl xả toàn bộ RAM Buffer sang Console và đưa con trỏ xuống dòng mới!', true);
+  } else if (cmd === 'flush') {
+    freeCon += freeBuf.join('');
+    freeBuf = [];
+    renderFree('Lệnh: cout.flush();', '⚡ cout.flush() xả toàn bộ RAM Buffer ra Console ngay lập tức mà KHÔNG xuống dòng!', true);
+  } else if (cmd === 'clear') {
+    freeBuf = [];
+    freeCon = '';
+    renderFree('Lệnh: Xoá màn hình', 'Đã xoá sạch Console và RAM Buffer.');
+  }
+}
+
+function setScenario(sc){
+  curScenario = sc;
+  $('tab-sc1').setAttribute('aria-selected', sc === 'sc1');
+  $('tab-sc2').setAttribute('aria-selected', sc === 'sc2');
+  $('tab-free').setAttribute('aria-selected', sc === 'free');
+  sim.rebuild();
+}
+
+var urlSc = qparam('vd') || qparam('sc');
+if (urlSc === 'sc2' || urlSc === 'free') {
+  setScenario(urlSc);
+} else {
+  sim.rebuild();
+}
+</script>
+</body>
+</html>

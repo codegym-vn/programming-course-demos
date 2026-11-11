@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Thác nước Phân loại Điểm số: else if vs if độc lập</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .tab.bad[aria-selected="true"]{background:var(--false);border-color:var(--false)}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input[type="number"]{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:56px}
+  .field input[type="range"]{width:90px}
+  
+  .presets{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.1fr 1.25fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:265px;overflow-y:auto;
+    font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.hit{background:var(--true-soft);border-left-color:var(--true)}
+  .ln.skip{opacity:.35;text-decoration:line-through;text-decoration-color:var(--muted)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:265px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  /* Waterfall ladder */
+  .ladder-card{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--code-bg);display:flex;flex-direction:column;gap:4px}
+  
+  .tier{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1.5px solid var(--line);
+    border-radius:6px;padding:4px 8px;font:12px ui-monospace,monospace;transition:all .2s}
+  .tier .cond{font-weight:600;color:var(--text)}
+  .tier .grade{font:700 13px ui-monospace,monospace;padding:1px 8px;border-radius:4px;background:var(--bg);color:var(--muted)}
+  .tier .status-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+  
+  .tier.active{border-color:var(--accent);background:var(--accent-soft)}
+  .tier.pass{border-color:var(--true);background:var(--true-soft)}
+  .tier.pass .grade{background:var(--true);color:#fff}
+  .tier.fail{border-color:var(--false);background:var(--false-soft)}
+  .tier.fail .status-tag{background:var(--false-soft);color:var(--false)}
+  .tier.skipped{opacity:.35;border-style:dashed}
+  .tier.skipped .status-tag{background:var(--bg);color:var(--muted)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 10px;min-height:36px;
+    font:12.5px/1.5 ui-monospace,monospace;display:flex;align-items:center;justify-content:space-between}
+  .con-label{font-size:11px;color:#94a3b8;font-weight:600}
+  .con-out{font-weight:700;font-size:15px;color:#38bdf8}
+  .con-out.multi{color:#fbbf24}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để so sánh cơ chế thác nước <b>else if</b> (dừng ngay ở nhánh đầu tiên đúng) vs <b>chuỗi if độc lập</b> (bị in thừa nhiều điểm).</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-elseif" role="tab" aria-selected="true" onclick="setMode('elseif')">1. Chuỗi else if (First-Match Wins)</button>
+      <button class="tab bad" id="tab-indep" role="tab" aria-selected="false" onclick="setMode('indep')">2. Bỏ quên else (if độc lập: LỖI!)</button>
+    </div>
+
+    <div class="field">
+      <label for="score-input">Điểm =</label>
+      <input type="number" id="score-input" min="0" max="100" value="82">
+      <input type="range" id="score-range" min="0" max="100" value="82">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn" onclick="setScore(95)">95 (A)</button>
+      <button class="preset-btn active" onclick="setScore(82)">82 (B)</button>
+      <button class="preset-btn" onclick="setScore(75)">75 (C)</button>
+      <button class="preset-btn" onclick="setScore(63)">63 (D)</button>
+      <button class="preset-btn" onclick="setScore(45)">45 (F)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title" id="code-head">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/6</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Thác nước phân loại & Console -->
+    <div class="card right-panel">
+      <div>
+        <div class="panel-head" style="margin-bottom:4px">
+          <p class="panel-title">Thác nước phân tầng (Top-Down)</p>
+          <span style="font-size:10px;color:var(--muted);font-family:ui-monospace">score = <b id="score-txt" style="color:var(--accent)">82</b></span>
+        </div>
+        <div class="ladder-card">
+          <!-- Bậc 1: A -->
+          <div class="tier" id="tier-a">
+            <span class="cond">score &gt;= 90</span>
+            <span class="status-tag" id="tag-a">Chờ duyệt</span>
+            <span class="grade">A</span>
+          </div>
+          <!-- Bậc 2: B -->
+          <div class="tier" id="tier-b">
+            <span class="cond" id="cond-b">else if (score &gt;= 80)</span>
+            <span class="status-tag" id="tag-b">Chờ duyệt</span>
+            <span class="grade">B</span>
+          </div>
+          <!-- Bậc 3: C -->
+          <div class="tier" id="tier-c">
+            <span class="cond" id="cond-c">else if (score &gt;= 70)</span>
+            <span class="status-tag" id="tag-c">Chờ duyệt</span>
+            <span class="grade">C</span>
+          </div>
+          <!-- Bậc 4: D -->
+          <div class="tier" id="tier-d">
+            <span class="cond" id="cond-d">else if (score &gt;= 60)</span>
+            <span class="status-tag" id="tag-d">Chờ duyệt</span>
+            <span class="grade">D</span>
+          </div>
+          <!-- Bậc 5: F -->
+          <div class="tier" id="tier-f">
+            <span class="cond" id="cond-f">else (&lt; 60)</span>
+            <span class="status-tag" id="tag-f">Chờ duyệt</span>
+            <span class="grade">F</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console output -->
+      <div class="console">
+        <span class="con-label">Console:</span>
+        <span class="con-out" id="con-out">Chưa xuất</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var mode = 'elseif'; // 'elseif' | 'indep'
+var curStep = 0;
+var timer = null;
+var SCORE = 82;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|if|else|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(m, sc){
+  if (m === 'elseif') {
+    return [
+      'int score = ' + sc + ';',
+      'if (score >= 90) {',
+      '  cout << "A\\n";',
+      '} else if (score >= 80) {',
+      '  cout << "B\\n";',
+      '} else if (score >= 70) {',
+      '  cout << "C\\n";',
+      '} else if (score >= 60) {',
+      '  cout << "D\\n";',
+      '} else {',
+      '  cout << "F\\n";',
+      '}'
+    ];
+  } else {
+    return [
+      'int score = ' + sc + ';',
+      '// LỖI: Chuỗi if độc lập không có else',
+      'if (score >= 90) cout << "A ";',
+      'if (score >= 80) cout << "B ";',
+      'if (score >= 70) cout << "C ";',
+      'if (score >= 60) cout << "D ";',
+      'if (score < 60)  cout << "F ";'
+    ];
+  }
+}
+
+function renderCode(lines, curLine, skippedLines){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    var isSkip = (skippedLines && skippedLines.indexOf(i) >= 0);
+    var cls = 'ln';
+    if(isCur) cls += ' cur';
+    if(isSkip) cls += ' skip';
+    html += '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(m, sc){
+  if (m === 'elseif') {
+    // Mode chuỗi else if chuẩn
+    var s = [
+      {
+        line: 0,
+        badge: 'Bước 1',
+        stClass: '',
+        stTitle: 'Bước 1: Khởi tạo score = ' + sc,
+        stMsg: 'Bắt đầu thác nước phân loại điểm. Kiểm tra lần lượt từ bậc cao nhất xuống.',
+        tiers: {a: 'active', b: '', c: '', d: '', f: ''},
+        tags: {a: 'Chờ duyệt', b: 'Chờ duyệt', c: 'Chờ duyệt', d: 'Chờ duyệt', f: 'Chờ duyệt'},
+        out: '–',
+        skipLines: []
+      }
+    ];
+
+    // Check A (score >= 90)
+    var hitA = (sc >= 90);
+    s.push({
+      line: 1,
+      badge: 'Bậc 1 (>= 90)',
+      stClass: hitA ? 'ok' : '',
+      stTitle: 'Kiểm tra if (score >= 90)',
+      stMsg: '<code>' + sc + ' &gt;= 90</code> → <b>' + (hitA ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + (hitA ? 'Thoả mãn! Khớp điểm A, toàn bộ các nhánh phía dưới lập tức bị bỏ qua.' : 'Chưa thoả mãn, dòng chảy rơi tiếp xuống bậc B.'),
+      tiers: {a: hitA ? 'pass' : 'fail', b: hitA ? 'skipped' : 'active', c: hitA ? 'skipped' : '', d: hitA ? 'skipped' : '', f: hitA ? 'skipped' : ''},
+      tags: {a: hitA ? 'Khớp (A)' : 'Sai', b: hitA ? 'BỎ QUA' : 'Chờ duyệt', c: hitA ? 'BỎ QUA' : 'Chờ duyệt', d: hitA ? 'BỎ QUA' : 'Chờ duyệt', f: hitA ? 'BỎ QUA' : 'Chờ duyệt'},
+      out: '–',
+      skipLines: hitA ? [3,4,5,6,7,8,9,10] : []
+    });
+
+    if (hitA) {
+      s.push({
+        line: 2,
+        badge: 'Xong',
+        stClass: 'ok',
+        stTitle: 'Thực thi nhánh A & Thoát cấu trúc',
+        stMsg: 'In <code>"A\\n"</code>. Kết thúc chuỗi <code>else if</code> nhờ nguyên tắc <b>First-Match Wins</b>.',
+        tiers: {a: 'pass', b: 'skipped', c: 'skipped', d: 'skipped', f: 'skipped'},
+        tags: {a: 'Khớp (A)', b: 'BỎ QUA', c: 'BỎ QUA', d: 'BỎ QUA', f: 'BỎ QUA'},
+        out: 'A',
+        skipLines: [3,4,5,6,7,8,9,10]
+      });
+      return s;
+    }
+
+    // Check B (score >= 80)
+    var hitB = (sc >= 80);
+    s.push({
+      line: 3,
+      badge: 'Bậc 2 (>= 80)',
+      stClass: hitB ? 'ok' : '',
+      stTitle: 'Kiểm tra else if (score >= 80)',
+      stMsg: '<code>' + sc + ' &gt;= 80</code> → <b>' + (hitB ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + (hitB ? 'Khớp điểm B! Dòng chảy dừng lại ngay tại đây, bỏ qua toàn bộ C, D, F.' : 'Sai, dòng chảy rơi tiếp xuống bậc C.'),
+      tiers: {a: 'fail', b: hitB ? 'pass' : 'fail', c: hitB ? 'skipped' : 'active', d: hitB ? 'skipped' : '', f: hitB ? 'skipped' : ''},
+      tags: {a: 'Sai', b: hitB ? 'Khớp (B)' : 'Sai', c: hitB ? 'BỎ QUA' : 'Chờ duyệt', d: hitB ? 'BỎ QUA' : 'Chờ duyệt', f: hitB ? 'BỎ QUA' : 'Chờ duyệt'},
+      out: '–',
+      skipLines: hitB ? [5,6,7,8,9,10] : []
+    });
+
+    if (hitB) {
+      s.push({
+        line: 4,
+        badge: 'Xong',
+        stClass: 'ok',
+        stTitle: 'Thực thi nhánh B & Thoát cấu trúc',
+        stMsg: 'In <code>"B\\n"</code>. Không cần kiểm tra <code>score &lt; 90</code> vì điều kiện trên đã sai từ trước!',
+        tiers: {a: 'fail', b: 'pass', c: 'skipped', d: 'skipped', f: 'skipped'},
+        tags: {a: 'Sai', b: 'Khớp (B)', c: 'BỎ QUA', d: 'BỎ QUA', f: 'BỎ QUA'},
+        out: 'B',
+        skipLines: [5,6,7,8,9,10]
+      });
+      return s;
+    }
+
+    // Check C (score >= 70)
+    var hitC = (sc >= 70);
+    s.push({
+      line: 5,
+      badge: 'Bậc 3 (>= 70)',
+      stClass: hitC ? 'ok' : '',
+      stTitle: 'Kiểm tra else if (score >= 70)',
+      stMsg: '<code>' + sc + ' &gt;= 70</code> → <b>' + (hitC ? 'true (Đúng)' : 'false (Sai)') + '</b>.',
+      tiers: {a: 'fail', b: 'fail', c: hitC ? 'pass' : 'fail', d: hitC ? 'skipped' : 'active', f: hitC ? 'skipped' : ''},
+      tags: {a: 'Sai', b: 'Sai', c: hitC ? 'Khớp (C)' : 'Sai', d: hitC ? 'BỎ QUA' : 'Chờ duyệt', f: hitC ? 'BỎ QUA' : 'Chờ duyệt'},
+      out: '–',
+      skipLines: hitC ? [7,8,9,10] : []
+    });
+
+    if (hitC) {
+      s.push({
+        line: 6,
+        badge: 'Xong',
+        stClass: 'ok',
+        stTitle: 'Thực thi nhánh C & Thoát cấu trúc',
+        stMsg: 'In <code>"C\\n"</code>. Nhánh đúng đầu tiên giành chiến thắng.',
+        tiers: {a: 'fail', b: 'fail', c: 'pass', d: 'skipped', f: 'skipped'},
+        tags: {a: 'Sai', b: 'Sai', c: 'Khớp (C)', d: 'BỎ QUA', f: 'BỎ QUA'},
+        out: 'C',
+        skipLines: [7,8,9,10]
+      });
+      return s;
+    }
+
+    // Check D (score >= 60)
+    var hitD = (sc >= 60);
+    s.push({
+      line: 7,
+      badge: 'Bậc 4 (>= 60)',
+      stClass: hitD ? 'ok' : '',
+      stTitle: 'Kiểm tra else if (score >= 60)',
+      stMsg: '<code>' + sc + ' &gt;= 60</code> → <b>' + (hitD ? 'true (Đúng)' : 'false (Sai)') + '</b>.',
+      tiers: {a: 'fail', b: 'fail', c: 'fail', d: hitD ? 'pass' : 'fail', f: hitD ? 'skipped' : 'active'},
+      tags: {a: 'Sai', b: 'Sai', c: 'Sai', d: hitD ? 'Khớp (D)' : 'Sai', f: hitD ? 'BỎ QUA' : 'Chờ duyệt'},
+      out: '–',
+      skipLines: hitD ? [9,10] : []
+    });
+
+    if (hitD) {
+      s.push({
+        line: 8,
+        badge: 'Xong',
+        stClass: 'ok',
+        stTitle: 'Thực thi nhánh D & Thoát cấu trúc',
+        stMsg: 'In <code>"D\\n"</code>.',
+        tiers: {a: 'fail', b: 'fail', c: 'fail', d: 'pass', f: 'skipped'},
+        tags: {a: 'Sai', b: 'Sai', c: 'Sai', d: 'Khớp (D)', f: 'BỎ QUA'},
+        out: 'D',
+        skipLines: [9,10]
+      });
+      return s;
+    }
+
+    // Fall to else (F)
+    s.push({
+      line: 9,
+      badge: 'Bậc cuối else',
+      stClass: 'bad',
+      stTitle: 'Rơi vào nhánh else cuối cùng',
+      stMsg: 'Tất cả các điều kiện phía trên đều sai (score &lt; 60) → Rơi vào nhánh else.',
+      tiers: {a: 'fail', b: 'fail', c: 'fail', d: 'fail', f: 'pass'},
+      tags: {a: 'Sai', b: 'Sai', c: 'Sai', d: 'Sai', f: 'Khớp (F)'},
+      out: '–',
+      skipLines: []
+    });
+
+    s.push({
+      line: 10,
+      badge: 'Xong',
+      stClass: 'ok',
+      stTitle: 'In điểm F',
+      stMsg: 'In <code>"F\\n"</code>.',
+      tiers: {a: 'fail', b: 'fail', c: 'fail', d: 'fail', f: 'pass'},
+      tags: {a: 'Sai', b: 'Sai', c: 'Sai', d: 'Sai', f: 'Khớp (F)'},
+      out: 'F',
+      skipLines: []
+    });
+    return s;
+
+  } else {
+    // Mode if độc lập (thiếu else)
+    var outAcc = [];
+    var s2 = [
+      {
+        line: 0,
+        badge: 'Bước 1/6',
+        stClass: 'bad',
+        stTitle: 'Bỏ quên từ khoá else',
+        stMsg: 'Nguy hiểm: Mỗi câu lệnh <code>if</code> là một cấu trúc độc lập hoàn toàn. Trình biên dịch sẽ <b>kiểm tra toàn bộ</b> các điều kiện mà không dừng lại!',
+        tiers: {a: 'active', b: '', c: '', d: '', f: ''},
+        tags: {a: 'Chờ duyệt', b: 'Chờ duyệt', c: 'Chờ duyệt', d: 'Chờ duyệt', f: 'Chờ duyệt'},
+        out: '–'
+      }
+    ];
+
+    var cA = (sc >= 90); if(cA) outAcc.push('A');
+    s2.push({
+      line: 2,
+      badge: 'Lệnh 1: >= 90',
+      stClass: cA ? 'ok' : '',
+      stTitle: 'Kiểm tra if (score >= 90)',
+      stMsg: '<code>' + sc + ' &gt;= 90</code> → <b>' + cA + '</b>.' + (cA ? ' In "A ".' : ' Bỏ qua.'),
+      tiers: {a: cA ? 'pass' : 'fail', b: 'active', c: '', d: '', f: ''},
+      tags: {a: cA ? 'In "A"' : 'Bỏ qua', b: 'Chờ duyệt', c: 'Chờ duyệt', d: 'Chờ duyệt', f: 'Chờ duyệt'},
+      out: outAcc.join(' ') || '–'
+    });
+
+    var cB = (sc >= 80); if(cB) outAcc.push('B');
+    s2.push({
+      line: 3,
+      badge: 'Lệnh 2: >= 80',
+      stClass: cB ? 'bad' : '',
+      stTitle: 'Kiểm tra if (score >= 80)',
+      stMsg: '<code>' + sc + ' &gt;= 80</code> → <b>' + cB + '</b>.' + (cB ? ' In thêm "B "!' : ' Bỏ qua.'),
+      tiers: {a: cA ? 'pass' : 'fail', b: cB ? 'pass' : 'fail', c: 'active', d: '', f: ''},
+      tags: {a: cA ? 'In "A"' : 'Bỏ qua', b: cB ? 'In "B"' : 'Bỏ qua', c: 'Chờ duyệt', d: 'Chờ duyệt', f: 'Chờ duyệt'},
+      out: outAcc.join(' ') || '–'
+    });
+
+    var cC = (sc >= 70); if(cC) outAcc.push('C');
+    s2.push({
+      line: 4,
+      badge: 'Lệnh 3: >= 70',
+      stClass: cC ? 'bad' : '',
+      stTitle: 'CẠM BẪY! Kiểm tra if (score >= 70)',
+      stMsg: 'Do thiếu else, C++ tiếp tục kiểm tra: <code>' + sc + ' &gt;= 70</code> vẫn <b>true</b>! Kết quả bị in thêm chữ <b>"C "</b>!',
+      tiers: {a: cA ? 'pass' : 'fail', b: cB ? 'pass' : 'fail', c: cC ? 'pass' : 'fail', d: 'active', f: ''},
+      tags: {a: cA ? 'In "A"' : 'Bỏ qua', b: cB ? 'In "B"' : 'Bỏ qua', c: cC ? 'In thêm "C"!' : 'Bỏ qua', d: 'Chờ duyệt', f: 'Chờ duyệt'},
+      out: outAcc.join(' ') || '–'
+    });
+
+    var cD = (sc >= 60); if(cD) outAcc.push('D');
+    s2.push({
+      line: 5,
+      badge: 'Lệnh 4: >= 60',
+      stClass: cD ? 'bad' : '',
+      stTitle: 'CẠM BẪY! Kiểm tra if (score >= 60)',
+      stMsg: '<code>' + sc + ' &gt;= 60</code> lại tiếp tục <b>true</b>! In thêm chữ <b>"D "</b>!',
+      tiers: {a: cA ? 'pass' : 'fail', b: cB ? 'pass' : 'fail', c: cC ? 'pass' : 'fail', d: cD ? 'pass' : 'fail', f: 'active'},
+      tags: {a: cA ? 'In "A"' : 'Bỏ qua', b: cB ? 'In "B"' : 'Bỏ qua', c: cC ? 'In thêm "C"!' : 'Bỏ qua', d: cD ? 'In thêm "D"!' : 'Bỏ qua', f: 'Chờ duyệt'},
+      out: outAcc.join(' ') || '–'
+    });
+
+    var cF = (sc < 60); if(cF) outAcc.push('F');
+    s2.push({
+      line: 6,
+      badge: 'Lệnh 5: < 60',
+      stClass: 'bad',
+      stTitle: 'Kết thúc chuỗi if độc lập: KẾT QUẢ SAI LỆCH!',
+      stMsg: 'Chương trình in ra console: <b>"' + outAcc.join(' ') + '"</b>. Học sinh bị gán cùng lúc nhiều điểm chữ! Luôn dùng <code>else if</code> cho các khoảng giá trị loại trừ nhau.',
+      tiers: {a: cA ? 'pass' : 'fail', b: cB ? 'pass' : 'fail', c: cC ? 'pass' : 'fail', d: cD ? 'pass' : 'fail', f: cF ? 'pass' : 'fail'},
+      tags: {a: cA ? 'In "A"' : 'Bỏ qua', b: cB ? 'In "B"' : 'Bỏ qua', c: cC ? 'In "C"' : 'Bỏ qua', d: cD ? 'In "D"' : 'Bỏ qua', f: cF ? 'In "F"' : 'Bỏ qua'},
+      out: outAcc.join(' ') || '–'
+    });
+
+    return s2;
+  }
+}
+
+function render(){
+  var lines = getLines(mode, SCORE);
+  var steps = getSteps(mode, SCORE);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line, s.skipLines);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  document.getElementById('score-txt').textContent = SCORE;
+
+  // Labels for ladder conditions depending on mode
+  document.getElementById('cond-b').textContent = (mode === 'elseif') ? 'else if (score >= 80)' : 'if (score >= 80)';
+  document.getElementById('cond-c').textContent = (mode === 'elseif') ? 'else if (score >= 70)' : 'if (score >= 70)';
+  document.getElementById('cond-d').textContent = (mode === 'elseif') ? 'else if (score >= 60)' : 'if (score >= 60)';
+  document.getElementById('cond-f').textContent = (mode === 'elseif') ? 'else (< 60)' : 'if (score < 60)';
+
+  // Tiers update
+  ['a', 'b', 'c', 'd', 'f'].forEach(function(k){
+    var el = document.getElementById('tier-' + k);
+    el.className = 'tier ' + (s.tiers[k] || '');
+    var tag = document.getElementById('tag-' + k);
+    tag.textContent = s.tags[k] || '';
+  });
+
+  var conOut = document.getElementById('con-out');
+  conOut.className = 'con-out' + (mode === 'indep' && s.out.length > 2 ? ' multi' : '');
+  conOut.textContent = s.out;
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setMode(m){
+  stopTimer();
+  mode = m;
+  document.getElementById('tab-elseif').setAttribute('aria-selected', m === 'elseif');
+  document.getElementById('tab-indep').setAttribute('aria-selected', m === 'indep');
+  curStep = 0;
+  render();
+}
+
+function setScore(sc){
+  stopTimer();
+  SCORE = parseInt(sc, 10);
+  document.getElementById('score-input').value = SCORE;
+  document.getElementById('score-range').value = SCORE;
+
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf('(' + SCORE + ')') >= 0 || b.textContent.indexOf(SCORE + ' ') === 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('score-input').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    SCORE = Math.max(0, Math.min(100, v));
+    document.getElementById('score-range').value = SCORE;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('score-range').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  stopTimer();
+  SCORE = v;
+  document.getElementById('score-input').value = v;
+  curStep = 0;
+  render();
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(mode, SCORE);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(mode, SCORE);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?mode=indep & ?score=N & ?buoc=N
+var qm = qparam('mode');
+if(qm === 'indep' || qm === 'elseif') setMode(qm);
+var qs = parseInt(qparam('score'), 10);
+if(!isNaN(qs)) { SCORE = qs; document.getElementById('score-input').value = SCORE; document.getElementById('score-range').value = SCORE; }
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

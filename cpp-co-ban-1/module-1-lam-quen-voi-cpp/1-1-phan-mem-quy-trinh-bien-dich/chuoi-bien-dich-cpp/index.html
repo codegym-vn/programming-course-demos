@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Mô phỏng chuỗi công cụ xây dựng C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --pp:#0369a1; --sym:#be185d;
+    --stage-pending:#94a3b8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --pp:#38bdf8; --sym:#f472b6;
+      --stage-pending:#475569;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  
+  /* Pipeline Bar */
+  .pipe{display:grid;grid-template-columns:repeat(5, 1fr);gap:4px;margin-bottom:8px}
+  .pipe-step{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 6px;text-align:center;
+    font-size:11.5px;color:var(--muted);transition:all .2s;position:relative}
+  .pipe-step .idx{display:block;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
+  .pipe-step .name{font-weight:600;font-size:12px;color:var(--text)}
+  .pipe-step.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .pipe-step.active .name{color:var(--accent)}
+  .pipe-step.done{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .pipe-step.done .name{color:var(--true)}
+  .pipe-step.err{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .pipe-step.err .name{color:var(--false)}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  /* Grid layout */
+  .grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}.pipe{grid-template-columns:repeat(3,1fr)}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .file-badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code & Hex viewers */
+  .viewer{background:var(--code-bg);border-radius:6px;padding:6px 0;height:245px;overflow-y:auto;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .pp{color:var(--pp);font-weight:600}.sym{color:var(--sym);font-weight:600}
+
+  /* Info / Visual right panel */
+  .info-panel{height:245px;display:flex;flex-direction:column;justify-content:space-between;overflow-y:auto}
+  .meta-box{background:var(--code-bg);border:1px dashed var(--line);border-radius:6px;padding:7px 9px;margin-bottom:6px}
+  .meta-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .meta-row:last-child{margin-bottom:0}
+  .meta-lbl{color:var(--muted);font-weight:600}
+  .meta-val{font-family:ui-monospace,monospace;font-weight:600}
+
+  /* Diagrams & Console in right panel */
+  .tool-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-weight:700;font-size:11.5px}
+  .tag-pre{background:#e0f2fe;color:#0284c7}
+  .tag-comp{background:#fef3c7;color:#b45309}
+  .tag-link{background:#f3e8ff;color:#7e22ce}
+  .tag-run{background:#dcfce7;color:#15803d}
+
+  .symbol-tag{display:inline-flex;align-items:center;gap:4px;background:var(--warn-soft);color:var(--warn);
+    padding:2px 6px;border-radius:4px;font:11.5px ui-monospace,monospace;margin-top:3px}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:8px 10px;
+    font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;flex:1;overflow-y:auto;border:1px solid #1f2937}
+  .console .prompt{color:#38bdf8}
+  .console .cursor{display:inline-block;width:7px;height:14px;background:#e5e7eb;vertical-align:middle;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi mã nguồn C++ đi qua từng giai đoạn để tạo thành chương trình chạy được.</p>
+  
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Chế độ mô phỏng">
+      <button class="tab" id="tab-ok" role="tab" aria-selected="true" onclick="setMode('ok')">Thành công chuẩn</button>
+      <button class="tab" id="tab-cerr" role="tab" aria-selected="false" onclick="setMode('cerr')">Thử lỗi: Quên dấu ; (Biên dịch)</button>
+      <button class="tab" id="tab-lerr" role="tab" aria-selected="false" onclick="setMode('lerr')">Thử lỗi: Main() hoa (Liên kết)</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="pipe" id="pipe"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title" id="file-title">Tệp mã nguồn</p>
+        <span class="file-badge" id="file-badge">hello.cpp</span>
+      </div>
+      <div class="viewer" id="viewer"></div>
+    </div>
+    
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Phân tích giai đoạn &amp; Kết quả</p>
+        <span id="tool-badge"></span>
+      </div>
+      <div class="info-panel" id="info-panel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hlCpp(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|return|namespace|extern|void|class)\b|(#\w+|<\w+>)|(\bstd::cout\b|\bcout\b|\bostream\b)|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="pp">' + esc(m[4]) + '</span>';
+    else if (m[5]) out += '<span class="sym">' + esc(m[5]) + '</span>';
+    else out += '<span class="num">' + m[6] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCodeLines(lines, cur, errLine){
+  return lines.map(function(l, i){
+    var isCur = cur === i;
+    var isErr = errLine === i;
+    var cls = 'ln' + (isCur ? ' cur' : '') + (isErr ? ' err-line' : '');
+    return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hlCpp(l) + '</span></div>';
+  }).join('');
+}
+
+var STAGES = [
+  {idx: 1, name: "Mã nguồn (.cpp)"},
+  {idx: 2, name: "Tiền xử lý (.ii)"},
+  {idx: 3, name: "Biên dịch (.o)"},
+  {idx: 4, name: "Liên kết (.exe)"},
+  {idx: 5, name: "Chạy chương trình"}
+];
+
+var currentMode = 'ok';
+
+function buildData(mode){
+  var S = [];
+  if (mode === 'ok') {
+    // Stage 1
+    S.push({
+      stage: 1, fileTitle: "Mã nguồn ban đầu", fileName: "hello.cpp",
+      tool: '<span class="tool-tag" style="background:#e2e8f0;color:#334155">Trình soạn thảo</span>',
+      lines: [
+        '#include <iostream>',
+        '',
+        'int main() {',
+        '    std::cout << "Hello, World!\\n";',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 0,
+      t: "Giai đoạn 1: Mã nguồn C++ người lập trình viết",
+      b: "Tệp hello.cpp là văn bản thuần tuý gồm các từ khoá C++. Máy tính chưa thể đọc hiểu trực tiếp tệp này.",
+      meta: [
+        ["Định dạng", "Văn bản nguồn C++ (.cpp)"],
+        ["Chỉ thị tiền xử lý", "#include <iostream>"],
+        ["Hàm thực thi chính", "main()"],
+        ["Trạng thái máy tính", "Chưa thể thi hành"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:var(--accent)">Chuẩn bị tiền xử lý</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Bộ tiền xử lý (Preprocessor) sẽ quét các dòng bắt đầu bằng dấu <code>#</code> trước khi biên dịch.</div></div>'
+    });
+
+    // Stage 2
+    S.push({
+      stage: 2, fileTitle: "Tệp trung gian sau tiền xử lý", fileName: "hello.ii",
+      tool: '<span class="tool-tag tag-pre">Preprocessor</span>',
+      lines: [
+        '// [Da ghep noi dung tu thu vien iostream]',
+        'namespace std {',
+        '    extern ostream cout;',
+        '}',
+        '',
+        'int main() {',
+        '    std::cout << "Hello, World!\\n";',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 0,
+      t: "Giai đoạn 2: Tiền xử lý (Preprocess) mở rộng thư viện",
+      b: "Dòng #include <iostream> được thay thế bằng toàn bộ nội dung khai báo luồng chuẩn. Sinh ra tệp trung gian hello.ii hoàn toàn không còn dấu #.",
+      meta: [
+        ["Công cụ thực hiện", "cpp (C Preprocessor)"],
+        ["Đầu ra trung gian", "hello.ii"],
+        ["Xử lý #include", "Đã chèn khai báo std::cout"],
+        ["Kiểm tra ngữ pháp", "Chưa kiểm tra"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:#0284c7">Cơ chế chèn văn bản</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Bộ tiền xử lý hoạt động như một công cụ sao chép/dán văn bản tự động: nó tìm tệp tiêu đề <code>iostream</code> và nhúng các khai báo cần thiết vào ngay đầu mã nguồn.</div></div>'
+    });
+
+    // Stage 3
+    S.push({
+      stage: 3, fileTitle: "Mã đối tượng nhị phân", fileName: "hello.o",
+      tool: '<span class="tool-tag tag-comp">Compiler (g++)</span>',
+      lines: [
+        '; [Machine Code: Architecture x86-64 / ARM64]',
+        '0000000000000000 <main>:',
+        '  55                    push   rbp',
+        '  48 89 e5              mov    rbp,rsp',
+        '  48 8d 3d 00 00 00 00  lea    rdi,[rip+0] ; "Hello, World!\\n"',
+        '  e8 00 00 00 00        call   <std::cout???> ; Vết nối mở!',
+        '  b8 00 00 00 00        mov    eax,0',
+        '  5d                    pop    rbp',
+        '  c3                    ret'
+      ],
+      curLine: 5,
+      t: "Giai đoạn 3: Biên dịch (Compile) kiểm tra cú pháp & dịch mã máy",
+      b: "Trình biên dịch kiểm tra ngữ pháp thành công và dịch sang tệp mã đối tượng hello.o. Hàm std::cout được đánh dấu là 'vết nối mở' (Unresolved Symbol) vì chưa biết địa chỉ cụ thể.",
+      meta: [
+        ["Công cụ thực hiện", "g++ (Compiler)"],
+        ["Đầu ra mã máy", "hello.o (.obj)"],
+        ["Cú pháp C++", "Hợp lệ 100% (Passed)"],
+        ["Ký hiệu mở", "std::cout (chờ liên kết)"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:#b45309">Vết nối chưa xác định (Unresolved)</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Tệp <code>hello.o</code> đã là mã máy nhưng <b>chưa thể tự chạy</b> vì chưa chứa mã thực thi của thư viện in <code>cout</code>. Cần trình liên kết để ghép lại.</div>' +
+        '<div class="symbol-tag">⚠️ Unresolved: std::cout</div></div>'
+    });
+
+    // Stage 4
+    S.push({
+      stage: 4, fileTitle: "Tệp thực thi hoàn chỉnh", fileName: "hello.exe",
+      tool: '<span class="tool-tag tag-link">Linker (ld)</span>',
+      lines: [
+        '; [Executable binary image - Linked with libstdc++]',
+        '0000000000401126 <main>:',
+        '  55                    push   rbp',
+        '  48 89 e5              mov    rbp,rsp',
+        '  48 8d 3d 00 00 00 00  lea    rdi,[rip+0]',
+        '  e8 40 0a 00 00        call   0x401b6a <std::ostream::operator<<> ; Da noi xong!',
+        '  b8 00 00 00 00        mov    eax,0',
+        '  5d                    pop    rbp',
+        '  c3                    ret'
+      ],
+      curLine: 5,
+      t: "Giai đoạn 4: Liên kết (Link) ghép nối với thư viện chuẩn C++",
+      b: "Trình liên kết tìm mã máy của std::cout trong thư viện chuẩn libstdc++, ghép nối vào 'vết nối mở' và tạo ra tệp thực thi hello.exe sẵn sàng chạy.",
+      meta: [
+        ["Công cụ thực hiện", "ld / lld (Linker)"],
+        ["Thư viện ghép nối", "libstdc++ / libc"],
+        ["Đầu ra hoàn chỉnh", "hello.exe (hoặc ./hello)"],
+        ["Khả năng thi hành", "Sẵn sàng (Executable)"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:#7e22ce">Khớp nối địa chỉ thành công</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Địa chỉ của lệnh xuất <code>cout</code> đã được điền chính xác vào mã máy. Tệp chương trình hoàn chỉnh đã hình thành trên ổ đĩa.</div></div>'
+    });
+
+    // Stage 5
+    S.push({
+      stage: 5, fileTitle: "Cửa sổ Terminal Console", fileName: "Runtime Console",
+      tool: '<span class="tool-tag tag-run">Hệ điều hành / OS</span>',
+      lines: [
+        '#include <iostream>',
+        '',
+        'int main() {',
+        '    std::cout << "Hello, World!\\n";',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 3,
+      t: "Giai đoạn 5: Chạy chương trình và hiển thị kết quả",
+      b: "Hệ điều hành nạp tệp hello.exe vào bộ nhớ RAM, trao quyền điều khiển cho CPU để thực thi từng lệnh. Dòng chữ 'Hello, World!' xuất hiện trên Console!",
+      st: "ok",
+      meta: [
+        ["Lệnh chạy", "./hello.exe"],
+        ["Mã thoát (Exit Code)", "0 (Thành công)"],
+        ["Tài nguyên sử dụng", "CPU + RAM Console"],
+        ["Kết quả xuất", "Hello, World!"]
+      ],
+      isConsole: true,
+      consoleText: "$ ./hello.exe\nHello, World!\n\n[Process completed - exit code 0]\n"
+    });
+  } else if (mode === 'cerr') {
+    // Compile error mode
+    // Stage 1
+    S.push({
+      stage: 1, fileTitle: "Mã nguồn (Có lỗi quên dấu ;)", fileName: "hello.cpp",
+      tool: '<span class="tool-tag" style="background:#e2e8f0;color:#334155">Trình soạn thảo</span>',
+      lines: [
+        '#include <iostream>',
+        '',
+        'int main() {',
+        '    std::cout << "Hello, World!\\n"',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 3, errLine: 3,
+      t: "Giai đoạn 1: Mã nguồn C++ bị thiếu dấu chấm phẩy ';'",
+      b: "Dòng 4 kết thúc lệnh in nhưng quên gõ dấu chấm phẩy ;. Hãy bấm Bước tiếp để xem công cụ nào sẽ bắt lỗi này!",
+      meta: [
+        ["Định dạng", "hello.cpp (Lỗi cố tình)"],
+        ["Dòng 4", "Thiếu dấu chấm phẩy ';'"],
+        ["Mục tiêu thử nghiệm", "Quan sát lỗi biên dịch"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:var(--warn)">Dự đoán thử</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Bộ tiền xử lý hay Trình biên dịch sẽ phát hiện thiếu dấu chấm phẩy? Bấm <b>Bước tiếp</b> để kiểm chứng.</div></div>'
+    });
+
+    // Stage 2
+    S.push({
+      stage: 2, fileTitle: "Tệp sau tiền xử lý", fileName: "hello.ii",
+      tool: '<span class="tool-tag tag-pre">Preprocessor</span>',
+      lines: [
+        '// [Khai bao tu thu vien iostream]',
+        'namespace std { extern ostream cout; }',
+        '',
+        'int main() {',
+        '    std::cout << "Hello, World!\\n"',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 4,
+      t: "Giai đoạn 2: Bộ tiền xử lý vẫn hoàn thành bình thường!",
+      b: "Bộ tiền xử lý chỉ quan tâm đến các chỉ thị bắt đầu bằng #. Nó không kiểm tra ngữ pháp C++ nên vẫn tạo ra tệp hello.ii mà không phát hiện thiếu dấu ;.",
+      meta: [
+        ["Công cụ", "cpp (Preprocessor)"],
+        ["Kết quả tiền xử lý", "Thành công tạo hello.ii"],
+        ["Lưu ý", "Preprocessor không kiểm tra cú pháp C++!"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:#0284c7">Tại sao chưa báo lỗi?</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Bộ tiền xử lý chỉ chèn văn bản và xử lý macro. Nó hoàn toàn "mù" trước cú pháp C++ của hàm <code>main</code>!</div></div>'
+    });
+
+    // Stage 3 - Compile error stops pipeline!
+    S.push({
+      stage: 3, fileTitle: "Trình biên dịch dừng lại & báo lỗi!", fileName: "Báo cáo lỗi biên dịch",
+      tool: '<span class="tool-tag" style="background:#fee2e2;color:#b91c1c">Compiler Error</span>',
+      lines: [
+        'hello.cpp: In function \'int main()\':',
+        'hello.cpp:4:36: error: expected \';\' before \'return\'',
+        '    4 |     std::cout << "Hello, World!\\n"',
+        '      |                                    ^',
+        '      |                                    ;',
+        '    5 |     return 0;',
+        '      |     ~~~~~~'
+      ],
+      curLine: 1, errLine: 1,
+      t: "Lỗi thời gian biên dịch (Compile-time Error)!",
+      b: "Trình biên dịch kiểm tra cấu trúc ngữ pháp và lập tức dừng lại khi phát hiện thiếu dấu ';' ở cuối câu lệnh dòng 4. Tệp mã đối tượng .o KHÔNG được sinh ra!",
+      st: "bad", isErr: true,
+      meta: [
+        ["Loại lỗi", "Compile-time error (Lỗi cú pháp)"],
+        ["Vị trí lỗi", "hello.cpp, dòng 4"],
+        ["Hậu quả", "Không sinh tệp hello.o"],
+        ["Giai đoạn tiếp theo", "BỊ HỦY BỎ (Không thể liên kết)"]
+      ],
+      panelHtml: '<div class="meta-box" style="border-color:var(--false);background:var(--false-soft)">' +
+        '<p style="margin:0 0 4px;font-weight:700;font-size:12.5px;color:var(--false)">Quy trình bị chặn đứng</p>' +
+        '<div style="font-size:12px;color:var(--text)">Vì không có tệp đối tượng <code>hello.o</code>, Trình liên kết (Linker) không có gì để làm. Không thể tạo ra tệp <code>hello.exe</code> cho đến khi sửa lỗi cú pháp.</div></div>'
+    });
+  } else if (mode === 'lerr') {
+    // Link error mode
+    // Stage 1
+    S.push({
+      stage: 1, fileTitle: "Mã nguồn (Đặt tên sai hàm Main())", fileName: "hello.cpp",
+      tool: '<span class="tool-tag" style="background:#e2e8f0;color:#334155">Trình soạn thảo</span>',
+      lines: [
+        '#include <iostream>',
+        '',
+        'int Main() {  // LƯU Ý: Viết hoa chữ M!',
+        '    std::cout << "Hello, World!\\n";',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 2,
+      t: "Giai đoạn 1: Đổi tên hàm thành 'Main()' viết hoa",
+      b: "C++ phân biệt chữ hoa chữ thường. Hãy xem điều gì xảy ra với chuỗi công cụ khi tên hàm khởi đầu bị viết hoa thành Main().",
+      meta: [
+        ["Định dạng", "hello.cpp (Lỗi cố tình)"],
+        ["Hàm chính", "int Main() (viết hoa chữ M)"],
+        ["Mục tiêu thử nghiệm", "Phân biệt lỗi biên dịch vs liên kết"]
+      ],
+      panelHtml: '<div class="meta-box"><p style="margin:0 0 4px;font-weight:600;font-size:12.5px;color:var(--warn)">Dự đoán thử</p>' +
+        '<div style="font-size:12px;color:var(--muted)">Liệu Trình biên dịch có báo lỗi không, hay Trình liên kết mới báo lỗi? Bấm <b>Bước tiếp</b> để theo dõi!</div></div>'
+    });
+
+    // Stage 2
+    S.push({
+      stage: 2, fileTitle: "Tệp sau tiền xử lý", fileName: "hello.ii",
+      tool: '<span class="tool-tag tag-pre">Preprocessor</span>',
+      lines: [
+        '// [Khai bao tu thu vien iostream]',
+        'namespace std { extern ostream cout; }',
+        '',
+        'int Main() {',
+        '    std::cout << "Hello, World!\\n";',
+        '    return 0;',
+        '}'
+      ],
+      curLine: 3,
+      t: "Giai đoạn 2: Tiền xử lý thành công tệp hello.ii",
+      b: "Bộ tiền xử lý vẫn hoạt động bình thường, ghép các khai báo luồng xuất vào mã nguồn.",
+      meta: [
+        ["Kết quả", "Tạo xong hello.ii"],
+        ["Trạng thái", "Bình thường"]
+      ],
+      panelHtml: '<div class="meta-box"><div style="font-size:12px;color:var(--muted)">Preprocessor hoàn thành công việc như thường lệ.</div></div>'
+    });
+
+    // Stage 3
+    S.push({
+      stage: 3, fileTitle: "Mã đối tượng sinh ra thành công!", fileName: "hello.o",
+      tool: '<span class="tool-tag tag-comp">Compiler (g++)</span>',
+      lines: [
+        '; [Object file hello.o created successfully]',
+        '0000000000000000 <Main>: ; Trình biên dịch dịch đúng cú pháp!',
+        '  55                    push   rbp',
+        '  48 89 e5              mov    rbp,rsp',
+        '  e8 00 00 00 00        call   <std::cout???>',
+        '  b8 00 00 00 00        mov    eax,0',
+        '  5d                    pop    rbp',
+        '  c3                    ret'
+      ],
+      curLine: 1,
+      t: "Giai đoạn 3: Biên dịch VẪN THÀNH CÔNG! Tạo ra hello.o",
+      b: "Bất ngờ: Trình biên dịch coi 'Main' là một hàm tự đặt tên hoàn toàn hợp lệ về mặt ngữ pháp! Do đó nó dịch thành công ra tệp hello.o mà không báo lỗi nào.",
+      st: "warn",
+      meta: [
+        ["Cú pháp C++", "Hợp lệ (Main được coi là hàm thông thường)"],
+        ["Mã đối tượng", "Tạo thành công hello.o"],
+        ["Cảnh báo", "Chưa có hàm main() chuẩn làm điểm vào!"]
+      ],
+      panelHtml: '<div class="meta-box" style="border-color:var(--warn);background:var(--warn-soft)">' +
+        '<p style="margin:0 0 4px;font-weight:700;font-size:12.5px;color:var(--warn)">Trình biên dịch không phàn nàn!</p>' +
+        '<div style="font-size:12px;color:var(--text)">Trong một dự án C++, có thể có hàng chục tệp <code>.cpp</code> chứa các hàm phụ mà không có hàm <code>main</code>. Vì thế Compiler dịch hàm <code>Main()</code> bình thường!</div></div>'
+    });
+
+    // Stage 4 - Linker Error
+    S.push({
+      stage: 4, fileTitle: "Trình liên kết báo lỗi Linker Error!", fileName: "Báo cáo lỗi liên kết",
+      tool: '<span class="tool-tag" style="background:#fee2e2;color:#b91c1c">Linker Error</span>',
+      lines: [
+        '/usr/bin/ld: /usr/lib/crt1.o: in function `_start\':',
+        '(.text+0x20): undefined reference to `main\'',
+        'collect2: error: ld returned 1 exit status',
+        '',
+        'Ghi chú: Trình liên kết tìm kiếm điểm bắt đầu \'main\' (chữ thường),',
+        'nhưng trong tệp hello.o chỉ có hàm \'Main\' (chữ hoa).'
+      ],
+      curLine: 1, errLine: 1,
+      t: "Lỗi thời gian liên kết (Link-time Error): undefined reference to 'main'",
+      b: "Trình liên kết tìm điểm xuất phát chuẩn 'main' để ghép vào hệ điều hành nhưng KHÔNG TÌM THẤY! Quá trình dừng lại, không tạo được tệp thực thi hello.exe.",
+      st: "bad", isErr: true,
+      meta: [
+        ["Loại lỗi", "Link-time error (Lỗi liên kết)"],
+        ["Công cụ báo lỗi", "ld / Linker"],
+        ["Ký hiệu thiếu", "undefined reference to 'main'"],
+        ["Kết quả", "Không sinh tệp thực thi hello.exe"]
+      ],
+      panelHtml: '<div class="meta-box" style="border-color:var(--false);background:var(--false-soft)">' +
+        '<p style="margin:0 0 4px;font-weight:700;font-size:12.5px;color:var(--false)">Bài học phân biệt cốt lõi</p>' +
+        '<div style="font-size:12px;color:var(--text)"><b>Lỗi biên dịch:</b> do vi phạm ngữ pháp.<br><b>Lỗi liên kết:</b> ngữ pháp đúng nhưng thiếu mảnh ghép (hàm/thư viện) khi ráp tệp thực thi.</div></div>'
+    });
+  }
+  return S;
+}
+
+function renderPipe(curStage, isErr){
+  return STAGES.map(function(st){
+    var cls = 'pipe-step';
+    if (st.idx < curStage) cls += ' done';
+    else if (st.idx === curStage) cls += isErr ? ' err' : ' active';
+    return '<div class="' + cls + '"><span class="idx">Bước ' + st.idx + '</span><span class="name">' + esc(st.name) + '</span></div>';
+  }).join('');
+}
+
+function render(s, k, n){
+  $('pipe').innerHTML = renderPipe(s.stage, s.isErr);
+  $('file-title').textContent = s.fileTitle;
+  $('file-badge').textContent = s.fileName;
+  $('tool-badge').innerHTML = s.tool || '';
+  
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.b);
+
+  if (s.isConsole) {
+    $('viewer').innerHTML = '<div class="console">' + esc(s.consoleText) + '<span class="cursor"></span></div>';
+  } else {
+    $('viewer').innerHTML = renderCodeLines(s.lines, s.curLine, s.errLine);
+  }
+
+  var metaHtml = '';
+  if (s.meta && s.meta.length) {
+    metaHtml = '<div class="meta-box">' + s.meta.map(function(m){
+      return '<div class="meta-row"><span class="meta-lbl">' + esc(m[0]) + '</span><span class="meta-val">' + esc(m[1]) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  $('info-panel').innerHTML = (s.panelHtml || '') + metaHtml;
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 700);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){ return buildData(currentMode); },
+  render: render
+});
+
+function setMode(m){
+  currentMode = m;
+  $('tab-ok').setAttribute('aria-selected', m === 'ok');
+  $('tab-cerr').setAttribute('aria-selected', m === 'cerr');
+  $('tab-lerr').setAttribute('aria-selected', m === 'lerr');
+  sim.rebuild();
+}
+
+var urlMode = qparam('vd') || qparam('mode');
+if (urlMode === 'cerr' || urlMode === 'lerr') {
+  setMode(urlMode);
+} else {
+  sim.rebuild();
+}
+</script>
+</body>
+</html>

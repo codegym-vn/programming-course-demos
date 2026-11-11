@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Đối chiếu hành vi: while vs do-while</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .field select{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad .st-title{color:var(--false)}
+
+  /* Side by side 2 columns */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2>*{min-width:0}
+  @media (max-width:640px){.grid2{grid-template-columns:1fr}}
+
+  .col-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .col-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.03em;margin:0}
+  .tag-badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:ui-monospace,monospace}
+  .tag-badge.while{background:#e0e7ff;color:#3730a3}
+  .tag-badge.dowhile{background:#fce7f3;color:#9d174d}
+
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;min-height:115px;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .box-meta{display:flex;justify-content:space-between;align-items:center;margin:8px 0;padding:6px 10px;background:var(--code-bg);border-radius:6px;font:12.5px ui-monospace,monospace}
+  .box-meta b{font-size:14px;color:var(--text)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:36px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+  .console .ph{color:#64748b;font-family:system-ui,sans-serif;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Quan sát đồng thời luồng thực thi của <code>while</code> (kiểm tra trước) và <code>do-while</code> (kiểm tra sau) với các giá trị đầu vào khác nhau.</p>
+  
+  <div class="controls">
+    <div class="field">
+      <label for="scenario_sel">Kịch bản thử nghiệm:</label>
+      <select id="scenario_sel">
+        <option value="false_start" selected>Kịch bản 1: Sai ngay từ đầu (x = 20 &lt; 10)</option>
+        <option value="true_start">Kịch bản 2: Đúng ban đầu (x = 8 &lt; 10)</option>
+      </select>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid2">
+    <!-- CỘT TRÁI: WHILE -->
+    <div class="card">
+      <div class="col-head">
+        <span class="col-title">Vòng lặp while (Kiểm tra trước)</span>
+        <span class="tag-badge while">TOP-CHECKING</span>
+      </div>
+      <div class="code" id="code_while"></div>
+      <div class="box-meta">
+        <span>Biến <code>x</code>: <b id="val_w_x">?</b></span>
+        <span>Số lần chạy thân: <b id="run_w_count">0</b></span>
+      </div>
+      <p class="panel-title" style="margin:6px 0 4px">Console Output (while)</p>
+      <div class="console" id="con_while"></div>
+    </div>
+
+    <!-- CỘT PHẢI: DO-WHILE -->
+    <div class="card">
+      <div class="col-head">
+        <span class="col-title">Vòng lặp do-while (Kiểm tra sau)</span>
+        <span class="tag-badge dowhile">BOTTOM-CHECKING</span>
+      </div>
+      <div class="code" id="code_dowhile"></div>
+      <div class="box-meta">
+        <span>Biến <code>x</code>: <b id="val_dw_x">?</b></span>
+        <span>Số lần chạy thân: <b id="run_dw_count">0</b></span>
+      </div>
+      <p class="panel-title" style="margin:6px 0 4px">Console Output (do-while)</p>
+      <div class="console" id="con_dowhile"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|do|return|cout|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var scenario = 'false_start';
+
+function getWhileLines(initX){
+  return [
+    'int x = ' + initX + ';',
+    'while (x < 10) {',
+    '  cout << x << " ";',
+    '  x++;',
+    '}',
+    '// Tiep tuc...'
+  ];
+}
+
+function getDoWhileLines(initX){
+  return [
+    'int x = ' + initX + ';',
+    'do {',
+    '  cout << x << " ";',
+    '  x++;',
+    '} while (x < 10);',
+    '// Tiep tuc...'
+  ];
+}
+
+function buildSnaps(){
+  var snaps = [];
+  var initX = (scenario === 'false_start') ? 20 : 8;
+
+  // Bước 0: Sẵn sàng
+  snaps.push({
+    w_ln: 0, dw_ln: 0,
+    w_x: initX, dw_x: initX,
+    w_count: 0, dw_count: 0,
+    w_con: '', dw_con: '',
+    statusTag: 'Khởi tạo biến',
+    statusCls: '',
+    statusMsg: 'Khai báo <code>int x = ' + initX + ';</code> ở cả hai bên. Chuẩn bị bước vào vòng lặp.'
+  });
+
+  if (scenario === 'false_start') {
+    // x = 20: Điều kiện x < 10 sai ngay từ đầu!
+    // Bước 1: while kiểm tra điều kiện (false) vs do-while bước thẳng vào thân do
+    snaps.push({
+      w_ln: 1, dw_ln: 1,
+      w_x: 20, dw_x: 20,
+      w_count: 0, dw_count: 0,
+      w_con: '', dw_con: '',
+      statusTag: 'Sự khác biệt cốt lõi ở lượt đầu',
+      statusCls: 'bad',
+      statusMsg: '<b>while:</b> Kiểm tra <code>20 < 10</code> → <b>false</b> ngay lập tức.<br><b>do-while:</b> Bỏ qua kiểm tra, đi thẳng vào từ khoá <code>do</code> để thực thi thân lệnh!'
+    });
+
+    // Bước 2: while nhảy ra ngoài (ln 5) vs do-while in 20 (ln 2)
+    snaps.push({
+      w_ln: 5, dw_ln: 2,
+      w_x: 20, dw_x: 20,
+      w_count: 0, dw_count: 1,
+      w_con: '', dw_con: '20 ',
+      statusTag: 'Thực thi thân lệnh',
+      statusCls: '',
+      statusMsg: '<b>while:</b> Nhảy cóc ra ngoài ngoặc nhọn, thân lệnh <b>chạy 0 lần</b>.<br><b>do-while:</b> Thực thi <code>cout << x</code> → In ra <b>20</b> vào Console!'
+    });
+
+    // Bước 3: do-while tăng x++ (ln 3)
+    snaps.push({
+      w_ln: 5, dw_ln: 3,
+      w_x: 20, dw_x: 21,
+      w_count: 0, dw_count: 1,
+      w_con: '', dw_con: '20 ',
+      statusTag: 'Cập nhật biến trong do-while',
+      statusCls: '',
+      statusMsg: '<b>do-while:</b> Thực thi <code>x++</code> → Biến <code>x</code> tăng từ 20 lên <b>21</b>.'
+    });
+
+    // Bước 4: do-while kiểm tra điều kiện ở cuối (ln 4)
+    snaps.push({
+      w_ln: 5, dw_ln: 4,
+      w_x: 20, dw_x: 21,
+      w_count: 0, dw_count: 1,
+      w_con: '', dw_con: '20 ',
+      statusTag: 'Kiểm tra điều kiện ở đáy do-while',
+      statusCls: 'bad',
+      statusMsg: '<b>do-while:</b> Đánh giá <code>21 < 10</code> ở cuối → <b>false</b>! Vòng lặp do-while kết thúc.'
+    });
+
+    // Bước 5: Tổng kết
+    snaps.push({
+      w_ln: 5, dw_ln: 5,
+      w_x: 20, dw_x: 21,
+      w_count: 0, dw_count: 1,
+      w_con: '', dw_con: '20 ',
+      statusTag: 'Tổng kết so sánh',
+      statusCls: 'ok',
+      statusMsg: '<b>Kết quả:</b><br>• <code>while</code>: In ra <b>rỗng</b> (thân lệnh chạy 0 lần, <code>x = 20</code>).<br>• <code>do-while</code>: In ra <b>20 </b> (thân lệnh chạy tối thiểu 1 lần, <code>x = 21</code>).'
+    });
+  } else {
+    // x = 8: Điều kiện ban đầu đúng (8, 9 < 10)
+    // Lượt 1
+    snaps.push({
+      w_ln: 1, dw_ln: 2,
+      w_x: 8, dw_x: 8,
+      w_count: 0, dw_count: 1,
+      w_con: '', dw_con: '8 ',
+      statusTag: 'Lượt 1: Bắt đầu',
+      statusCls: 'ok',
+      statusMsg: 'Cả hai cấu trúc đều tiến hành in giá trị <code>x = 8</code>.'
+    });
+
+    snaps.push({
+      w_ln: 2, dw_ln: 3,
+      w_x: 8, dw_x: 9,
+      w_count: 1, dw_count: 1,
+      w_con: '8 ', dw_con: '8 ',
+      statusTag: 'Lượt 1: In và tăng',
+      statusCls: '',
+      statusMsg: 'In 8 và tăng x lên 9 ở cả hai vòng lặp.'
+    });
+
+    // Lượt 2
+    snaps.push({
+      w_ln: 3, dw_ln: 4,
+      w_x: 9, dw_x: 9,
+      w_count: 1, dw_count: 1,
+      w_con: '8 ', dw_con: '8 ',
+      statusTag: 'Lượt 1 kết thúc, kiểm tra lượt 2',
+      statusCls: 'ok',
+      statusMsg: '<code>9 < 10</code> → <b>true</b>. Cả hai tiếp tục lượt lặp thứ 2.'
+    });
+
+    snaps.push({
+      w_ln: 2, dw_ln: 2,
+      w_x: 9, dw_x: 9,
+      w_count: 2, dw_count: 2,
+      w_con: '8 9 ', dw_con: '8 9 ',
+      statusTag: 'Lượt 2: In 9',
+      statusCls: '',
+      statusMsg: 'In tiếp <b>9</b> vào Console.'
+    });
+
+    snaps.push({
+      w_ln: 3, dw_ln: 3,
+      w_x: 10, dw_x: 10,
+      w_count: 2, dw_count: 2,
+      w_con: '8 9 ', dw_con: '8 9 ',
+      statusTag: 'Lượt 2: Tăng lên 10',
+      statusCls: '',
+      statusMsg: '<code>x++</code> đưa giá trị lên <b>10</b>.'
+    });
+
+    snaps.push({
+      w_ln: 1, dw_ln: 4,
+      w_x: 10, dw_x: 10,
+      w_count: 2, dw_count: 2,
+      w_con: '8 9 ', dw_con: '8 9 ',
+      statusTag: 'Kiểm tra dừng',
+      statusCls: 'bad',
+      statusMsg: '<code>10 < 10</code> → <b>false</b>. Cả hai vòng lặp đều kết thúc.'
+    });
+
+    snaps.push({
+      w_ln: 5, dw_ln: 5,
+      w_x: 10, dw_x: 10,
+      w_count: 2, dw_count: 2,
+      w_con: '8 9 ', dw_con: '8 9 ',
+      statusTag: 'Hoàn thành: Kết quả giống nhau',
+      statusCls: 'ok',
+      statusMsg: 'Khi điều kiện ban đầu đúng, cả hai vòng lặp cùng chạy 2 lần và in ra <b>8 9 </b>.'
+    });
+  }
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(w_cur, dw_cur){
+  var initX = (scenario === 'false_start') ? 20 : 8;
+  var w_lines = getWhileLines(initX);
+  var dw_lines = getDoWhileLines(initX);
+
+  $('code_while').innerHTML = w_lines.map(function(l, i){
+    var on = (i === w_cur);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+
+  $('code_dowhile').innerHTML = dw_lines.map(function(l, i){
+    var on = (i === dw_cur);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function render(s){
+  renderCode(s.w_ln, s.dw_ln);
+
+  $('val_w_x').textContent = s.w_x;
+  $('run_w_count').textContent = s.w_count + ' lần';
+  $('con_while').innerHTML = s.w_con ? esc(s.w_con) : '<span class="ph">(trống rỗng - không in)</span>';
+
+  $('val_dw_x').textContent = s.dw_x;
+  $('run_dw_count').textContent = s.dw_count + ' lần';
+  $('con_dowhile').innerHTML = s.dw_con ? esc(s.dw_con) : '<span class="ph">(chưa in)</span>';
+
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function initSim(){
+  stopTimer();
+  snaps = buildSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 600);
+  render(snaps[curIdx]);
+};
+
+$('scenario_sel').onchange = function(){
+  scenario = this.value;
+  initSim();
+};
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+initSim();
+</script>
+</body>
+</html>

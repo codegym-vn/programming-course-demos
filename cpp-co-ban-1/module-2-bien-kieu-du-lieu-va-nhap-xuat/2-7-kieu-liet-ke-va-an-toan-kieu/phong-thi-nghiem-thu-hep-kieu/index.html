@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Phòng thí nghiệm Chuyển đổi kiểu &amp; Khởi tạo ngoặc nhọn {}</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --sym:#be185d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --sym:#f472b6;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .syntax-toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card)}
+  .st-btn{border:none;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer;background:transparent;color:var(--text);font-weight:600}
+  .st-btn[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code Panel */
+  .code{background:var(--code-bg);border-radius:6px;padding:8px 0;height:140px;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:6px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.str{color:var(--str)}.cm{color:var(--muted);font-style:italic}
+  .sym{color:var(--sym);font-weight:700}
+
+  /* Diagnostic Box below code */
+  .diag-box{margin-top:6px;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;
+    font:12px/1.45 ui-monospace,monospace;min-height:90px;overflow-y:auto}
+
+  /* Right Side: Memory Transformer Lab */
+  .lab-panel{height:245px;display:flex;flex-direction:column;justify-content:space-between}
+  
+  .mem-trans{display:grid;grid-template-columns:1fr 75px 1fr;gap:6px;align-items:center;margin-bottom:6px}
+  
+  .m-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px;text-align:center}
+  .m-title{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px}
+  .m-val{font:700 20px ui-monospace,monospace;color:var(--text);margin:2px 0}
+  .m-type{font-size:10.5px;font-family:ui-monospace,monospace;color:var(--accent)}
+  .m-bits{font:10px ui-monospace,monospace;color:var(--muted);word-break:break-all;margin-top:2px}
+
+  .funnel{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:16px}
+  .funnel .drop{font-size:10px;font-weight:700;color:var(--false);text-align:center;margin-top:2px;line-height:1.2}
+
+  /* Shield / Result Banner */
+  .result-banner{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+    display:flex;align-items:center;gap:10px;min-height:65px}
+  .shield-icon{font-size:28px;flex:none}
+  .res-text b{display:block;font-size:12.5px;margin-bottom:2px}
+  .res-text p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Khám phá sự khác biệt giữa phép gán truyền thống <code>=</code> (cho phép thu hẹp kiểu) và khởi tạo bằng ngoặc nhọn <code>{}</code> (chặn lỗi từ lúc biên dịch).</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Kịch bản thử nghiệm">
+      <button class="tab" id="tab-s1" role="tab" aria-selected="true" onclick="setScenario('s1')">1. double &rarr; int (7.8)</button>
+      <button class="tab" id="tab-s2" role="tab" aria-selected="false" onclick="setScenario('s2')">2. int &rarr; char (1000)</button>
+      <button class="tab" id="tab-s3" role="tab" aria-selected="false" onclick="setScenario('s3')">3. Số âm &rarr; unsigned (-1)</button>
+      <button class="tab" id="tab-s4" role="tab" aria-selected="false" onclick="setScenario('s4')">4. char &rarr; int ('A' an toàn)</button>
+    </div>
+
+    <div class="syntax-toggle" role="group" aria-label="Cú pháp">
+      <button class="st-btn" id="btn-eq" aria-pressed="true" onclick="setSyntax('eq')">Cú pháp gán: =</button>
+      <button class="st-btn" id="btn-brace" aria-pressed="false" onclick="setSyntax('brace')">Cú pháp ngoặc: {}</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ & Thông báo Compiler -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="syntax-badge">Gán =</span>
+      </div>
+      <div class="code" id="code-view"></div>
+      
+      <div class="panel-head" style="margin-top:6px">
+        <p class="panel-title">Chẩn đoán từ Trình biên dịch (Compiler)</p>
+        <span class="badge" id="diag-badge" style="background:#e2e8f0;color:#475569">Chờ phân tích</span>
+      </div>
+      <div class="diag-box" id="diag-box"></div>
+    </div>
+
+    <!-- Cột 2: Phòng thí nghiệm biến đổi ô nhớ & Khiên bảo vệ -->
+    <div class="card lab-panel">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Mô phỏng Chuyển đổi Ô nhớ RAM</p>
+          <span class="badge" id="conv-type-badge">Narrowing</span>
+        </div>
+
+        <div class="mem-trans">
+          <!-- Ô nhớ nguồn -->
+          <div class="m-box">
+            <div class="m-title">Nguồn (Source)</div>
+            <div class="m-val" id="src-val">7.8</div>
+            <div class="m-type" id="src-type">double (8 bytes)</div>
+            <div class="m-bits" id="src-bits">IEEE 754 64-bit</div>
+          </div>
+
+          <!-- Mũi tên / Phễu lọc -->
+          <div class="funnel">
+            <span id="funnel-icon">&rarr;</span>
+            <span class="drop" id="funnel-drop">Mất .8</span>
+          </div>
+
+          <!-- Ô nhớ đích -->
+          <div class="m-box">
+            <div class="m-title">Đích (Target)</div>
+            <div class="m-val" id="dst-val">7</div>
+            <div class="m-type" id="dst-type">int (4 bytes)</div>
+            <div class="m-bits" id="dst-bits">Signed 32-bit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Khiên bảo vệ & Đánh giá an toàn -->
+      <div class="result-banner" id="res-banner">
+        <div class="shield-icon" id="shield-icon">&#9888;&#65039;</div>
+        <div class="res-text">
+          <b id="res-title">Cảnh báo thu hẹp kiểu</b>
+          <p id="res-desc">Phần thập phân .8 bị cắt bỏ ngầm định trong khi chương trình chạy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|char|unsigned|return)\b|(\b\d+(?:\.\d+)?\b)|(\b'[^']*'\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="num">' + m[4] + '</span>';
+    else if (m[5]) out += '<span class="str">' + esc(m[5]) + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur, isErr){
+  return lines.map(function(l, i){
+    var on = cur === i;
+    var cls = 'ln' + (on ? ' cur' : '') + (on && isErr ? ' err' : '');
+    return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var curSc = 's1';
+var curSyntax = 'eq';
+
+function buildSnaps(sc, syntax){
+  var S = [];
+
+  if (sc === 's1') {
+    // double 7.8 -> int
+    var isEq = syntax === 'eq';
+    var lines = isEq ? [
+      'double d = 7.8;',
+      'int x = d;  // Gan thuong bang dau =',
+      'cout << "x = " << x;'
+    ] : [
+      'double d = 7.8;',
+      'int x{d};  // Khoi tao bang cap ngoac {}',
+      'cout << "x = " << x;'
+    ];
+
+    // Step 0: Check code
+    S.push({
+      ln: 0, lines: lines, isErr: false,
+      diagBadge: "Sẵn sàng", diagText: "Mã nguồn chuẩn bị qua trình biên dịch...",
+      srcVal: "7.8", srcType: "double (8 byte)", srcBits: "Phần nguyên 7 + phần lẻ .8",
+      dstVal: "?", dstType: "int (4 byte)", dstBits: "Chờ nạp",
+      drop: "...", funnelIcon: "&rarr;",
+      t: "Bước 1: Chuẩn bị giá trị số thực double 7.8",
+      desc: "Ta muốn cất giá trị 7.8 từ kiểu double vào biến số nguyên int. Bấm Bước tiếp để theo dõi khâu biên dịch."
+    });
+
+    if (isEq) {
+      // Step 1: Compiler passes with =
+      S.push({
+        ln: 1, lines: lines, isErr: false,
+        diagBadge: "Compile OK (Passed)", diagClass: "dot-good",
+        diagText: "g++: Cú pháp hợp lệ.\n(Cho phép chuyển đổi kiểu thu hẹp ngầm định từ double sang int)",
+        srcVal: "7.8", srcType: "double (8 byte)", srcBits: "64-bit IEEE 754",
+        dstVal: "7", dstType: "int (4 byte)", dstBits: "Đã cắt bỏ .8",
+        drop: "Bị cắt: .8", funnelIcon: "&rarr;",
+        t: "Bước 2: Phép gán = cho phép biên dịch ngầm định",
+        desc: "Dấu = xuất phát từ C cổ điển nên trình biên dịch KHÔNG báo lỗi, nó âm thầm cắt bỏ phần thập phân .8 để lấy phần nguyên 7."
+      });
+
+      // Step 2: Runtime result
+      S.push({
+        ln: 2, lines: lines, isErr: false, st: "warn",
+        diagBadge: "Runtime Warning", diagClass: "dot-fail",
+        diagText: "Kết quả in: x = 7\nCảnh báo: Dữ liệu .8 đã bị mất vĩnh viễn trong RAM!",
+        srcVal: "7.8", srcType: "double", srcBits: "Giá trị gốc",
+        dstVal: "7", dstType: "int", dstBits: "Giá trị nhận được",
+        drop: "Mất .8 vĩnh viễn", funnelIcon: "&rarr;",
+        shieldIcon: "&#9888;&#65039;",
+        shieldTitle: "Cảnh báo mất mát dữ liệu (Data Loss)!",
+        shieldDesc: "Phép gán = gây ra chuyển đổi thu hẹp ngầm định: 7.8 biến thành 7 mà không có cảnh báo nào chặn lại ở khâu dịch.",
+        t: "Bước 3: Hậu quả lúc chạy chương trình",
+        desc: "Biến x nhận giá trị 7. Phần lẻ .8 bị mất sạch. Nếu 7.8 là số tiền hay điểm số, sai số này sẽ chạy ngầm trong hệ thống!"
+      });
+    } else {
+      // Step 1: Compiler BLOCKS with {}
+      S.push({
+        ln: 1, lines: lines, isErr: true, st: "bad",
+        diagBadge: "Compile Error!", diagClass: "dot-fail",
+        diagText: "error: type 'double' cannot be narrowed to 'int' in initializer list [-Wc++11-narrowing]\n  2 | int x{d};\n    |       ^",
+        srcVal: "7.8", srcType: "double", srcBits: "Bị chặn!",
+        dstVal: "CHẶN", dstType: "int", dstBits: "Không sinh mã máy",
+        drop: "CHẶN THU HẸP", funnelIcon: "&#128737;&#65039;",
+        shieldIcon: "&#128737;&#65039;",
+        shieldTitle: "Khiên an toàn kiểu C++ (Type Safety Shield)",
+        shieldDesc: "Cặp ngoặc nhọn {} cấm tuyệt đối chuyển đổi thu hẹp! Trình biên dịch bắt lỗi ngay tại chỗ, buộc lập trình viên phải ép kiểu rõ ràng.",
+        t: "BỊ CHẶN: Trình biên dịch từ chối ngoặc nhọn {}!",
+        desc: "C++ hiện đại dùng {} để bảo vệ an toàn: trình biên dịch phát hiện từ double sang int làm mất phần thập phân nên lập tức dừng lại và báo lỗi compile!"
+      });
+    }
+
+  } else if (sc === 's2') {
+    // int 1000 -> char
+    var isEq = syntax === 'eq';
+    var lines = isEq ? [
+      'int n = 1000;',
+      'char c = n;  // Gan bang dau =',
+      'cout << "c (int) = " << (int)c;'
+    ] : [
+      'int n = 1000;',
+      'char c{n};  // Khoi tao bang ngoac {}',
+      'cout << "c (int) = " << (int)c;'
+    ];
+
+    S.push({
+      ln: 0, lines: lines, isErr: false,
+      diagBadge: "Sẵn sàng", diagText: "Giá trị 1000 (4 byte) chuẩn bị nạp vào char (1 byte)...",
+      srcVal: "1000", srcType: "int (4 byte)", srcBits: "Binary: ...0011 11101000",
+      dstVal: "?", dstType: "char (1 byte)", dstBits: "Chờ nạp",
+      drop: "...", funnelIcon: "&rarr;",
+      t: "Bước 1: Nạp 1000 vào biến char (chỉ chứa tối đa 127)",
+      desc: "Kiểu char có dấu chỉ lưu được từ -128 đến 127. Con số 1000 vượt quá dung lượng 1 byte rất nhiều."
+    });
+
+    if (isEq) {
+      S.push({
+        ln: 1, lines: lines, isErr: false,
+        diagBadge: "Compile OK", diagClass: "dot-good",
+        diagText: "g++: Cú pháp hợp lệ với =.\nTrình biên dịch cắt bỏ 24 bit cao, chỉ giữ lại 8 bit thấp.",
+        srcVal: "1000", srcType: "int (4 byte)", srcBits: "24 bit cao bị vứt bỏ",
+        dstVal: "-24", dstType: "char (1 byte)", dstBits: "8 bit: 11101000 (= -24)",
+        drop: "Cắt 24 bit", funnelIcon: "&rarr;",
+        t: "Bước 2: Cắt gọt bit ngầm định",
+        desc: "Trình biên dịch lấy 8 bit thấp nhất (1000 mod 256 = 232 -> biểu diễn bù hai là -24). Dữ liệu bị biến dạng hoàn toàn!"
+      });
+
+      S.push({
+        ln: 2, lines: lines, isErr: false, st: "warn",
+        diagBadge: "Dữ liệu biến dạng", diagClass: "dot-fail",
+        diagText: "Kết quả in: c = -24\n1000 biến thành -24! Lỗi logic nghiêm trọng.",
+        srcVal: "1000", srcType: "int", srcBits: "Giá trị ban đầu",
+        dstVal: "-24", dstType: "char", dstBits: "Giá trị bị sai lệch",
+        drop: "1000 -> -24", funnelIcon: "&rarr;",
+        shieldIcon: "&#9888;&#65039;",
+        shieldTitle: "Dữ liệu bị biến dạng hoàn toàn!",
+        shieldDesc: "Phép gán = âm thầm nhồi 1000 vào char 1 byte khiến số dương 1000 biến thành số âm -24 trong runtime.",
+        t: "Bước 3: Kết quả runtime bị sai lệch",
+        desc: "Chương trình chạy ra kết quả -24. Lỗi này cực kỳ khó phát hiện nếu không có công cụ bảo vệ kiểu."
+      });
+    } else {
+      S.push({
+        ln: 1, lines: lines, isErr: true, st: "bad",
+        diagBadge: "Compile Error!", diagClass: "dot-fail",
+        diagText: "error: constant expression evaluates to 1000 which cannot be narrowed to type 'char' [-Wc++11-narrowing]\n  2 | char c{n};\n    |        ^",
+        srcVal: "1000", srcType: "int", srcBits: "Vượt dải 1 byte",
+        dstVal: "CHẶN", dstType: "char", dstBits: "Không thể lưu",
+        drop: "CHẶN THU HẸP", funnelIcon: "&#128737;&#65039;",
+        shieldIcon: "&#128737;&#65039;",
+        shieldTitle: "Ngoặc nhọn {} cứu nguy ngay tức thì!",
+        shieldDesc: "Ngoặc nhọn {} chặn đứng con số 1000 ngay từ khi biên dịch. Lập trình viên không bao giờ bị lỗi biến dạng thành -24.",
+        t: "BỊ CHẶN: {} từ chối giá trị 1000 tràn byte",
+        desc: "Trình biên dịch biết chắc chắn 1000 sẽ làm tràn kiểu char, nên ngoặc nhọn {} lập tức từ chối biên dịch."
+      });
+    }
+
+  } else if (sc === 's3') {
+    // int -1 -> unsigned int
+    var isEq = syntax === 'eq';
+    var lines = isEq ? [
+      'int am = -1;',
+      'unsigned int u = am;  // Gan bang dau =',
+      'cout << "u = " << u;'
+    ] : [
+      'int am = -1;',
+      'unsigned int u{am};  // Khoi tao bang ngoac {}',
+      'cout << "u = " << u;'
+    ];
+
+    S.push({
+      ln: 0, lines: lines, isErr: false,
+      diagBadge: "Sẵn sàng", diagText: "Gán số âm -1 vào kiểu không dấu unsigned int...",
+      srcVal: "-1", srcType: "int (có dấu)", srcBits: "32 bit 1: 0xFFFFFFFF",
+      dstVal: "?", dstType: "unsigned int", dstBits: "Chờ nạp",
+      drop: "...", funnelIcon: "&rarr;",
+      t: "Bước 1: Số âm -1 vào kiểu unsigned (không dấu)",
+      desc: "Kiểu unsigned int chỉ chấp nhận các số từ 0 trở lên. Điều gì xảy ra khi ta gán -1 vào?"
+    });
+
+    if (isEq) {
+      S.push({
+        ln: 1, lines: lines, isErr: false,
+        diagBadge: "Compile OK", diagClass: "dot-good",
+        diagText: "g++: Biên dịch được với =.\nCác bit 0xFFFFFFFF được diễn giải lại thành số dương cực đại.",
+        srcVal: "-1", srcType: "int", srcBits: "32 bit toàn 1",
+        dstVal: "4,294,967,295", dstType: "unsigned int", dstBits: "2^32 - 1",
+        drop: "Đảo nghĩa bit", funnelIcon: "&rarr;",
+        t: "Bước 2: Hiện tượng quay vòng số nhị phân",
+        desc: "Chuỗi 32 bit 1 của số -1 được trình biên dịch hiểu thành số nguyên dương lớn nhất có thể: 4,294,967,295!"
+      });
+
+      S.push({
+        ln: 2, lines: lines, isErr: false, st: "warn",
+        diagBadge: "Quay vòng số nguy hiểm", diagClass: "dot-fail",
+        diagText: "Kết quả in: u = 4294967295\nSố âm -1 biến thành số khổng lồ 4.29 tỷ!",
+        srcVal: "-1", srcType: "int", srcBits: "Âm",
+        dstVal: "4294967295", dstType: "unsigned", dstBits: "Hơn 4.29 tỷ",
+        drop: "Modulo 2^32", funnelIcon: "&rarr;",
+        shieldIcon: "&#9888;&#65039;",
+        shieldTitle: "Bẫy tràn số không dấu (Unsigned Wrap)!",
+        shieldDesc: "Gán -1 bằng dấu = biến nó thành 4.29 tỷ. Trong các vòng lặp đếm ngược, điều này sẽ tạo ra vòng lặp vô tận!",
+        t: "Bước 3: Số âm biến thành 4.29 tỷ!",
+        desc: "Một trong những bẫy nguy hiểm nhất trong C++. Dấu = âm thầm chấp nhận phép gán tai hại này."
+      });
+    } else {
+      S.push({
+        ln: 1, lines: lines, isErr: true, st: "bad",
+        diagBadge: "Compile Error!", diagClass: "dot-fail",
+        diagText: "error: constant expression evaluates to -1 which cannot be narrowed to type 'unsigned int' [-Wc++11-narrowing]\n  2 | unsigned int u{am};\n    |                ^",
+        srcVal: "-1", srcType: "int", srcBits: "Số âm",
+        dstVal: "CHẶN", dstType: "unsigned", dstBits: "Không được phép",
+        drop: "CHẶN THU HẸP", funnelIcon: "&#128737;&#65039;",
+        shieldIcon: "&#128737;&#65039;",
+        shieldTitle: "Ngoặc nhọn {} cấm số âm vào unsigned",
+        shieldDesc: "Ngoặc nhọn {} nhận diện ngay sự bất tương thích giữa số âm và kiểu không dấu, ngăn chặn thảm hoạ vòng lặp vô tận.",
+        t: "BỊ CHẶN: {} từ chối số âm vào kiểu không dấu",
+        desc: "Cơ chế khởi tạo chuẩn {} đảm bảo an toàn tuyệt đối cho hệ thống kiểu."
+      });
+    }
+
+  } else if (sc === 's4') {
+    // char 'A' -> int (Widening safe)
+    var isEq = syntax === 'eq';
+    var lines = isEq ? [
+      "char c = 'A';",
+      "int code = c;  // Gan bang dau =",
+      'cout << "code = " << code;'
+    ] : [
+      "char c = 'A';",
+      "int code{c};  // Khoi tao bang ngoac {}",
+      'cout << "code = " << code;'
+    ];
+
+    S.push({
+      ln: 0, lines: lines, isErr: false,
+      diagBadge: "Sẵn sàng", diagText: "Chuyển đổi mở rộng (Widening) từ char (1 byte) sang int (4 byte)...",
+      srcVal: "'A'", srcType: "char (1 byte)", srcBits: "Mã ASCII 65",
+      dstVal: "?", dstType: "int (4 byte)", dstBits: "Chờ nạp",
+      drop: "Không mất gì", funnelIcon: "&rarr;",
+      t: "Bước 1: Chuyển đổi mở rộng (Widening Conversion)",
+      desc: "Kiểu char 'A' (1 byte) có mã ASCII là 65. Kiểu đích int (4 byte) có kích thước lớn hơn rất nhiều."
+    });
+
+    S.push({
+      ln: 1, lines: lines, isErr: false, st: "ok",
+      diagBadge: "Compile OK (Passed)", diagClass: "dot-good",
+      diagText: "g++: Cú pháp hợp lệ 100%!\nĐây là phép mở rộng an toàn (Widening), cả = và {} đều cho phép.",
+      srcVal: "'A'", srcType: "char (1 byte)", srcBits: "Mã 65",
+      dstVal: "65", dstType: "int (4 byte)", dstBits: "Mã 65 bảo toàn trọn vẹn",
+      drop: "Bảo toàn 100%", funnelIcon: "&rarr;",
+      shieldIcon: "&#9989;",
+      shieldTitle: "Chuyển đổi an toàn tuyệt đối (Widening)!",
+      shieldDesc: "Vì phạm vi của int bao trọn phạm vi của char, không có bất kỳ bit nào bị mất. Cặp ngoặc nhọn {} hoàn toàn ủng hộ phép gán này!",
+      t: "Bước 2: Cả = và {} đều thành công trọn vẹn!",
+      desc: "Chuyển đổi mở rộng là an toàn. Dù dùng = hay {}, chương trình đều biên dịch mượt mà và bảo toàn giá trị 65."
+    });
+  }
+
+  return S;
+}
+
+function render(s, k, n){
+  $('code-view').innerHTML = renderCode(s.lines, s.ln, s.isErr);
+  $('syntax-badge').textContent = curSyntax === 'eq' ? 'Gán thường =' : 'Khởi tạo {}';
+
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+  // Diagnostics
+  $('diag-badge').textContent = s.diagBadge;
+  if (s.diagClass) $('diag-badge').className = 'badge ' + s.diagClass;
+  else $('diag-badge').className = 'badge';
+  $('diag-box').innerHTML = '<pre style="margin:0;white-space:pre-wrap;font-family:inherit;color:' + (s.isErr ? 'var(--false)' : 'var(--text)') + '">' + esc(s.diagText) + '</pre>';
+
+  // Memory transform
+  $('src-val').textContent = s.srcVal;
+  $('src-type').textContent = s.srcType;
+  $('src-bits').textContent = s.srcBits;
+
+  $('dst-val').textContent = s.dstVal;
+  $('dst-type').textContent = s.dstType;
+  $('dst-bits').textContent = s.dstBits;
+
+  $('funnel-drop').textContent = s.drop;
+  $('funnel-icon').innerHTML = s.funnelIcon;
+
+  // Banner
+  if (s.shieldTitle) {
+    $('shield-icon').innerHTML = s.shieldIcon;
+    $('res-title').textContent = s.shieldTitle;
+    $('res-desc').textContent = s.shieldDesc;
+    $('res-title').style.color = s.isErr ? 'var(--true)' : (s.st === 'warn' ? 'var(--warn)' : 'var(--true)');
+  }
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 750);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({
+  build: function(){ return buildSnaps(curSc, curSyntax); },
+  render: render
+});
+
+function setScenario(sc, skipRebuild){
+  curSc = sc;
+  $('tab-s1').setAttribute('aria-selected', sc === 's1');
+  $('tab-s2').setAttribute('aria-selected', sc === 's2');
+  $('tab-s3').setAttribute('aria-selected', sc === 's3');
+  $('tab-s4').setAttribute('aria-selected', sc === 's4');
+  if (!skipRebuild) sim.rebuild();
+}
+
+function setSyntax(st, skipRebuild){
+  curSyntax = st;
+  $('btn-eq').setAttribute('aria-pressed', st === 'eq');
+  $('btn-brace').setAttribute('aria-pressed', st === 'brace');
+  if (!skipRebuild) sim.rebuild();
+}
+
+var urlSc = qparam('vd') || qparam('s');
+if (urlSc && ['s1','s2','s3','s4'].indexOf(urlSc) >= 0) {
+  setScenario(urlSc, true);
+}
+
+var urlSt = qparam('mode') || qparam('syntax');
+if (urlSt === 'brace') {
+  setSyntax('brace', true);
+}
+
+sim.rebuild();
+</script>
+</body>
+</html>

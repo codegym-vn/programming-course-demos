@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Trình khám phá Cây quyết định if-else lồng nhau</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input[type="number"]{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:60px}
+  .field input[type="range"]{width:100px}
+  
+  .presets{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:260px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:260px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  /* Decision Tree Graphic */
+  .tree-card{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--code-bg);position:relative}
+  .tree-svg{width:100%;height:165px;display:block}
+
+  .node-box{rx:6;ry:6;stroke-width:1.5;transition:all .25s}
+  .node-box.inactive{fill:var(--card);stroke:var(--line)}
+  .node-box.active{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.5}
+  .node-box.pass{fill:var(--true-soft);stroke:var(--true);stroke-width:2.5}
+  .node-box.fail{fill:var(--false-soft);stroke:var(--false);stroke-width:2.5}
+  .node-box.leaf-hit{fill:#fef3c7;stroke:#f59e0b;stroke-width:2.5}
+
+  .node-txt{font-family:ui-monospace,monospace;font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:middle;fill:var(--text)}
+  .node-sub{font-family:system-ui,sans-serif;font-size:9.5px;text-anchor:middle;dominant-baseline:middle;fill:var(--muted)}
+
+  .edge-line{stroke:var(--line);stroke-width:1.5;stroke-dasharray:none;transition:stroke .2s,stroke-width .2s}
+  .edge-line.active{stroke:var(--accent);stroke-width:2.5}
+  .edge-lbl{font-family:ui-monospace,monospace;font-size:9px;font-weight:700;dominant-baseline:middle}
+  .edge-lbl.t{fill:var(--true)}
+  .edge-lbl.f{fill:var(--false)}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 10px;min-height:36px;
+    font:12.5px/1.5 ui-monospace,monospace;display:flex;align-items:center;justify-content:space-between}
+  .con-label{font-size:11px;color:#94a3b8;font-weight:600}
+  .con-out{font-weight:700;font-size:14px;color:#38bdf8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi điểm sáng đi qua từng tầng của <b>Cây quyết định if-else lồng nhau</b>.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="val-input">val =</label>
+      <input type="number" id="val-input" min="-20" max="40" value="15">
+      <input type="range" id="val-range" min="-20" max="40" value="15">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn" onclick="setVal(-5)">-5 (Quá nhỏ)</button>
+      <button class="preset-btn" onclick="setVal(0)">0 (Biên hợp lệ)</button>
+      <button class="preset-btn" onclick="setVal(7)">7 (Hợp lệ)</button>
+      <button class="preset-btn" onclick="setVal(10)">10 (Biên hợp lệ)</button>
+      <button class="preset-btn active" onclick="setVal(15)">15 (Quá lớn)</button>
+      <button class="preset-btn" onclick="setVal(25)">25 (Rất lớn)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Cây quyết định đồ hoạ & Console -->
+    <div class="card right-panel">
+      <div class="tree-card">
+        <div class="panel-head" style="margin-bottom:2px">
+          <p class="panel-title">Cây quyết định 2 tầng</p>
+          <span style="font-size:10px;color:var(--muted);font-family:ui-monospace">val = <b id="val-indicator" style="color:var(--accent)">15</b></span>
+        </div>
+        
+        <!-- SVG Decision Tree -->
+        <svg class="tree-svg" viewBox="0 0 380 165">
+          <!-- Cạnh nối từ Nút gốc Tầng 1 -->
+          <!-- Nhánh Sai sang Trái (Quá nhỏ) -->
+          <line id="edge-root-fail" class="edge-line" x1="190" y1="36" x2="65" y2="76" />
+          <text id="lbl-edge-rf" class="edge-lbl f" x="110" y="50">sai (&lt; 0)</text>
+
+          <!-- Nhánh Đúng sang Phải (Tầng 2) -->
+          <line id="edge-root-pass" class="edge-line" x1="190" y1="36" x2="270" y2="76" />
+          <text id="lbl-edge-rp" class="edge-lbl t" x="238" y="50">đúng (&gt;= 0)</text>
+
+          <!-- Cạnh nối từ Tầng 2 sang 2 Lá -->
+          <!-- Nhánh Đúng sang Hợp lệ -->
+          <line id="edge-t2-pass" class="edge-line" x1="270" y1="104" x2="200" y2="135" />
+          <text id="lbl-edge-t2p" class="edge-lbl t" x="220" y="116">&lt;= 10</text>
+
+          <!-- Nhánh Sai sang Quá lớn -->
+          <line id="edge-t2-fail" class="edge-line" x1="270" y1="104" x2="330" y2="135" />
+          <text id="lbl-edge-t2f" class="edge-lbl f" x="306" y="116">&gt; 10</text>
+
+          <!-- TẦNG 1: Nút Gốc -->
+          <g id="node-root">
+            <rect id="rect-root" class="node-box inactive" x="120" y="8" width="140" height="32" />
+            <text class="node-txt" x="190" y="24">val &gt;= 0 ?</text>
+          </g>
+
+          <!-- LÁ 1: Quá nhỏ (Số âm) -->
+          <g id="leaf-small">
+            <rect id="rect-leaf-small" class="node-box inactive" x="10" y="70" width="110" height="32" />
+            <text class="node-txt" x="65" y="83" style="font-size:10px">"Qua nho"</text>
+            <text class="node-sub" x="65" y="94">(số âm)</text>
+          </g>
+
+          <!-- TẦNG 2: Nút Kiểm tra trong -->
+          <g id="node-t2">
+            <rect id="rect-t2" class="node-box inactive" x="200" y="70" width="140" height="32" />
+            <text class="node-txt" x="270" y="86">val &lt;= 10 ?</text>
+          </g>
+
+          <!-- LÁ 2: Hợp lệ -->
+          <g id="leaf-ok">
+            <rect id="rect-leaf-ok" class="node-box inactive" x="150" y="130" width="100" height="28" />
+            <text class="node-txt" x="200" y="145" style="font-size:10.5px;fill:var(--true)">"Hop le"</text>
+          </g>
+
+          <!-- LÁ 3: Quá lớn -->
+          <g id="leaf-large">
+            <rect id="rect-leaf-large" class="node-box inactive" x="280" y="130" width="95" height="28" />
+            <text class="node-txt" x="327" y="145" style="font-size:10.5px;fill:var(--false)">"Qua lon"</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Console output -->
+      <div class="console">
+        <span class="con-label">Console:</span>
+        <span class="con-out" id="con-out">Chưa xuất</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var curStep = 0;
+var timer = null;
+var VAL = 15;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|if|else|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(v){
+  return [
+    'int val = ' + v + ';',
+    'if (val >= 0) {',
+    '  if (val <= 10) {',
+    '    cout << "Hop le\\n";',
+    '  } else {',
+    '    cout << "Qua lon\\n";',
+    '  }',
+    '} else {',
+    '  cout << "Qua nho (so am)\\n";',
+    '}'
+  ];
+}
+
+function renderCode(lines, curLine){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    html += '<div class="ln' + (isCur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(v){
+  var isNonNeg = (v >= 0);
+  var isLe10 = (v <= 10);
+
+  var s = [
+    {
+      line: 0,
+      badge: 'Bước 1/4',
+      stClass: '',
+      stTitle: 'Bước 1: Khởi tạo val = ' + v,
+      stMsg: 'Biến <code>val</code> nhận giá trị ' + v + '. Luồng chạy chuẩn bị tới câu lệnh <code>if (val >= 0)</code> ở tầng ngoài.',
+      rootState: 'active', edgeRF: false, edgeRP: false, t2State: 'inactive', edgeT2P: false, edgeT2F: false,
+      leafSmall: 'inactive', leafOk: 'inactive', leafLarge: 'inactive',
+      out: '–'
+    },
+    {
+      line: 1,
+      badge: 'Bước 2/4',
+      stClass: isNonNeg ? 'ok' : 'bad',
+      stTitle: 'Bước 2: Tầng ngoài: Kiểm tra val >= 0',
+      stMsg: 'Đánh giá <code>' + v + ' &gt;= 0</code> → <b>' + (isNonNeg ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + 
+             (isNonNeg ? 'Điều kiện đúng! Luồng chạy rẽ sang nhánh phải để đi vào bên trong khối { } của tầng 2.' : 'Điều kiện sai (số âm)! Luồng chạy rẽ sang nhánh trái tới khối else ngoài cùng.'),
+      rootState: isNonNeg ? 'pass' : 'fail',
+      edgeRF: !isNonNeg,
+      edgeRP: isNonNeg,
+      t2State: isNonNeg ? 'active' : 'inactive',
+      edgeT2P: false, edgeT2F: false,
+      leafSmall: 'inactive', leafOk: 'inactive', leafLarge: 'inactive',
+      out: '–'
+    }
+  ];
+
+  if (!isNonNeg) {
+    // val < 0
+    s.push({
+      line: 8,
+      badge: 'Bước 3/4',
+      stClass: 'bad',
+      stTitle: 'Bước 3: Thực thi nhánh else ngoài cùng',
+      stMsg: 'Do <code>val &lt; 0</code>, chương trình chạy dòng <code>cout &lt;&lt; "Qua nho (so am)"</code>.',
+      rootState: 'fail', edgeRF: true, edgeRP: false, t2State: 'inactive', edgeT2P: false, edgeT2F: false,
+      leafSmall: 'leaf-hit', leafOk: 'inactive', leafLarge: 'inactive',
+      out: '–'
+    });
+    s.push({
+      line: 8,
+      badge: 'Bước 4/4',
+      stClass: 'ok',
+      stTitle: 'Bước 4: Xuất kết quả',
+      stMsg: 'In ra màn hình: <code>"Qua nho (so am)"</code>. Thoát khỏi toàn bộ cấu trúc if-else lồng nhau.',
+      rootState: 'fail', edgeRF: true, edgeRP: false, t2State: 'inactive', edgeT2P: false, edgeT2F: false,
+      leafSmall: 'leaf-hit', leafOk: 'inactive', leafLarge: 'inactive',
+      out: 'Qua nho (so am)'
+    });
+  } else {
+    // val >= 0
+    s.push({
+      line: 2,
+      badge: 'Bước 3/4',
+      stClass: isLe10 ? 'ok' : 'bad',
+      stTitle: 'Bước 3: Tầng trong: Kiểm tra val <= 10',
+      stMsg: 'Tại tầng 2, kiểm tra <code>' + v + ' &lt;= 10</code> → <b>' + (isLe10 ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + 
+             (isLe10 ? 'Thoả mãn cả 2 tầng (0 <= val <= 10) → Đi tới lá "Hop le".' : 'Lớn hơn 10 → Nhảy vào nhánh else trong: "Qua lon".'),
+      rootState: 'pass', edgeRF: false, edgeRP: true,
+      t2State: isLe10 ? 'pass' : 'fail',
+      edgeT2P: isLe10, edgeT2F: !isLe10,
+      leafSmall: 'inactive',
+      leafOk: isLe10 ? 'leaf-hit' : 'inactive',
+      leafLarge: !isLe10 ? 'leaf-hit' : 'inactive',
+      out: '–'
+    });
+
+    s.push({
+      line: isLe10 ? 3 : 5,
+      badge: 'Bước 4/4',
+      stClass: 'ok',
+      stTitle: 'Bước 4: Xuất kết quả',
+      stMsg: 'In ra màn hình: <code>"' + (isLe10 ? 'Hop le' : 'Qua lon') + '"</code>. Thoát khỏi toàn bộ cấu trúc điều kiện.',
+      rootState: 'pass', edgeRF: false, edgeRP: true,
+      t2State: isLe10 ? 'pass' : 'fail',
+      edgeT2P: isLe10, edgeT2F: !isLe10,
+      leafSmall: 'inactive',
+      leafOk: isLe10 ? 'leaf-hit' : 'inactive',
+      leafLarge: !isLe10 ? 'leaf-hit' : 'inactive',
+      out: isLe10 ? 'Hop le' : 'Qua lon'
+    });
+  }
+
+  return s;
+}
+
+function render(){
+  var lines = getLines(VAL);
+  var steps = getSteps(VAL);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  document.getElementById('val-indicator').textContent = VAL;
+
+  // Tree nodes class update
+  document.getElementById('rect-root').className.baseVal = 'node-box ' + s.rootState;
+  document.getElementById('rect-t2').className.baseVal = 'node-box ' + s.t2State;
+  document.getElementById('rect-leaf-small').className.baseVal = 'node-box ' + s.leafSmall;
+  document.getElementById('rect-leaf-ok').className.baseVal = 'node-box ' + s.leafOk;
+  document.getElementById('rect-leaf-large').className.baseVal = 'node-box ' + s.leafLarge;
+
+  // Edges
+  document.getElementById('edge-root-fail').className.baseVal = 'edge-line' + (s.edgeRF ? ' active' : '');
+  document.getElementById('edge-root-pass').className.baseVal = 'edge-line' + (s.edgeRP ? ' active' : '');
+  document.getElementById('edge-t2-pass').className.baseVal = 'edge-line' + (s.edgeT2P ? ' active' : '');
+  document.getElementById('edge-t2-fail').className.baseVal = 'edge-line' + (s.edgeT2F ? ' active' : '');
+
+  document.getElementById('con-out').textContent = s.out;
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setVal(v){
+  stopTimer();
+  VAL = parseInt(v, 10);
+  document.getElementById('val-input').value = VAL;
+  document.getElementById('val-range').value = VAL;
+
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf('(' + VAL + ')') >= 0 || b.textContent.indexOf(VAL + ' ') === 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('val-input').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    VAL = v;
+    document.getElementById('val-range').value = v;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('val-range').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  stopTimer();
+  VAL = v;
+  document.getElementById('val-input').value = v;
+  curStep = 0;
+  render();
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(VAL);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(VAL);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?val=N & ?buoc=N
+var qv = parseInt(qparam('val'), 10);
+if(!isNaN(qv)) { VAL = qv; document.getElementById('val-input').value = VAL; document.getElementById('val-range').value = VAL; }
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

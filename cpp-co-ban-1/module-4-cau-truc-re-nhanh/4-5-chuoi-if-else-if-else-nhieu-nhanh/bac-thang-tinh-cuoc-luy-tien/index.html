@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Bậc thang tính cước luỹ tiến tương tác</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input[type="number"]{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:56px}
+  .field input[type="range"]{width:90px}
+  
+  .presets{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .preset-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.3fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:180px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:265px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Right Panels */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:265px;justify-content:space-between}
+  @media (max-width:640px){.right-panel{height:auto}}
+
+  /* Layered tiers display */
+  .tiers-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--code-bg);display:flex;flex-direction:column;gap:6px}
+  
+  .tier-row{border-radius:6px;padding:6px 8px;border:1.5px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:space-between}
+  .tier-row.t1{border-color:#93c5fd;background:rgba(59,130,246,0.06)}
+  .tier-row.t2{border-color:#fdba74;background:rgba(249,115,22,0.06)}
+  .tier-row.inactive{opacity:.4;border-style:dashed}
+
+  .tier-info{display:flex;flex-direction:column}
+  .tier-name{font:700 11.5px system-ui,sans-serif}
+  .tier-desc{font:11px ui-monospace,monospace;color:var(--muted)}
+  .tier-sum{font:700 13.5px ui-monospace,monospace}
+  .tier-row.t1 .tier-sum{color:#2563eb}
+  .tier-row.t2 .tier-sum{color:#ea580c}
+
+  .sum-card{display:flex;align-items:center;justify-content:space-between;border-top:1.5px dashed var(--line);padding-top:4px}
+  .sum-label{font-size:12px;font-weight:700;color:var(--text)}
+  .sum-val{font:700 16px ui-monospace,monospace;color:var(--true)}
+
+  /* Contrast trap card */
+  .trap-card{border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;background:rgba(239,68,68,0.05);font-size:11.5px}
+  .trap-card b{color:var(--false);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để bóc tách cách tính <b>bậc thang luỹ tiến</b> từng khúc sản lượng, tránh cào bằng sai giá.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="m3-input">Sản lượng (m³):</label>
+      <input type="number" id="m3-input" min="0" max="40" value="15">
+      <input type="range" id="m3-range" min="0" max="40" value="15">
+    </div>
+
+    <div class="presets">
+      <span style="font-size:11px;color:var(--muted);font-weight:600">Mẫu:</span>
+      <button class="preset-btn" onclick="setM3(5)">5 m³ (Bậc 1)</button>
+      <button class="preset-btn" onclick="setM3(10)">10 m³ (Ngưỡng 1)</button>
+      <button class="preset-btn active" onclick="setM3(15)">15 m³ (Trong bài)</button>
+      <button class="preset-btn" onclick="setM3(25)">25 m³ (Bậc 2 lớn)</button>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Bóc tách từng bậc & Đối chiếu -->
+    <div class="card right-panel">
+      <div class="tiers-card">
+        <div class="panel-head" style="margin-bottom:2px">
+          <p class="panel-title">Bóc tách biểu giá 2 tầng</p>
+          <span style="font-size:10px;color:var(--muted);font-family:ui-monospace">m³ = <b id="m3-indicator" style="color:var(--accent)">15</b></span>
+        </div>
+
+        <!-- Tầng 1 -->
+        <div class="tier-row t1" id="row-t1">
+          <div class="tier-info">
+            <span class="tier-name" style="color:#2563eb">Tầng 1 (0 .. 10 m³)</span>
+            <span class="tier-desc" id="desc-t1">10 m³ × 6.000 đ</span>
+          </div>
+          <span class="tier-sum" id="sum-t1">60.000 đ</span>
+        </div>
+
+        <!-- Tầng 2 -->
+        <div class="tier-row t2" id="row-t2">
+          <div class="tier-info">
+            <span class="tier-name" style="color:#ea580c">Tầng 2 (vượt trên 10 m³)</span>
+            <span class="tier-desc" id="desc-t2">(15 - 10) = 5 m³ × 8.000 đ</span>
+          </div>
+          <span class="tier-sum" id="sum-t2">40.000 đ</span>
+        </div>
+
+        <!-- Tổng cộng -->
+        <div class="sum-card">
+          <span class="sum-label">Tổng cước phí chuẩn (cost):</span>
+          <span class="sum-val" id="sum-total">100.000 đ</span>
+        </div>
+      </div>
+
+      <!-- Sai lầm cào bằng -->
+      <div class="trap-card" id="trap-card">
+        <b>⚠️ Sai lầm cào bằng nguy hiểm:</b>
+        <div id="trap-calc" style="font-family:ui-monospace;margin-top:2px;color:var(--false)">15 × 8.000 = 120.000 đ (Tính thừa 20.000 đ!)</div>
+        <div style="color:var(--muted);font-size:10.5px;margin-top:2px">Không được nhân toàn bộ 15 m³ với đơn giá bậc 2! 10 m³ đầu vẫn phải hưởng giá 6.000 đ.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var curStep = 0;
+var timer = null;
+var M3 = 15;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+function formatVND(n){ return n.toLocaleString('vi-VN') + ' đ'; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|if|else|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(v){
+  return [
+    'int m3 = ' + v + ', cost = 0;',
+    'if (m3 <= 10) {',
+    '  cost = m3 * 6000;',
+    '} else {',
+    '  cost = 10 * 6000 + (m3 - 10) * 8000;',
+    '}',
+    'cout << cost << "\\n";'
+  ];
+}
+
+function renderCode(lines, curLine){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    html += '<div class="ln' + (isCur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function getSteps(v){
+  var inTier1 = (v <= 10);
+  var t1Amount = inTier1 ? v : 10;
+  var t1Cost = t1Amount * 6000;
+  var t2Amount = inTier1 ? 0 : (v - 10);
+  var t2Cost = t2Amount * 8000;
+  var totalCost = t1Cost + t2Cost;
+  var flatCost = v * 8000;
+  var diff = flatCost - totalCost;
+
+  return [
+    {
+      line: 0,
+      badge: 'Bước 1/4',
+      stClass: '',
+      stTitle: 'Bước 1: Khởi tạo m3 = ' + v + ', cost = 0',
+      stMsg: 'Chuẩn bị kiểm tra xem mức tiêu thụ ' + v + ' m³ có vượt quá bậc 1 (10 m³) hay không.',
+      t1Active: false, t2Active: false,
+      costShown: 0
+    },
+    {
+      line: 1,
+      badge: 'Bước 2/4',
+      stClass: inTier1 ? 'ok' : 'ok',
+      stTitle: 'Bước 2: Kiểm tra if (m3 <= 10)',
+      stMsg: 'Đánh giá <code>' + v + ' &lt;= 10</code> → <b>' + (inTier1 ? 'true (Đúng)' : 'false (Sai)') + '</b>. ' + 
+             (inTier1 ? 'Sản lượng không vượt quá 10 m³ → Chỉ tính tiền theo đơn giá Bậc 1.' : 'Sản lượng vượt trên 10 m³ → Rẽ vào nhánh else để bóc tách 2 bậc thang!'),
+      t1Active: inTier1, t2Active: false,
+      costShown: 0
+    },
+    {
+      line: inTier1 ? 2 : 4,
+      badge: 'Bước 3/4',
+      stClass: 'ok',
+      stTitle: inTier1 ? 'Bước 3: Tính theo công thức Bậc 1' : 'Bước 3: Bóc tách 2 bậc theo luỹ tiến',
+      stMsg: inTier1 ? ('<code>cost = ' + v + ' * 6000 = ' + formatVND(totalCost) + '</code>.') : 
+             ('10 m³ đầu: <code>10 * 6000 = 60.000 đ</code>. Phần vượt: <code>(' + v + ' - 10) * 8000 = ' + formatVND(t2Cost) + '</code>. Tổng: <b>' + formatVND(totalCost) + '</b>.'),
+      t1Active: true, t2Active: !inTier1,
+      costShown: totalCost
+    },
+    {
+      line: 6,
+      badge: 'Bước 4/4',
+      stClass: 'ok',
+      stTitle: 'Bước 4: Xuất tổng cước phí ra màn hình',
+      stMsg: 'In <code>cost = ' + totalCost + '</code> ra console. So với cào bằng sai (' + formatVND(flatCost) + '), phép tính bậc thang tiết kiệm đúng <b>' + formatVND(diff) + '</b>!',
+      t1Active: true, t2Active: !inTier1,
+      costShown: totalCost
+    }
+  ];
+}
+
+function render(){
+  var lines = getLines(M3);
+  var steps = getSteps(M3);
+  if(curStep >= steps.length) curStep = steps.length - 1;
+  var s = steps[curStep];
+
+  renderCode(lines, s.line);
+
+  var statusEl = document.getElementById('status');
+  statusEl.className = 'status' + (s.stClass ? ' ' + s.stClass : '');
+  statusEl.innerHTML = '<b>' + esc(s.stTitle) + '</b>' + s.stMsg;
+
+  document.getElementById('step-badge').textContent = s.badge;
+  document.getElementById('m3-indicator').textContent = M3;
+
+  var inTier1 = (M3 <= 10);
+  var t1Amount = inTier1 ? M3 : 10;
+  var t1Cost = t1Amount * 6000;
+  var t2Amount = inTier1 ? 0 : (M3 - 10);
+  var t2Cost = t2Amount * 8000;
+  var totalCost = t1Cost + t2Cost;
+  var flatCost = M3 * 8000;
+  var diff = flatCost - totalCost;
+
+  // T1
+  document.getElementById('desc-t1').textContent = t1Amount + ' m³ × 6.000 đ';
+  document.getElementById('sum-t1').textContent = formatVND(t1Cost);
+  document.getElementById('row-t1').className = 'tier-row t1' + (s.t1Active ? '' : ' inactive');
+
+  // T2
+  var rowT2 = document.getElementById('row-t2');
+  if (inTier1) {
+    rowT2.className = 'tier-row t2 inactive';
+    document.getElementById('desc-t2').textContent = '0 m³ vượt (không phát sinh)';
+    document.getElementById('sum-t2').textContent = '0 đ';
+  } else {
+    rowT2.className = 'tier-row t2' + (s.t2Active ? '' : ' inactive');
+    document.getElementById('desc-t2').textContent = '(' + M3 + ' - 10) = ' + t2Amount + ' m³ × 8.000 đ';
+    document.getElementById('sum-t2').textContent = formatVND(t2Cost);
+  }
+
+  // Sum
+  document.getElementById('sum-total').textContent = s.costShown ? formatVND(s.costShown) : 'Chờ tính...';
+
+  // Trap card update
+  var trapCard = document.getElementById('trap-card');
+  if (inTier1) {
+    trapCard.style.display = 'none';
+  } else {
+    trapCard.style.display = 'block';
+    document.getElementById('trap-calc').textContent = M3 + ' × 8.000 = ' + formatVND(flatCost) + ' (Tính sai, thừa ' + formatVND(diff) + '!)';
+  }
+
+  var isRunning = (timer !== null);
+  document.getElementById('prev').disabled = (curStep === 0 || isRunning);
+  document.getElementById('next').disabled = (curStep === steps.length - 1 || isRunning);
+  document.getElementById('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!isRunning && curStep >= steps.length - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setM3(v){
+  stopTimer();
+  M3 = parseInt(v, 10);
+  document.getElementById('m3-input').value = M3;
+  document.getElementById('m3-range').value = M3;
+
+  var btns = document.querySelectorAll('.preset-btn');
+  btns.forEach(function(b){
+    b.classList.toggle('active', b.textContent.indexOf(M3 + ' ') === 0);
+  });
+  curStep = 0;
+  render();
+}
+
+document.getElementById('m3-input').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){
+    stopTimer();
+    M3 = Math.max(0, Math.min(100, v));
+    document.getElementById('m3-range').value = M3;
+    curStep = 0;
+    render();
+  }
+});
+
+document.getElementById('m3-range').addEventListener('input', function(){
+  var v = parseInt(this.value, 10);
+  stopTimer();
+  M3 = v;
+  document.getElementById('m3-input').value = v;
+  curStep = 0;
+  render();
+});
+
+document.getElementById('next').addEventListener('click', function(){
+  var steps = getSteps(M3);
+  if(curStep < steps.length - 1){ curStep++; render(); }
+});
+
+document.getElementById('prev').addEventListener('click', function(){
+  if(curStep > 0){ curStep--; render(); }
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  stopTimer(); curStep = 0; render();
+});
+
+document.getElementById('all').addEventListener('click', function(){
+  if(timer){ stopTimer(); render(); return; }
+  var steps = getSteps(M3);
+  timer = setInterval(function(){
+    if(curStep >= steps.length - 1){ stopTimer(); render(); return; }
+    curStep++; render();
+  }, 750);
+  render();
+});
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params: ?m3=N & ?buoc=N
+var qm = parseInt(qparam('m3'), 10);
+if(!isNaN(qm)) { M3 = qm; document.getElementById('m3-input').value = M3; document.getElementById('m3-range').value = M3; }
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1) { curStep = qb - 1; }
+
+render();
+</script>
+</body>
+</html>

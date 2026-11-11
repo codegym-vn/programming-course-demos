@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Lần vết bộ nhớ: Toán tử tiền tố ++i vs hậu tố i++ trong C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff; --cell-temp:#9333ea; --cell-temp-soft:#f3e8ff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b; --cell-temp:#c084fc; --cell-temp-soft:#2e1065;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:60px}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:5px 8px;margin-bottom:8px;min-height:46px;font-size:13px}
+  .status b{display:block;font-size:11.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .ram-panel{height:auto}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,monospace;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:245px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* RAM Cells */
+  .ram-panel{display:flex;flex-direction:column;justify-content:space-between;height:245px}
+  .mem-row{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px}
+  
+  .cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:8px;padding:6px;
+    text-align:center;position:relative;transition:all .25s}
+  .cell.active{border-color:var(--cur-bar);background:var(--cur);box-shadow:0 0 0 2px rgba(224,168,0,0.25)}
+  .cell.dest{border-color:var(--accent);background:var(--accent-soft)}
+  .cell.temp-box{border-style:dashed}
+  .cell.temp-box.dim{opacity:.35;border-color:var(--cell-border);background:transparent}
+  .cell.temp-active{border-color:var(--cell-temp);background:var(--cell-temp-soft);box-shadow:0 0 0 2px rgba(147,51,234,0.2)}
+
+  .cell-name{font:700 13px ui-monospace,monospace;color:var(--muted);margin-bottom:2px}
+  .cell-val{font:700 28px ui-monospace,monospace;color:var(--text);margin:2px 0}
+  .cell-val.chg{color:var(--warn);transform:scale(1.1);transition:transform .2s}
+  .cell-desc{font-size:10px;color:var(--muted)}
+
+  /* Flow bar */
+  .flow-banner{background:var(--code-bg);border:1px dashed var(--line);border-radius:6px;padding:6px 8px;
+    font:12px/1.4 system-ui,sans-serif;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center}
+  
+  /* Log History */
+  .history-box{background:var(--code-bg);border-radius:6px;padding:6px 8px;font:11.5px/1.45 ui-monospace,monospace;
+    height:72px;overflow-y:auto}
+  .hist-line{padding:1px 0;color:var(--muted)}
+  .hist-line.cur{color:var(--text);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để so sánh cơ chế ô nhớ tạm thời giữa toán tử tiền tố <code>++x</code> và hậu tố <code>x++</code>.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-pre" role="tab" aria-selected="true" onclick="setMode('prefix')">1. Tiền tố: y = ++x</button>
+      <button class="tab" id="tab-post" role="tab" aria-selected="false" onclick="setMode('postfix')">2. Hậu tố: y = x++</button>
+      <button class="tab" id="tab-dec-pre" role="tab" aria-selected="false" onclick="setMode('dec-prefix')">3. Giảm tiền tố: y = --x</button>
+      <button class="tab" id="tab-dec-post" role="tab" aria-selected="false" onclick="setMode('dec-postfix')">4. Giảm hậu tố: y = x--</button>
+    </div>
+
+    <div class="field">
+      <label for="in-x">Giá trị x ban đầu</label>
+      <input type="number" id="in-x" value="10" min="-100" max="100">
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/4</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Trực quan hoá ô nhớ RAM -->
+    <div class="card ram-panel">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Không gian ô nhớ RAM</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">Memory Stack</span>
+        </div>
+
+        <div class="mem-row">
+          <!-- Ô nhớ x -->
+          <div class="cell" id="box-x">
+            <div class="cell-name">int x</div>
+            <div class="cell-val" id="val-x">10</div>
+            <div class="cell-desc">Biến gốc</div>
+          </div>
+
+          <!-- Ô nhớ tạm temp (chỉ sinh ra ở hậu tố) -->
+          <div class="cell temp-box dim" id="box-temp">
+            <div class="cell-name" style="color:var(--cell-temp)">temp (ẩn)</div>
+            <div class="cell-val" id="val-temp">—</div>
+            <div class="cell-desc" id="desc-temp">Không dùng</div>
+          </div>
+
+          <!-- Ô nhớ y -->
+          <div class="cell" id="box-y">
+            <div class="cell-name">int y</div>
+            <div class="cell-val" id="val-y">?</div>
+            <div class="cell-desc">Biến nhận gán</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-banner" id="flow-banner"></div>
+
+      <div>
+        <div class="panel-head" style="margin-bottom:2px">
+          <p class="panel-title">Nhật ký bộ nhớ (Memory Tracer Log)</p>
+        </div>
+        <div class="history-box" id="hist-box"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var curMode = 'prefix';
+var curStepIdx = 0;
+var startX = 10;
+var timer = null;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|cout|return|using|namespace|include)\b|(\b-?\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function getLines(mode, x0){
+  if(mode === 'prefix'){
+    return [
+      'int x = ' + x0 + ';',
+      'int y = ++x;',
+      '// Bước 1: x tang truc tiep len ' + (x0 + 1),
+      '// Bước 2: y nhan gia tri moi cua x',
+      'cout << "x=" << x << ", y=" << y;'
+    ];
+  } else if(mode === 'postfix'){
+    return [
+      'int x = ' + x0 + ';',
+      'int y = x++;',
+      '// Bước 1: compiler tao temp = ' + x0 + ';',
+      '// Bước 2: x tang len ' + (x0 + 1) + ';',
+      '// Bước 3: y nhan gia tri temp (' + x0 + ');',
+      'cout << "x=" << x << ", y=" << y;'
+    ];
+  } else if(mode === 'dec-prefix'){
+    return [
+      'int x = ' + x0 + ';',
+      'int y = --x;',
+      '// Bước 1: x giam truc tiep xuong ' + (x0 - 1),
+      '// Bước 2: y nhan gia tri moi cua x',
+      'cout << "x=" << x << ", y=" << y;'
+    ];
+  } else {
+    return [
+      'int x = ' + x0 + ';',
+      'int y = x--;',
+      '// Bước 1: compiler tao temp = ' + x0 + ';',
+      '// Bước 2: x giam xuong ' + (x0 - 1) + ';',
+      '// Bước 3: y nhan gia tri temp (' + x0 + ');',
+      'cout << "x=" << x << ", y=" << y;'
+    ];
+  }
+}
+
+function getSteps(mode, x0){
+  if(mode === 'prefix'){
+    var x1 = x0 + 1;
+    return [
+      {
+        line: 0,
+        x: x0, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 1: Khởi tạo biến x',
+        msg: 'Cấp phát ô nhớ <code>x</code> và gán giá trị ban đầu ' + x0 + '.',
+        flow: 'Khởi tạo: <code>x = ' + x0 + '</code>',
+        log: '1. Cấp phát ô nhớ x = ' + x0
+      },
+      {
+        line: 2,
+        x: x1, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 2: Toán tử tiền tố ++x tăng x ngay lập tức',
+        msg: 'Giá trị trong ô nhớ <code>x</code> được tăng trực tiếp từ ' + x0 + ' lên ' + x1 + ' (không cần tạo bản sao).',
+        flow: '⚡ Tăng trực tiếp: <code>x: ' + x0 + ' ➜ ' + x1 + '</code> (Không cần tạo ô nhớ tạm!)',
+        log: '2. [Tiền tố] Tăng ô nhớ x từ ' + x0 + ' lên ' + x1
+      },
+      {
+        line: 3,
+        x: x1, temp: null, y: x1,
+        boxActive: 'y',
+        title: 'Bước 3: Gán giá trị mới của x vào y',
+        msg: 'Biểu thức <code>++x</code> trả về giá trị mới ' + x1 + ' để gán vào ô nhớ <code>y</code>.',
+        flow: '📥 Gán giá trị mới: <code>y = x = ' + x1 + '</code>',
+        log: '3. Gán giá trị mới ' + x1 + ' vào biến y'
+      },
+      {
+        line: 4,
+        x: x1, temp: null, y: x1,
+        boxActive: null,
+        title: 'Bước 4: Hoàn thành! Kết quả x và y bằng nhau',
+        msg: 'Kết thúc: <b>x = ' + x1 + ', y = ' + x1 + '</b>. Cả hai biến đều mang giá trị mới sau khi tăng.',
+        flow: '✅ Kết thúc: <code>x = ' + x1 + ', y = ' + x1 + '</code> (Hiệu năng tối ưu)',
+        log: '4. In ra màn hình: x=' + x1 + ', y=' + x1
+      }
+    ];
+  } else if(mode === 'postfix'){
+    var x1 = x0 + 1;
+    return [
+      {
+        line: 0,
+        x: x0, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 1: Khởi tạo biến x',
+        msg: 'Cấp phát ô nhớ <code>x</code> với giá trị ban đầu ' + x0 + '.',
+        flow: 'Khởi tạo: <code>x = ' + x0 + '</code>',
+        log: '1. Cấp phát ô nhớ x = ' + x0
+      },
+      {
+        line: 2,
+        x: x0, temp: x0, y: '?',
+        boxActive: 'temp',
+        title: 'Bước 2: Hậu tố x++ tạo biến tạm thời copy giá trị cũ',
+        msg: 'Compiler tự động sinh ô nhớ ẩn <code>temp = ' + x0 + '</code> để lưu lại giá trị ban đầu của <code>x</code>.',
+        flow: '📦 Sao chép giá trị cũ: <code>temp = x (' + x0 + ')</code>',
+        log: '2. [Hậu tố] Compiler tạo biến tạm temp = ' + x0
+      },
+      {
+        line: 3,
+        x: x1, temp: x0, y: '?',
+        boxActive: 'x',
+        title: 'Bước 3: Tăng biến x trong ô nhớ lên 1',
+        msg: 'Biến <code>x</code> được tăng từ ' + x0 + ' lên ' + x1 + ' sau khi đã sao lưu giá trị cũ vào <code>temp</code>.',
+        flow: '⚡ Tăng biến gốc: <code>x: ' + x0 + ' ➜ ' + x1 + '</code>',
+        log: '3. Tăng ô nhớ x từ ' + x0 + ' lên ' + x1
+      },
+      {
+        line: 4,
+        x: x1, temp: x0, y: x0,
+        boxActive: 'y',
+        title: 'Bước 4: Gán giá trị từ biến tạm temp vào y',
+        msg: 'Biến <code>y</code> nhận giá trị cũ từ <code>temp (' + x0 + ')</code> chứ KHÔNG nhận giá trị mới của <code>x</code>!',
+        flow: '📥 Gán giá trị cũ: <code>y = temp (' + x0 + ')</code>',
+        log: '4. Gán temp (' + x0 + ') vào y. Ô nhớ temp được giải phóng.'
+      },
+      {
+        line: 5,
+        x: x1, temp: null, y: x0,
+        boxActive: null,
+        title: 'Bước 5: Hoàn tất! x nhận giá trị mới còn y nhận giá trị cũ',
+        msg: 'Kết thúc: <b>x = ' + x1 + ', y = ' + x0 + '</b>. Hậu tố tốn thêm 1 bản sao tạm thời.',
+        flow: '✅ Kết thúc: <code>x = ' + x1 + ', y = ' + x0 + '</code>',
+        log: '5. In ra màn hình: x=' + x1 + ', y=' + x0
+      }
+    ];
+  } else if(mode === 'dec-prefix'){
+    var x1 = x0 - 1;
+    return [
+      {
+        line: 0,
+        x: x0, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 1: Khởi tạo biến x',
+        msg: 'Khởi tạo <code>x = ' + x0 + '</code>.',
+        flow: 'Khởi tạo: <code>x = ' + x0 + '</code>',
+        log: '1. Khởi tạo x = ' + x0
+      },
+      {
+        line: 2,
+        x: x1, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 2: Toán tử giảm tiền tố --x giảm x trực tiếp',
+        msg: 'Ô nhớ <code>x</code> giảm trực tiếp từ ' + x0 + ' xuống ' + x1 + '.',
+        flow: '⚡ Giảm trực tiếp: <code>x: ' + x0 + ' ➜ ' + x1 + '</code>',
+        log: '2. [Tiền tố] Giảm ô nhớ x từ ' + x0 + ' xuống ' + x1
+      },
+      {
+        line: 3,
+        x: x1, temp: null, y: x1,
+        boxActive: 'y',
+        title: 'Bước 3: Gán giá trị mới của x vào y',
+        msg: '<code>y</code> nhận giá trị mới ' + x1 + '.',
+        flow: '📥 Gán giá trị mới: <code>y = x = ' + x1 + '</code>',
+        log: '3. Gán giá trị mới ' + x1 + ' vào biến y'
+      },
+      {
+        line: 4,
+        x: x1, temp: null, y: x1,
+        boxActive: null,
+        title: 'Bước 4: Hoàn tất!',
+        msg: 'Kết thúc: <b>x = ' + x1 + ', y = ' + x1 + '</b>.',
+        flow: '✅ Kết thúc: <code>x = ' + x1 + ', y = ' + x1 + '</code>',
+        log: '4. In ra: x=' + x1 + ', y=' + x1
+      }
+    ];
+  } else {
+    var x1 = x0 - 1;
+    return [
+      {
+        line: 0,
+        x: x0, temp: null, y: '?',
+        boxActive: 'x',
+        title: 'Bước 1: Khởi tạo biến x',
+        msg: 'Khởi tạo <code>x = ' + x0 + '</code>.',
+        flow: 'Khởi tạo: <code>x = ' + x0 + '</code>',
+        log: '1. Khởi tạo x = ' + x0
+      },
+      {
+        line: 2,
+        x: x0, temp: x0, y: '?',
+        boxActive: 'temp',
+        title: 'Bước 2: Giảm hậu tố x-- sao lưu giá trị cũ vào temp',
+        msg: 'Compiler tạo <code>temp = ' + x0 + '</code> lưu lại giá trị ban đầu trước khi giảm.',
+        flow: '📦 Sao lưu: <code>temp = x (' + x0 + ')</code>',
+        log: '2. [Hậu tố] Tạo biến tạm temp = ' + x0
+      },
+      {
+        line: 3,
+        x: x1, temp: x0, y: '?',
+        boxActive: 'x',
+        title: 'Bước 3: Giảm biến x trong ô nhớ đi 1',
+        msg: 'Biến <code>x</code> giảm từ ' + x0 + ' xuống ' + x1 + '.',
+        flow: '⚡ Giảm biến gốc: <code>x: ' + x0 + ' ➜ ' + x1 + '</code>',
+        log: '3. Giảm ô nhớ x từ ' + x0 + ' xuống ' + x1
+      },
+      {
+        line: 4,
+        x: x1, temp: x0, y: x0,
+        boxActive: 'y',
+        title: 'Bước 4: Gán giá trị từ temp vào y',
+        msg: '<code>y</code> nhận giá trị cũ từ <code>temp (' + x0 + ')</code>.',
+        flow: '📥 Gán giá trị cũ: <code>y = temp (' + x0 + ')</code>',
+        log: '4. Gán temp (' + x0 + ') vào y'
+      },
+      {
+        line: 5,
+        x: x1, temp: null, y: x0,
+        boxActive: null,
+        title: 'Bước 5: Hoàn tất!',
+        msg: 'Kết thúc: <b>x = ' + x1 + ', y = ' + x0 + '</b>.',
+        flow: '✅ Kết thúc: <code>x = ' + x1 + ', y = ' + x0 + '</code>',
+        log: '5. In ra: x=' + x1 + ', y=' + x0
+      }
+    ];
+  }
+}
+
+function renderCode(lines, curLine){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    html += '<div class="ln' + (isCur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+function updateUI(){
+  var steps = getSteps(curMode, startX);
+  var total = steps.length;
+  var step = steps[curStepIdx];
+
+  document.getElementById('step-badge').textContent = 'Bước ' + (curStepIdx + 1) + '/' + total;
+
+  // Status
+  var st = document.getElementById('status');
+  st.className = 'status' + (curStepIdx === total - 1 ? ' ok' : '');
+  st.innerHTML = '<b>' + esc(step.title) + '</b>' + step.msg;
+
+  // Code
+  renderCode(getLines(curMode, startX), step.line);
+
+  // RAM cells
+  document.getElementById('val-x').textContent = step.x;
+  document.getElementById('val-y').textContent = step.y;
+
+  var bX = document.getElementById('box-x');
+  var bY = document.getElementById('box-y');
+  var bTemp = document.getElementById('box-temp');
+  var vTemp = document.getElementById('val-temp');
+  var dTemp = document.getElementById('desc-temp');
+
+  bX.className = 'cell' + (step.boxActive === 'x' ? ' active' : '');
+  bY.className = 'cell' + (step.boxActive === 'y' ? ' dest' : '');
+
+  if(step.temp !== null){
+    bTemp.className = 'cell temp-box' + (step.boxActive === 'temp' ? ' temp-active' : '');
+    vTemp.textContent = step.temp;
+    dTemp.textContent = 'Bản sao cũ';
+  } else {
+    bTemp.className = 'cell temp-box dim';
+    vTemp.textContent = '—';
+    dTemp.textContent = (curMode.indexOf('prefix') >= 0 ? 'Không sử dụng' : 'Đã giải phóng');
+  }
+
+  // Flow banner
+  document.getElementById('flow-banner').innerHTML = step.flow;
+
+  // Log box
+  var lHtml = '';
+  for(var s=0; s<=curStepIdx; s++){
+    var isCur = (s === curStepIdx);
+    lHtml += '<div class="hist-line' + (isCur ? ' cur' : '') + '">' + esc(steps[s].log) + '</div>';
+  }
+  var hEl = document.getElementById('hist-box');
+  hEl.innerHTML = lHtml;
+  hEl.scrollTop = hEl.scrollHeight;
+
+  // Controls state
+  var running = (timer !== null);
+  document.getElementById('next').disabled = (curStepIdx >= total - 1) || running;
+  document.getElementById('prev').disabled = (curStepIdx <= 0) || running;
+  document.getElementById('all').textContent = running ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!running && curStepIdx >= total - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setMode(m){
+  stopTimer();
+  curMode = m;
+  curStepIdx = 0;
+  var modes = ['prefix', 'postfix', 'dec-prefix', 'dec-postfix'];
+  var ids = ['tab-pre', 'tab-post', 'tab-dec-pre', 'tab-dec-post'];
+  for(var i=0; i<modes.length; i++){
+    var btn = document.getElementById(ids[i]);
+    if(btn) btn.setAttribute('aria-selected', modes[i] === m ? 'true' : 'false');
+  }
+  updateUI();
+}
+
+document.getElementById('in-x').onchange = function(){
+  var v = parseInt(this.value, 10);
+  if(!isNaN(v)){ startX = v; stopTimer(); curStepIdx = 0; updateUI(); }
+};
+
+document.getElementById('next').onclick = function(){
+  var total = getSteps(curMode, startX).length;
+  if(curStepIdx < total - 1){ curStepIdx++; updateUI(); }
+};
+document.getElementById('prev').onclick = function(){
+  if(curStepIdx > 0){ curStepIdx--; updateUI(); }
+};
+document.getElementById('reset').onclick = function(){
+  stopTimer(); curStepIdx = 0; updateUI();
+};
+document.getElementById('all').onclick = function(){
+  if(timer){ stopTimer(); updateUI(); return; }
+  timer = setInterval(function(){
+    var total = getSteps(curMode, startX).length;
+    if(curStepIdx >= total - 1){ stopTimer(); updateUI(); return; }
+    curStepIdx++;
+    updateUI();
+    if(curStepIdx >= total - 1){ stopTimer(); updateUI(); }
+  }, 750);
+  updateUI();
+};
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Query params support
+var qm = qparam('mode');
+if(qm && ['prefix', 'postfix', 'dec-prefix', 'dec-postfix'].indexOf(qm) >= 0) setMode(qm);
+else setMode('prefix');
+
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1 && qb <= getSteps(curMode, startX).length){
+  curStepIdx = qb - 1;
+  updateUI();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Lần vết vòng lặp while & Theo dõi bộ nhớ</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:13px;color:var(--muted)}
+  .field select,.field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad .st-title{color:var(--false)}
+  .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .right-col{display:flex;flex-direction:column;gap:10px}
+  .vars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .var-box{background:var(--code-bg);border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;transition:all .2s}
+  .var-box small{display:block;color:var(--muted);font:11px ui-monospace,monospace}
+  .var-box strong{font:700 18px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .cond-box{background:var(--code-bg);border-radius:8px;padding:8px 10px;font:13px ui-monospace,monospace;display:flex;justify-content:space-between;align-items:center}
+  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-weight:700;font-size:11.5px}
+  .tag.t{background:var(--true-soft);color:var(--true)}
+  .tag.f{background:var(--false-soft);color:var(--false)}
+  .tag.wait{background:var(--line);color:var(--muted)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:8px 10px;min-height:46px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+  .console .ph{color:#64748b;font-family:system-ui,sans-serif;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi từng bước kiểm tra điều kiện và cập nhật biến trong vòng lặp <code>while</code>.</p>
+  <div class="controls">
+    <div class="field">
+      <label for="limit">Tính tổng đến N =</label>
+      <select id="limit">
+        <option value="3" selected>3 (mẫu bài học)</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Mã nguồn C++</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <p class="panel-title">Ô nhớ biến trong RAM</p>
+        <div class="vars" id="vars"></div>
+        <p class="panel-title" style="margin-top:10px">Kiểm tra điều kiện lặp</p>
+        <div class="cond-box" id="cond"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Màn hình Console Output</p>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|return|cout|endl)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var N = 3;
+function getLines(){
+  return [
+    'int count = 1;',
+    'int sum = 0;',
+    'while (count <= ' + N + ') {',
+    '  sum += count;',
+    '  count++;',
+    '}',
+    'cout << sum << "\\n";'
+  ];
+}
+
+function buildSnaps(){
+  var snaps = [];
+  // Bước 0: Sẵn sàng
+  snaps.push({
+    ln: -1,
+    count: '?',
+    sum: '?',
+    condText: 'count <= ' + N,
+    condStatus: 'wait',
+    condLabel: 'Chưa kiểm tra',
+    chg: '',
+    con: '',
+    statusTag: 'Bắt đầu',
+    statusCls: '',
+    statusMsg: 'Chương trình chuẩn bị thực thi. Bấm <b>Bước tiếp</b> để bắt đầu khai báo biến.'
+  });
+
+  // Bước 1: int count = 1
+  snaps.push({
+    ln: 0,
+    count: 1,
+    sum: '?',
+    condText: 'count <= ' + N,
+    condStatus: 'wait',
+    condLabel: 'Chưa kiểm tra',
+    chg: 'count',
+    con: '',
+    statusTag: 'Khởi tạo biến đếm',
+    statusCls: '',
+    statusMsg: 'Khai báo biến <code>int count = 1;</code>. Biến đếm bắt đầu từ 1.'
+  });
+
+  // Bước 2: int sum = 0
+  snaps.push({
+    ln: 1,
+    count: 1,
+    sum: 0,
+    condText: 'count <= ' + N,
+    condStatus: 'wait',
+    condLabel: 'Chưa kiểm tra',
+    chg: 'sum',
+    con: '',
+    statusTag: 'Khởi tạo biến tổng',
+    statusCls: '',
+    statusMsg: 'Khai báo biến tích luỹ <code>int sum = 0;</code>.'
+  });
+
+  var curCount = 1;
+  var curSum = 0;
+  var round = 1;
+
+  while (curCount <= N) {
+    // Kiểm tra điều kiện: dòng 2
+    snaps.push({
+      ln: 2,
+      count: curCount,
+      sum: curSum,
+      condText: curCount + ' <= ' + N,
+      condStatus: 't',
+      condLabel: 'true (Đúng)',
+      chg: '',
+      con: '',
+      statusTag: 'Lượt lặp ' + round + ': Kiểm tra điều kiện',
+      statusCls: 'ok',
+      statusMsg: 'Đánh giá <code>' + curCount + ' <= ' + N + '</code> → <b>true</b>. Điều kiện thoả mãn, luồng thực thi tiến vào thân vòng lặp.'
+    });
+
+    // Cộng sum += count: dòng 3
+    var oldSum = curSum;
+    curSum += curCount;
+    snaps.push({
+      ln: 3,
+      count: curCount,
+      sum: curSum,
+      condText: curCount + ' <= ' + N,
+      condStatus: 't',
+      condLabel: 'true',
+      chg: 'sum',
+      con: '',
+      statusTag: 'Lượt lặp ' + round + ': Cộng dồn tổng',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>sum += count;</code> (' + oldSum + ' + ' + curCount + ' = <b>' + curSum + '</b>). Biến <code>sum</code> được cập nhật.'
+    });
+
+    // Tăng count++: dòng 4
+    var oldCount = curCount;
+    curCount++;
+    snaps.push({
+      ln: 4,
+      count: curCount,
+      sum: curSum,
+      condText: oldCount + ' <= ' + N,
+      condStatus: 't',
+      condLabel: 'true',
+      chg: 'count',
+      con: '',
+      statusTag: 'Lượt lặp ' + round + ': Cập nhật biến đếm',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>count++;</code> (' + oldCount + ' → <b>' + curCount + '</b>). Xong thân lặp, luồng quay ngược lên đầu để kiểm tra lại điều kiện.'
+    });
+
+    round++;
+  }
+
+  // Kiểm tra dừng: dòng 2 với count = N + 1
+  snaps.push({
+    ln: 2,
+    count: curCount,
+    sum: curSum,
+    condText: curCount + ' <= ' + N,
+    condStatus: 'f',
+    condLabel: 'false (Sai)',
+    chg: '',
+    con: '',
+    statusTag: 'Kiểm tra điều kiện dừng',
+    statusCls: 'bad',
+    statusMsg: 'Đánh giá <code>' + curCount + ' <= ' + N + '</code> → <b>false</b>. Điều kiện không còn thoả mãn, thoát khỏi vòng lặp <code>while</code>.'
+  });
+
+  // Lệnh in kết quả: dòng 6
+  snaps.push({
+    ln: 6,
+    count: curCount,
+    sum: curSum,
+    condText: curCount + ' <= ' + N,
+    condStatus: 'f',
+    condLabel: 'Đã thoát vòng lặp',
+    chg: '',
+    con: String(curSum),
+    statusTag: 'Hoàn thành chương trình',
+    statusCls: 'ok',
+    statusMsg: 'Thực thi <code>cout << sum << "\\n";</code>. In ra kết quả tổng là <b>' + curSum + '</b>. Biến <code>count</code> khi thoát bằng ' + curCount + '.'
+  });
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(curLine){
+  var lines = getLines();
+  $('code').innerHTML = lines.map(function(l, i){
+    var on = (i === curLine);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function render(s){
+  renderCode(s.ln);
+  
+  // Variables
+  $('vars').innerHTML = 
+    '<div class="var-box' + (s.chg === 'count' ? ' chg' : '') + '"><small>count</small><strong>' + esc(s.count) + '</strong></div>' +
+    '<div class="var-box' + (s.chg === 'sum' ? ' chg' : '') + '"><small>sum</small><strong>' + esc(s.sum) + '</strong></div>';
+  
+  // Condition box
+  var tagCls = s.condStatus === 't' ? 't' : (s.condStatus === 'f' ? 'f' : 'wait');
+  $('cond').innerHTML = '<span><code>' + esc(s.condText) + '</code></span><span class="tag ' + tagCls + '">' + esc(s.condLabel) + '</span>';
+
+  // Console
+  $('console').innerHTML = s.con ? esc(s.con) : '<span class="ph">(chưa có đầu ra console)</span>';
+
+  // Status
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  // Buttons state
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function initSim(){
+  stopTimer();
+  snaps = buildSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 600);
+  render(snaps[curIdx]);
+};
+
+$('limit').onchange = function(){
+  N = parseInt(this.value, 10) || 3;
+  initSim();
+};
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+initSim();
+</script>
+</body>
+</html>

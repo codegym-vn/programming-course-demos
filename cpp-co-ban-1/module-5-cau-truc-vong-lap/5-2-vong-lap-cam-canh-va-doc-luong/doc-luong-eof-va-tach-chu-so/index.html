@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="580">
+<title>Đọc luồng EOF & Máy bóc tách chữ số</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 10px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:8px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px;line-height:1.5}
+  .status .st-title{display:block;font-size:12px;color:var(--accent);margin-bottom:2px;font-weight:700}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok .st-title{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad .st-title{color:var(--false)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn .st-title{color:var(--warn)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:10px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+  .right-col{display:flex;flex-direction:column;gap:10px}
+
+  /* Token Stream & Digit Extractor Visuals */
+  .visual-box{background:var(--code-bg);border-radius:8px;padding:10px 12px}
+  .stream-tokens{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:4px 2px 6px}
+  .tok{padding:6px 12px;border:2px solid var(--line);border-radius:8px;background:var(--card);
+    font:700 14px ui-monospace,monospace;transition:all .2s;white-space:nowrap}
+  .tok.reading{border-color:var(--cur-bar);background:var(--cur);transform:scale(1.06)}
+  .tok.passed{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .tok.eof{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .tok.unreached{opacity:0.35}
+
+  .digit-display{display:flex;gap:6px;align-items:center;justify-content:center;margin:6px 0 10px}
+  .dig-cell{width:42px;height:48px;border:2px solid var(--line);border-radius:8px;background:var(--card);
+    display:flex;align-items:center;justify-content:center;font:700 22px ui-monospace,monospace;transition:all .25s}
+  .dig-cell.active{border-color:var(--cur-bar);background:var(--cur);transform:translateY(-3px)}
+  .dig-cell.chopped{border-color:var(--false);background:var(--false-soft);color:var(--false);opacity:0.4}
+
+  .tray-title{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .tray{display:flex;gap:6px;flex-wrap:wrap;min-height:38px;padding:4px 8px;border:1.5px dashed var(--line);border-radius:6px;background:var(--card);align-items:center}
+  .tray-item{padding:3px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font:700 13.5px ui-monospace,monospace}
+
+  /* Variables */
+  .vars{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px}
+  .var-box{background:var(--code-bg);border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;transition:all .2s}
+  .var-box small{display:block;color:var(--muted);font:11px ui-monospace,monospace}
+  .var-box strong{font:700 17px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chuyển đổi giữa 2 tab để thử nghiệm cơ chế đọc đến hết luồng <code>while (cin &gt;&gt; x)</code> và giải thuật tách từng chữ số bằng <code>% 10</code>, <code>/ 10</code>.</p>
+  
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab active" id="tab_eof">Tab 1: Luồng EOF</button>
+      <button class="tab" id="tab_digit">Tab 2: Bóc tách chữ số</button>
+    </div>
+    
+    <div id="ctrl_eof" class="field" style="display:flex">
+      <label for="inp_stream">Dãy token:</label>
+      <input type="text" id="inp_stream" value="10 25 -4 80 stop" style="width:160px">
+    </div>
+
+    <div id="ctrl_digit" class="field" style="display:none">
+      <label for="inp_num">Số n =</label>
+      <input type="number" id="inp_num" value="8392" min="1" max="9999999" style="width:90px">
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title" id="code_title">Mã nguồn C++</p>
+      <div class="code" id="code"></div>
+    </div>
+    <div class="right-col">
+      <div class="card">
+        <p class="panel-title" id="vis_title">Trực quan hoá luồng dữ liệu</p>
+        <div class="visual-box" id="vis_box"></div>
+
+        <p class="panel-title" style="margin-top:10px">Các ô nhớ biến</p>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|bool|while|return|cout|endl|cin)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var curTab = 'eof'; // 'eof' | 'digit'
+
+function getEofLines(){
+  return [
+    'int x, sum = 0;',
+    'while (cin >> x) { // Lap chung nao con doc duoc int',
+    '  sum += x;',
+    '}',
+    'cout << sum << "\\n";'
+  ];
+}
+
+function getDigitLines(){
+  return [
+    'int n = ' + getDigitN() + ';',
+    'int count = 0, sum = 0;',
+    'while (n > 0) {',
+    '  int digit = n % 10; // Lay chu so tan cung',
+    '  sum += digit;',
+    '  count++;',
+    '  n /= 10;           // Cat bo chu so tan cung',
+    '}'
+  ];
+}
+
+function getDigitN(){
+  var v = parseInt($('inp_num').value, 10);
+  return (isNaN(v) || v <= 0) ? 8392 : v;
+}
+
+function buildEofSnaps(){
+  var raw = $('inp_stream').value.trim();
+  var tokens = raw ? raw.split(/\s+/) : ['10', '25', '-4', '80', 'stop'];
+  var snaps = [];
+
+  snaps.push({
+    type: 'eof',
+    ln: 0,
+    x: '?',
+    sum: 0,
+    tokIdx: -1,
+    tokens: tokens,
+    chg: '',
+    statusTag: 'Sẵn sàng đọc luồng',
+    statusCls: '',
+    statusMsg: 'Khởi tạo <code>int sum = 0;</code>. Luồng <code>std::cin</code> sẵn sàng trích xuất từng token số nguyên.'
+  });
+
+  var curSum = 0;
+  for (var i = 0; i < tokens.length; i++) {
+    var tok = tokens[i];
+    var num = parseInt(tok, 10);
+    var isNum = (!isNaN(num) && String(num) === tok);
+
+    if (isNum) {
+      // Đọc thành công
+      snaps.push({
+        type: 'eof',
+        ln: 1,
+        x: num,
+        sum: curSum,
+        tokIdx: i,
+        tokens: tokens,
+        chg: 'x',
+        statusTag: 'Đọc thành công token #' + (i + 1),
+        statusCls: 'ok',
+        statusMsg: 'Biểu thức <code>cin >> x</code> đọc thành công số <b>' + num + '</b> → trả về trạng thái <code>cin.good() == true</code>. Tiến vào thân vòng lặp.'
+      });
+
+      var oldSum = curSum;
+      curSum += num;
+      snaps.push({
+        type: 'eof',
+        ln: 2,
+        x: num,
+        sum: curSum,
+        tokIdx: i,
+        tokens: tokens,
+        chg: 'sum',
+        statusTag: 'Cộng dồn vào tổng',
+        statusCls: '',
+        statusMsg: 'Thực thi <code>sum += x;</code> (' + oldSum + ' + ' + num + ' = <b>' + curSum + '</b>).'
+      });
+    } else {
+      // Gặp chuỗi không phải số hoặc EOF -> failbit
+      snaps.push({
+        type: 'eof',
+        ln: 1,
+        x: 'FAIL',
+        sum: curSum,
+        tokIdx: i,
+        tokens: tokens,
+        chg: 'x',
+        statusTag: 'Chạm kết thúc luồng hoặc sai kiểu!',
+        statusCls: 'bad',
+        statusMsg: 'Token <code>"' + tok + '"</code> không phải số nguyên (hoặc gặp EOF)! <code>cin</code> chuyển cờ <code>failbit</code>, biểu thức <code>cin >> x</code> trả về <b>false</b> → Dừng vòng lặp.'
+      });
+      break;
+    }
+  }
+
+  // Kết thúc
+  snaps.push({
+    type: 'eof',
+    ln: 4,
+    x: 'EOF',
+    sum: curSum,
+    tokIdx: tokens.length,
+    tokens: tokens,
+    chg: '',
+    statusTag: 'Kết thúc an toàn',
+    statusCls: 'ok',
+    statusMsg: 'Thực thi <code>cout << sum;</code>. In tổng các số hợp lệ là <b>' + curSum + '</b>. Vòng lặp kết thúc hoàn toàn tự động.'
+  });
+
+  return snaps;
+}
+
+function buildDigitSnaps(){
+  var origN = getDigitN();
+  var snaps = [];
+
+  snaps.push({
+    type: 'digit',
+    ln: 0,
+    n: origN,
+    digit: '?',
+    count: 0,
+    sum: 0,
+    tray: [],
+    chg: '',
+    statusTag: 'Khởi tạo bóc tách số',
+    statusCls: '',
+    statusMsg: 'Chuẩn bị bóc tách các chữ số của <code>n = ' + origN + '</code> từ phải sang trái.'
+  });
+
+  var curN = origN;
+  var curCount = 0;
+  var curSum = 0;
+  var tray = [];
+
+  while (curN > 0) {
+    // Kiểm tra n > 0 (dòng 2)
+    snaps.push({
+      type: 'digit',
+      ln: 2,
+      n: curN,
+      digit: '?',
+      count: curCount,
+      sum: curSum,
+      tray: tray.slice(),
+      chg: '',
+      statusTag: 'Kiểm tra n > 0',
+      statusCls: 'ok',
+      statusMsg: 'Đánh giá <code>' + curN + ' > 0</code> → <b>true</b>. Tiếp tục bóc chữ số.'
+    });
+
+    // Lấy digit = n % 10 (dòng 3)
+    var d = curN % 10;
+    snaps.push({
+      type: 'digit',
+      ln: 3,
+      n: curN,
+      digit: d,
+      count: curCount,
+      sum: curSum,
+      tray: tray.slice(),
+      chg: 'digit',
+      statusTag: 'Phép lấy dư: n % 10',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>int digit = ' + curN + ' % 10;</code> → Tách được chữ số tận cùng <b>' + d + '</b>.'
+    });
+
+    // Cộng sum += digit (dòng 4)
+    var oldSum = curSum;
+    curSum += d;
+    tray.push(d);
+    snaps.push({
+      type: 'digit',
+      ln: 4,
+      n: curN,
+      digit: d,
+      count: curCount,
+      sum: curSum,
+      tray: tray.slice(),
+      chg: 'sum',
+      statusTag: 'Cộng chữ số vào tổng',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>sum += digit;</code> (' + oldSum + ' + ' + d + ' = <b>' + curSum + '</b>).'
+    });
+
+    // Tăng count++ (dòng 5)
+    curCount++;
+    snaps.push({
+      type: 'digit',
+      ln: 5,
+      n: curN,
+      digit: d,
+      count: curCount,
+      sum: curSum,
+      tray: tray.slice(),
+      chg: 'count',
+      statusTag: 'Tăng số lượng chữ số',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>count++;</code> (Đã bóc được ' + curCount + ' chữ số).'
+    });
+
+    // Cắt bỏ n /= 10 (dòng 6)
+    var oldN = curN;
+    curN = Math.floor(curN / 10);
+    snaps.push({
+      type: 'digit',
+      ln: 6,
+      n: curN,
+      digit: d,
+      count: curCount,
+      sum: curSum,
+      tray: tray.slice(),
+      chg: 'n',
+      statusTag: 'Phép chia nguyên: n /= 10',
+      statusCls: '',
+      statusMsg: 'Thực thi <code>n /= 10;</code> (' + oldN + ' → <b>' + curN + '</b>). Chữ số cuối bị loại bỏ, số n co lại.'
+    });
+  }
+
+  // Kết thúc: n == 0
+  snaps.push({
+    type: 'digit',
+    ln: 2,
+    n: 0,
+    digit: '—',
+    count: curCount,
+    sum: curSum,
+    tray: tray.slice(),
+    chg: '',
+    statusTag: 'Hoàn tất bóc tách',
+    statusCls: 'ok',
+    statusMsg: 'Đánh giá <code>0 > 0</code> → <b>false</b>. Thoát vòng lặp! Đã tách được <b>' + curCount + ' chữ số</b>: <code>' + tray.join(', ') + '</code>. Tổng các chữ số = <b>' + curSum + '</b>.'
+  });
+
+  return snaps;
+}
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+var snaps = [];
+var curIdx = 0;
+var timer = null;
+
+function renderCode(curLine){
+  var lines = (curTab === 'eof') ? getEofLines() : getDigitLines();
+  $('code').innerHTML = lines.map(function(l, i){
+    var on = (i === curLine);
+    return '<div class="ln' + (on ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+function renderVis(s){
+  if (curTab === 'eof') {
+    $('code_title').textContent = 'Mã nguồn C++ (while cin >> x)';
+    $('vis_title').textContent = 'Luồng dữ liệu đầu vào (std::cin)';
+    
+    var html = '<div class="stream-tokens">';
+    for (var i = 0; i < s.tokens.length; i++) {
+      var tok = s.tokens[i];
+      var cls = 'tok';
+      if (i === s.tokIdx) {
+        cls += (s.x === 'FAIL') ? ' eof' : ' reading';
+      } else if (i < s.tokIdx) {
+        cls += ' passed';
+      } else {
+        cls += ' unreached';
+      }
+      html += '<div class="' + cls + '">' + esc(tok) + '</div>';
+    }
+    html += '</div>';
+    $('vis_box').innerHTML = html;
+
+    $('vars').innerHTML = 
+      '<div class="var-box' + (s.chg === 'x' ? ' chg' : '') + '"><small>x</small><strong>' + esc(s.x) + '</strong></div>' +
+      '<div class="var-box' + (s.chg === 'sum' ? ' chg' : '') + '"><small>sum</small><strong>' + esc(s.sum) + '</strong></div>' +
+      '<div class="var-box"><small>cin.good()</small><strong>' + (s.x === 'FAIL' ? '<span style="color:var(--false)">false</span>' : 'true') + '</strong></div>';
+  } else {
+    $('code_title').textContent = 'Mã nguồn C++ (Bóc tách chữ số)';
+    $('vis_title').textContent = 'Trực quan hoá số n và khay chữ số';
+
+    var nStr = String(s.n);
+    var html = '<div class="tray-title">Số hiện tại n:</div>';
+    html += '<div class="digit-display">';
+    if (s.n === 0) {
+      html += '<div class="dig-cell" style="opacity:0.5">0</div>';
+    } else {
+      for (var j = 0; j < nStr.length; j++) {
+        var isLast = (j === nStr.length - 1);
+        html += '<div class="dig-cell' + (isLast ? ' active' : '') + '">' + nStr[j] + '</div>';
+      }
+    }
+    html += '</div>';
+
+    html += '<div class="tray-title">Khay chữ số đã tách (từ phải sang trái):</div>';
+    html += '<div class="tray">';
+    if (s.tray.length === 0) {
+      html += '<span style="color:var(--muted);font-size:12px">(chưa có chữ số nào)</span>';
+    } else {
+      for (var k = 0; k < s.tray.length; k++) {
+        html += '<span class="tray-item">' + s.tray[k] + '</span>';
+      }
+    }
+    html += '</div>';
+
+    $('vis_box').innerHTML = html;
+
+    $('vars').innerHTML = 
+      '<div class="var-box' + (s.chg === 'n' ? ' chg' : '') + '"><small>n</small><strong>' + esc(s.n) + '</strong></div>' +
+      '<div class="var-box' + (s.chg === 'digit' ? ' chg' : '') + '"><small>digit</small><strong>' + esc(s.digit) + '</strong></div>' +
+      '<div class="var-box' + (s.chg === 'sum' ? ' chg' : '') + '"><small>sum</small><strong>' + esc(s.sum) + '</strong></div>';
+  }
+}
+
+function render(s){
+  renderCode(s.ln);
+  renderVis(s);
+
+  var st = $('status');
+  st.className = 'status' + (s.statusCls ? ' ' + s.statusCls : '');
+  st.innerHTML = '<span class="st-title">' + esc(s.statusTag) + '</span>' + s.statusMsg;
+
+  var isRunning = timer !== null;
+  $('next').disabled = (curIdx >= snaps.length - 1) || isRunning;
+  $('prev').disabled = (curIdx <= 0) || isRunning;
+  $('all').textContent = isRunning ? 'Dừng' : 'Chạy hết';
+  $('all').disabled = !isRunning && (curIdx >= snaps.length - 1);
+}
+
+function stopTimer(){
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function setStep(idx){
+  stopTimer();
+  curIdx = Math.max(0, Math.min(snaps.length - 1, idx));
+  render(snaps[curIdx]);
+}
+
+function initSim(){
+  stopTimer();
+  snaps = (curTab === 'eof') ? buildEofSnaps() : buildDigitSnaps();
+  curIdx = 0;
+  var b = Number(qparam('buoc'));
+  if (b > 0) curIdx = Math.min(snaps.length - 1, b - 1);
+  render(snaps[curIdx]);
+}
+
+$('next').onclick = function(){ if (curIdx < snaps.length - 1) { curIdx++; render(snaps[curIdx]); } };
+$('prev').onclick = function(){ if (curIdx > 0) { curIdx--; render(snaps[curIdx]); } };
+$('reset').onclick = function(){ setStep(0); };
+$('all').onclick = function(){
+  if (timer) { stopTimer(); render(snaps[curIdx]); return; }
+  timer = setInterval(function(){
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); return; }
+    curIdx++;
+    render(snaps[curIdx]);
+    if (curIdx >= snaps.length - 1) { stopTimer(); render(snaps[curIdx]); }
+  }, 500);
+  render(snaps[curIdx]);
+};
+
+$('tab_eof').onclick = function(){
+  if (curTab === 'eof') return;
+  curTab = 'eof';
+  $('tab_eof').className = 'tab active';
+  $('tab_digit').className = 'tab';
+  $('ctrl_eof').style.display = 'flex';
+  $('ctrl_digit').style.display = 'none';
+  initSim();
+};
+
+$('tab_digit').onclick = function(){
+  if (curTab === 'digit') return;
+  curTab = 'digit';
+  $('tab_digit').className = 'tab active';
+  $('tab_eof').className = 'tab';
+  $('ctrl_eof').style.display = 'none';
+  $('ctrl_digit').style.display = 'flex';
+  initSim();
+};
+
+$('inp_stream').onchange = initSim;
+$('inp_num').onchange = initSim;
+
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+});
+
+var vd = qparam('vd');
+if (vd === 'digit') {
+  $('tab_digit').click();
+} else {
+  initSim();
+}
+</script>
+</body>
+</html>

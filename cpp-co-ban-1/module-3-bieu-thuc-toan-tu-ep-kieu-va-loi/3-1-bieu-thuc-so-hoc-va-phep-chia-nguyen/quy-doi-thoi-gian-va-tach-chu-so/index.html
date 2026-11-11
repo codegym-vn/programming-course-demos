@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Quy đổi thời gian & Bóc tách chữ số bằng / và %</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --box-border:#cbd5e1; --box-bg:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --box-border:#334155; --box-bg:#1e293b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px 10px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .field input{padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--text);font:13px ui-monospace,monospace;width:80px}
+  
+  .presets{display:flex;gap:4px;align-items:center}
+  .preset-btn{border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:3px 7px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;font-family:ui-monospace,monospace}
+  .preset-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Status Box */
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:8px;min-height:48px;font-size:13.5px}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+
+  /* 2-Column Grid */
+  .grid{display:grid;grid-template-columns:1.05fr 1.3fr;gap:8px}
+  .grid>*{min-width:0}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .code{height:165px}
+    .right-panel{height:auto;gap:6px}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;height:245px;overflow-y:auto;
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:24px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Variables & Visualizer Cards */
+  .right-panel{display:flex;flex-direction:column;gap:8px;height:245px;justify-content:space-between}
+  
+  .vars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .var-box{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;text-align:center}
+  .var-box small{display:block;color:var(--muted);font:10.5px ui-monospace,monospace}
+  .var-box strong{font:700 16px ui-monospace,monospace;color:var(--text)}
+  .var-box.chg{border-color:var(--cur-bar);background:var(--cur)}
+
+  /* Clock visualizer */
+  .clock-wrap{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--con-bg);
+    border-radius:8px;padding:10px 12px;color:var(--con-text)}
+  .clock-digit{font:700 28px/1 ui-monospace,monospace;background:rgba(255,255,255,0.08);padding:4px 8px;border-radius:4px;letter-spacing:1px}
+  .clock-digit.active{background:var(--accent);color:#fff;box-shadow:0 0 8px var(--accent)}
+  .clock-sep{font:700 24px/1 ui-monospace,monospace;color:rgba(255,255,255,0.4)}
+  .clock-lbl{font:11px system-ui,sans-serif;color:#94a3b8;text-align:center;margin-top:2px}
+
+  /* Math pipeline */
+  .math-card{background:var(--code-bg);border-radius:6px;padding:8px 10px;font:13px ui-monospace,monospace}
+  .math-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+  .math-op{color:var(--kw);font-weight:700}
+  .math-res{color:var(--true);font-weight:700}
+  .math-rem{color:var(--num);font-weight:700}
+
+  /* Digits decomposition */
+  .digits-grid{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}
+  .digit-card{text-align:center;background:var(--box-bg);border:2px solid var(--box-border);border-radius:8px;padding:6px 12px;min-width:68px;transition:all .2s}
+  .digit-card.cur{border-color:var(--accent);background:var(--accent-soft)}
+  .digit-card .val{font:700 30px ui-monospace,monospace;color:var(--text)}
+  .digit-card .tag{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+
+  .formula-summary{font:12px/1.45 ui-monospace,monospace;background:var(--code-bg);padding:6px 8px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (hoặc phím →) để lần vết cách <code>/</code> và <code>%</code> bóc tách thời gian hoặc chữ số thập phân.</p>
+
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-time" role="tab" aria-selected="true" onclick="setTab('time')">1. Quy đổi thời gian (giây ↔ h:m:s)</button>
+      <button class="tab" id="tab-digits" role="tab" aria-selected="false" onclick="setTab('digits')">2. Bóc tách chữ số cơ số 10</button>
+    </div>
+    
+    <div class="field" id="field-wrap"></div>
+    <div class="presets" id="presets-wrap"></div>
+
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <!-- Cột 1: Mã nguồn C++ -->
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="step-badge">Bước 1/6</span>
+      </div>
+      <div class="code" id="code-view"></div>
+    </div>
+
+    <!-- Cột 2: Trực quan hoá bộ nhớ & kết quả -->
+    <div class="card right-panel">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Biến bộ nhớ</p>
+          <span class="badge" style="background:#f1f5f9;color:#475569">RAM View</span>
+        </div>
+        <div class="vars" id="vars-view"></div>
+      </div>
+
+      <div id="visual-center"></div>
+      <div id="visual-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentTab = 'time';
+var stepIndex = 0;
+var timer = null;
+var inputSeconds = 10000;
+var inputNumber = 358;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(int|double|cout|return|using|namespace|include)\b|(\b\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, curLine){
+  var html = '';
+  for(var i=0; i<lines.length; i++){
+    var isCur = (i === curLine);
+    html += '<div class="ln' + (isCur ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(lines[i]) + '</span></div>';
+  }
+  document.getElementById('code-view').innerHTML = html;
+}
+
+/* ==================== TAB 1: TIME CONVERSION ==================== */
+function getTimeLines(sec){
+  return [
+    'int seconds = ' + sec + ';',
+    'int hours = seconds / 3600;',
+    'seconds = seconds % 3600;',
+    'int minutes = seconds / 60;',
+    'seconds = seconds % 60;',
+    'cout << hours << "h " << minutes << "m " << seconds << "s\\n";'
+  ];
+}
+
+function getTimeSteps(totalSec){
+  var sec0 = totalSec;
+  var hrs = Math.floor(sec0 / 3600);
+  var remSec1 = sec0 % 3600;
+  var mins = Math.floor(remSec1 / 60);
+  var remSec2 = remSec1 % 60;
+
+  return [
+    {
+      line: 0,
+      vars: [['seconds', sec0, true], ['hours', '?', false], ['minutes', '?', false], ['sec còn', '?', false]],
+      statusTitle: 'Bước 1: Khởi tạo tổng số giây ban đầu',
+      statusMsg: 'Biến <code>seconds</code> nhận giá trị ' + sec0 + ' giây cần quy đổi.',
+      clock: ['--', '--', '--'],
+      activeDigit: -1,
+      math: 'Chờ tính toán: 1 giờ = 3600s, 1 phút = 60s.'
+    },
+    {
+      line: 1,
+      vars: [['seconds', sec0, false], ['hours', hrs, true], ['minutes', '?', false], ['sec còn', '?', false]],
+      statusTitle: 'Bước 2: Chia nguyên cho 3600 để lấy số giờ',
+      statusMsg: '<code>hours = ' + sec0 + ' / 3600 = ' + hrs + '</code> giờ (phần thập phân bị cắt bỏ).',
+      clock: [pad(hrs), '--', '--'],
+      activeDigit: 0,
+      math: sec0 + ' / 3600 = <b>' + hrs + '</b> (thương số giờ)'
+    },
+    {
+      line: 2,
+      vars: [['seconds', remSec1, true], ['hours', hrs, false], ['minutes', '?', false], ['sec còn', '?', false]],
+      statusTitle: 'Bước 3: Chia lấy dư cho 3600 để lấy số giây chưa đủ 1 giờ',
+      statusMsg: '<code>seconds = ' + sec0 + ' % 3600 = ' + remSec1 + '</code> giây còn lại.',
+      clock: [pad(hrs), '--', '--'],
+      activeDigit: 0,
+      math: sec0 + ' % 3600 = <span style="color:var(--num)">' + remSec1 + '</span> s còn lại'
+    },
+    {
+      line: 3,
+      vars: [['seconds', remSec1, false], ['hours', hrs, false], ['minutes', mins, true], ['sec còn', '?', false]],
+      statusTitle: 'Bước 4: Chia nguyên số giây còn lại cho 60 để lấy số phút',
+      statusMsg: '<code>minutes = ' + remSec1 + ' / 60 = ' + mins + '</code> phút.',
+      clock: [pad(hrs), pad(mins), '--'],
+      activeDigit: 1,
+      math: remSec1 + ' / 60 = <b>' + mins + '</b> (thương số phút)'
+    },
+    {
+      line: 4,
+      vars: [['seconds', remSec2, true], ['hours', hrs, false], ['minutes', mins, false], ['sec còn', remSec2, true]],
+      statusTitle: 'Bước 5: Chia lấy dư cho 60 để lấy số giây lẻ cuối cùng',
+      statusMsg: '<code>seconds = ' + remSec1 + ' % 60 = ' + remSec2 + '</code> giây.',
+      clock: [pad(hrs), pad(mins), pad(remSec2)],
+      activeDigit: 2,
+      math: remSec1 + ' % 60 = <span style="color:var(--true)">' + remSec2 + '</span> s lẻ cuối cùng'
+    },
+    {
+      line: 5,
+      vars: [['seconds', remSec2, false], ['hours', hrs, false], ['minutes', mins, false], ['sec còn', remSec2, false]],
+      statusTitle: 'Bước 6: Hoàn thành! In chuỗi thời gian chuẩn',
+      statusMsg: 'Đã phân rã: <b>' + totalSec + 's = ' + hrs + ' giờ, ' + mins + ' phút, ' + remSec2 + ' giây</b>.',
+      clock: [pad(hrs), pad(mins), pad(remSec2)],
+      activeDigit: 3,
+      math: 'Đẳng thức kiểm chứng: ' + hrs + '×3600 + ' + mins + '×60 + ' + remSec2 + ' = ' + totalSec + 's'
+    }
+  ];
+}
+
+/* ==================== TAB 2: DIGITS DECOMPOSITION ==================== */
+function getDigitsLines(n){
+  return [
+    'int n = ' + n + ';',
+    'int a = n / 100;         // hàng trăm',
+    'int b = (n / 10) % 10;   // hàng chục',
+    'int c = n % 10;          // hàng đơn vị',
+    'int sum = a + b + c;     // tổng chữ số',
+    'int rev = c * 100 + b * 10 + a; // đảo ngược'
+  ];
+}
+
+function getDigitsSteps(n){
+  var a = Math.floor(n / 100);
+  var mid = Math.floor(n / 10);
+  var b = mid % 10;
+  var c = n % 10;
+  var sum = a + b + c;
+  var rev = c * 100 + b * 10 + a;
+
+  return [
+    {
+      line: 0,
+      vars: [['n', n, true], ['a (trăm)', '?', false], ['b (chục)', '?', false], ['c (đvị)', '?', false]],
+      statusTitle: 'Bước 1: Khởi tạo số nguyên n = ' + n,
+      statusMsg: 'Chuẩn bị bóc tách số ' + n + ' thành 3 chữ số hàng trăm, chục, đơn vị.',
+      digits: [a, b, c],
+      activeCard: -1,
+      math: 'Cơ số 10: ' + n + ' = ' + a + '×100 + ' + b + '×10 + ' + c
+    },
+    {
+      line: 1,
+      vars: [['n', n, false], ['a (trăm)', a, true], ['b (chục)', '?', false], ['c (đvị)', '?', false]],
+      statusTitle: 'Bước 2: Lấy chữ số hàng trăm bằng n / 100',
+      statusMsg: '<code>a = ' + n + ' / 100 = ' + a + '</code> (chia nguyên cho 100 bỏ 2 chữ số cuối).',
+      digits: [a, b, c],
+      activeCard: 0,
+      math: n + ' / 100 = <b style="color:var(--accent)">' + a + '</b> (chữ số hàng trăm)'
+    },
+    {
+      line: 2,
+      vars: [['n', n, false], ['a (trăm)', a, false], ['b (chục)', b, true], ['c (đvị)', '?', false]],
+      statusTitle: 'Bước 3: Lấy chữ số hàng chục bằng (n / 10) % 10',
+      statusMsg: 'Bước 1: <code>' + n + ' / 10 = ' + mid + '</code>; Bước 2: <code>' + mid + ' % 10 = ' + b + '</code>.',
+      digits: [a, b, c],
+      activeCard: 1,
+      math: '(' + n + ' / 10 = ' + mid + ') % 10 = <b style="color:var(--accent)">' + b + '</b> (chữ số hàng chục)'
+    },
+    {
+      line: 3,
+      vars: [['n', n, false], ['a (trăm)', a, false], ['b (chục)', b, false], ['c (đvị)', c, true]],
+      statusTitle: 'Bước 4: Lấy chữ số hàng đơn vị bằng n % 10',
+      statusMsg: '<code>c = ' + n + ' % 10 = ' + c + '</code> (chia dư cho 10 lấy ngay số tận cùng).',
+      digits: [a, b, c],
+      activeCard: 2,
+      math: n + ' % 10 = <b style="color:var(--accent)">' + c + '</b> (chữ số hàng đơn vị)'
+    },
+    {
+      line: 4,
+      vars: [['a', a, false], ['b', b, false], ['c', c, false], ['sum', sum, true]],
+      statusTitle: 'Bước 5: Tính tổng các chữ số a + b + c',
+      statusMsg: '<code>sum = ' + a + ' + ' + b + ' + ' + c + ' = ' + sum + '</code>.',
+      digits: [a, b, c],
+      activeCard: -1,
+      math: 'Tổng: ' + a + ' + ' + b + ' + ' + c + ' = <b>' + sum + '</b>'
+    },
+    {
+      line: 5,
+      vars: [['a', a, false], ['b', b, false], ['c', c, false], ['rev', rev, true]],
+      statusTitle: 'Bước 6: Ghép thành số đảo ngược rev',
+      statusMsg: '<code>rev = ' + c + ' * 100 + ' + b + ' * 10 + ' + a + ' = ' + rev + '</code>.',
+      digits: [a, b, c],
+      activeCard: 3,
+      math: 'Số đảo ngược: ' + c + '×100 + ' + b + '×10 + ' + a + ' = <b style="color:var(--true)">' + rev + '</b>'
+    }
+  ];
+}
+
+var currentSteps = [];
+
+function updateUI(){
+  var step = currentSteps[stepIndex];
+  var total = currentSteps.length;
+
+  document.getElementById('step-badge').textContent = 'Bước ' + (stepIndex + 1) + '/' + total;
+  
+  // Status
+  var st = document.getElementById('status');
+  st.className = 'status' + (stepIndex === total - 1 ? ' ok' : '');
+  st.innerHTML = '<b>' + esc(step.statusTitle) + '</b>' + step.statusMsg;
+
+  // Code
+  var lines = (currentTab === 'time') ? getTimeLines(inputSeconds) : getDigitsLines(inputNumber);
+  renderCode(lines, step.line);
+
+  // Vars
+  var vHtml = '';
+  for(var i=0; i<step.vars.length; i++){
+    var v = step.vars[i];
+    vHtml += '<div class="var-box' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>';
+  }
+  document.getElementById('vars-view').innerHTML = vHtml;
+
+  // Visual Center
+  if (currentTab === 'time') {
+    var c = step.clock;
+    var act = step.activeDigit;
+    document.getElementById('visual-center').innerHTML = 
+      '<div class="clock-wrap">' +
+        '<div><div class="clock-digit' + (act === 0 || act === 3 ? ' active' : '') + '">' + c[0] + '</div><div class="clock-lbl">GIỜ</div></div>' +
+        '<div class="clock-sep">:</div>' +
+        '<div><div class="clock-digit' + (act === 1 || act === 3 ? ' active' : '') + '">' + c[1] + '</div><div class="clock-lbl">PHÚT</div></div>' +
+        '<div class="clock-sep">:</div>' +
+        '<div><div class="clock-digit' + (act === 2 || act === 3 ? ' active' : '') + '">' + c[2] + '</div><div class="clock-lbl">GIÂY</div></div>' +
+      '</div>';
+  } else {
+    var d = step.digits;
+    var ac = step.activeCard;
+    document.getElementById('visual-center').innerHTML = 
+      '<div class="digits-grid">' +
+        '<div class="digit-card' + (ac === 0 ? ' cur' : '') + '"><div class="val">' + d[0] + '</div><div class="tag">Trăm (a)</div></div>' +
+        '<div class="digit-card' + (ac === 1 ? ' cur' : '') + '"><div class="val">' + d[1] + '</div><div class="tag">Chục (b)</div></div>' +
+        '<div class="digit-card' + (ac === 2 ? ' cur' : '') + '"><div class="val">' + d[2] + '</div><div class="tag">Đơn vị (c)</div></div>' +
+      '</div>';
+  }
+
+  // Visual Bottom (Math formula)
+  document.getElementById('visual-bottom').innerHTML = 
+    '<div class="math-card"><div class="math-row"><span class="math-op">Công thức C++:</span><span class="math-res">' + step.math + '</span></div></div>';
+
+  // Controls state
+  var running = (timer !== null);
+  document.getElementById('next').disabled = (stepIndex >= total - 1) || running;
+  document.getElementById('prev').disabled = (stepIndex <= 0) || running;
+  document.getElementById('all').textContent = running ? 'Dừng' : 'Chạy hết';
+  document.getElementById('all').disabled = (!running && stepIndex >= total - 1);
+}
+
+function stopTimer(){
+  if(timer){ clearInterval(timer); timer = null; }
+}
+
+function setTab(tab){
+  stopTimer();
+  currentTab = tab;
+  document.getElementById('tab-time').setAttribute('aria-selected', tab === 'time' ? 'true' : 'false');
+  document.getElementById('tab-digits').setAttribute('aria-selected', tab === 'digits' ? 'true' : 'false');
+
+  var fWrap = document.getElementById('field-wrap');
+  var pWrap = document.getElementById('presets-wrap');
+
+  if(tab === 'time'){
+    fWrap.innerHTML = '<label for="in-sec">Tổng giây</label><input type="number" id="in-sec" min="0" max="86400" value="' + inputSeconds + '">';
+    pWrap.innerHTML = 
+      '<button class="preset-btn" onclick="applyPresetSec(10000)">10000s</button>' +
+      '<button class="preset-btn" onclick="applyPresetSec(3661)">3661s</button>' +
+      '<button class="preset-btn" onclick="applyPresetSec(11045)">11045s</button>' +
+      '<button class="preset-btn" onclick="applyPresetSec(59)">59s</button>';
+    document.getElementById('in-sec').onchange = function(){
+      var v = parseInt(this.value, 10);
+      if(!isNaN(v) && v >= 0 && v <= 86400){ inputSeconds = v; rebuild(); }
+    };
+  } else {
+    fWrap.innerHTML = '<label for="in-num">Số n (3 chữ số)</label><input type="number" id="in-num" min="100" max="999" value="' + inputNumber + '">';
+    pWrap.innerHTML = 
+      '<button class="preset-btn" onclick="applyPresetNum(358)">358</button>' +
+      '<button class="preset-btn" onclick="applyPresetNum(742)">742</button>' +
+      '<button class="preset-btn" onclick="applyPresetNum(905)">905</button>' +
+      '<button class="preset-btn" onclick="applyPresetNum(256)">256</button>';
+    document.getElementById('in-num').onchange = function(){
+      var v = parseInt(this.value, 10);
+      if(!isNaN(v) && v >= 100 && v <= 999){ inputNumber = v; rebuild(); }
+    };
+  }
+
+  rebuild();
+}
+
+function applyPresetSec(v){
+  inputSeconds = v;
+  var el = document.getElementById('in-sec');
+  if(el) el.value = v;
+  rebuild();
+}
+
+function applyPresetNum(v){
+  inputNumber = v;
+  var el = document.getElementById('in-num');
+  if(el) el.value = v;
+  rebuild();
+}
+
+function rebuild(){
+  stopTimer();
+  stepIndex = 0;
+  if(currentTab === 'time'){
+    currentSteps = getTimeSteps(inputSeconds);
+  } else {
+    currentSteps = getDigitsSteps(inputNumber);
+  }
+  updateUI();
+}
+
+document.getElementById('next').onclick = function(){
+  if(stepIndex < currentSteps.length - 1){ stepIndex++; updateUI(); }
+};
+document.getElementById('prev').onclick = function(){
+  if(stepIndex > 0){ stepIndex--; updateUI(); }
+};
+document.getElementById('reset').onclick = function(){
+  stopTimer(); stepIndex = 0; updateUI();
+};
+document.getElementById('all').onclick = function(){
+  if(timer){ stopTimer(); updateUI(); return; }
+  timer = setInterval(function(){
+    if(stepIndex >= currentSteps.length - 1){ stopTimer(); updateUI(); return; }
+    stepIndex++;
+    updateUI();
+    if(stepIndex >= currentSteps.length - 1){ stopTimer(); updateUI(); }
+  }, 750);
+  updateUI();
+};
+
+document.addEventListener('keydown', function(e){
+  var tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('next').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prev').click(); }
+});
+
+// Initialization with query params
+var initTab = qparam('tab');
+if(initTab === 'digits') setTab('digits');
+else setTab('time');
+
+var qb = parseInt(qparam('buoc'), 10);
+if(!isNaN(qb) && qb >= 1 && qb <= currentSteps.length){
+  stepIndex = qb - 1;
+  updateUI();
+}
+</script>
+</body>
+</html>
