@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Tháp Hà Nội</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --g0:#dbeafe; --g1:#fde68a; --g2:#bbf7d0; --g3:#fbcfe8; --g4:#ddd6fe; --g5:#fed7aa; --g6:#a5f3fc; --g7:#e5e7eb;
+    --c0:#2563eb; --c1:#d97706; --c2:#16a34a; --c3:#db2777; --c4:#7c3aed; --c5:#ea580c; --c6:#0891b2; --c7:#64748b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --g0:#1e3a6b; --g1:#5a4710; --g2:#14532d; --g3:#5b1f3d; --g4:#3b2d6b; --g5:#5c2e0e; --g6:#164e5a; --g7:#2a303b;
+      --c0:#6ea0ff; --c1:#fbbf24; --c2:#4ade80; --c3:#f472b6; --c4:#a78bfa; --c5:#fb923c; --c6:#22d3ee; --c7:#94a3b8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text],.field select{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field select{width:auto}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip[aria-pressed="true"]{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px;display:flex;justify-content:space-between;gap:8px}
+  .panel-title span{text-transform:none;letter-spacing:0;font-weight:600;color:var(--accent)}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre;overflow:auto;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px;white-space:normal}
+  .console .new{color:#fde68a}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .stat{display:inline-block;background:var(--code-bg);border-radius:8px;padding:2px 10px;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+  .stat b{font-size:14px}
+
+  /* ngăn xếp lời gọi */
+  .stack{display:flex;flex-direction:column;gap:4px;padding:5px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px;overflow:auto}
+  .stack>:first-child{margin-top:auto}
+  .stack .empty{color:var(--muted);font-size:13px;text-align:center;margin:auto}
+  .frame{border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:2px 8px;transition:all .3s;flex:none}
+  .frame.fresh{animation:push .35s ease-out}
+  @keyframes push{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+  .frame.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .frame.popping{opacity:.5;border-style:dashed;border-color:var(--true)}
+  .frame .fh{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 12.5px ui-monospace,Menlo,Consolas,monospace}
+  .frame .fh small{font:600 11px system-ui,sans-serif;color:var(--muted);text-align:right}
+  .frame.active .fh small{color:var(--accent)}
+  .frame.popping .fh small{color:var(--true)}
+  .frame .fv{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px}
+  .frame .cell{background:var(--code-bg);border:2px solid transparent;border-radius:6px;padding:0 6px;font:12px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .frame .cell b{font-weight:700}
+  .frame .cell.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .frame .cell.blank b{color:var(--muted);font-weight:400}
+  .stlabel{font-size:11px;color:var(--muted);text-align:center}
+
+  /* cây lời gọi */
+  .tree svg{display:block;width:100%}
+  .tree .edge{stroke:var(--node-line);stroke-width:1.5;fill:none}
+  .tree .edge.hot{stroke:var(--accent);stroke-width:2.2}
+  .tree .nd rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.5}
+  .tree .nd text{fill:var(--text);font:600 12px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle;dominant-baseline:central}
+  .tree .nd.wait rect{stroke:var(--accent);stroke-dasharray:4 3;stroke-width:2}
+  .tree .nd.active rect{stroke:var(--accent);stroke-width:3}
+  .tree .nd.active .halo{fill:var(--accent-soft);stroke:none}
+  .tree .nd .ord{font:600 9.5px system-ui,sans-serif;fill:var(--muted);text-anchor:start}
+  .tree .nd .val{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--true)}
+  .tree .nd.done rect{stroke:var(--true)}
+  .tree .nd.ghost{opacity:.18}
+  .frame.cf{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;padding:3px 8px}
+  .frame.cf .fn{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;margin-right:2px}
+  .frame.cf .fnote{margin-left:auto;font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .frame.cf.active .fnote{color:var(--accent)}
+  .frame.cf.popping .fnote{color:var(--true)}
+  .towers svg{display:block;width:100%;margin:0 auto}
+  .towers .peg{fill:var(--node-line)}
+  .towers .base{fill:var(--muted)}
+  .towers .lbl{font:700 14px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted);text-anchor:middle}
+  .towers .lbl.sel{fill:var(--accent)}
+  .towers .disk{stroke:rgba(0,0,0,.25);stroke-width:1;transition:all .25s}
+  .towers .dn{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:#fff;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  @media (prefers-color-scheme: dark){.towers .dn{fill:#0f1218}}
+  .towers .hit{fill:transparent;cursor:pointer}
+  .towers .hit:hover{fill:var(--accent-soft);opacity:.5}
+  .towers .hit:focus{outline:none;fill:var(--accent-soft);opacity:.6}
+  .towers .zone{fill:transparent}
+  .towers .zone.sel{fill:var(--accent-soft)}
+  .towers .disk.last{stroke:var(--cur-bar);stroke-width:3}
+  .towers .disk.up{transform:translateY(-10px)}
+  .mode-choi .only-step, .mode-giai .only-play, .mode-cay .only-play{display:none !important}
+  .mode-choi .grid{grid-template-columns:1fr !important}
+  #con{max-height:150px}
+  .mode-cay #con{max-height:110px}
+  .tree svg{margin:0 auto}
+  #stack{max-height:200px}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+  <div class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-m="choi">Tự chơi</button>
+      <button class="tab" role="tab" data-m="giai">Xem lời giải</button>
+      <button class="tab" role="tab" data-m="cay">Cây lời gọi</button>
+    </div>
+    <div class="field" id="nsel"></div>
+  </div>
+  <div class="controls">
+    <div class="btns only-step">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="btns only-play">
+      <button class="btn ghost" id="undo">Đi lại nước trước</button>
+      <button class="btn ghost" id="restart">Làm lại</button>
+      <span class="stat">Số nước: <b id="mcount">0</b></span>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid" id="grid" style="grid-template-columns:1.25fr 1fr">
+    <div class="col">
+      <div class="card towers"><p class="panel-title">Ba cột A, B, C<span id="t-tw"></span></p><div id="tw"></div></div>
+      <div class="card only-cay" id="p-tree"><p class="panel-title">Cây lời gọi moveDisks<span>n:từ→đến</span></p><div class="tree" id="tree"></div></div>
+    </div>
+    <div class="col only-step">
+      <div class="card only-cay" id="p-stack"><p class="panel-title">Ngăn xếp lời gọi<span id="t-stack"></span></p><div class="stack" id="stack"></div><div class="stlabel">đáy ngăn xếp</div></div>
+      <div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|static|void|int|long|double|char|boolean|String|File|if|else|for|while|new|true|false|null|return|throws)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: mảng chuỗi; o.cur: số dòng (đếm từ 1) hoặc [từ, đến]
+  function codeHtml(lines, o){
+    o = o || {}; var cur = o.cur, tags = o.tags || {};
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var n = i + 1;
+      return '<div class="ln' + (n >= a && n <= b ? ' cur' : '') + '"><span class="no">' + n + '</span><span>' + hl(l) + '</span>' +
+        (tags[n] ? '<span class="tagln">' + esc(tags[n]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void, interval?: ms}
+  // snap cần có title, body; snap.tone = 'ok' | 'bad' đổi màu dòng giải thích.
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var st = $('status');
+      st.className = 'status' + (sn.tone ? ' ' + sn.tone : '');
+      st.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      var ms = typeof cfg.interval === 'function' ? cfg.interval(snaps.length) : (cfg.interval || 550);
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, ms);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (cfg.enabled && !cfg.enabled()) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, stop: stop, redraw: function(){ if (snaps.length) draw(); }};
+  }
+
+  // frames: [{name, vars:[[tên, giá trị]], state:'active'|'paused'|'popping', note, chg:[tên], fresh}] từ đáy lên đỉnh
+  function stackHtml(frames, compact){
+    if (!frames.length) return '<div class="empty">Ngăn xếp trống</div>';
+    return frames.slice().reverse().map(function(f){
+      var st = f.state === 'active' ? 'đang chạy' : f.state === 'popping' ? 'trả về, sắp bị gỡ' : 'đang chờ';
+      var cells = (f.vars || []).map(function(v){
+        var blank = v[1] === null || v[1] === undefined;
+        return '<span class="cell' + (blank ? ' blank' : '') + ((f.chg || []).indexOf(v[0]) >= 0 ? ' chg' : '') + '">' + esc(v[0]) + ': <b>' + (blank ? '?' : esc(v[1])) + '</b></span>';
+      }).join('');
+      if (compact) return '<div class="frame cf ' + f.state + (f.fresh ? ' fresh' : '') + '"><b class="fn">' + esc(f.name) + '</b>' + cells + '<small class="fnote">' + (f.note ? esc(f.note) : st) + '</small></div>';
+      return '<div class="frame ' + f.state + (f.fresh ? ' fresh' : '') + '"><div class="fh"><span>' + esc(f.name) + '</span><small>' + (f.note ? esc(f.note) : st) + '</small></div>' +
+        (cells ? '<div class="fv">' + cells + '</div>' : '') + '</div>';
+    }).join('');
+  }
+  // Bộ vẽ cây lời gọi dùng chung (E1, E2).
+  // root: {label, vlabel?, children:[]}. Gán id theo thứ tự trước (đúng thứ tự gọi trái trước phải sau).
+  function treeLayout(root, o){
+    o = o || {};
+    var CW = o.cw || 7.4, PAD = o.pad || 14, GAP = o.gap || 8, LH = o.lh || 46, TOP = o.top || 16, MINW = o.minW || 26;
+    var nodes = [], depthMax = 0;
+    (function index(n, d, parent){
+      n.id = nodes.length; n.depth = d; n.parent = parent; nodes.push(n);
+      if (d > depthMax) depthMax = d;
+      (n.children || (n.children = [])).forEach(function(c){ index(c, d + 1, n); });
+    })(root, 0, null);
+    (function measure(n){
+      n.w = Math.max(MINW, Math.max(String(n.label).length, String(n.vlabel || '').length) * CW + PAD);
+      if (!n.children.length) { n.sw = n.w; return; }
+      var s = 0; n.children.forEach(function(c){ measure(c); s += c.sw; });
+      s += GAP * (n.children.length - 1);
+      n.sw = Math.max(n.w, s);
+    })(root);
+    (function place(n, x0){
+      n.y = TOP + n.depth * LH;
+      if (!n.children.length) { n.x = x0 + n.sw / 2; return; }
+      var s = GAP * (n.children.length - 1); n.children.forEach(function(c){ s += c.sw; });
+      var cx = x0 + (n.sw - s) / 2;
+      n.children.forEach(function(c){ place(c, cx); cx += c.sw + GAP; });
+      n.x = (n.children[0].x + n.children[n.children.length - 1].x) / 2;
+    })(root, 4);
+    return {nodes: nodes, W: root.sw + 8, H: TOP + depthMax * LH + 34};
+  }
+  // st.state[id]: undefined (ẩn) | 'active' | 'wait' | 'done' ; st.val[id]: chuỗi hiện dưới nút;
+  // st.color[id]: chỉ số màu nhóm 0..7 ; st.ord: true để hiện số thứ tự lời gọi ; st.ghost: true để hiện mờ nút chưa gọi
+  function treeSvg(L, st){
+    var H = 22, out = [];
+    L.nodes.forEach(function(n){
+      if (!n.parent) return;
+      var a = st.state[n.id], b = st.state[n.parent.id];
+      if (a === undefined && !st.ghost) return;
+      var hot = (a === 'active' || a === 'wait') && b === 'wait';
+      out.push('<path class="edge' + (hot ? ' hot' : '') + (a === undefined ? ' ghostE' : '') + '" ' + (a === undefined ? 'opacity=".18" ' : '') +
+        'd="M' + n.parent.x + ' ' + (n.parent.y + H / 2) + ' L' + n.x + ' ' + (n.y - H / 2) + '"/>');
+    });
+    L.nodes.forEach(function(n){
+      var s = st.state[n.id];
+      if (s === undefined && !st.ghost) return;
+      var cls = 'nd' + (s ? ' ' + s : ' ghost');
+      var fill = st.color && st.color[n.id] !== undefined ? ' style="fill:var(--g' + st.color[n.id] + ')"' : '';
+      var g = '<g class="' + cls + '">';
+      if (s === 'active') g += '<rect class="halo" x="' + (n.x - n.w / 2 - 5) + '" y="' + (n.y - H / 2 - 5) + '" width="' + (n.w + 10) + '" height="' + (H + 10) + '" rx="10"/>';
+      g += '<rect x="' + (n.x - n.w / 2) + '" y="' + (n.y - H / 2) + '" width="' + n.w + '" height="' + H + '" rx="7"' + fill + '/>';
+      g += '<text x="' + n.x + '" y="' + (n.y + 0.5) + '">' + esc(n.label) + '</text>';
+      if (st.ord && s) g += '<text class="ord" x="' + (n.x - n.w / 2 + 1) + '" y="' + (n.y - H / 2 - 6) + '">#' + (n.order !== undefined ? n.order : n.id + 1) + '</text>';
+      if (st.val && st.val[n.id] !== undefined) g += '<text class="val" x="' + n.x + '" y="' + (n.y + H / 2 + 9) + '">' + esc(st.val[n.id]) + '</text>';
+      out.push(g + '</g>');
+    });
+    return '<svg viewBox="0 0 ' + L.W + ' ' + L.H + '" preserveAspectRatio="xMidYMin meet" role="img" aria-label="' + esc(st.aria || 'Cây lời gọi') + '">' + out.join('') + '</svg>';
+  }
+// Bộ ghi vết lời gọi: ngăn xếp khung + cây lời gọi + ảnh chụp từng bước (dùng chung E1, E2).
+function Tracer(){
+  var T = {snaps: [], frames: [], st: {}, val: {}, out: [], calls: 0, nodes: [], cur: null, cnt: {}, x: null};
+  function cl(o){ return o === null || o === undefined ? o : JSON.parse(JSON.stringify(o)); }
+  T.push = function(name, vars, label, key){
+    T.frames.forEach(function(f){ if (f.state === 'active') f.state = 'paused'; });
+    T.frames.push({name: name, vars: vars, state: 'active', chg: vars.map(function(v){ return v[0]; }), fresh: true, note: ''});
+    T.calls++;
+    if (label !== undefined) {
+      var n = {label: label, children: [], id: T.nodes.length, key: key};
+      T.nodes.push(n);
+      if (T.cur) { T.cur.children.push(n); T.st[T.cur.id] = 'wait'; }
+      n.par = T.cur; T.cur = n; T.st[n.id] = 'active';
+      if (key !== undefined) T.cnt[key] = (T.cnt[key] || 0) + 1;
+    }
+  };
+  T.top = function(){ return T.frames[T.frames.length - 1]; };
+  T.set = function(name, v){
+    var f = T.top(), found = false;
+    f.vars.forEach(function(p){ if (p[0] === name) { p[1] = v; found = true; } });
+    if (!found) f.vars.push([name, v]);
+    f.chg.push(name);
+  };
+  T.note = function(s){ T.top().note = s; };
+  // đánh dấu khung đỉnh đang trả về (vẫn còn trên ngăn xếp trong ảnh chụp kế tiếp)
+  T.ret = function(vtext, note){
+    var f = T.top(); f.state = 'popping'; f.note = note || ('trả về ' + vtext);
+    if (T.cur) { T.st[T.cur.id] = 'done'; T.val[T.cur.id] = vtext; T.cur.vlabel = vtext; }
+    T.popPending = true;
+  };
+  T.snap = function(ln, title, body, extra){
+    T.snaps.push({ln: ln, title: title, body: body, frames: cl(T.frames), st: cl(T.st), val: cl(T.val), out: T.out.slice(),
+      calls: T.calls, cnt: cl(T.cnt), x: cl(extra !== undefined ? extra : T.x), tone: T.tone || ''});
+    T.tone = '';
+    T.frames.forEach(function(f){ f.fresh = false; f.chg = []; });
+    if (T.popPending) {
+      T.popPending = false; T.frames.pop();
+      if (T.frames.length) T.top().state = 'active';
+      if (T.cur) { T.cur = T.cur.par; if (T.cur) T.st[T.cur.id] = 'active'; }
+    }
+  };
+  return T;
+}
+// E2: Tháp Hà Nội. Cần lib/tracer.js.
+var HANOI_LINES = [
+'public static void moveDisks(int n,',
+'    char fromTower, char toTower,',
+'    char auxTower) {',
+'  if (n == 1) // Truong hop co so',
+'    System.out.println(',
+'        "Move disk " + n',
+'        + " from " + fromTower',
+'        + " to " + toTower);',
+'  else {',
+'    moveDisks(n - 1, fromTower,',
+'        auxTower, toTower);',
+'    System.out.println(',
+'        "Move disk " + n',
+'        + " from " + fromTower',
+'        + " to " + toTower);',
+'    moveDisks(n - 1, auxTower,',
+'        toTower, fromTower);',
+'  }',
+'}'];
+function hanoiStart(n){ var a = []; for (var k = n; k >= 1; k--) a.push(k); return {A: a, B: [], C: []}; }
+function hanoiClone(t){ return {A: t.A.slice(), B: t.B.slice(), C: t.C.slice()}; }
+// Danh sách nước đi đúng như chương trình TowerOfHanoi in ra
+function hanoiMoves(n){
+  var out = [];
+  (function mv(k, f, t, a){
+    if (k === 1) { out.push([1, f, t]); return; }
+    mv(k - 1, f, a, t); out.push([k, f, t]); mv(k - 1, a, t, f);
+  })(n, 'A', 'B', 'C');
+  return out;
+}
+function moveLine(m){ return 'Move disk ' + m[0] + ' from ' + m[1] + ' to ' + m[2]; }
+// Chế độ "Xem lời giải": mỗi bước một nước
+function simHanoiSolve(n){
+  var t = hanoiStart(n), snaps = [], out = ['The moves are:'], ms = hanoiMoves(n);
+  snaps.push({title: 'Ban đầu', body: 'Mọi đĩa ở cột A. Mục tiêu: chuyển hết sang cột B, dùng C làm trung gian. Chương trình in <code>The moves are:</code> rồi gọi <code>moveDisks(' + n + ", 'A', 'B', 'C')</code>.", towers: hanoiClone(t), out: out.slice(), last: null});
+  ms.forEach(function(m, i){
+    t[m[2]].push(t[m[1]].pop());
+    out.push(moveLine(m));
+    var body = 'Đĩa ' + m[0] + ' rời đỉnh cột ' + m[1] + ', đặt lên cột ' + m[2] + '.';
+    if (m[0] === n && n > 1) body += ' Đây là nước của đĩa lớn nhất: ' + (n - 1) + ' đĩa nhỏ hơn đã được dọn sang cột C.';
+    if (i === ms.length - 1) body += ' Hoàn thành sau ' + ms.length + ' nước.';
+    snaps.push({title: 'Nước ' + (i + 1) + ': ' + moveLine(m), body: body, towers: hanoiClone(t), out: out.slice(), last: m, tone: i === ms.length - 1 ? 'ok' : ''});
+  });
+  return {snaps: snaps, moves: ms};
+}
+// Chế độ "Cây lời gọi": vào lời gọi, chuyển đĩa, trả về
+function simHanoiTree(n){
+  var T = Tracer(), t = hanoiStart(n), moves = 0;
+  T.out.push('The moves are:');
+  function q(c){ return "'" + c + "'"; }
+  function mv(k, f, to, a){
+    T.push('moveDisks(' + k + ', ' + q(f) + ', ' + q(to) + ', ' + q(a) + ')', [['n', k], ['from', f], ['to', to], ['aux', a]], k + ':' + f + '→' + to);
+    T.x = {towers: hanoiClone(t), last: null};
+    if (k === 1) {
+      T.snap([1, 3], 'Gọi moveDisks(1, ' + q(f) + ', ' + q(to) + ', ' + q(a) + ')', 'Trường hợp cơ sở <code>n == 1</code>: chuyển thẳng đĩa 1 từ ' + f + ' sang ' + to + '.');
+    } else {
+      T.note('chờ dọn ' + (k - 1) + ' đĩa sang ' + a);
+      T.snap([10, 11], 'Gọi moveDisks(' + k + ', ' + q(f) + ', ' + q(to) + ', ' + q(a) + ')', 'Muốn chuyển ' + k + ' đĩa từ <b>' + f + '</b> sang <b>' + to + '</b>, trước hết dọn ' + (k - 1) + ' đĩa trên cùng sang cột trung gian <b>' + a + '</b>: gọi <code>moveDisks(' + (k - 1) + ', ' + q(f) + ', ' + q(a) + ', ' + q(to) + ')</code>. Để ý vai trò của các cột đổi chỗ.');
+      mv(k - 1, f, a, to);
+    }
+    t[to].push(t[f].pop()); moves++;
+    var m = [k, f, to];
+    T.out.push(moveLine(m));
+    T.x = {towers: hanoiClone(t), last: m};
+    if (k === 1) {
+      T.ret('nước ' + moves, 'in xong, trả về');
+      T.snap([5, 8], moveLine(m), 'In <code>' + moveLine(m) + '</code> (nước thứ ' + moves + '). Lời gọi này xong việc.');
+      return;
+    }
+    T.note('chờ đưa ' + (k - 1) + ' đĩa về ' + to);
+    T.snap([12, 17], moveLine(m), (k - 1) + ' đĩa nhỏ đã nằm ở ' + a + '. In <code>' + moveLine(m) + '</code> (nước thứ ' + moves + '), rồi gọi <code>moveDisks(' + (k - 1) + ', ' + q(a) + ', ' + q(to) + ', ' + q(f) + ')</code> để đưa chúng từ ' + a + ' sang ' + to + '.');
+    mv(k - 1, a, to, f);
+    T.x = {towers: hanoiClone(t), last: null};
+    T.ret('xong', 'xong, trả về'); T.tone = 'ok';
+    T.snap(19, 'moveDisks(' + k + ', ' + q(f) + ', ' + q(to) + ', ' + q(a) + ') xong', k + ' đĩa đã nằm ở cột ' + to + '. Khung bị gỡ khỏi ngăn xếp.');
+  }
+  mv(n, 'A', 'B', 'C');
+  T.x = {towers: hanoiClone(t), last: null};
+  T.snap(null, 'Xong: ' + moves + ' nước, ' + T.calls + ' lời gọi', 'Mọi đĩa đã ở cột B. Mỗi lời gọi <code>moveDisks</code> in đúng một dòng <code>Move disk</code>.');
+  return {snaps: T.snaps, nodes: T.nodes, moves: moves, calls: T.calls, out: T.out, lines: HANOI_LINES};
+}
+
+var MODES = {choi: 1, giai: 1, cay: 1};
+var mode = MODES[qs('m') || qs('mode')] ? (qs('m') || qs('mode')) : 'choi';
+var PLAYMAX = 6, STEPMAX = parseIntIn(qs('nmax'), 1, 6) || 4;
+var n = parseIntIn(qs('n'), 1, 6) || 3;
+var LEADS = {
+  choi: 'Bấm một cột để nhấc đĩa trên cùng, rồi bấm cột đích để đặt xuống. Chuyển mọi đĩa từ A sang B; đĩa lớn không được nằm trên đĩa nhỏ.',
+  giai: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem từng nước đi đúng như chương trình in ra.',
+  cay: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem cây lời gọi <code>moveDisks</code> dựng dần, đồng bộ với ba cột và ngăn xếp lời gọi.'
+};
+
+// ---------- vẽ ba cột ----------
+var PX = {A: 70, B: 200, C: 330}, DH = 15;
+function towersSvg(t, nn, o){
+  o = o || {};
+  var H = Math.max(nn, 3) * DH + 44, base = H - 22, s = '';
+  ['A', 'B', 'C'].forEach(function(p){
+    if (o.play) s += '<rect class="zone' + (o.sel === p ? ' sel' : '') + '" x="' + (PX[p] - 63) + '" y="0" width="126" height="' + H + '" rx="8"/>';
+    s += '<rect class="peg" x="' + (PX[p] - 3) + '" y="' + (base - nn * DH - 12) + '" width="6" height="' + (nn * DH + 12) + '" rx="3"/>';
+    s += '<text class="lbl' + (o.sel === p ? ' sel' : '') + '" x="' + PX[p] + '" y="' + (H - 5) + '">' + p + '</text>';
+  });
+  s += '<rect class="base" x="8" y="' + base + '" width="384" height="4" rx="2"/>';
+  ['A', 'B', 'C'].forEach(function(p){
+    t[p].forEach(function(k, i){
+      var w = 22 + k * 15, y = base - (i + 1) * DH;
+      var top = i === t[p].length - 1;
+      var cls = 'disk' + (o.last && o.last[0] === k && o.last[2] === p && top ? ' last' : '') + (o.sel === p && top ? ' up' : '');
+      s += '<g class="' + cls + '"><rect class="disk" x="' + (PX[p] - w / 2) + '" y="' + (y + 1) + '" width="' + w + '" height="' + (DH - 2) + '" rx="6" style="fill:var(--c' + ((k - 1) % 8) + ')"/>' +
+        '<text class="dn" x="' + PX[p] + '" y="' + (y + DH / 2) + '">' + k + '</text></g>';
+    });
+  });
+  if (o.play) ['A', 'B', 'C'].forEach(function(p){
+    s += '<rect class="hit" tabindex="0" role="button" aria-label="Cột ' + p + '" data-p="' + p + '" x="' + (PX[p] - 63) + '" y="0" width="126" height="' + H + '" rx="8"/>';
+  });
+  return '<svg viewBox="0 0 400 ' + H + '" style="max-width:' + (o.maxw || 520) + 'px" role="img" aria-label="Ba cột tháp Hà Nội">' + s + '</svg>';
+}
+
+// ---------- tham số n ----------
+function nmax(){ return mode === 'choi' ? PLAYMAX : STEPMAX; }
+function drawN(){
+  var hi = nmax(), h = '<label>Số đĩa:</label>';
+  for (var k = 1; k <= hi; k++) h += '<button class="chip" data-v="' + k + '" aria-pressed="' + (k === n) + '">' + k + '</button>';
+  $('nsel').innerHTML = h;
+}
+$('nsel').addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if (!b) return;
+  n = parseInt(b.getAttribute('data-v'), 10); drawN(); start();
+});
+document.querySelectorAll('.tab').forEach(function(b){
+  b.addEventListener('click', function(){ setMode(b.getAttribute('data-m')); });
+});
+function setMode(m){
+  mode = m;
+  document.body.className = 'mode-' + m;
+  document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-m') === m); });
+  document.querySelectorAll('.only-cay').forEach(function(el){ el.style.display = m === 'cay' ? '' : 'none'; });
+  $('lead').innerHTML = LEADS[m];
+  if (n > nmax()) n = nmax();
+  drawN(); start();
+}
+
+// ---------- chế độ tự chơi ----------
+var play = null;
+function playStart(){
+  play = {t: hanoiStart(n), sel: null, hist: [], done: false};
+  playDraw('Bắt đầu với ' + n + ' đĩa', 'Bấm cột A để nhấc đĩa trên cùng.', '');
+}
+function playDraw(title, body, tone){
+  $('tw').innerHTML = towersSvg(play.t, n, {play: true, sel: play.sel, maxw: 560});
+  $('mcount').textContent = play.hist.length;
+  $('undo').disabled = !play.hist.length;
+  if (title !== undefined) {
+    $('status').className = 'status' + (tone ? ' ' + tone : '');
+    $('status').innerHTML = '<b>' + esc(title) + '</b><span>' + body + '</span>';
+  }
+}
+function pick(p){
+  if (play.done) return;
+  var t = play.t;
+  if (play.sel === null) {
+    if (!t[p].length) { playDraw('Cột ' + p + ' đang trống', 'Hãy chọn một cột có đĩa.', 'bad'); return; }
+    play.sel = p;
+    playDraw('Đã nhấc đĩa ' + t[p][t[p].length - 1] + ' ở cột ' + p, 'Bấm cột đích. Bấm lại cột ' + p + ' để bỏ chọn.', '');
+    return;
+  }
+  var f = play.sel; play.sel = null;
+  if (f === p) { playDraw('Bỏ chọn', 'Chọn lại cột để nhấc đĩa.', ''); return; }
+  var d = t[f][t[f].length - 1], top = t[p][t[p].length - 1];
+  if (top !== undefined && top < d) { playDraw('Nước đi sai luật', 'Không được đặt đĩa ' + d + ' lên trên đĩa ' + top + ' nhỏ hơn.', 'bad'); return; }
+  t[p].push(t[f].pop()); play.hist.push([d, f, p]);
+  if (t.B.length === n) {
+    play.done = true;
+    playDraw('Hoàn thành sau ' + play.hist.length + ' nước', 'Mọi đĩa đã ở cột B. Thử so với số nước ở tab <b>Xem lời giải</b>.', 'ok');
+  } else playDraw('Nước ' + play.hist.length + ': Move disk ' + d + ' from ' + f + ' to ' + p, 'Tiếp tục: bấm cột nguồn rồi cột đích.', '');
+}
+$('tw').addEventListener('click', function(e){
+  var r = e.target.closest('.hit'); if (r && mode === 'choi') pick(r.getAttribute('data-p'));
+});
+$('tw').addEventListener('keydown', function(e){
+  var r = e.target.closest && e.target.closest('.hit');
+  if (r && mode === 'choi' && (e.key === 'Enter' || e.key === ' ')) { pick(r.getAttribute('data-p')); e.preventDefault(); }
+});
+document.addEventListener('keydown', function(e){
+  if (mode !== 'choi') return;
+  var k = e.key.toUpperCase(); if (k === 'A' || k === 'B' || k === 'C') pick(k);
+});
+$('undo').addEventListener('click', function(){
+  if (!play.hist.length) return;
+  var m = play.hist.pop(); play.t[m[1]].push(play.t[m[2]].pop()); play.sel = null; play.done = false;
+  playDraw('Đi lại', 'Đã đưa đĩa ' + m[0] + ' về cột ' + m[1] + '.', '');
+});
+$('restart').addEventListener('click', playStart);
+
+// ---------- chế độ xem lời giải và cây lời gọi ----------
+var R = null, L = null;
+var st = Stepper({
+  enabled: function(){ return mode !== 'choi'; },
+  interval: function(cnt){ return cnt > 30 ? 420 : 600; },
+  build: function(){
+    if (mode === 'giai') { R = simHanoiSolve(n); L = null; }
+    else { R = simHanoiTree(n); L = treeLayout(R.nodes[0], {gap: 6, lh: 42, top: 8, cw: 7.2, pad: 10}); }
+    return R.snaps;
+  },
+  render: function(sn, i){
+    var tw = mode === 'giai' ? sn.towers : sn.x.towers, last = mode === 'giai' ? sn.last : sn.x.last;
+    $('tw').innerHTML = towersSvg(tw, n, {last: last, maxw: mode === 'cay' ? 330 : 520});
+    var prevLen = i > 0 ? R.snaps[i - 1].out.length : 0;
+    $('con').innerHTML = sn.out.map(function(l, k){ return k >= prevLen && k > 0 ? '<span class="new">' + esc(l) + '</span>' : esc(l); }).join('\n');
+    $('con').scrollTop = $('con').scrollHeight;
+    if (mode === 'cay') {
+      $('tree').innerHTML = treeSvg(L, {state: sn.st, val: null, ghost: false, aria: 'Cây lời gọi moveDisks'});
+      $('tree').firstChild.style.maxWidth = Math.round(L.W * 1.05) + 'px';
+      $('stack').innerHTML = stackHtml(sn.frames, true);
+      $('t-stack').textContent = sn.frames.length ? sn.frames.length + ' khung' : '';
+    }
+  }
+});
+function start(){
+  st.stop();
+  if (mode === 'choi') playStart(); else st.reset();
+}
+setMode(mode);
+})();
+</script>
+</body>
+</html>

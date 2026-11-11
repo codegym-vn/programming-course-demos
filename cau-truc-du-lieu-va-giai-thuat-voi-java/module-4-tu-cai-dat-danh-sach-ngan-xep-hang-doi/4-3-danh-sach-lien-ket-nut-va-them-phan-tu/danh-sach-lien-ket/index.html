@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Danh sách liên kết</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8; --arrow:#6b7280;
+    --loc:#c2410c; --loc-soft:#ffe9d6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250; --arrow:#9aa3b2;
+      --loc:#fdba74; --loc-soft:#3a2614;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:8px 12px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .controls{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-size:13px}
+  .field input[type=text]{width:64px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chk{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--false);cursor:pointer}
+  .chk code{font-size:12px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.op{background:var(--true-soft);border-color:var(--true);color:var(--true);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:5px 12px;margin-bottom:6px;min-height:50px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:start;margin-top:8px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 3px}
+  .code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;max-height:244px;
+    font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.off{text-decoration:line-through;opacity:.5}
+  .ln.swp{border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;max-height:96px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+  .console .er{color:#fca5a5}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .side{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+  .viz{overflow-x:auto}
+  .viz svg{display:block;width:100%;height:auto}
+  .nb rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.6;transition:fill .25s,stroke .25s}
+  .nb line.sep{stroke:var(--node-line);stroke-width:1.2}
+  .nb text{font:600 12.5px system-ui,sans-serif;fill:var(--text);text-anchor:middle;dominant-baseline:central}
+  .nb text.nul{font:italic 9.5px ui-monospace,Menlo,monospace;fill:var(--muted)}
+  .nb{transition:transform .45s ease,opacity .3s}
+  .nb.new rect.box{fill:var(--true-soft);stroke:var(--true);stroke-width:2.4}
+  .nb.cur rect.box{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.4}
+  .nb.del rect.box{fill:var(--false-soft);stroke:var(--false);stroke-width:2.4}
+  .nb.vis rect.box{stroke:var(--cur-bar);stroke-width:2}
+  .nb.lost{opacity:.4}
+  .nb.lost rect.box{stroke-dasharray:4 3}
+  .ar{fill:none;stroke:var(--arrow);stroke-width:1.6}
+  .ar.hi{stroke:var(--cur-bar);stroke-width:3}
+  .ar.pv{stroke-dasharray:5 3}
+  .ar.bad{stroke:var(--false);stroke-width:2.4}
+  .ptr text{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--accent);text-anchor:middle}
+  .ptr text.loc{fill:var(--loc)}
+  .ptr line{stroke:var(--accent);stroke-width:1.4}
+  .ptr line.loc{stroke:var(--loc)}
+  .lostlbl{font:600 10px system-ui,sans-serif;fill:var(--false);text-anchor:middle}
+  #mk path{fill:var(--arrow)} #mkh path{fill:var(--cur-bar)} #mkb path{fill:var(--false)} #mkp path{fill:var(--accent)} #mkl path{fill:var(--loc)}
+
+  .vars{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;min-height:24px}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:7px;padding:0 8px;font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .var b{font-weight:700}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .var.big{font-size:13px}
+
+  /* ngăn xếp */
+  .sqrow{display:grid;grid-template-columns:170px minmax(0,1fr);gap:8px;align-items:stretch}
+  @media (max-width:520px){.sqrow{grid-template-columns:1fr}}
+  .stack{display:flex;flex-direction:column-reverse;gap:3px;min-height:110px;padding:4px 6px 0;border:2px solid var(--node-line);border-top:none;border-radius:0 0 8px 8px}
+  .scell{display:flex;align-items:center;gap:6px}
+  .scell .bx{flex:1;height:26px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--node-line);border-radius:6px;background:var(--node);font:600 12.5px system-ui,sans-serif;transition:background .25s}
+  .scell .ix{width:16px;font:10px ui-monospace,Menlo,monospace;color:var(--muted);text-align:right}
+  .scell .bx.new{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .scell .bx.cur{border-color:var(--cur-bar);background:var(--cur)}
+  .scell .bx.del{border-color:var(--false);background:var(--false-soft);color:var(--false);text-decoration:line-through;opacity:.7}
+  .scell .top{font:700 10px ui-monospace,Menlo,monospace;color:var(--accent);width:44px;white-space:nowrap}
+  .stempty{color:var(--muted);font-size:12px;text-align:center;margin:auto}
+
+  /* hai cách duyệt */
+  .trav{display:flex;flex-direction:column;gap:6px}
+  .trow .th{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:600;margin-bottom:2px}
+  .trow .th span{font-family:ui-monospace,Menlo,monospace;color:var(--muted)}
+  .chain{display:flex;align-items:center;gap:0;overflow-x:auto;padding:16px 2px 2px}
+  .cn{position:relative;flex:none;min-width:34px;height:30px;padding:0 6px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--node-line);border-radius:6px;background:var(--node);font:600 12.5px system-ui,sans-serif;transition:background .25s,border-color .25s}
+  .cn.vis{background:var(--cur);border-color:var(--cur-bar)}
+  .cn.tgt{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+  .cn.done{opacity:.55}
+  .cn .pl{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font:700 10px ui-monospace,Menlo,monospace;color:var(--loc);white-space:nowrap}
+  .cn .pl.hd{color:var(--accent)}
+  .cnar{flex:none;width:16px;text-align:center;color:var(--arrow);font-size:12px}
+  .cnar.hi{color:var(--cur-bar);font-weight:700}
+  .cnt{font:700 15px ui-monospace,Menlo,monospace}
+  .hidden{display:none !important}
+  @media (prefers-reduced-motion: reduce){.nb{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+  <div class="controls" id="ops"></div>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div id="vizArea"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title" id="codeTitle">Code</p><div class="code" id="code"></div></div>
+    <div class="side">
+      <div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Kết quả</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+
+//SIM-START
+var CODE = {
+  build: {t: 'NodeDemo: xây chuỗi rồi duyệt', l: [
+'Node<String> head = null;',
+'Node<String> tail = null;',
+'',
+'head = new Node<>("Ha Noi");',
+'tail = head;',
+'',
+'tail.next = new Node<>("Hue");',
+'tail = tail.next;',
+'',
+'tail.next = new Node<>("Da Nang");',
+'tail = tail.next;',
+'',
+'Node<String> current = head;',
+'while (current != null) {',
+'  System.out.println(',
+'      current.element);',
+'  current = current.next;',
+'}',
+'System.out.println(',
+'    "tail: " + tail.element);']},
+  addFirst: {t: 'MyLinkedList: addFirst', l: [
+'public void addFirst(E e) {',
+'  Node<E> newNode = new Node<>(e);',
+'  newNode.next = head;',
+'  head = newNode;',
+'  size++;',
+'  if (tail == null) tail = head;',
+'}']},
+  addFirstSw: {t: 'addFirst (đã đổi thứ tự hai lệnh)', l: [
+'public void addFirst(E e) {',
+'  Node<E> newNode = new Node<>(e);',
+'  head = newNode;          // đổi chỗ',
+'  newNode.next = head;     // đổi chỗ',
+'  size++;',
+'  if (tail == null) tail = head;',
+'}'], swp: [2, 3]},
+  addLast: {t: 'MyLinkedList: addLast', l: [
+'public void addLast(E e) {',
+'  Node<E> newNode = new Node<>(e);',
+'  if (tail == null) {',
+'    head = tail = newNode;',
+'  } else {',
+'    tail.next = newNode;',
+'    tail = tail.next;',
+'  }',
+'  size++;',
+'}']},
+  addIdx: {t: 'MyLinkedList: add(index, e)', l: [
+'public void add(int index, E e) {',
+'  if (index == 0) {',
+'    addFirst(e);',
+'  } else if (index >= size) {',
+'    addLast(e);',
+'  } else {',
+'    Node<E> current = head;',
+'    for (int i = 1; i < index; i++) {',
+'      current = current.next;',
+'    }',
+'    Node<E> temp = current.next;',
+'    current.next = new Node<>(e);',
+'    (current.next).next = temp;',
+'    size++;',
+'  }',
+'}']},
+  removeFirst: {t: 'MyLinkedList: removeFirst', l: [
+'public E removeFirst() {',
+'  if (size == 0) return null;',
+'  Node<E> temp = head;',
+'  head = head.next;',
+'  size--;',
+'  if (head == null) tail = null;',
+'  return temp.element;',
+'}']},
+  removeLast: {t: 'MyLinkedList: removeLast', l: [
+'public E removeLast() {',
+'  if (size == 0) return null;',
+'  if (size == 1) {',
+'    Node<E> temp = head;',
+'    head = tail = null;',
+'    size = 0;',
+'    return temp.element;',
+'  }',
+'  Node<E> current = head;',
+'  for (int i = 0; i < size - 2; i++) {',
+'    current = current.next;',
+'  }',
+'  Node<E> temp = tail;',
+'  tail = current;',
+'  tail.next = null;',
+'  size--;',
+'  return temp.element;',
+'}']},
+  removeIdx: {t: 'MyLinkedList: remove(index)', l: [
+'public E remove(int index) {',
+'  if (index < 0 || index >= size) {',
+'    return null;',
+'  }',
+'  if (index == 0) return removeFirst();',
+'  if (index == size - 1) {',
+'    return removeLast();',
+'  }',
+'  Node<E> previous = head;',
+'  for (int i = 1; i < index; i++) {',
+'    previous = previous.next;',
+'  }',
+'  Node<E> current = previous.next;',
+'  previous.next = current.next;',
+'  size--;',
+'  return current.element;',
+'}']},
+  trav: {t: 'Hai cách duyệt danh sách list', l: [
+'// (a) vòng for gọi get(i)',
+'for (int i = 0; i < list.size(); i++)',
+'  System.out.print(list.get(i) + " ");',
+'',
+'// (b) for-each, dùng iterator',
+'for (String s : list)',
+'  System.out.print(s + " ");']},
+  dAdd: {t: 'DoublyDemo: addLast', l: [
+'static void addLast(String e) {',
+'  Node n = new Node(e);',
+'  if (tail == null) {',
+'    head = tail = n;',
+'  } else {',
+'    tail.next = n;',
+'    n.previous = tail;',
+'    tail = n;',
+'  }',
+'}']},
+  dTrav: {t: 'DoublyDemo: duyệt hai chiều', l: [
+'for (Node c = head; c != null;',
+'    c = c.next) {',
+'  System.out.print(c.element + " ");',
+'}',
+'System.out.println();',
+'',
+'for (Node c = tail; c != null;',
+'    c = c.previous) {',
+'  System.out.print(c.element + " ");',
+'}',
+'System.out.println();']},
+  dRem: {t: 'Xoá nút cuối của danh sách đôi', l: [
+'// khi danh sách có từ 2 nút trở lên',
+'tail = tail.previous;',
+'tail.next = null;']},
+  stack: {t: 'GenericStack (nền ArrayList)', l: [
+'public E peek() {',
+'  return list.get(getSize() - 1);',
+'}',
+'',
+'public void push(E o) {',
+'  list.add(o);',
+'}',
+'',
+'public E pop() {',
+'  E o = list.get(getSize() - 1);',
+'  list.remove(getSize() - 1);',
+'  return o;',
+'}']},
+  queue: {t: 'GenericQueue (nền LinkedList)', l: [
+'public void enqueue(E e) {',
+'  list.addLast(e);',
+'}',
+'',
+'public E dequeue() {',
+'  return list.removeFirst();',
+'}',
+'',
+'public int getSize() {',
+'  return list.size();',
+'}']}
+};
+
+// ---------- mô hình nút ----------
+function World(doubly){ return {N: {}, v: {}, s: {}, uid: 0, doubly: !!doubly, out: [], S: [], broken: false, ends: []}; }
+function mk(w, el, x, y){ var id = 'n' + (w.uid++); w.N[id] = {id: id, el: el, next: null, prev: null, x: x, y: y || 0}; return id; }
+function chainFrom(w, id){ var seen = {}, a = []; while (id && !seen[id] && w.N[id]) { seen[id] = 1; a.push(id); id = w.N[id].next; } return a; }
+function reachAll(w, starts){
+  var seen = {}, st = starts.filter(Boolean);
+  while (st.length) { var id = st.pop(); if (!id || seen[id] || !w.N[id]) continue; seen[id] = 1; st.push(w.N[id].next); if (w.doubly) st.push(w.N[id].prev); }
+  return seen;
+}
+function layout(w){ chainFrom(w, w.v.head).forEach(function(id, i){ w.N[id].x = i; w.N[id].y = 0; }); }
+var PTRS = ['head', 'tail', 'current', 'previous', 'temp', 'newNode', 'n', 'c'];
+// Kết thúc một thao tác: bỏ biến cục bộ, thu hồi nút không còn ai trỏ tới, xếp lại hàng
+function endOp(w, keepLost){
+  PTRS.forEach(function(p){ if (p !== 'head' && p !== 'tail') delete w.v[p]; });
+  delete w.s.i; delete w.s.index; delete w.s.steps;
+  var r = reachAll(w, [w.v.head, w.v.tail]);
+  if (!keepLost) Object.keys(w.N).forEach(function(id){ if (!r[id]) delete w.N[id]; });
+  if (!w.broken) layout(w);
+}
+function snap(w, code, lines, title, body, o){
+  o = o || {};
+  var r = reachAll(w, PTRS.map(function(p){ return w.v[p]; }));
+  var inChain = {}; chainFrom(w, w.v.head).forEach(function(id){ inChain[id] = 1; });
+  var nodes = Object.keys(w.N).map(function(id){
+    var n = w.N[id], cls = (o.hl && o.hl[id]) || '';
+    var lost = !r[id] || (w.broken && o.final && !inChain[id]);
+    return {id: id, el: n.el, x: n.x, y: n.y, next: n.next, prev: n.prev, cls: cls + (lost ? ' lost' : '')};
+  });
+  var vars = [];
+  PTRS.forEach(function(p){ if (p in w.v) vars.push([p, w.v[p] ? {ptr: w.v[p], el: w.N[w.v[p]] ? w.N[w.v[p]].el : '?'} : null]); });
+  Object.keys(w.s).forEach(function(k){ vars.push([k, w.s[k]]); });
+  var s = {code: code, lines: lines, title: title, body: body, nodes: nodes, vars: vars, chg: o.chg || [], ah: o.ah || {}, bad: o.bad || {},
+    out: w.out.slice(), off: o.off || null, doubly: w.doubly, extra: o.extra || null, stack: o.stack || null};
+  w.S.push(s); return s;
+}
+function nm(w, id){ return id ? '<b>' + esc(w.N[id].el) + '</b>' : '<code>null</code>'; }
+function listText(w){ return chainFrom(w, w.v.head).map(function(id){ return w.N[id].el; }); }
+
+// ---------- các thao tác ----------
+function opAddFirst(w, e, swap){
+  var C = swap ? 'addFirstSw' : 'addFirst';
+  var h0 = w.v.head, x0 = h0 ? w.N[h0].x - 1 : 0;
+  var id = mk(w, e, x0, 0); w.v.newNode = id;
+  snap(w, C, [1], 'Tạo nút mới', 'Tạo nút ' + nm(w, id) + ', <code>next</code> của nó đang là <code>null</code>.', {hl: hl1(id, 'new'), chg: ['newNode']});
+  if (!swap) {
+    w.N[id].next = w.v.head;
+    snap(w, C, [2], 'newNode.next = head', w.v.head ? 'Nút mới trỏ tới nút đầu hiện tại ' + nm(w, w.v.head) + '.' : 'Danh sách đang rỗng: <code>head</code> là <code>null</code> nên <code>next</code> vẫn là <code>null</code>.', {hl: hl1(id, 'new'), ah: ah1(id)});
+    w.v.head = id;
+    snap(w, C, [3], 'head = newNode', '<code>head</code> chuyển sang nút mới. Các nút cũ vẫn nối tiếp phía sau.', {hl: hl1(id, 'new'), chg: ['head']});
+  } else {
+    w.v.head = id;
+    snap(w, C, [2], 'head = newNode (làm trước)', '<code>head</code> chuyển sang nút mới, trong khi nút mới chưa nối với ai. Không còn biến nào giữ nút đầu cũ.', {hl: hl1(id, 'new'), chg: ['head']});
+    w.N[id].next = w.v.head; w.broken = !!h0;
+    snap(w, C, [3], 'newNode.next = head', 'Lúc này <code>head</code> chính là nút mới, nên nút mới trỏ vào <b>chính nó</b>. ' + (h0 ? 'Các nút cũ đã mất khỏi danh sách.' : 'Danh sách rỗng nên hậu quả chưa lộ ra, nhưng nút trỏ vòng vào chính nó.'), {hl: hl1(id, 'new'), ah: ah1(id), bad: ah1(id)});
+    if (!h0) w.broken = true;
+  }
+  w.s.size = (w.s.size || 0) + 1;
+  snap(w, C, [4], 'size++', '<code>size</code> = ' + w.s.size + '.', {hl: hl1(id, 'new'), chg: ['size']});
+  var empty = w.v.tail === null || w.v.tail === undefined;
+  if (empty) w.v.tail = w.v.head;
+  snap(w, C, [5], empty ? 'tail == null: tail = head' : 'tail khác null', empty ? 'Danh sách vừa rỗng nên nút mới vừa là đầu vừa là cuối: <code>tail = head</code>.' : '<code>tail</code> đã trỏ tới nút cuối, giữ nguyên.', {hl: hl1(id, 'new'), chg: empty ? ['tail'] : []});
+  if (w.broken) w.out.push('Danh sách hỏng: ' + (h0 ? 'đi từ head chỉ gặp ' + e + ' lặp mãi, các nút cũ bị mất.' : 'nút ' + e + ' trỏ vào chính nó.'));
+  else w.out.push('addFirst(' + e + '): ' + fmtList(w));
+  endOp(w, w.broken);
+  snap(w, C, [], 'Xong addFirst(' + e + ')', w.broken ? 'Bấm <b>Làm lại</b> để thử lại với thứ tự lệnh đúng.' : 'Chỉ vài phép gán, không có vòng lặp: <i>O</i>(1).', {final: true});
+}
+function opAddLast(w, e, quick){
+  var C = 'addLast', t0 = w.v.tail;
+  var id = mk(w, e, t0 ? w.N[t0].x + 1 : 0, 0); w.v.newNode = id;
+  snap(w, C, [1], 'Tạo nút mới', 'Tạo nút ' + nm(w, id) + '.', {hl: hl1(id, 'new'), chg: ['newNode']});
+  if (!t0) {
+    w.v.head = w.v.tail = id;
+    snap(w, C, [2, 3], 'tail == null: head = tail = newNode', 'Danh sách rỗng: cả <code>head</code> và <code>tail</code> cùng trỏ tới nút mới.', {hl: hl1(id, 'new'), chg: ['head', 'tail']});
+  } else {
+    w.N[t0].next = id;
+    snap(w, C, [2, 5], 'tail.next = newNode', 'Nối nút cuối ' + nm(w, t0) + ' tới nút mới. <code>tail</code> vẫn ở nút cũ.', {hl: hl1(id, 'new'), ah: ah1(t0)});
+    w.v.tail = id;
+    snap(w, C, [6], 'tail = tail.next', '<code>tail</code> dời sang nút mới.', {hl: hl1(id, 'new'), chg: ['tail']});
+  }
+  w.s.size = (w.s.size || 0) + 1;
+  snap(w, C, [8], 'size++', '<code>size</code> = ' + w.s.size + '. Không có vòng lặp: <i>O</i>(1).', {hl: hl1(id, 'new'), chg: ['size']});
+  w.out.push('addLast(' + e + '): ' + fmtList(w));
+  endOp(w);
+  snap(w, C, [], 'Xong addLast(' + e + ')', 'Danh sách: ' + esc(fmtList(w)) + '.', {final: true});
+}
+function opAddIdx(w, index, e, skip){
+  var C = 'addIdx', size = w.s.size || 0;
+  w.s.index = index;
+  if (index === 0 || index >= size) {
+    var first = index === 0;
+    snap(w, C, first ? [1, 2] : [1, 3, 4], first ? 'index == 0: gọi addFirst' : 'index >= size: gọi addLast', first ? 'Chèn vào đầu là trường hợp riêng vì <code>head</code> phải đổi.' : '<code>index</code> = ' + index + ' ≥ <code>size</code> = ' + size + ' nên thêm vào cuối, <code>tail</code> phải đổi.', {chg: ['index']});
+    var id;
+    if (first) { id = mk(w, e, w.v.head ? w.N[w.v.head].x - 1 : 0, 0); w.N[id].next = w.v.head; w.v.head = id; if (!w.v.tail) w.v.tail = id; }
+    else { id = mk(w, e, w.v.tail ? w.N[w.v.tail].x + 1 : 0, 0); if (w.v.tail) w.N[w.v.tail].next = id; else w.v.head = id; w.v.tail = id; }
+    w.s.size = size + 1;
+    snap(w, C, first ? [2] : [4], first ? 'addFirst(' + e + ')' : 'addLast(' + e + ')', 'Nút ' + nm(w, id) + ' được thêm ' + (first ? 'vào đầu' : 'vào cuối') + '; <code>size</code> = ' + w.s.size + '.', {hl: hl1(id, 'new'), chg: [first ? 'head' : 'tail', 'size']});
+    w.out.push('add(' + index + ', ' + e + '): ' + fmtList(w));
+    endOp(w);
+    snap(w, C, [], 'Xong add(' + index + ', ' + e + ')', 'Danh sách: ' + esc(fmtList(w)) + '.', {final: true});
+    return;
+  }
+  snap(w, C, [1, 3], 'Chèn vào giữa', '<code>index</code> = ' + index + ' không phải 0 và nhỏ hơn <code>size</code> = ' + size + ': chèn vào giữa.', {chg: ['index']});
+  w.v.current = w.v.head;
+  snap(w, C, [6], 'current = head', '<code>current</code> bắt đầu ở nút đầu ' + nm(w, w.v.current) + '. Cần dừng ở nút <b>đứng trước</b> vị trí ' + index + '.', {hl: hl1(w.v.current, 'cur'), chg: ['current']});
+  for (var i = 1; i < index; i++) {
+    w.s.i = i; w.v.current = w.N[w.v.current].next;
+    snap(w, C, [7, 8], 'i = ' + i + ': current = current.next', '<code>' + i + ' &lt; ' + index + '</code> đúng: <code>current</code> tiến sang ' + nm(w, w.v.current) + '.', {hl: hl1(w.v.current, 'cur'), chg: ['current', 'i']});
+  }
+  w.s.i = index;
+  snap(w, C, [7], 'i = ' + index + ': dừng', '<code>' + index + ' &lt; ' + index + '</code> sai, vòng lặp dừng. <code>current</code> là ' + nm(w, w.v.current) + ', nút đứng trước vị trí chèn.', {hl: hl1(w.v.current, 'cur'), chg: ['i']});
+  var cur = w.v.current;
+  w.v.temp = w.N[cur].next;
+  snap(w, C, [10], 'temp = current.next', '<code>temp</code> giữ nút ' + nm(w, w.v.temp) + ' để không bị mất khi đổi <code>current.next</code>.', {hl: hl1(w.v.temp, 'cur'), chg: ['temp']});
+  var id2 = mk(w, e, w.N[cur].x + 0.5, 1);
+  w.N[cur].next = id2;
+  snap(w, C, [11], 'current.next = new Node<>(' + e + ')', 'Nút mới ' + nm(w, id2) + ' nối sau ' + nm(w, cur) + '. Phần còn lại chỉ có <code>temp</code> giữ.', {hl: hl1(id2, 'new'), ah: ah1(cur)});
+  if (skip) {
+    w.broken = true;
+    snap(w, C, [12], 'Bỏ qua (current.next).next = temp', 'Dòng này bị bỏ: nút mới ' + nm(w, id2) + ' vẫn có <code>next</code> là <code>null</code>.', {hl: hl1(id2, 'new'), off: [12]});
+  } else {
+    w.N[id2].next = w.v.temp;
+    snap(w, C, [12], '(current.next).next = temp', 'Nối nút mới tới ' + nm(w, w.v.temp) + '. Danh sách liền mạch trở lại.', {hl: hl1(id2, 'new'), ah: ah1(id2)});
+  }
+  w.s.size = size + 1;
+  snap(w, C, [13], 'size++', '<code>size</code> = ' + w.s.size + '. <code>head</code> và <code>tail</code> không đổi.', {hl: hl1(id2, 'new'), chg: ['size'], off: skip ? [12] : null});
+  var seen = listText(w);
+  w.out.push(skip ? 'Đi từ head: ' + seen.join(' -> ') + ' (size = ' + w.s.size + ' nhưng chỉ thấy ' + seen.length + ' nút)' : 'add(' + index + ', ' + e + '): ' + fmtList(w));
+  endOp(w, skip);
+  snap(w, C, [], 'Xong add(' + index + ', ' + e + ')', skip ? 'Các nút sau ' + nm(w, id2) + ' không còn đi tới được từ <code>head</code>, dù <code>tail</code> vẫn trỏ vào nút cuối cũ. Bấm <b>Làm lại</b>.' : 'Tìm vị trí tốn <i>O</i>(n), nối lại chỉ tốn <i>O</i>(1).', {final: true, off: skip ? [12] : null});
+}
+function opRemoveFirst(w, sub){
+  var C = 'removeFirst';
+  if (!(w.s.size > 0)) {
+    w.out.push('removeFirst(): null');
+    snap(w, C, [1], 'size == 0: return null', 'Danh sách rỗng, không có gì để xoá.', {});
+    endOp(w); return null;
+  }
+  w.v.temp = w.v.head;
+  snap(w, C, [2], 'temp = head', '<code>temp</code> giữ nút đầu ' + nm(w, w.v.temp) + ' để trả về phần tử của nó.', {hl: hl1(w.v.temp, 'del'), chg: ['temp']});
+  w.v.head = w.N[w.v.head].next;
+  snap(w, C, [3], 'head = head.next', '<code>head</code> nhảy sang ' + nm(w, w.v.head) + '. Nút cũ chỉ còn <code>temp</code> giữ.', {hl: hl1(w.v.temp, 'del'), chg: ['head']});
+  w.s.size--;
+  snap(w, C, [4], 'size--', '<code>size</code> = ' + w.s.size + '.', {hl: hl1(w.v.temp, 'del'), chg: ['size']});
+  var emp = !w.v.head;
+  if (emp) w.v.tail = null;
+  snap(w, C, [5], emp ? 'head == null: tail = null' : 'head khác null', emp ? 'Danh sách vừa thành rỗng nên phải gán <code>tail = null</code>; nếu quên, <code>tail</code> vẫn trỏ vào nút đã xoá.' : 'Danh sách còn nút, <code>tail</code> giữ nguyên.', {hl: hl1(w.v.temp, 'del'), chg: emp ? ['tail'] : []});
+  var el = w.N[w.v.temp].el;
+  w.out.push('removeFirst(): ' + el);
+  endOp(w);
+  snap(w, C, [6], 'return ' + el, 'Trả về ' + esc(el) + '. Nút cũ không còn ai trỏ tới, JVM sẽ thu hồi. Tốn <i>O</i>(1).', {final: true});
+  return el;
+}
+function opRemoveLast(w){
+  var C = 'removeLast', size = w.s.size || 0;
+  if (!size) { w.out.push('removeLast(): null'); snap(w, C, [1], 'size == 0: return null', 'Danh sách rỗng, trả về <code>null</code>.', {}); endOp(w); return; }
+  if (size === 1) {
+    w.v.temp = w.v.head;
+    snap(w, C, [1, 2, 3], 'size == 1: temp = head', 'Chỉ có một nút: giữ nó trong <code>temp</code>.', {hl: hl1(w.v.temp, 'del'), chg: ['temp']});
+    w.v.head = w.v.tail = null;
+    snap(w, C, [4], 'head = tail = null', 'Danh sách thành rỗng.', {hl: hl1(w.v.temp, 'del'), chg: ['head', 'tail']});
+    w.s.size = 0;
+    snap(w, C, [5], 'size = 0', '', {hl: hl1(w.v.temp, 'del'), chg: ['size']});
+    var e1 = w.N[w.v.temp].el; w.out.push('removeLast(): ' + e1);
+    endOp(w);
+    snap(w, C, [6], 'return ' + e1, 'Trả về ' + esc(e1) + '.', {final: true});
+    return;
+  }
+  w.s.steps = 0;
+  w.v.current = w.v.head;
+  snap(w, C, [1, 2, 8], 'current = head', '<code>size</code> = ' + size + ': phải đi từ đầu tìm nút <b>kế cuối</b>, vì nút cuối không biết nút đứng trước nó.', {hl: hl1(w.v.current, 'cur'), chg: ['current']});
+  for (var i = 0; i < size - 2; i++) {
+    w.s.i = i; w.v.current = w.N[w.v.current].next; w.s.steps++;
+    snap(w, C, [9, 10], 'i = ' + i + ': current = current.next', '<code>' + i + ' &lt; ' + (size - 2) + '</code> đúng: <code>current</code> sang ' + nm(w, w.v.current) + '. Đã đi ' + w.s.steps + ' bước.', {hl: hl1(w.v.current, 'cur'), chg: ['current', 'i', 'steps']});
+  }
+  w.s.i = size - 2;
+  snap(w, C, [9], 'i = ' + (size - 2) + ': dừng', 'Vòng lặp chạy <code>size - 2</code> = ' + (size - 2) + ' lần. <code>current</code> dừng ở nút kế cuối ' + nm(w, w.v.current) + '.', {hl: hl1(w.v.current, 'cur'), chg: ['i']});
+  w.v.temp = w.v.tail;
+  snap(w, C, [12], 'temp = tail', '<code>temp</code> giữ nút cuối ' + nm(w, w.v.temp) + '.', {hl: hl1(w.v.temp, 'del'), chg: ['temp']});
+  w.v.tail = w.v.current;
+  snap(w, C, [13], 'tail = current', '<code>tail</code> lùi về ' + nm(w, w.v.tail) + '.', {hl: hl1(w.v.temp, 'del'), chg: ['tail']});
+  w.N[w.v.tail].next = null;
+  snap(w, C, [14], 'tail.next = null', 'Cắt liên kết tới nút cuối cũ.', {hl: hl1(w.v.temp, 'del'), ah: ah1(w.v.tail)});
+  w.s.size--;
+  snap(w, C, [15], 'size--', '<code>size</code> = ' + w.s.size + '.', {hl: hl1(w.v.temp, 'del'), chg: ['size']});
+  var el = w.N[w.v.temp].el, st = w.s.steps;
+  w.out.push('removeLast(): ' + el + '   (' + st + ' bước đi)');
+  endOp(w);
+  snap(w, C, [16], 'return ' + el, 'Trả về ' + esc(el) + '. Phải đi ' + st + ' bước (<code>size - 2</code>): danh sách càng dài càng lâu, <i>O</i>(n).', {final: true});
+}
+function opRemoveIdx(w, index){
+  var C = 'removeIdx', size = w.s.size || 0;
+  w.s.index = index;
+  if (index < 0 || index >= size) {
+    w.out.push('remove(' + index + '): null');
+    snap(w, C, [1, 2], 'Ngoài khoảng: return null', '<code>index</code> = ' + index + ' nằm ngoài [0, ' + (size - 1) + '] nên không xoá gì.', {chg: ['index']});
+    endOp(w); snap(w, C, [], 'Xong remove(' + index + ')', 'Danh sách không đổi.', {final: true}); return;
+  }
+  if (index === 0) {
+    snap(w, C, [1, 4], 'index == 0: removeFirst()', 'Xoá nút đầu làm đổi <code>head</code>, nên giao cho <code>removeFirst()</code>.', {chg: ['index']});
+    var h = w.v.head; w.v.temp = h; w.v.head = w.N[h].next; w.s.size--; if (!w.v.head) w.v.tail = null;
+    snap(w, C, [4], 'head = head.next', '<code>head</code> nhảy sang ' + nm(w, w.v.head) + '; <code>size</code> = ' + w.s.size + '.', {hl: hl1(h, 'del'), chg: ['head', 'size']});
+    var e0 = w.N[h].el; w.out.push('remove(0): ' + e0); endOp(w);
+    snap(w, C, [], 'Trả về ' + e0, 'Danh sách: ' + esc(fmtList(w)) + '.', {final: true}); return;
+  }
+  if (index === size - 1) {
+    snap(w, C, [1, 4, 5, 6], 'index == size - 1: removeLast()', 'Xoá nút cuối làm đổi <code>tail</code>, nên giao cho <code>removeLast()</code>: đi từ đầu tới nút kế cuối (' + (size - 2) + ' bước).', {chg: ['index']});
+    var cur = w.v.head; for (var k = 0; k < size - 2; k++) cur = w.N[cur].next;
+    var last = w.v.tail; w.v.temp = last; w.v.tail = cur; w.N[cur].next = null; w.s.size--;
+    snap(w, C, [6], 'tail = nút kế cuối', '<code>tail</code> lùi về ' + nm(w, cur) + ', <code>tail.next = null</code>; <code>size</code> = ' + w.s.size + '.', {hl: hl1(last, 'del'), chg: ['tail', 'size'], ah: ah1(cur)});
+    var e2 = w.N[last].el; w.out.push('remove(' + index + '): ' + e2); endOp(w);
+    snap(w, C, [], 'Trả về ' + e2, 'Danh sách: ' + esc(fmtList(w)) + '.', {final: true}); return;
+  }
+  snap(w, C, [1, 4, 5], 'Xoá ở giữa', '<code>index</code> = ' + index + ': không ngoài khoảng, không phải đầu (0), không phải cuối (' + (size - 1) + ').', {chg: ['index']});
+  w.v.previous = w.v.head;
+  snap(w, C, [8], 'previous = head', '<code>previous</code> bắt đầu ở ' + nm(w, w.v.previous) + '. Cần dừng ở nút <b>đứng trước</b> nút bị xoá.', {hl: hl1(w.v.previous, 'cur'), chg: ['previous']});
+  for (var i = 1; i < index; i++) {
+    w.s.i = i; w.v.previous = w.N[w.v.previous].next;
+    snap(w, C, [9, 10], 'i = ' + i + ': previous = previous.next', '<code>previous</code> tiến sang ' + nm(w, w.v.previous) + '.', {hl: hl1(w.v.previous, 'cur'), chg: ['previous', 'i']});
+  }
+  w.s.i = index;
+  snap(w, C, [9], 'i = ' + index + ': dừng', '<code>previous</code> dừng ở ' + nm(w, w.v.previous) + '.', {hl: hl1(w.v.previous, 'cur'), chg: ['i']});
+  w.v.current = w.N[w.v.previous].next;
+  snap(w, C, [12], 'current = previous.next', 'Nút cần xoá là ' + nm(w, w.v.current) + '.', {hl: hl2(w.v.previous, 'cur', w.v.current, 'del'), chg: ['current']});
+  w.N[w.v.previous].next = w.N[w.v.current].next;
+  w.N[w.v.current].y = 1;
+  snap(w, C, [13], 'previous.next = current.next', nm(w, w.v.previous) + ' nối thẳng tới ' + nm(w, w.N[w.v.current].next) + ', vòng qua nút bị xoá.', {hl: hl2(w.v.previous, 'cur', w.v.current, 'del'), ah: ah1(w.v.previous)});
+  w.s.size--;
+  snap(w, C, [14], 'size--', '<code>size</code> = ' + w.s.size + '. <code>head</code>, <code>tail</code> giữ nguyên.', {hl: hl1(w.v.current, 'del'), chg: ['size']});
+  var el = w.N[w.v.current].el; w.out.push('remove(' + index + '): ' + el); endOp(w);
+  snap(w, C, [15], 'return ' + el, 'Trả về ' + esc(el) + '. Nút ' + esc(el) + ' không còn ai trỏ tới, JVM sẽ thu hồi.', {final: true});
+}
+// danh sách đôi
+function dAddLast(w, e, forget){
+  var C = 'dAdd', t0 = w.v.tail;
+  var id = mk(w, e, t0 ? w.N[t0].x + 1 : 0, 0); w.v.n = id;
+  snap(w, C, [1], 'Node n = new Node(' + e + ')', 'Tạo nút ' + nm(w, id) + ': cả <code>next</code> và <code>previous</code> đều là <code>null</code>.', {hl: hl1(id, 'new'), chg: ['n']});
+  if (!t0) {
+    w.v.head = w.v.tail = id;
+    snap(w, C, [2, 3], 'head = tail = n', 'Danh sách rỗng: <code>head</code> và <code>tail</code> cùng trỏ tới nút mới.', {hl: hl1(id, 'new'), chg: ['head', 'tail']});
+  } else {
+    w.N[t0].next = id;
+    snap(w, C, [2, 5], 'tail.next = n', 'Chiều tiến: ' + nm(w, t0) + ' trỏ tới nút mới.', {hl: hl1(id, 'new'), ah: ah1(t0)});
+    if (forget) {
+      snap(w, C, [6], 'Quên n.previous = tail', 'Dòng này bị bỏ: nút mới không biết nút đứng trước nó, <code>previous</code> vẫn là <code>null</code>.', {hl: hl1(id, 'new'), off: [6]});
+    } else {
+      w.N[id].prev = t0;
+      var a = {}; a[id + 'p'] = 1;
+      snap(w, C, [6], 'n.previous = tail', 'Chiều lùi: nút mới trỏ ngược về ' + nm(w, t0) + '.', {hl: hl1(id, 'new'), ah: a});
+    }
+    w.v.tail = id;
+    snap(w, C, [7], 'tail = n', '<code>tail</code> dời sang nút mới.', {hl: hl1(id, 'new'), chg: ['tail'], off: forget ? [6] : null});
+  }
+  endOp(w);
+  snap(w, C, [], 'Xong addLast(' + e + ')', forget && t0 ? 'Duyệt xuôi vẫn đúng, nhưng thử <b>Duyệt ngược</b> xem.' : 'Mỗi lần nối cập nhật cả hai chiều.', {final: true, off: forget && t0 ? [6] : null});
+}
+function dTrav(w, back){
+  var C = 'dTrav', L = back ? [6, 7] : [0, 1], P = back ? 8 : 2, E = back ? 10 : 4, line = '';
+  w.v.c = back ? w.v.tail : w.v.head;
+  snap(w, C, [L[0]], 'c = ' + (back ? 'tail' : 'head'), 'Bắt đầu từ ' + (back ? '<code>tail</code>' : '<code>head</code>') + ': ' + nm(w, w.v.c) + '.', {hl: w.v.c ? hl1(w.v.c, 'cur') : {}, chg: ['c']});
+  var guard = 0, oi = w.out.length; w.out.push('');
+  while (w.v.c && guard++ < 12) {
+    var c = w.v.c; line += w.N[c].el + ' ';
+    w.out[oi] = line;
+    var nx = back ? w.N[c].prev : w.N[c].next;
+    w.v.c = nx;
+    var a = {}; a[c + (back ? 'p' : 'n')] = 1;
+    var early = back && !nx && c !== w.v.head;
+    snap(w, C, [P, L[1]], 'In ' + w.N[c].el + ', c = c.' + (back ? 'previous' : 'next'), 'In ' + nm(w, c) + ', rồi <code>c</code> sang ' + nm(w, nx) + (early ? ': nút này có <code>previous</code> là <code>null</code> nên duyệt ngược dừng sớm!' : '.'), {hl: hl1(c, 'cur'), chg: ['c'], ah: early ? {} : a});
+  }
+  var full = listText(w).length, got = line.trim() ? line.trim().split(' ').length : 0;
+  snap(w, C, [L[0], E], 'c == null: dừng', 'Điều kiện <code>c != null</code> sai, vòng lặp dừng' + (got < full ? '. Chỉ in được ' + got + '/' + full + ' phần tử.' : '.'), {});
+  endOp(w);
+  snap(w, C, [], back ? 'Xong duyệt ngược' : 'Xong duyệt xuôi', got < full ? 'Thiếu <code>previous</code> chỉ làm hỏng chiều lùi; chiều tiến vẫn đúng.' : 'In đủ ' + got + ' phần tử.', {final: true});
+}
+function dRemoveLast(w){
+  var C = 'dRem', t = w.v.tail, p = w.N[t].prev;
+  snap(w, C, [0], 'Xoá nút cuối ' + w.N[t].el, 'Không cần vòng lặp tìm nút kế cuối: nó chính là <code>tail.previous</code>.', {hl: hl1(t, 'del')});
+  w.v.temp = t; w.v.tail = p;
+  if (!p) {
+    w.broken = true; w.out.push('Exception: java.lang.NullPointerException');
+    snap(w, C, [1], 'tail = tail.previous', '<code>tail.previous</code> là <code>null</code> (dòng <code>n.previous = tail</code> đã bị quên), nên <code>tail</code> thành <code>null</code>.', {hl: hl1(t, 'del'), chg: ['tail']});
+    snap(w, C, [2], 'tail.next: NullPointerException', 'Truy cập <code>tail.next</code> khi <code>tail</code> là <code>null</code>: chương trình ném <code>NullPointerException</code>. Bấm <b>Làm lại</b>.', {hl: hl1(t, 'del')});
+    return;
+  }
+  snap(w, C, [1], 'tail = tail.previous', '<code>tail</code> lùi một bước về ' + nm(w, p) + '.', {hl: hl1(t, 'del'), chg: ['tail']});
+  w.N[p].next = null;
+  snap(w, C, [2], 'tail.next = null', 'Cắt chiều tiến tới nút cũ. <i>O</i>(1).', {hl: hl1(t, 'del'), ah: ah1(p)});
+  w.out.push('removeLast(): ' + w.N[t].el);
+  w.N[t].prev = null;
+  endOp(w);
+  snap(w, C, [], 'Xong removeLast()', 'Nút cũ không còn ai trỏ tới, JVM sẽ thu hồi.', {final: true});
+}
+function hl1(id, c){ var h = {}; if (id) h[id] = c; return h; }
+function hl2(a, ca, b, cb){ var h = {}; if (a) h[a] = ca; if (b) h[b] = cb; return h; }
+function ah1(id){ var a = {}; if (id) a[id + 'n'] = 1; return a; }
+function fmtList(w){ return '[' + listText(w).join(', ') + ']'; }
+function initList(w, els){ var prev = null; els.forEach(function(e, i){ var id = mk(w, e, i, 0); if (prev) w.N[prev].next = id; else w.v.head = id; if (w.doubly && prev) w.N[id].prev = prev; prev = id; }); w.v.tail = prev; if (!w.doubly) w.s.size = els.length; if (!els.length) { w.v.head = null; w.v.tail = null; } }
+
+// ---------- chương trình theo ví dụ ----------
+function simBuild(){
+  var w = World(false), C = 'build';
+  w.v.head = null; w.v.tail = null;
+  snap(w, C, [0, 1], 'Bước 1. head = null, tail = null', 'Danh sách rỗng: chưa có nút nào.', {chg: ['head', 'tail']});
+  var a = mk(w, 'Ha Noi', 0, 0); w.v.head = a;
+  snap(w, C, [3], 'Bước 2. head = new Node<>("Ha Noi")', 'Tạo nút đầu tiên, <code>head</code> trỏ tới nó.', {hl: hl1(a, 'new'), chg: ['head']});
+  w.v.tail = w.v.head;
+  snap(w, C, [4], 'Bước 2. tail = head', 'Cả <code>head</code> và <code>tail</code> cùng trỏ tới nút duy nhất.', {hl: hl1(a, 'new'), chg: ['tail']});
+  [['Hue', 6, 7, 3], ['Da Nang', 9, 10, 5]].forEach(function(t, k){
+    var id = mk(w, t[0], k + 1, 0); w.N[w.v.tail].next = id;
+    snap(w, C, [t[1]], 'Bước ' + t[3] + '. tail.next = new Node<>("' + t[0] + '")', 'Nút ' + nm(w, w.v.tail) + ' nối tới nút mới ' + nm(w, id) + ', nhưng <code>tail</code> vẫn ở nút cũ.', {hl: hl1(id, 'new'), ah: ah1(w.v.tail)});
+    w.v.tail = w.N[w.v.tail].next;
+    snap(w, C, [t[2]], 'Bước ' + (k ? t[3] : t[3] + 1) + '. tail = tail.next', '<code>tail</code> dời sang ' + nm(w, id) + '.', {hl: hl1(id, 'new'), chg: ['tail']});
+  });
+  w.v.current = w.v.head;
+  snap(w, C, [12], 'Duyệt: current = head', '<code>current</code> bắt đầu ở nút đầu ' + nm(w, w.v.current) + '.', {hl: hl1(w.v.current, 'cur'), chg: ['current']});
+  while (w.v.current) {
+    var c = w.v.current;
+    w.out.push(w.N[c].el);
+    snap(w, C, [13, 14, 15], 'current != null: in ' + w.N[c].el, '<code>current</code> khác <code>null</code> nên in <code>current.element</code> là ' + nm(w, c) + '.', {hl: hl1(c, 'cur')});
+    w.v.current = w.N[c].next;
+    snap(w, C, [16], 'current = current.next', '<code>current</code> chuyển sang ' + nm(w, w.v.current) + (w.v.current ? '.' : ': đã đi qua nút cuối.'), {hl: w.v.current ? hl1(w.v.current, 'cur') : {}, chg: ['current'], ah: ah1(c)});
+  }
+  snap(w, C, [13], 'current == null: dừng', 'Điều kiện <code>current != null</code> sai, vòng lặp kết thúc.', {});
+  w.out.push('tail: ' + w.N[w.v.tail].el);
+  snap(w, C, [18, 19], 'In tail', '<code>tail</code> vẫn trỏ nút cuối ' + nm(w, w.v.tail) + '.', {});
+  return w.S;
+}
+function simList(prog){
+  var w = World(prog.doubly);
+  initList(w, prog.init);
+  snap(w, prog.firstCode, [], prog.init.length ? 'Danh sách ban đầu' : 'Danh sách rỗng', prog.init.length ? 'Danh sách có ' + prog.init.length + ' nút.' + (prog.doubly ? '' : ' <code>size</code> = ' + w.s.size + '.') : 'Chưa có nút nào: <code>head</code> và <code>tail</code> đều là <code>null</code>.', {final: true});
+  var starts = [];
+  prog.ops.forEach(function(op){
+    starts.push(w.S.length);
+    if (w.broken) return;
+    if (op.t === 'addFirst') opAddFirst(w, op.e, op.swap);
+    else if (op.t === 'addLast') opAddLast(w, op.e);
+    else if (op.t === 'add') opAddIdx(w, op.index, op.e, op.skip);
+    else if (op.t === 'removeFirst') opRemoveFirst(w);
+    else if (op.t === 'removeLast') opRemoveLast(w);
+    else if (op.t === 'remove') opRemoveIdx(w, op.index);
+    else if (op.t === 'dAdd') dAddLast(w, op.e, op.forget);
+    else if (op.t === 'fwd') dTrav(w, false);
+    else if (op.t === 'bwd') dTrav(w, true);
+    else if (op.t === 'dRem') dRemoveLast(w);
+  });
+  w.S.starts = starts; w.S.world = w;
+  return w.S;
+}
+// Hai cách duyệt: get(i) đi lại từ head, iterator tiến một bước
+function simTrav(els){
+  var S = [], n = els.length, a = 0, b = 0, outA = '', outB = '';
+  function sn(i, title, body, lines, A, B){ S.push({code: 'trav', lines: lines, title: title, body: body, trav: {els: els, A: A, B: B, a: a, b: b, outA: outA, outB: outB}, vars: [], out: []}); }
+  sn(-1, 'Danh sách ' + n + ' nút', 'Hai vòng lặp cùng in ' + n + ' phần tử. Đếm xem mỗi cách phải ghé bao nhiêu nút.', [], {}, {cur: 0});
+  for (var i = 0; i < n; i++) {
+    a += i + 1; b += 1; outA += els[i] + ' '; outB += els[i] + ' ';
+    sn(i, 'i = ' + i, '(a) <code>get(' + i + ')</code> đi từ <code>head</code> qua ' + (i + 1) + ' nút. (b) <code>next()</code> chỉ lấy nút <code>current</code> rồi tiến một bước.', [1, 2, 5, 6], {walk: i}, {cur: i + 1, got: i});
+  }
+  sn(n, 'Xong', 'Cách (a) ghé 1 + 2 + ... + ' + n + ' = <b>' + a + '</b> nút: <i>O</i>(n²). Cách (b) ghé đúng <b>' + b + '</b> nút: <i>O</i>(n).', [], {done: 1}, {cur: n, done: 1});
+  return S;
+}
+// Ngăn xếp và hàng đợi
+function simSQ(prog){
+  var w = World(false), st = [], S = w.S;
+  initList(w, []); w.s.size = 0;
+  function snapSQ(code, lines, title, body, shl, o){ o = o || {}; var s = snap(w, code, lines, title, body, o); s.stack = {items: st.slice(), hl: shl || {}}; return s; }
+  snapSQ('stack', [], 'Ngăn xếp và hàng đợi rỗng', 'Ngăn xếp dùng <code>ArrayList</code> (đỉnh là cuối mảng); hàng đợi dùng danh sách liên kết (thêm ở <code>tail</code>, lấy ở <code>head</code>).', {}, {final: true});
+  var starts = [];
+  prog.ops.forEach(function(op){
+    starts.push(S.length);
+    var e = op.e, h = {};
+    if (op.t === 'push') {
+      st.push(e); h[st.length - 1] = 'new'; w.out.push('push(' + e + ') -> stack: [' + st.join(', ') + ']');
+      snapSQ('stack', [4, 5], 'push(' + e + ')', '<code>list.add(o)</code> đặt ' + esc(e) + ' vào cuối mảng, tức đỉnh ngăn xếp. <i>O</i>(1).', h, {final: true});
+    } else if (op.t === 'pop' || op.t === 'peek') {
+      var pk = op.t === 'peek';
+      if (!st.length) { w.out.push('Exception: java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 0'); snapSQ('stack', pk ? [1] : [9], op.t + '() trên ngăn xếp rỗng', '<code>list.get(getSize() - 1)</code> là <code>list.get(-1)</code>: ném <code>IndexOutOfBoundsException</code>.', {}, {final: true}); return; }
+      var top = st[st.length - 1]; h[st.length - 1] = pk ? 'cur' : 'del';
+      if (pk) { w.out.push('peek() -> ' + top); snapSQ('stack', [0, 1], 'peek() = ' + top, 'Xem phần tử ở đỉnh, <b>không</b> xoá.', h, {final: true}); }
+      else {
+        snapSQ('stack', [8, 9, 10], 'pop(): lấy ' + top, 'Lấy phần tử cuối mảng ' + esc(top) + ' rồi xoá ô cuối.', h, {});
+        st.pop(); w.out.push('pop() -> ' + top);
+        snapSQ('stack', [11], 'return ' + top, 'Trả về ' + esc(top) + '. Ngăn xếp còn ' + st.length + ' phần tử. Vào sau, ra trước.', {}, {final: true});
+      }
+    } else if (op.t === 'enqueue') {
+      var id = mk(w, e, w.v.tail ? w.N[w.v.tail].x + 1 : 0, 0);
+      if (w.v.tail) w.N[w.v.tail].next = id; else w.v.head = id;
+      w.v.tail = id; w.s.size++;
+      w.out.push('enqueue(' + e + ') -> Queue: ' + fmtList(w));
+      snapSQ('queue', [0, 1], 'enqueue(' + e + ')', '<code>list.addLast(e)</code>: nút mới nối sau <code>tail</code>, rồi <code>tail</code> dời sang nó. <i>O</i>(1).', {}, {hl: hl1(id, 'new'), chg: ['tail', 'size']});
+      layout(w); S[S.length - 1].nodes.forEach(function(nd){ nd.x = w.N[nd.id].x; });
+    } else if (op.t === 'dequeue') {
+      if (!w.v.head) { w.out.push('Exception: java.util.NoSuchElementException'); snapSQ('queue', [4, 5], 'dequeue() trên hàng đợi rỗng', '<code>removeFirst()</code> của <code>LinkedList</code> rỗng ném <code>NoSuchElementException</code>.', {}, {final: true}); return; }
+      var hd = w.v.head; w.v.temp = hd;
+      snapSQ('queue', [4, 5], 'dequeue(): lấy ' + w.N[hd].el, '<code>list.removeFirst()</code>: <code>head</code> nhảy sang nút kế. Người vào trước ra trước.', {}, {hl: hl1(hd, 'del')});
+      var el = w.N[hd].el; w.v.head = w.N[hd].next; if (!w.v.head) w.v.tail = null; w.s.size--;
+      w.out.push('dequeue() -> ' + el);
+      endOp(w);
+      snapSQ('queue', [5], 'return ' + el, 'Trả về ' + esc(el) + '. Hàng đợi còn ' + w.s.size + ' phần tử.', {}, {final: true, chg: ['head', 'size']});
+    }
+  });
+  S.starts = starts; S.sq = {st: st, w: w};
+  return S;
+}
+//SIM-END
+
+// ---------- cấu hình theo ví dụ ----------
+var MODES = {
+  xaychuoi: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem từng lệnh xây chuỗi Ha Noi → Hue → Da Nang, rồi <code>current</code> duyệt tới <code>null</code>.', slots: 4},
+  them: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem từng lệnh; nhập giá trị rồi bấm <code>addFirst</code> hoặc <code>addLast</code> để tự thử.', slots: 7, max: 6,
+    prog: {init: [], firstCode: 'addLast', ops: [{t: 'addLast', e: 'B'}, {t: 'addFirst', e: 'A'}, {t: 'addLast', e: 'C'}, {t: 'addFirst', e: 'Z'}]}},
+  chen: {low: true, lead: 'Chọn <code>index</code> và giá trị rồi bấm <code>add(index, e)</code>; <b>Bước tiếp</b> (<kbd>→</kbd>) chạy từng lệnh.', slots: 7, max: 6,
+    prog: {init: ['A', 'B', 'C'], firstCode: 'addIdx', ops: [{t: 'add', index: 2, e: 'X'}]}},
+  xoadaucuoi: {lead: 'Bấm <code>removeFirst</code> hoặc <code>removeLast</code>, rồi <b>Bước tiếp</b> (<kbd>→</kbd>); để ý số bước <code>current</code> phải đi.', slots: 6, max: 6,
+    prog: {init: ['A', 'B', 'C', 'D', 'E'], firstCode: 'removeFirst', ops: [{t: 'removeFirst'}, {t: 'removeLast'}]}},
+  xoachiso: {low: true, lead: 'Chọn <code>index</code> rồi bấm <code>remove(index)</code>; <b>Bước tiếp</b> (<kbd>→</kbd>) chạy từng lệnh.', slots: 6, max: 6,
+    prog: {init: ['A', 'B', 'C', 'D'], firstCode: 'removeIdx', ops: [{t: 'remove', index: 2}]}},
+  duyet: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để so sánh số nút phải ghé của hai cách duyệt danh sách 8 nút.'},
+  doi: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem từng lệnh; thử <code>addLast</code>, <code>removeLast</code> và hai chiều duyệt.', slots: 6, max: 6, doubly: true,
+    prog: {init: [], firstCode: 'dAdd', doubly: true, ops: [{t: 'dAdd', e: 'A'}, {t: 'dAdd', e: 'B'}, {t: 'dAdd', e: 'C'}, {t: 'fwd'}, {t: 'bwd'}]}},
+  nganxephangdoi: {lead: 'Nhập giá trị rồi bấm các thao tác; <b>Lùi lại</b> (<kbd>←</kbd>) để xem lại từng bước.', slots: 5, max: 5,
+    prog: {ops: [{t: 'push', e: 'Tom'}, {t: 'push', e: 'Susan'}, {t: 'push', e: 'Kim'}, {t: 'pop'}, {t: 'enqueue', e: 'Tom'}, {t: 'enqueue', e: 'Susan'}, {t: 'enqueue', e: 'Kim'}, {t: 'dequeue'}]}}
+};
+var VD = qs('vd'); if (!MODES[VD]) VD = 'xaychuoi';
+var M = MODES[VD], prog = null, snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10);
+function clone(p){ return JSON.parse(JSON.stringify(p)); }
+function build(){
+  if (VD === 'xaychuoi') return simBuild();
+  if (VD === 'duyet') return simTrav(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+  if (VD === 'nganxephangdoi') return simSQ(prog);
+  return simList(prog);
+}
+
+// ---------- vẽ ----------
+var NS = 'http://www.w3.org/2000/svg';
+var SLOT = M.doubly ? 124 : 114, NW = M.doubly ? 98 : 90, NH = 34, ELW = 60, PADL = 14, ROW0 = 52, ROW1 = 118;
+var VBW = PADL * 2 + (M.slots || 6) * SLOT - (SLOT - NW), VBH = M.low ? 162 : 116;
+var nodeEls = {}, svgEl = null;
+function setupViz(){
+  var area = $('vizArea');
+  if (VD === 'duyet') {
+    area.innerHTML = '<div class="card trav"><div class="trow"><div class="th">(a) for + get(i)<span>đã ghé: <b class="cnt" id="ca">0</b> nút</span></div><div class="chain" id="ra"></div></div>' +
+      '<div class="trow"><div class="th">(b) for-each (iterator)<span>đã ghé: <b class="cnt" id="cb">0</b> nút</span></div><div class="chain" id="rb"></div></div></div>';
+    return;
+  }
+  var svg = '<svg viewBox="0 0 ' + VBW + ' ' + VBH + '" style="min-width:' + Math.round(VBW * 0.62) + 'px;max-width:' + Math.round(VBW * 1.05) + 'px;margin:0 auto" role="img" aria-label="Các nút của danh sách liên kết"><defs>' +
+    ['mk', 'mkh', 'mkb', 'mkp', 'mkl'].map(function(id){ return '<marker id="' + id + '" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>'; }).join('') +
+    '</defs><g id="gA"></g><g id="gN"></g><g id="gP"></g><text id="emp" x="' + VBW / 2 + '" y="' + (ROW0 + NH / 2) + '" text-anchor="middle" style="font:13px system-ui;fill:var(--muted)"></text></svg>';
+  if (VD === 'nganxephangdoi') {
+    area.innerHTML = '<div class="sqrow"><div class="card"><p class="panel-title">Ngăn xếp</p><div class="stack" id="stk"></div><div class="vars" id="sv"></div></div>' +
+      '<div class="card"><p class="panel-title">Hàng đợi (danh sách liên kết)</p><div class="viz">' + svg + '</div></div></div>';
+  } else area.innerHTML = '<div class="card"><div class="viz">' + svg + '</div></div>';
+  nodeEls = {};
+}
+function px(nd, minX){ return {x: PADL + (nd.x - minX) * SLOT, y: nd.y ? ROW1 : ROW0}; }
+function mkNodeEl(nd){
+  var g = document.createElementNS(NS, 'g');
+  var html = '<rect class="box" x="0" y="0" width="' + NW + '" height="' + NH + '" rx="6"/>';
+  if (M.doubly) html += '<line class="sep" x1="22" y1="0" x2="22" y2="' + NH + '"/><line class="sep" x1="' + (NW - 22) + '" y1="0" x2="' + (NW - 22) + '" y2="' + NH + '"/>' +
+    '<text x="' + (NW / 2) + '" y="' + (NH / 2) + '">' + esc(nd.el) + '</text><text class="nul pv" x="11" y="' + (NH / 2) + '"></text><text class="nul nx" x="' + (NW - 11) + '" y="' + (NH / 2) + '"></text>';
+  else html += '<line class="sep" x1="' + ELW + '" y1="0" x2="' + ELW + '" y2="' + NH + '"/><text x="' + (ELW / 2) + '" y="' + (NH / 2) + '">' + esc(nd.el) + '</text><text class="nul nx" x="' + (ELW + (NW - ELW) / 2) + '" y="' + (NH / 2) + '"></text>';
+  g.innerHTML = html;
+  return g;
+}
+function drawChain(sn){
+  var gN = $('gN'), gA = $('gA'), gP = $('gP');
+  var minX = sn.nodes.length ? Math.min.apply(null, sn.nodes.map(function(n){ return n.x; })) : 0;
+  var maxX = sn.nodes.length ? Math.max.apply(null, sn.nodes.map(function(n){ return n.x; })) : 0;
+  if (maxX - minX > (M.slots || 6) - 1) minX = maxX - ((M.slots || 6) - 1);
+  var P = {}, seen = {};
+  sn.nodes.forEach(function(nd){ P[nd.id] = px(nd, minX); });
+  sn.nodes.forEach(function(nd){
+    var g = nodeEls[nd.id], p = P[nd.id];
+    if (!g) { g = mkNodeEl(nd); g.setAttribute('transform', 'translate(' + p.x + ',' + p.y + ')'); gN.appendChild(g); nodeEls[nd.id] = g; g.getBoundingClientRect(); }
+    g.setAttribute('class', 'nb ' + nd.cls);
+    g.setAttribute('transform', 'translate(' + p.x + ',' + p.y + ')');
+    g.querySelector('.nx').textContent = nd.next ? '' : 'null';
+    var pv = g.querySelector('.pv'); if (pv) pv.textContent = nd.prev ? '' : 'null';
+    seen[nd.id] = 1;
+  });
+  Object.keys(nodeEls).forEach(function(id){ if (!seen[id]) { nodeEls[id].remove(); delete nodeEls[id]; } });
+  // mũi tên
+  var paths = '';
+  sn.nodes.forEach(function(nd){
+    if (nd.next && P[nd.next]) paths += arrowPath(P[nd.id], P[nd.next], nd.id === nd.next, false, sn.ah[nd.id + 'n'], sn.bad[nd.id + 'n'], nd.cls.indexOf('lost') >= 0);
+    if (M.doubly && nd.prev && P[nd.prev]) paths += arrowPath(P[nd.id], P[nd.prev], false, true, sn.ah[nd.id + 'p'], sn.bad[nd.id + 'p'], nd.cls.indexOf('lost') >= 0);
+  });
+  gA.innerHTML = paths;
+  // nhãn con trỏ
+  var labels = {};
+  sn.vars.forEach(function(v){ if (v[1] && v[1].ptr && P[v[1].ptr]) (labels[v[1].ptr] = labels[v[1].ptr] || []).push(v[0]); });
+  var lp = '';
+  Object.keys(labels).forEach(function(id){
+    var p = P[id], cx = p.x + (M.doubly ? NW / 2 : ELW / 2), names = labels[id];
+    lp += '<g class="ptr">';
+    names.forEach(function(nm, k){ var loc = nm !== 'head' && nm !== 'tail'; lp += '<text' + (loc ? ' class="loc"' : '') + ' x="' + cx + '" y="' + (p.y - 12 - 12 * (names.length - 1 - k)) + '">' + nm + '</text>'; });
+    var loc0 = names.every(function(n){ return n !== 'head' && n !== 'tail'; });
+    lp += '<line' + (loc0 ? ' class="loc"' : '') + ' x1="' + cx + '" y1="' + (p.y - 9) + '" x2="' + cx + '" y2="' + (p.y - 1) + '" marker-end="url(#' + (loc0 ? 'mkl' : 'mkp') + ')"/></g>';
+  });
+  sn.nodes.forEach(function(nd){ if (nd.cls.indexOf('lost') >= 0) { var p = P[nd.id]; lp += '<text class="lostlbl" x="' + (p.x + NW / 2) + '" y="' + (p.y + NH + 12) + '">mất</text>'; } });
+  gP.innerHTML = lp;
+  $('emp').textContent = sn.nodes.length ? '' : 'head = null, tail = null: danh sách rỗng';
+}
+function arrowPath(a, b, self, isPrev, hi, bad, lost){
+  var cls = 'ar' + (isPrev ? ' pv' : '') + (hi ? ' hi' : '') + (bad ? ' bad' : ''), mk = bad ? 'mkb' : hi ? 'mkh' : 'mk', d;
+  var sty = lost ? ' style="opacity:.4"' : '';
+  if (self) {
+    var sx = a.x + NW - (M.doubly ? 11 : 15), sy = a.y;
+    d = 'M' + sx + ',' + (sy + NH - 6) + ' C' + (sx + 26) + ',' + (sy + NH + 24) + ' ' + (a.x + 6) + ',' + (sy + NH + 26) + ' ' + (a.x + 14) + ',' + (sy + NH + 2);
+  } else if (!isPrev) {
+    var x1 = a.x + NW - (M.doubly ? 11 : 15), y1 = a.y + (M.doubly ? 11 : NH / 2);
+    if (b.y === a.y && b.x > a.x && b.x - a.x <= SLOT + 1) d = 'M' + x1 + ',' + y1 + ' L' + (b.x - 1) + ',' + (b.y + (M.doubly ? 11 : NH / 2));
+    else if (b.y === a.y) { var top = a.y - 22; d = 'M' + x1 + ',' + (a.y + 2) + ' C' + (x1 + 10) + ',' + top + ' ' + (b.x - 30) + ',' + top + ' ' + (b.x - 1) + ',' + (b.y + 7); }
+    else if (b.y > a.y) d = 'M' + x1 + ',' + (a.y + NH - 2) + ' C' + x1 + ',' + (b.y - 10) + ' ' + (b.x - 20) + ',' + (b.y + NH / 2) + ' ' + (b.x - 1) + ',' + (b.y + NH / 2);
+    else d = 'M' + (a.x + NW) + ',' + (a.y + NH / 2) + ' C' + (a.x + NW + 26) + ',' + (a.y + NH / 2) + ' ' + (b.x - 4) + ',' + (b.y + NH + 24) + ' ' + (b.x + 10) + ',' + (b.y + NH + 1);
+  } else {
+    var px1 = a.x + 11, py1 = a.y + NH - 9;
+    if (b.y === a.y && b.x < a.x && a.x - b.x <= SLOT + 1) d = 'M' + px1 + ',' + py1 + ' L' + (b.x + NW + 1) + ',' + py1;
+    else { var bot = a.y + NH + 26; d = 'M' + px1 + ',' + (a.y + NH - 2) + ' C' + px1 + ',' + bot + ' ' + (b.x + NW - 12) + ',' + bot + ' ' + (b.x + NW - 14) + ',' + (b.y + NH + 1); }
+  }
+  return '<path class="' + cls + '"' + sty + ' d="' + d + '" marker-end="url(#' + mk + ')"/>';
+}
+function drawTrav(sn){
+  var t = sn.trav, n = t.els.length;
+  function row(which){
+    var h = '';
+    for (var i = 0; i < n; i++) {
+      var cls = '', lab = '';
+      if (which === 'a') {
+        if (t.A.walk !== undefined) { if (i < t.A.walk) cls = 'vis'; else if (i === t.A.walk) cls = 'tgt'; }
+        if (i === 0) lab = '<span class="pl hd">head</span>';
+      } else {
+        if (t.B.got === i) cls = 'tgt'; else if (t.B.got !== undefined && i < t.B.got) cls = 'done';
+        if (i === t.B.cur) lab = '<span class="pl">current</span>';
+        else if (i === 0) lab = '<span class="pl hd">head</span>';
+      }
+      h += '<div class="cn ' + cls + '">' + lab + esc(t.els[i]) + '</div><span class="cnar' + ((which === 'a' && t.A.walk !== undefined && i < t.A.walk) ? ' hi' : '') + '">→</span>';
+    }
+    h += '<div class="cn" style="border-style:dashed;color:var(--muted);font:italic 11px ui-monospace,monospace">' + (which === 'b' && t.B.cur === n ? '<span class="pl">current</span>' : '') + 'null</div>';
+    return h;
+  }
+  $('ra').innerHTML = row('a'); $('rb').innerHTML = row('b');
+  $('ca').textContent = t.a; $('cb').textContent = t.b;
+}
+function hlc(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(public|private|static|void|int|new|if|else|while|for|return|null|class)\b|(\b\d+\b)/g, o = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    o += esc(src.slice(last, m.index));
+    if (m[1]) o += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) o += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) o += '<span class="kw">' + m[3] + '</span>';
+    else o += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return o + esc(src.slice(last));
+}
+function drawCode(sn){
+  var c = CODE[sn.code], set = {}, off = {}, box = $('code');
+  (sn.lines || []).forEach(function(i){ set[i] = 1; });
+  (sn.off || []).forEach(function(i){ off[i] = 1; });
+  $('codeTitle').textContent = c.t;
+  box.innerHTML = c.l.map(function(l, i){ return '<div class="ln' + (set[i] ? ' cur' : '') + (off[i] ? ' off' : '') + (c.swp && c.swp.indexOf(i) >= 0 ? ' swp' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hlc(l) + '</span></div>'; }).join('');
+  var el = box.querySelector('.ln.cur');
+  if (el && box.scrollHeight > box.clientHeight + 2) { var top = el.offsetTop - box.clientHeight / 2; box.scrollTop = Math.max(0, top); }
+}
+function varsHtml(sn){
+  return sn.vars.map(function(v){
+    var val = v[1] === null ? 'null' : (typeof v[1] === 'object' ? '→ ' + v[1].el : v[1]);
+    return '<span class="var' + (sn.chg.indexOf(v[0]) >= 0 ? ' chg' : '') + '">' + esc(v[0]) + (typeof v[1] === 'object' && v[1] ? ' ' : ' = ') + '<b>' + esc(val) + '</b></span>';
+  }).join('') || '<span class="var">(chưa có biến)</span>';
+}
+function render(){
+  var sn = snaps[step];
+  $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+  if (VD === 'duyet') { drawTrav(sn); $('vars').innerHTML = '<span class="var">(a): <b>' + sn.trav.a + '</b> nút</span><span class="var">(b): <b>' + sn.trav.b + '</b> nút</span>'; }
+  else {
+    drawChain(sn);
+    $('vars').innerHTML = varsHtml(sn);
+    if (sn.stack) {
+      var it = sn.stack.items;
+      $('stk').innerHTML = it.length ? it.map(function(x, i){ return '<div class="scell"><span class="ix">' + i + '</span><div class="bx ' + (sn.stack.hl[i] || '') + '">' + esc(x) + '</div><span class="top">' + (i === it.length - 1 ? '← đỉnh' : '') + '</span></div>'; }).join('') : '<div class="stempty">Ngăn xếp rỗng</div>';
+      $('sv').innerHTML = '<span class="var">getSize() = <b>' + it.length + '</b></span>';
+    }
+  }
+  drawCode(sn);
+  var out = VD === 'duyet' ? ['(a) ' + sn.trav.outA, '(b) ' + sn.trav.outB] : sn.out;
+  var has = VD === 'duyet' ? sn.trav.b > 0 : out.length > 0;
+  $('con').innerHTML = has ? out.map(function(l){ return /Exception|hỏng|chỉ thấy/.test(l) ? '<span class="er">' + esc(l) + '</span>' : esc(l); }).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+  $('con').scrollTop = 1e6;
+  var run = timer !== null;
+  $('next').disabled = step >= snaps.length - 1 || run;
+  $('prev').disabled = step <= 0 || run;
+  $('all').disabled = run || step >= snaps.length - 1;
+  var broken = snaps.world && snaps.world.broken;
+  Array.prototype.forEach.call(document.querySelectorAll('.btn.op'), function(b){ b.disabled = run || !!broken; });
+}
+function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+function reset(){
+  stop(); $('err').textContent = '';
+  if (M.prog) prog = clone(M.prog);
+  snaps = build(); step = 0;
+  if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; }
+  render();
+}
+function next(){ if (step < snaps.length - 1) { step++; render(); } }
+function prev(){ if (step > 0) { step--; render(); } }
+$('next').addEventListener('click', next);
+$('prev').addEventListener('click', prev);
+$('reset').addEventListener('click', reset);
+$('all').addEventListener('click', function(){
+  if (timer) return;
+  timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); render(); return; } step++; render(); }, 550);
+  render();
+});
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || timer) return;
+  if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+});
+
+// ---------- thao tác của người học ----------
+function appendOp(op){
+  stop();
+  var oldLen = snaps.length;
+  prog.ops.push(op);
+  snaps = build();
+  step = Math.min(oldLen, snaps.length - 1);
+  render();
+}
+function finalWorld(){ var s = build(); return s.world || (s.sq && s.sq.w); }
+function readVal(){
+  var v = $('iv').value.trim();
+  if (!/^[A-Za-z0-9]{1,7}$/.test(v)) { $('iv').classList.add('bad'); $('err').textContent = 'Giá trị gồm 1–7 chữ cái không dấu hoặc chữ số.'; return null; }
+  $('iv').classList.remove('bad'); return v;
+}
+function readIdx(lo, hi){
+  var s = $('ix').value.trim();
+  if (!/^-?\d+$/.test(s) || +s < lo || +s > hi) { $('ix').classList.add('bad'); $('err').textContent = 'index là số nguyên từ ' + lo + ' đến ' + hi + '.'; return null; }
+  $('ix').classList.remove('bad'); return +s;
+}
+function countNow(){
+  var w = finalWorld();
+  if (VD === 'nganxephangdoi') return {st: snaps.sq.st.length, q: w.s.size};
+  return Object.keys(w.N).length;
+}
+function full(){ if (countNow() >= M.max) { $('err').textContent = 'Trang này vẽ tối đa ' + M.max + ' nút. Hãy xoá bớt hoặc bấm Làm lại.'; return true; } return false; }
+function setupOps(){
+  var o = $('ops'), h = '';
+  var val = '<div class="field"><label for="iv">Giá trị</label><input type="text" id="iv" value="X" autocomplete="off"></div>';
+  if (VD === 'them') h = val + '<div class="btns"><button class="btn op" id="bAF">addFirst</button><button class="btn op" id="bAL">addLast</button></div><label class="chk"><input type="checkbox" id="sw"> Đổi thứ tự hai lệnh <code>newNode.next = head;</code> và <code>head = newNode;</code></label>';
+  else if (VD === 'chen') h = '<div class="field"><label for="ix">index</label><input type="text" id="ix" value="1" inputmode="numeric" autocomplete="off" style="width:48px"></div>' + val + '<div class="btns"><button class="btn op" id="bAI">add(index, e)</button></div><label class="chk"><input type="checkbox" id="sk"> Bỏ dòng <code>(current.next).next = temp;</code></label>';
+  else if (VD === 'xoadaucuoi') h = '<div class="btns"><button class="btn op" id="bRF">removeFirst</button><button class="btn op" id="bRL">removeLast</button></div>' + val + '<div class="btns"><button class="btn op" id="bAL">addLast</button></div>';
+  else if (VD === 'xoachiso') h = '<div class="field"><label for="ix">index</label><input type="text" id="ix" value="1" inputmode="numeric" autocomplete="off" style="width:48px"></div><div class="btns"><button class="btn op" id="bRI">remove(index)</button></div>' + val + '<div class="btns"><button class="btn op" id="bAL">addLast</button></div>';
+  else if (VD === 'doi') h = val + '<div class="btns"><button class="btn op" id="bDA">addLast</button><button class="btn op" id="bDR">removeLast</button><button class="btn op" id="bF">Duyệt xuôi</button><button class="btn op" id="bB">Duyệt ngược</button></div><label class="chk"><input type="checkbox" id="fg"> Quên dòng <code>n.previous = tail;</code></label>';
+  else if (VD === 'nganxephangdoi') h = val.replace('value="X"', 'value="Ann"') + '<div class="btns"><button class="btn op" id="bPu">push</button><button class="btn op" id="bPo">pop</button><button class="btn op" id="bPe">peek</button><button class="btn op" id="bEn">enqueue</button><button class="btn op" id="bDe">dequeue</button></div>';
+  o.innerHTML = h; if (!h) o.classList.add('hidden');
+  function on(id, f){ var b = $(id); if (b) b.addEventListener('click', function(){ $('err').textContent = ''; f(); }); }
+  on('bAF', function(){ var v = readVal(); if (v !== null && !full()) appendOp({t: 'addFirst', e: v, swap: $('sw').checked}); });
+  on('bAL', function(){ var v = readVal(); if (v !== null && !full()) appendOp({t: 'addLast', e: v}); });
+  on('bAI', function(){ var i = readIdx(0, 9), v = i === null ? null : readVal(); if (v !== null && !full()) appendOp({t: 'add', index: i, e: v, skip: $('sk').checked}); });
+  on('bRF', function(){ appendOp({t: 'removeFirst'}); });
+  on('bRL', function(){ appendOp({t: 'removeLast'}); });
+  on('bRI', function(){ var i = readIdx(-2, 9); if (i !== null) appendOp({t: 'remove', index: i}); });
+  on('bDA', function(){ var v = readVal(); if (v !== null && !full()) appendOp({t: 'dAdd', e: v, forget: $('fg').checked}); });
+  on('bDR', function(){ if (countNow() < 2) { $('err').textContent = 'Trang này minh hoạ removeLast khi danh sách có từ 2 nút.'; return; } appendOp({t: 'dRem'}); });
+  on('bF', function(){ appendOp({t: 'fwd'}); });
+  on('bB', function(){ appendOp({t: 'bwd'}); });
+  on('bPu', function(){ var v = readVal(); if (v === null) return; if (countNow().st >= 6) { $('err').textContent = 'Ngăn xếp ở đây chứa tối đa 6 phần tử.'; return; } appendOp({t: 'push', e: v}); });
+  on('bPo', function(){ appendOp({t: 'pop'}); });
+  on('bPe', function(){ appendOp({t: 'peek'}); });
+  on('bEn', function(){ var v = readVal(); if (v === null) return; if (countNow().q >= M.max) { $('err').textContent = 'Hàng đợi ở đây chứa tối đa ' + M.max + ' phần tử.'; return; } appendOp({t: 'enqueue', e: v}); });
+  on('bDe', function(){ appendOp({t: 'dequeue'}); });
+}
+$('lead').innerHTML = M.lead;
+setupViz();
+setupOps();
+reset();
+})();
+</script>
+</body>
+</html>

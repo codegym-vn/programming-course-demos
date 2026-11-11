@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="585">
+<title>Ba biến f0, f1, f2 trượt dần</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --run:#e3f4e8; --run-bar:#15803d;
+  --b2:#0e7490; --b2-soft:#e0f4f8;
+  --vio:#7c3aed; --vio-soft:#f1eafe;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --run:#13301f; --run-bar:#4ade80;
+    --b2:#67e8f9; --b2-soft:#0f2e36;
+    --vio:#c4a1ff; --vio-soft:#2a2140;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 10px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px;line-height:1.4}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:6px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs:empty{display:none}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+  border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.op{background:var(--card);color:var(--text);border-color:var(--node-line);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:12.5px}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.inp{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+.inp label{color:var(--muted)}
+.inp input[type=text],.inp input[type=number]{font:13px ui-monospace,Menlo,Consolas,monospace;padding:4px 7px;border:1px solid var(--node-line);
+  border-radius:7px;background:var(--card);color:var(--text);min-width:0}
+.inp input.bad{border-color:var(--false);background:var(--false-soft)}
+.inp .err{color:var(--false);font-size:12px}
+.chk{display:inline-flex;gap:5px;align-items:center;font-size:13px;cursor:pointer}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:4px 10px;margin-bottom:6px;min-height:52px;font-size:13.5px;line-height:1.4}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:8px;margin-top:6px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 0 4px;flex-wrap:wrap}
+.head .panel-title{margin:0}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;max-height:206px;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s;width:max-content;min-width:100%}
+.ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.curf{background:var(--false-soft);border-left-color:var(--false)}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.vars{display:flex;gap:6px;flex-wrap:wrap}
+.var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:58px;text-align:center;transition:all .25s}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px;white-space:nowrap}
+.var.chg{border-color:var(--cur-bar);background:var(--cur)}
+.var.ok{border-color:var(--true);background:var(--true-soft)}
+.var.bad{border-color:var(--false);background:var(--false-soft)}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;max-height:112px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+.console .new{color:#fde68a}
+.console .er{color:#fca5a5}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.note{font-size:11.5px;color:var(--muted);margin-top:4px}
+.note b{color:var(--text)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:600px){.code{max-height:220px}}
+
+/* ===== Dải ô mảng ===== */
+.viz{overflow-x:auto;overflow-y:hidden}
+.srow{display:flex;align-items:center;gap:8px;min-width:max-content}
+.srow+.srow{margin-top:2px}
+.rlabel{flex:none;width:var(--lw,62px);text-align:right;font:700 12px/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.rlabel small{display:block;font-weight:400;font-size:10.5px}
+.strip{display:flex;gap:var(--gap,4px);padding:17px 2px 16px;position:relative}
+.strip.noix{padding-bottom:4px}
+.strip.notop{padding-top:4px}
+.cell{position:relative;width:var(--cw,36px);height:var(--ch,36px);flex:none;border:2px solid var(--node-line);border-radius:7px;
+  background:var(--node);display:flex;align-items:center;justify-content:center;
+  font:700 var(--fs,14px) ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:background .25s,border-color .25s,opacity .25s,color .25s}
+.cell .ix{position:absolute;top:100%;margin-top:1px;left:-6px;right:-6px;text-align:center;font:10.5px/1.3 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400}
+.cell .pt{position:absolute;bottom:100%;margin-bottom:1px;left:-14px;right:-14px;text-align:center;font:700 10.5px/1.25 ui-monospace,Menlo,monospace;color:var(--accent);white-space:nowrap}
+.cell .pt.b{bottom:auto;top:100%;margin:13px 0 0}
+.cell .sub{position:absolute;right:2px;top:0;font:9.5px/1.2 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400}
+.cell.range{background:var(--accent-soft);border-color:var(--accent)}
+.cell.dim{opacity:.3}
+.cell.cmp{background:var(--cur);border-color:var(--cur-bar)}
+.cell.min{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cell.done{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+.cell.sw{background:var(--b2-soft);border-color:var(--b2)}
+.cell.piv{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+.cell.wr{background:var(--true-soft);border-color:var(--true)}
+.cell.rest{background:var(--vio-soft);border-color:var(--vio)}
+.cell.empty{border-style:dashed;color:var(--muted);font-weight:400;background:transparent}
+.cell.hole{border-style:dashed;color:var(--muted);opacity:.65;background:transparent}
+.cell.bad{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+.cell.gone{opacity:.25;text-decoration:line-through}
+.cell.ghost{border-color:var(--cur-bar);background:var(--cur)}
+.cell.wall::before{content:"";position:absolute;left:calc(-2px - var(--gap,4px) / 2 - 1px);top:-6px;bottom:-6px;width:3px;border-radius:2px;background:var(--true)}
+.cell.wallr::after{content:"";position:absolute;right:calc(-2px - var(--gap,4px) / 2 - 1px);top:-6px;bottom:-6px;width:3px;border-radius:2px;background:var(--true)}
+.cell .dg{color:var(--false)}
+.flipping{z-index:5}
+/* cột (histogram) */
+.bars{display:flex;gap:8px;align-items:flex-end;padding:18px 2px 18px;height:var(--bh,170px);min-width:max-content}
+.bar{position:relative;width:var(--cw,40px);flex:none;border:2px solid var(--node-line);border-bottom-width:2px;border-radius:6px 6px 2px 2px;background:var(--accent-soft);
+  transition:background .25s,border-color .25s,height .3s}
+.bar b{position:absolute;bottom:100%;left:0;right:0;text-align:center;font:700 13px ui-monospace,Menlo,monospace}
+.bar .ix{position:absolute;top:100%;left:0;right:0;text-align:center;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted);margin-top:2px}
+.bar.cmp{background:var(--cur);border-color:var(--cur-bar)}
+.bar.sw{background:var(--b2-soft);border-color:var(--b2)}
+.bar.done{background:var(--true-soft);border-color:var(--true)}
+/* thùng */
+.bins{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:4px;min-width:420px}
+.bin{border:1px solid var(--line);border-radius:7px;background:var(--code-bg);min-height:72px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:2px;padding:2px 2px 4px}
+.bin>small{flex:0 0 100%;text-align:center;font:700 11px ui-monospace,Menlo,monospace;color:var(--muted)}
+.bin.on{border-color:var(--false);box-shadow:0 0 0 1px var(--false)}
+.chip{width:28px;border:2px solid var(--node-line);border-radius:5px;background:var(--node);text-align:center;font:700 11px/1.45 ui-monospace,Menlo,monospace;letter-spacing:-.3px}
+.chip.wr{background:var(--true-soft);border-color:var(--true)}
+/* khung lời gọi */
+.frames{display:flex;flex-direction:column-reverse;gap:3px}
+.frame{border:1px solid var(--node-line);border-radius:6px;padding:1px 8px;background:var(--code-bg);font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;animation:pop .25s ease-out;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame.top{white-space:normal}
+.frame.top{border-color:var(--accent);background:var(--accent-soft)}
+.frame.ret{border-color:var(--true);background:var(--true-soft)}
+.frame small{color:var(--muted)}
+.frame .rv{float:right;font-weight:700;color:var(--true)}
+.frames:empty::before{content:"(trống)";color:var(--muted);font-size:12px}
+/* ref mảng */
+.ref{font:700 12px ui-monospace,Menlo,monospace;color:var(--accent)}
+
+.tags{position:relative;height:60px;margin-left:72px}
+.tg{position:absolute;width:52px;text-align:center;font:700 12px/18px ui-monospace,Menlo,monospace;border-radius:6px;color:#fff}
+.tg::after{content:"";position:absolute;left:50%;margin-left:-4px;top:100%;border:4px solid transparent;border-top-color:inherit}
+.tg.t0{background:var(--b2);border-color:var(--b2)}
+.tg.t1{background:var(--accent);border-color:var(--accent)}
+.tg.t2{background:var(--true);border-color:var(--true)}
+.tg.chg{box-shadow:0 0 0 3px var(--cur-bar)}
+.srow{--lw:64px}
+.cell.unk{color:var(--muted);font-weight:400;border-style:dashed}
+.cell.more{border:none;background:transparent;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để chạy <code>fib(5)</code>: mỗi lệnh gán làm một nhãn trượt sang phải một ô.</p>
+  <div class="controls"><div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card viz" id="viz"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">ImprovedFibonacci.java</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Biến của fib(5)</p><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Các phép gán đã chạy</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+// Engine dải ô mảng dùng chung cho nhóm "mang" (khoá 113).
+//PURE-START
+function clone(o){ return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+// Arrays.toString của Java cho mảng số nguyên / chuỗi
+function jArr(a){ return '[' + a.map(function(x){ return x === null || x === undefined ? 'null' : String(x); }).join(', ') + ']'; }
+// Double.toString cho số trong phạm vi nhỏ (không dùng dạng mũ)
+function jDbl(x){ var s = String(x); return /[.eE]/.test(s) ? s : s + '.0'; }
+// Tìm số dòng (đếm từ 1) của dòng đầu tiên chứa chuỗi s, bắt đầu từ dòng from.
+function lineOf(lines, s, from){ for (var i = (from || 1) - 1; i < lines.length; i++) if (lines[i].indexOf(s) >= 0) return i + 1; throw new Error('Không thấy dòng: ' + s); }
+// Đọc danh sách số. o: {min, max, minLen, maxLen, dec (cho phép số thập phân), sorted}
+function parseNums(text, o){
+  var parts = String(text).trim().split(/[\s,;]+/).filter(function(s){ return s !== ''; }), out = [];
+  if (parts.length < o.minLen) return {err: 'Cần ít nhất ' + o.minLen + ' số.'};
+  if (parts.length > o.maxLen) return {err: 'Tối đa ' + o.maxLen + ' số.'};
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i], re = o.dec ? /^-?\d+(\.\d{1,2})?$/ : /^-?\d+$/;
+    if (!re.test(p)) return {err: '"' + p + '" không phải ' + (o.dec ? 'số (tối đa 2 chữ số thập phân)' : 'số nguyên') + '.'};
+    var v = Number(p); if (v === 0) v = 0;
+    if (v < o.min || v > o.max) return {err: 'Mỗi số phải từ ' + o.min + ' đến ' + o.max + '.'};
+    out.push(v);
+  }
+  if (o.sorted) for (var j = 1; j < out.length; j++) if (out[j] < out[j - 1]) return {err: 'Dãy phải tăng dần (không giảm).'};
+  return {vals: out};
+}
+//PURE-END
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|package|public|private|protected|class|interface|extends|implements|super|abstract|static|final|void|int|long|double|float|char|boolean|byte|if|else|while|do|for|try|catch|finally|throw|throws|return|new|true|false|null|this)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+// lines: các dòng code; o: {start, cur: số dòng hoặc [từ, đến], bad}
+function codeHtml(lines, o){
+  o = o || {}; var cur = o.cur, st = o.start || 1;
+  var none = cur === undefined || cur === null;
+  var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    var n = i + st, c = 'ln' + (n >= a && n <= b ? (o.bad ? ' curf' : ' cur') : '');
+    return '<div class="' + c + '"><span class="no">' + n + '</span><span>' + (hl(l) || ' ') + '</span></div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Hoạt cảnh dịch chuyển: các phần tử có data-k giữ vị trí cũ rồi trượt tới vị trí mới.
+// data-from: khoá của phần tử nguồn (ô được chép từ đâu).
+function snapRects(root){
+  var m = {}; if (!root) return m;
+  [].forEach.call(root.querySelectorAll('[data-k]'), function(el){ m[el.getAttribute('data-k')] = el.getBoundingClientRect(); });
+  return m;
+}
+function flip(root, prev){
+  if (!root || REDUCED) return;
+  [].forEach.call(root.querySelectorAll('[data-k]'), function(el){
+    var r0 = prev[el.getAttribute('data-k')] || prev[el.getAttribute('data-from')]; if (!r0) return;
+    var r1 = el.getBoundingClientRect(), dx = r0.left - r1.left, dy = r0.top - r1.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    el.classList.add('flipping');
+    el.style.transition = 'none'; el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    el.getBoundingClientRect();
+    el.style.transition = 'transform .38s ease';
+    el.style.transform = '';
+    setTimeout(function(){ el.style.transition = ''; el.classList.remove('flipping'); }, 420);
+  });
+}
+// cfg: build() -> snaps; render(sn, i, n); anim: phần tử gốc để tạo hoạt cảnh; speed (ms)
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10), shown = -1;
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step], run = timer !== null, root = cfg.anim ? $(cfg.anim) : null;
+    var prev = (shown >= 0 && Math.abs(step - shown) === 1) ? snapRects(root) : null;
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + sn.title + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    if (prev) flip(root, prev);
+    shown = step;
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+    if (cfg.after) cfg.after(sn, step, snaps.length, run);
+  }
+  function reset(){
+    stop(); snaps = cfg.build(); step = 0; shown = -1;
+    if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; }
+    draw();
+  }
+  // Thêm các bước mới sau bước hiện tại (bỏ các bước phía sau nếu đã lùi lại), chuyển tới bước mới đầu tiên.
+  function append(more){
+    stop(); snaps = snaps.slice(0, step + 1).concat(more); step++; draw();
+  }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 450);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, append: append, cur: function(){ return snaps[step]; },
+    step: function(){ return step; }, atEnd: function(){ return step >= snaps.length - 1; }, running: function(){ return timer !== null; }};
+}
+// opts: [{k, label}]; param: tên tham số URL mở sẵn (mặc định vd)
+function setupTabs(boxId, opts, onChange, param){
+  var box = $(boxId), sel = opts[0].k, want = qs(param || 'vd');
+  opts.forEach(function(o){ if (o.k === want) sel = o.k; });
+  box.setAttribute('role', 'tablist');
+  opts.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.innerHTML = o.label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', o.k === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      [].forEach.call(box.children, function(c){ c.setAttribute('aria-selected', 'false'); });
+      b.setAttribute('aria-selected', 'true'); onChange(o.k);
+    });
+    box.appendChild(b);
+  });
+  return sel;
+}
+// out: mảng dòng; dòng cuối mới in được tô sáng nếu fresh
+function drawCon(box, out, ph, fresh){
+  box.innerHTML = out.length ? out.map(function(s, i){
+    var line = typeof s === 'string' ? [s, ''] : s;
+    var cls = line[1] || (fresh && i === out.length - 1 ? 'new' : '');
+    return cls ? '<span class="' + cls + '">' + esc(line[0]) + '</span>' : esc(line[0]);
+  }).join('\n') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>';
+  box.scrollTop = box.scrollHeight;
+}
+// list: [[tên, giá trị, lớp]]
+function varsHtml(list){
+  return list.map(function(v){ return '<div class="var' + (v[2] ? ' ' + v[2] : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+}
+// Một hàng dải ô. o: {label, labelSub, cells: [{v, k, cls, pt, ptb, ix, sub, from}], cls, style, noix}
+function stripHtml(o){
+  var h = '<div class="srow"' + (o.rowStyle ? ' style="' + o.rowStyle + '"' : '') + '>';
+  if (o.label !== undefined) h += '<div class="rlabel">' + o.label + (o.labelSub ? '<small>' + o.labelSub + '</small>' : '') + '</div>';
+  h += '<div class="strip' + (o.cls ? ' ' + o.cls : '') + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>';
+  (o.cells || []).forEach(function(c, i){
+    var ix = c.ix !== undefined ? c.ix : (o.noix ? '' : i);
+    h += '<div class="cell' + (c.cls ? ' ' + c.cls : '') + '"' + (c.k !== undefined ? ' data-k="' + c.k + '"' : '') + (c.from !== undefined ? ' data-from="' + c.from + '"' : '') + '>' +
+      (c.html !== undefined ? c.html : esc(c.v === null || c.v === undefined ? '' : c.v)) +
+      (c.sub !== undefined ? '<span class="sub">' + esc(c.sub) + '</span>' : '') +
+      (ix !== '' ? '<span class="ix">' + esc(ix) + '</span>' : '') +
+      (c.pt ? '<span class="pt">' + c.pt + '</span>' : '') +
+      (c.ptb ? '<span class="pt b">' + c.ptb + '</span>' : '') + '</div>';
+  });
+  return h + '</div></div>';
+}
+// Khung lời gọi. frames: [{t: tiêu đề, sub, rv, cls}] (phần tử cuối là đỉnh ngăn xếp)
+function framesHtml(frames){
+  return frames.map(function(f, i){
+    var cls = 'frame' + (f.cls ? ' ' + f.cls : (i === frames.length - 1 ? ' top' : ''));
+    return '<div class="' + cls + '">' + (f.rv !== undefined ? '<span class="rv">' + esc(f.rv) + '</span>' : '') + '<b>' + esc(f.t) + '</b>' + (f.sub ? ' <small>' + esc(f.sub) + '</small>' : '') + '</div>';
+  }).join('');
+}
+// Ô nhập danh sách số có kiểm tra. Trả về hàm đọc: null nếu sai (và hiện lỗi).
+function numInput(inpId, errId, o){
+  var inp = $(inpId), err = $(errId);
+  return function(){
+    var r = parseNums(inp.value, o);
+    if (r.err) { inp.classList.add('bad'); err.textContent = r.err; return null; }
+    inp.classList.remove('bad'); err.textContent = ''; return r.vals;
+  };
+}
+
+//SIM-START
+var LINES = ["public class ImprovedFibonacci {","  public static void main(String[] args) {","    for (int i = 0; i <= 11; i++) {","      System.out.print(fib(i) + \" \");","    }","    System.out.println();","    System.out.println(\"fib(90) = \"","        + fib(90));","  }","","  public static long fib(long n) {","    long f0 = 0; // fib(0)","    long f1 = 1; // fib(1)","    long f2 = 1; // fib(2)","","    if (n == 0) {","      return f0;","    } else if (n == 1) {","      return f1;","    } else if (n == 2) {","      return f2;","    }","","    for (int i = 3; i <= n; i++) {","      f0 = f1;","      f1 = f2;","      f2 = f0 + f1;","    }","    return f2;","  }","}"];
+var N = 5; // chỉ chạy tới i = 5
+function sim(){
+  var S = [], v = {}, pos = {}, known = 3, log = [], chg = '';
+  function L(s){ return lineOf(LINES, s); }
+  function s(cur, title, body, ev){ S.push({cur: cur, title: title, body: body, v: clone(v), pos: clone(pos), known: known, log: log.slice(), chg: chg, ev: ev}); chg = ''; }
+  v = {n: N, i: '–', f0: 0, f1: 1, f2: 1}; pos = {f0: 0, f1: 1, f2: 2};
+  s([L('long f0 = 0;'), L('long f2 = 1;')], 'Gọi fib(' + N + ')', 'Ba biến giữ ba số Fibonacci đầu tiên: <code>fib(0)</code>, <code>fib(1)</code>, <code>fib(2)</code>.');
+  s([L('if (n == 0) {'), L('} else if (n == 2) {')], 'n = ' + N + ' không phải 0, 1, 2', 'Không rơi vào trường hợp đặc biệt nào, chuyển sang vòng lặp.');
+  for (var i = 3; i <= N; i++) {
+    v.i = i;
+    s(L('for (int i = 3; i <= n; i++)'), 'i = ' + i + ': i <= n đúng', 'Vòng lặp này tính <code>fib(' + i + ')</code>.');
+    v.f0 = v.f1; pos.f0 = pos.f1; chg = 'f0'; log.push('i = ' + i + ': f0 = f1 -> f0 = ' + v.f0);
+    s(L('f0 = f1;'), 'f0 = f1 = ' + v.f0, 'Nhãn <code>f0</code> trượt sang ô ' + pos.f0 + '.');
+    v.f1 = v.f2; pos.f1 = pos.f2; chg = 'f1'; log.push('       f1 = f2 -> f1 = ' + v.f1);
+    s(L('f1 = f2;'), 'f1 = f2 = ' + v.f1, 'Nhãn <code>f1</code> trượt sang ô ' + pos.f1 + '.');
+    v.f2 = v.f0 + v.f1; pos.f2 = i; known = i + 1; chg = 'f2'; log.push('       f2 = f0 + f1 -> f2 = ' + v.f2);
+    s(L('f2 = f0 + f1;'), 'f2 = f0 + f1 = ' + (v.f2 - v.f1) + ' + ' + v.f1 + ' = ' + v.f2, 'Số mới <code>fib(' + i + ') = ' + v.f2 + '</code> được tính từ hai số ngay trước, không phải tính lại gì.', 'step ' + i + ' ' + v.f0 + ' ' + v.f1 + ' ' + v.f2);
+  }
+  v.i = N + 1;
+  s(L('for (int i = 3; i <= n; i++)'), 'i = ' + (N + 1) + ': i <= n sai', 'Vòng lặp đã chạy ' + (N - 2) + ' lần.');
+  log.push('return f2 = ' + v.f2);
+  s(L('return f2;'), 'Trả về f2 = ' + v.f2, '<code>fib(' + N + ') = ' + v.f2 + '</code>. Mỗi số chỉ được tính đúng một lần.', 'ret ' + v.f2);
+  return S;
+}
+//SIM-END
+var FIB = [0, 1, 1, 2, 3, 5];
+var CW = 52, GAP = 6;
+var st = Stepper({
+  anim: 'viz',
+  build: sim,
+  render: function(sn){
+    $('code').innerHTML = codeHtml(LINES, {cur: sn.cur}); scrollToCur($('code'));
+    var tags = ['f0', 'f1', 'f2'].map(function(t, r){
+      return '<div class="tg t' + r + (sn.chg === t ? ' chg' : '') + '" data-k="tag' + t + '" style="left:' + (sn.pos[t] * (CW + GAP) + 2) + 'px;top:' + (r * 20) + 'px">' + t + '</div>';
+    }).join('');
+    var cells = FIB.map(function(x, i){
+      var on = i === sn.pos.f0 || i === sn.pos.f1 || i === sn.pos.f2;
+      return {v: i < sn.known ? x : '?', cls: i < sn.known ? (on ? 'range' : 'done') : 'unk', ix: 'fib(' + i + ')'};
+    }).concat([{v: '...', cls: 'more', ix: ''}]);
+    $('viz').innerHTML = '<div class="tags">' + tags + '</div>' + stripHtml({label: 'dãy', cells: cells, style: '--cw:' + CW + 'px;--gap:' + GAP + 'px;padding-top:4px'});
+    var v = sn.v;
+    $('vars').innerHTML = varsHtml([['n', v.n], ['i', v.i], ['f0', v.f0, sn.chg === 'f0' ? 'chg' : ''], ['f1', v.f1, sn.chg === 'f1' ? 'chg' : ''], ['f2', v.f2, sn.chg === 'f2' ? 'chg' : '']]);
+    drawCon($('con'), sn.log, 'Chưa có phép gán nào trong vòng lặp.', true);
+  }
+});
+st.reset();
+})();
+</script>
+</body>
+</html>

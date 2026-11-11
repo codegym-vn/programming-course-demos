@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Cây tìm kiếm nhị phân</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#9aa3b2; --edge:#9aa3b2;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --path:#dbe7ff; --path-line:#2563eb;
+    --orange:#c2410c; --orange-soft:#ffedd5;
+    --g1:#e0f2fe; --g2:#fef3c7; --g3:#ede9fe; --g4:#dcfce7;
+    --g1l:#0369a1; --g2l:#a16207; --g3l:#6d28d9; --g4l:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#5b6474; --edge:#5b6474;
+      --run:#13301f; --run-bar:#4ade80;
+      --path:#1e2a44; --path-line:#6ea0ff;
+      --orange:#fdba74; --orange-soft:#3b2412;
+      --g1:#0c2a3d; --g2:#3a2e0b; --g3:#2a1f45; --g4:#123321;
+      --g1l:#7dd3fc; --g2l:#fcd34d; --g3l:#c4b5fd; --g4l:#86efac;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-size:13.5px}
+  .field input[type=text]{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field input.wide{width:190px}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover,.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  .chip[aria-pressed="true"]{border-style:solid;background:var(--accent-soft)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:5px 11px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:5px 12px;margin-bottom:8px;min-height:50px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code,.status .m{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  #codeTitle{text-transform:none;letter-spacing:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s}
+  .ln .no{width:28px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.skip{opacity:.35}
+  .card.codecard{display:flex;flex-direction:column}
+  .card.codecard .code{flex:1 1 0;height:0;min-height:230px}
+  @media (max-width:600px){.card.codecard .code{flex:none;height:auto;max-height:270px}}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:auto}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+  .console .new{color:#fde68a}
+  .vars{display:flex;gap:6px;flex-wrap:wrap}
+  .var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:1px 10px;min-width:62px;text-align:center}
+  .var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+  .var strong{font:700 15px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px}
+  .var.chg{border-color:var(--cur-bar);background:var(--cur)}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .tree svg{display:block;width:100%;height:auto;overflow:visible}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:2px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;border:2px solid var(--node-line);vertical-align:-1px;margin-right:4px}
+  .legend i.cur{background:var(--cur);border-color:var(--cur-bar)}
+  .legend i.path{background:var(--path);border-color:var(--path-line)}
+  .legend i.bad{background:var(--false-soft);border-color:var(--false)}
+  .legend i.ok{background:var(--true-soft);border-color:var(--true)}
+  .legend i.rm{background:var(--orange-soft);border-color:var(--orange)}
+  /* tree svg */
+  .tv .e{stroke:var(--edge);stroke-width:1.6;fill:none}
+  .tv .e.chg{stroke:var(--cur-bar);stroke-width:2.6}
+  .tv .e.on{stroke:var(--path-line);stroke-width:2.4}
+  .tv .e.bad{stroke:var(--false);stroke-width:2.4;stroke-dasharray:5 3}
+  .tv .ah{fill:var(--edge)}
+  .tv .el{font:600 10px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted)}
+  .tv .nd circle{fill:var(--node);stroke:var(--node-line);stroke-width:1.8}
+  .tv .nd text.v{fill:var(--text);font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-anchor:middle;dominant-baseline:central}
+  .tv .nd.cur circle{fill:var(--cur);stroke:var(--cur-bar);stroke-width:2.6}
+  .tv .nd.path circle{fill:var(--path);stroke:var(--path-line)}
+  .tv .nd.ok circle{fill:var(--true-soft);stroke:var(--true);stroke-width:2.4}
+  .tv .nd.bad circle{fill:var(--false-soft);stroke:var(--false);stroke-width:2.6}
+  .tv .nd.rm circle{fill:var(--orange-soft);stroke:var(--orange);stroke-width:2.4}
+  .tv .nd.par circle{stroke:var(--accent);stroke-width:2.6;stroke-dasharray:4 2}
+  .tv .nd.gone{opacity:.38}
+  .tv .nd.gone circle{stroke-dasharray:3 3}
+  .tv .nd.g1 circle{fill:var(--g1);stroke:var(--g1l)} .tv .nd.g2 circle{fill:var(--g2);stroke:var(--g2l)}
+  .tv .nd.g3 circle{fill:var(--g3);stroke:var(--g3l)} .tv .nd.g4 circle{fill:var(--g4);stroke:var(--g4l)}
+  .tv .tag rect{fill:var(--accent)} .tv .tag text{fill:#fff;font:600 10.5px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+  .tv .tag.alt rect{fill:var(--orange)}
+  .tv .tl{font:700 11px system-ui,sans-serif;text-anchor:end;dominant-baseline:central}
+  .tv .tl.g1{fill:var(--g1l)} .tv .tl.g2{fill:var(--g2l)} .tv .tl.g3{fill:var(--g3l)} .tv .tl.g4{fill:var(--g4l)}
+  .tv .bd{font:600 10px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted)}
+  .tv .bd.bf{fill:var(--accent)} .tv .bd.bf.bad{fill:var(--false);font-weight:800}
+  .tv .bd.chg{fill:var(--orange);font-weight:800}
+  .tv .ghost circle{fill:none;stroke:var(--node-line);stroke-dasharray:3 3;stroke-width:1.5}
+  .tv .ghost text{fill:var(--muted);font:600 10px ui-monospace,Menlo,monospace;text-anchor:middle;dominant-baseline:central}
+  .tv .rootlbl{font:600 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted)}
+  .tv .empty{fill:var(--muted);font:16px system-ui,sans-serif;text-anchor:middle}
+  .tbl{width:100%;border-collapse:collapse;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tbl th{font:600 11px system-ui,sans-serif;color:var(--muted);text-align:left;padding:2px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:1px 6px;border-bottom:1px solid var(--line)}
+
+  .frames{display:flex;flex-direction:column;gap:4px;min-height:60px;max-height:190px;overflow:auto}
+  .frame{border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:2px 8px;font:12.5px ui-monospace,Menlo,Consolas,monospace;display:flex;justify-content:space-between;gap:8px}
+  .frame small{font:11px system-ui,sans-serif;color:var(--muted)}
+  .frame.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .frame.empty{color:var(--muted);border-style:dashed;justify-content:center;font-family:system-ui,sans-serif}
+  .stk{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:150px;padding:6px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px}
+  .sbox{width:110px;text-align:center;border:2px solid var(--path-line);background:var(--path);border-radius:8px;padding:3px;font:700 15px ui-monospace,Menlo,monospace;position:relative}
+  .sbox.top{border-color:var(--cur-bar);background:var(--cur)}
+  .sbox small{position:absolute;right:-44px;top:5px;font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .sbox.empty{border-style:dashed;border-color:var(--line);background:transparent;color:var(--muted);font:13px system-ui,sans-serif}
+  #con{max-height:100px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+  <div class="controls" id="ctl"></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+(function(){
+// ===== core.js: tiện ích giao diện dùng chung =====
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|(@Override)|\b(import|public|private|protected|class|static|void|int|char|boolean|String|if|else|switch|case|break|default|return|for|while|new|true|false|null|extends|implements|throws|this)\b|(\b\d+\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="cm">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="kw">' + m[4] + '</span>';
+    else out += '<span class="num">' + m[5] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+function codeHtml(lines, cur){
+  var a = cur == null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+  var b = cur == null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    return '<div class="ln' + (i >= a && i <= b ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+  box.scrollTop = Math.max(0, top);
+}
+// Tìm chỉ số dòng chứa chuỗi s (lần xuất hiện thứ nth, mặc định 1)
+function lineOf(lines, s, nth){
+  nth = nth || 1;
+  for (var i = 0; i < lines.length; i++) if (lines[i].indexOf(s) >= 0 && --nth === 0) return i;
+  throw new Error('Không thấy dòng: ' + s);
+}
+function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+// Dãy số nguyên cách nhau bởi dấu cách/phẩy; trả null nếu sai
+function parseList(s, lo, hi, maxLen){
+  var parts = String(s).trim().split(/[\s,;]+/).filter(function(x){ return x !== ''; });
+  if (!parts.length || parts.length > maxLen) return null;
+  var out = [];
+  for (var i = 0; i < parts.length; i++) { var v = parseIntIn(parts[i], lo, hi); if (v === null) return null; out.push(v); }
+  return out;
+}
+var reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Stepper: cfg = {build: () => steps, render: (step, i, n) => void, speed}
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null;
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step];
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + (sn.body || '') + '</span>';
+    cfg.render(sn, step, snaps.length);
+    var run = timer !== null;
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+  }
+  var jump = parseInt(qs('buoc'), 10);
+  function load(list, keepEnd){
+    stop(); snaps = list; step = keepEnd ? Math.min(keepEnd, snaps.length - 1) : 0;
+    if (jump > 0) {
+      step = Math.min(jump - 1, snaps.length - 1); jump = 0;
+      // dựng lần lượt các bước trước (không hoạt cảnh) để vị trí nút giống như khi bấm từng bước
+      if (typeof TreeView !== 'undefined') { TreeView.instant = true; for (var i = 0; i < step; i++) cfg.render(snaps[i], i, snaps.length); TreeView.instant = false; }
+    }
+    draw();
+  }
+  function reset(){ load(cfg.build()); }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 650);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, load: load, cur: function(){ return snaps[step]; }, index: function(){ return step; }, count: function(){ return snaps.length; }};
+}
+function varsHtml(list){
+  return list.map(function(v){
+    return '<div class="var' + (v[2] ? ' chg' : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1] == null ? 'null' : v[1]) + '</strong></div>';
+  }).join('');
+}
+function consoleHtml(out, prevLen, ph){
+  if (!out) return '<span class="ph">' + esc(ph || 'Chưa có gì được in ra.') + '</span>';
+  prevLen = Math.min(prevLen || 0, out.length);
+  return esc(out.slice(0, prevLen)) + '<span class="new">' + esc(out.slice(prevLen)) + '</span>';
+}
+
+// ===== tree.js: mô hình nút liên kết + bố cục + bộ vẽ cây SVG =====
+// Mỗi nút: {el, l, r, h}; l/r là id nút con (hoặc null). Cây: {root, n: {id: nút}}.
+function TreeM(){ this.n = {}; this.root = null; this.seq = 0; }
+TreeM.prototype.mk = function(el){ var id = ++this.seq; this.n[id] = {el: el, l: null, r: null, h: 0}; return id; };
+TreeM.prototype.snap = function(){
+  var c = {};
+  for (var k in this.n) { var o = this.n[k], d = {}; for (var f in o) d[f] = o[f]; c[k] = d; }
+  return {root: this.root, n: c};
+};
+TreeM.prototype.clone = function(){ var t = new TreeM(), s = this.snap(); t.n = s.n; t.root = s.root; t.seq = this.seq; return t; };
+TreeM.prototype.el = function(id){ return id == null ? null : this.n[id].el; };
+TreeM.prototype.drop = function(id){ delete this.n[id]; };
+TreeM.prototype.pre = function(){ var out = [], n = this.n; (function go(id){ if (id == null) return; out.push(n[id].el); go(n[id].l); go(n[id].r); })(this.root); return out; };
+TreeM.prototype.ino = function(){ var out = [], n = this.n; (function go(id){ if (id == null) return; go(n[id].l); out.push(n[id].el); go(n[id].r); })(this.root); return out; };
+TreeM.prototype.size = function(){ return Object.keys(this.n).length; };
+// Chiều cao tính lại từ cấu trúc (lá = 0, cây rỗng = -1)
+function heightOfSub(n, id){ return id == null ? -1 : 1 + Math.max(heightOfSub(n, n[id].l), heightOfSub(n, n[id].r)); }
+
+// Bố cục theo thứ tự trung tố; trả null nếu đồ thị con trỏ không phải một rừng hợp lệ chứa mọi nút
+function layoutForest(snap, roots, W, H, L){
+  var n = snap.n, ids = Object.keys(n), seen = {}, rank = {}, depth = {}, r = 0, maxD = 0, ok = true;
+  roots.forEach(function(root, ti){
+    if (root == null) return;
+    if (ti > 0) r += L.gap == null ? 0.7 : L.gap;
+    (function go(id, d){
+      if (!ok) return;
+      if (seen[id]) { ok = false; return; }
+      seen[id] = 1;
+      var o = n[id];
+      if (o.l != null) go(o.l, d + 1);
+      rank[id] = r++; depth[id] = d; if (d > maxD) maxD = d;
+      if (o.r != null) go(o.r, d + 1);
+    })(root, 0);
+  });
+  if (!ok || Object.keys(seen).length !== ids.length) return null;
+  var span = Math.max(r - 1, 1);
+  var slot = Math.min(L.maxSlot || 56, (W - 2 * L.padX) / span);
+  var dy = maxD ? Math.min(L.maxDy || 62, (H - L.top - L.bottom) / maxD) : 0;
+  var x0 = (W - (r - 1) * slot) / 2, pos = {};
+  ids.forEach(function(id){ pos[id] = {x: x0 + rank[id] * slot, y: L.top + depth[id] * dy}; });
+  pos._slot = slot; pos._dy = dy || (L.maxDy || 62);
+  return pos;
+}
+
+var SVGNS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, parent){
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+// TreeView(container, {W, H, padX, top, bottom, maxSlot, maxDy, maxR, arrows, badges})
+function TreeView(box, opt){
+  this.o = opt; this.W = opt.W; this.H = opt.H;
+  this.svg = svgEl('svg', {viewBox: '0 0 ' + opt.W + ' ' + opt.H, 'class': 'tv', role: 'img', 'aria-label': opt.label || 'Hình cây'}, null);
+  box.appendChild(this.svg);
+  var defs = svgEl('defs', {}, this.svg);
+  var mk = svgEl('marker', {id: 'ah' + (TreeView.k = (TreeView.k || 0) + 1), viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'}, defs);
+  svgEl('path', {d: 'M0,0 L10,5 L0,10 z', 'class': 'ah'}, mk);
+  this.mid = mk.getAttribute('id');
+  this.gE = svgEl('g', {}, this.svg); this.gX = svgEl('g', {}, this.svg); this.gN = svgEl('g', {}, this.svg);
+  this.cur = {}; this.valid = null; this.r = opt.maxR || 17; this.slot = 50; this.dy = 56; this.anim = null;
+}
+TreeView.prototype.draw = function(snap, o){
+  o = o || {};
+  var self = this, n = snap.n, ids = Object.keys(n), opt = this.o;
+  var roots = o.roots || [snap.root];
+  var target = o.pos || layoutForest(snap, roots, this.W, this.H, opt);
+  if (target) {
+    this.valid = target; this.slot = target._slot; this.dy = target._dy;
+    this.r = Math.max(9, Math.min(opt.maxR || 17, this.slot * (opt.rk || 0.4), this.dy * 0.42));
+  } else {
+    target = {};
+    ids.forEach(function(id){ target[id] = self.cur[id] || (self.valid && self.valid[id]) || {x: self.W / 2, y: opt.top}; });
+  }
+  var from = {};
+  ids.forEach(function(id){
+    var c = self.cur[id];
+    if (!c) { // nút mới: hiện từ vị trí cha (nếu có) cho mượt
+      var par = null;
+      for (var k in n) if (n[k].l == id || n[k].r == id) par = k;
+      c = par && self.cur[par] ? self.cur[par] : target[id];
+    }
+    from[id] = {x: c.x, y: c.y};
+  });
+  // dựng lại phần tử nút
+  var gN = this.gN, r = this.r, els = {};
+  while (gN.firstChild) gN.removeChild(gN.firstChild);
+  ids.forEach(function(id){
+    var nd = n[id], cls = 'nd' + (o.hl && o.hl[id] ? ' ' + o.hl[id] : '') + (o.groups && o.groups[id] ? ' ' + o.groups[id] : '') + (o.gone && o.gone[id] ? ' gone' : '');
+    var g = svgEl('g', {'class': cls}, gN);
+    svgEl('circle', {r: r}, g);
+    var label = o.label ? o.label(nd, id) : String(nd.el);
+    var fs = Math.min(r * 0.82, label.length <= 2 ? 15 : label.length === 3 ? r * 0.72 : r * 0.58);
+    var t = svgEl('text', {'class': 'v', 'font-size': fs.toFixed(1)}, g); t.textContent = label;
+    if (o.badges) o.badges(nd, id).forEach(function(b, i){
+      var bt = svgEl('text', {'class': 'bd ' + (b.cls || ''), x: r + 2, y: i === 0 ? -r * 0.35 : r * 0.55 + 4}, g); bt.textContent = b.t;
+    });
+    if (o.sub) { var st = svgEl('text', {'class': 'bd', x: 0, y: r + 11, 'text-anchor': 'middle'}, g); st.textContent = o.sub(nd, id) || ''; }
+    if (o.tlabels && o.tlabels[id]) { var tl = svgEl('text', {'class': 'tl ' + (o.groups && o.groups[id] || ''), x: -r - 4, y: 0}, g); tl.textContent = o.tlabels[id]; }
+    var tags = o.tags && o.tags[id];
+    if (tags && tags.length) {
+      var txt = tags.join(', '), w = Math.max(24, txt.length * 6.1 + 10);
+      var tg = svgEl('g', {'class': 'tag' + (o.tagAlt && o.tagAlt[id] ? ' alt' : ''), transform: 'translate(0,' + (-r - 10) + ')'}, g);
+      svgEl('rect', {x: -w / 2, y: -8, width: w, height: 16, rx: 8}, tg);
+      var tt = svgEl('text', {x: 0, y: 0}, tg); tt.textContent = txt;
+    }
+    els[id] = g;
+  });
+  this.els = els; this.snapNow = snap; this.oNow = o;
+  if (this.anim) cancelAnimationFrame(this.anim);
+  var t0 = null, dur = reduceMotion || o.instant || TreeView.instant ? 0 : (o.dur || 420);
+  function frame(ts){
+    if (t0 === null) t0 = ts;
+    var k = dur ? Math.min(1, (ts - t0) / dur) : 1, e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    var p = {};
+    ids.forEach(function(id){ p[id] = {x: from[id].x + (target[id].x - from[id].x) * e, y: from[id].y + (target[id].y - from[id].y) * e}; });
+    self.place(p);
+    if (k < 1) self.anim = requestAnimationFrame(frame); else self.anim = null;
+  }
+  if (dur) this.anim = requestAnimationFrame(frame); else frame(0);
+  this.cur = {}; ids.forEach(function(id){ self.cur[id] = {x: target[id].x, y: target[id].y}; });
+};
+TreeView.prototype.place = function(p){
+  var self = this, snap = this.snapNow, o = this.oNow, n = snap.n, r = this.r;
+  for (var id in this.els) this.els[id].setAttribute('transform', 'translate(' + p[id].x.toFixed(1) + ',' + p[id].y.toFixed(1) + ')');
+  var gE = this.gE, gX = this.gX;
+  while (gE.firstChild) gE.removeChild(gE.firstChild);
+  while (gX.firstChild) gX.removeChild(gX.firstChild);
+  var arrows = this.o.arrows;
+  Object.keys(n).forEach(function(id){
+    ['l', 'r'].forEach(function(side){
+      var c = n[id][side]; if (c == null || !p[c]) return;
+      var a = p[id], b = p[c], key = id + side, cls = 'e' + (o.edgeHl && o.edgeHl[key] ? ' ' + o.edgeHl[key] : '');
+      var d;
+      if (c == id) { // tự trỏ vào chính nó
+        var sx = side === 'l' ? -1 : 1;
+        d = 'M' + (a.x + sx * r * .7) + ',' + (a.y + r * .7) + ' C' + (a.x + sx * r * 2.6) + ',' + (a.y + r * 2.4) + ' ' + (a.x + sx * r * 2.8) + ',' + (a.y - r * .6) + ' ' + (a.x + sx * r) + ',' + (a.y - r * .1);
+      } else {
+        var dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L;
+        var off = arrows ? (side === 'l' ? -0.18 : 0.18) : 0; // tách nhẹ hai mũi tên trái/phải
+        var sx0 = a.x + (ux * Math.cos(off) - uy * Math.sin(off)) * r, sy0 = a.y + (uy * Math.cos(off) + ux * Math.sin(off)) * r;
+        var ex = b.x - ux * (r + (arrows ? 1.5 : 0)), ey = b.y - uy * (r + (arrows ? 1.5 : 0));
+        d = 'M' + sx0.toFixed(1) + ',' + sy0.toFixed(1) + ' L' + ex.toFixed(1) + ',' + ey.toFixed(1);
+        if (o.edgeLabel) {
+          var lt = svgEl('text', {'class': 'el', x: ((sx0 + ex) / 2 + (side === 'l' ? -7 : 7)).toFixed(1), y: ((sy0 + ey) / 2).toFixed(1), 'text-anchor': 'middle', 'dominant-baseline': 'central'}, gX);
+          lt.textContent = side === 'l' ? '0' : '1';
+        }
+      }
+      var attrs = {d: d, 'class': cls};
+      if (arrows) attrs['marker-end'] = 'url(#' + self.mid + ')';
+      svgEl('path', attrs, gE);
+    });
+  });
+  // vị trí con rỗng (null) đang được trỏ tới
+  if (o.ghost && p[o.ghost.of]) {
+    var a = p[o.ghost.of], sx = o.ghost.side === 'l' ? -1 : 1;
+    var gx = a.x + sx * Math.max(this.slot * 0.5, r * 1.6), gy = a.y + Math.min(this.dy, 52);
+    svgEl('path', {d: 'M' + (a.x + sx * r * .6) + ',' + (a.y + r * .8) + ' L' + (gx - sx * r * .5) + ',' + (gy - r * .6), 'class': 'e', 'stroke-dasharray': '3 3'}, gE);
+    var g = svgEl('g', {'class': 'ghost', transform: 'translate(' + gx + ',' + gy + ')'}, gX);
+    svgEl('circle', {r: r * 0.8}, g);
+    var t = svgEl('text', {}, g); t.textContent = o.ghost.text || 'null';
+    if (o.ghost.tag) {
+      var w = o.ghost.tag.length * 6.1 + 10, tg = svgEl('g', {'class': 'tag', transform: 'translate(0,' + (r * 0.8 + 10) + ')'}, g);
+      svgEl('rect', {x: -w / 2, y: -8, width: w, height: 16, rx: 8}, tg);
+      var tt = svgEl('text', {x: 0, y: 0}, tg); tt.textContent = o.ghost.tag;
+    }
+  }
+  if (o.rootLabel && snap.root != null && p[snap.root]) {
+    var rp = p[snap.root], rl = svgEl('text', {'class': 'rootlbl', x: rp.x - r - 5, y: rp.y + 4, 'text-anchor': 'end'}, gX); rl.textContent = o.rootLabel + ' \u2192';
+  }
+  if (!Object.keys(n).length && o.emptyText) {
+    var et = svgEl('text', {'class': 'empty', x: this.W / 2, y: this.H / 2}, gX); et.textContent = o.emptyText;
+  }
+};
+
+// ===== algo.js: thuật toán BST / AVL đúng như lớp của khoá, ghi lại từng bước =====
+function Rec(t){ this.t = t; this.steps = []; this.out = ''; this.on = true; this.extra = {}; }
+Rec.prototype.s = function(o){ if (!this.on) return null; o.snap = this.t.snap(); o.out = this.out; for (var k in this.extra) if (!(k in o)) o[k] = this.extra[k]; this.steps.push(o); return o; };
+Rec.prototype.p = function(s){ this.out += s; };
+function quietRec(t){ var r = new Rec(t); r.on = false; return r; }
+function mapOf(ids, cls){ var m = {}; ids.forEach(function(id){ if (id != null) m[id] = cls; }); return m; }
+function merge(){ var m = {}; for (var i = 0; i < arguments.length; i++) { var a = arguments[i]; if (a) for (var k in a) m[k] = a[k]; } return m; }
+function tagsOf(list){ // list: [[id, 'nhãn'], ...]
+  var m = {}; list.forEach(function(p){ if (p[0] == null) return; (m[p[0]] = m[p[0]] || []).push(p[1]); }); return m;
+}
+
+// ---------- Mã nguồn hiển thị (khớp bài đọc) ----------
+var CODE = {};
+CODE.search = [
+'static boolean search(TreeNode root,',
+'    int element) {',
+'  TreeNode current = root;',
+'  while (current != null) {',
+'    System.out.print(',
+'      current.element + " ");',
+'    if (element < current.element)',
+'      current = current.left;',
+'    else if (element > current.element)',
+'      current = current.right;',
+'    else',
+'      return true; // Found',
+'  }',
+'  return false; // Not in the tree',
+'}'];
+CODE.insert = [
+'static boolean insert(int e) {',
+'  if (root == null) {',
+'    root = new TreeNode(e);',
+'    return true;',
+'  }',
+'  TreeNode parent = null;',
+'  TreeNode current = root;',
+'  while (current != null) {',
+'    if (e < current.element) {',
+'      parent = current;',
+'      current = current.left;',
+'    }',
+'    else if (e > current.element) {',
+'      parent = current;',
+'      current = current.right;',
+'    }',
+'    else',
+'      return false; // Duplicate',
+'  }',
+'  if (e < parent.element) {',
+'    parent.left = new TreeNode(e);',
+'    System.out.println(e',
+'      + " la con trai cua "',
+'      + parent.element);',
+'  }',
+'  else {',
+'    parent.right = new TreeNode(e);',
+'    System.out.println(e',
+'      + " la con phai cua "',
+'      + parent.element);',
+'  }',
+'  return true;',
+'}'];
+CODE.inorder = ['static void inorder(TreeNode r) {', '  if (r == null) return;', '  inorder(r.left);', '  System.out.print(r.element + " ");', '  inorder(r.right);', '}'];
+CODE.preorder = ['static void preorder(TreeNode r) {', '  if (r == null) return;', '  System.out.print(r.element + " ");', '  preorder(r.left);', '  preorder(r.right);', '}'];
+CODE.postorder = ['static void postorder(TreeNode r) {', '  if (r == null) return;', '  postorder(r.left);', '  postorder(r.right);', '  System.out.print(r.element + " ");', '}'];
+CODE.bstDelete = [
+'public boolean delete(E e) {',
+'  // Locate current and its parent',
+'  TreeNode<E> parent = null;',
+'  TreeNode<E> current = root;',
+'  while (current != null) {',
+'    if (e.compareTo(',
+'        current.element) < 0) {',
+'      parent = current;',
+'      current = current.left;',
+'    }',
+'    else if (e.compareTo(',
+'        current.element) > 0) {',
+'      parent = current;',
+'      current = current.right;',
+'    }',
+'    else',
+'      break;',
+'  }',
+'  if (current == null)',
+'    return false; // Not in the tree',
+'',
+'  if (current.left == null) { // Case 1',
+'    if (parent == null)',
+'      root = current.right;',
+'    else if (e.compareTo(',
+'        parent.element) < 0)',
+'      parent.left = current.right;',
+'    else',
+'      parent.right = current.right;',
+'  }',
+'  else { // Case 2',
+'    TreeNode<E> parentOfRightMost',
+'      = current;',
+'    TreeNode<E> rightMost = current.left;',
+'    while (rightMost.right != null) {',
+'      parentOfRightMost = rightMost;',
+'      rightMost = rightMost.right;',
+'    }',
+'    current.element = rightMost.element;',
+'    if (parentOfRightMost.right',
+'        == rightMost)',
+'      parentOfRightMost.right',
+'        = rightMost.left;',
+'    else // parentOfRightMost == current',
+'      parentOfRightMost.left',
+'        = rightMost.left;',
+'  }',
+'  size--;',
+'  return true;',
+'}'];
+CODE.avlInsert = [
+'@Override',
+'public boolean insert(E e) {',
+'  boolean ok = super.insert(e);',
+'  if (!ok)',
+'    return false; // e da co trong cay',
+'  balancePath(e);',
+'  return true;',
+'}'];
+CODE.balancePath = [
+'/** Can bang tu nut chua e ve goc */',
+'private void balancePath(E e) {',
+'  ArrayList<TreeNode<E>> path =',
+'      path(e);',
+'  for (int i = path.size() - 1;',
+'      i >= 0; i--) {',
+'    TreeNode<E> A = path.get(i);',
+'    updateHeight(A);',
+'    TreeNode<E> parentOfA =',
+'        (A == root) ? null',
+'                    : path.get(i - 1);',
+'    switch (balanceFactor(A)) {',
+'      case -2:',
+'        if (balanceFactor(',
+'            A.left) <= 0)',
+'          balanceLL(A, parentOfA);',
+'        else',
+'          balanceLR(A, parentOfA);',
+'        break;',
+'      case +2:',
+'        if (balanceFactor(',
+'            A.right) >= 0)',
+'          balanceRR(A, parentOfA);',
+'        else',
+'          balanceRL(A, parentOfA);',
+'    }',
+'  }',
+'}'];
+CODE.avlDelete = [
+'@Override',
+'public boolean delete(E element) {',
+'  TreeNode<E> parent = null;',
+'  TreeNode<E> current = root;',
+'  while (current != null) {',
+'    int c = element.compareTo(',
+'        current.element);',
+'    if (c == 0) break;',
+'    parent = current;',
+'    current = c < 0 ? current.left',
+'                    : current.right;',
+'  }',
+'  if (current == null)',
+'    return false;',
+'',
+'  if (current.left == null) {',
+'    // Truong hop 1: khong co con trai',
+'    if (parent == null) {',
+'      root = current.right;',
+'    } else {',
+'      if (element.compareTo(',
+'          parent.element) < 0)',
+'        parent.left = current.right;',
+'      else',
+'        parent.right = current.right;',
+'      balancePath(parent.element);',
+'    }',
+'  } else {',
+'    // Truong hop 2: co con trai',
+'    TreeNode<E> parentOfRightMost =',
+'        current;',
+'    TreeNode<E> rightMost =',
+'        current.left;',
+'    while (rightMost.right != null) {',
+'      parentOfRightMost = rightMost;',
+'      rightMost = rightMost.right;',
+'    }',
+'    current.element =',
+'        rightMost.element;',
+'    if (parentOfRightMost.right',
+'        == rightMost)',
+'      parentOfRightMost.right =',
+'          rightMost.left;',
+'    else',
+'      parentOfRightMost.left =',
+'          rightMost.left;',
+'    balancePath(',
+'        parentOfRightMost.element);',
+'  }',
+'  size--;',
+'  return true;',
+'}'];
+function L(name, s, nth){ return lineOf(CODE[name], s, nth); }
+function Lr(name, a, b){ return [L(name, a), L(name, b)]; }
+
+// ---------- BST: dựng cây không ghi bước ----------
+function bstInsertQuiet(t, e){
+  if (t.root == null) { t.root = t.mk(e); return true; }
+  var parent = null, cur = t.root;
+  while (cur != null) {
+    if (e < t.n[cur].el) { parent = cur; cur = t.n[cur].l; }
+    else if (e > t.n[cur].el) { parent = cur; cur = t.n[cur].r; }
+    else return false;
+  }
+  if (e < t.n[parent].el) t.n[parent].l = t.mk(e); else t.n[parent].r = t.mk(e);
+  return true;
+}
+function buildBST(list){ var t = new TreeM(); list.forEach(function(e){ bstInsertQuiet(t, e); }); return t; }
+
+// ---------- [5-03] tìm kiếm (SearchDemo.search) ----------
+function stepsSearch(t, key){
+  var R = new Rec(t), cur = t.root, seen = [], el = function(id){ return t.n[id].el; };
+  R.extra = {code: 'search'};
+  var V = function(c, chg){ return [['element', key], ['current', c == null ? 'null' : 'nút ' + el(c), chg]]; };
+  R.s({ln: L('search', 'TreeNode current = root'), title: 'Bắt đầu từ gốc', body: '<code>current = root</code>: <code>current</code> trỏ vào nút ' + (cur == null ? 'null' : el(cur)) + '.', hl: mapOf([cur], 'cur'), tags: tagsOf([[cur, 'current']]), vars: V(cur, true)});
+  while (true) {
+    if (cur == null) {
+      var last = seen[seen.length - 1];
+      R.s({ln: L('search', 'while (current != null)'), title: 'current là null', body: '<code>current == null</code>: điều kiện lặp sai, vòng lặp kết thúc. Ta đã đi tới một cây con rỗng.', hl: mapOf(seen, 'path'), ghost: last == null ? null : {of: last, side: key < el(last) ? 'l' : 'r', tag: 'current'}, vars: V(null)});
+      R.p('-> false\n');
+      R.s({ln: L('search', 'return false'), title: 'Không có ' + key + ' trong cây', body: 'Trả về <code>false</code>. Chương trình in <code>-> false</code>.', hl: mapOf(seen, 'path'), vars: V(null), done: true});
+      return R.steps;
+    }
+    var hlPrev = mapOf(seen, 'path');
+    R.p(el(cur) + ' ');
+    R.s({ln: Lr('search', 'System.out.print(', 'current.element + " "'), title: 'Đi qua nút ' + el(cur), body: '<code>current != null</code> nên vào vòng lặp và in <code>' + el(cur) + '</code>.', hl: merge(hlPrev, mapOf([cur], 'cur')), tags: tagsOf([[cur, 'current']]), vars: V(cur)});
+    seen.push(cur);
+    var hlNow = merge(hlPrev, mapOf([cur], 'cur'));
+    if (key < el(cur)) {
+      R.s({ln: L('search', 'if (element < current.element)'), title: 'So sánh ' + key + ' với ' + el(cur), body: '<code>' + key + ' &lt; ' + el(cur) + '</code> đúng: phần tử cần tìm nằm bên trái.', hl: hlNow, tags: tagsOf([[cur, 'current']]), vars: V(cur)});
+      var nx = t.n[cur].l;
+      R.s({ln: L('search', 'current = current.left'), title: 'Sang trái', body: '<code>current = current.left</code> → ' + (nx == null ? '<code>null</code> (nút ' + el(cur) + ' không có con trái).' : 'nút ' + el(nx) + '.'), hl: merge(mapOf(seen, 'path'), mapOf([nx], 'cur')), tags: tagsOf([[nx, 'current']]), ghost: nx == null ? {of: cur, side: 'l', tag: 'current'} : null, edgeHl: nx == null ? null : (function(){ var m = {}; m[cur + 'l'] = 'on'; return m; })(), vars: V(nx, true)});
+      cur = nx;
+    } else if (key > el(cur)) {
+      R.s({ln: L('search', 'else if (element > current.element)'), title: 'So sánh ' + key + ' với ' + el(cur), body: '<code>' + key + ' &lt; ' + el(cur) + '</code> sai, <code>' + key + ' &gt; ' + el(cur) + '</code> đúng: phần tử cần tìm nằm bên phải.', hl: hlNow, tags: tagsOf([[cur, 'current']]), vars: V(cur)});
+      var nr = t.n[cur].r;
+      R.s({ln: L('search', 'current = current.right'), title: 'Sang phải', body: '<code>current = current.right</code> → ' + (nr == null ? '<code>null</code> (nút ' + el(cur) + ' không có con phải).' : 'nút ' + el(nr) + '.'), hl: merge(mapOf(seen, 'path'), mapOf([nr], 'cur')), tags: tagsOf([[nr, 'current']]), ghost: nr == null ? {of: cur, side: 'r', tag: 'current'} : null, edgeHl: nr == null ? null : (function(){ var m = {}; m[cur + 'r'] = 'on'; return m; })(), vars: V(nr, true)});
+      cur = nr;
+    } else {
+      R.p('-> true\n');
+      R.s({ln: L('search', 'return true'), title: 'Tìm thấy ' + key, body: 'Hai phép so sánh đều sai, tức <code>' + key + ' == ' + el(cur) + '</code>: trả về <code>true</code>. Chương trình in <code>-> true</code>.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'ok')), tags: tagsOf([[cur, 'current']]), vars: V(cur), done: true});
+      return R.steps;
+    }
+  }
+}
+
+// ---------- [5-04] chèn (InsertDemo.insert) ----------
+function stepsInsert(t, keys){
+  var R = new Rec(t), el = function(id){ return t.n[id].el; };
+  R.extra = {code: 'insert'};
+  keys.forEach(function(e, ki){
+    var V = function(p, c, chg){ return [['e', e], ['parent', p === undefined ? '—' : p == null ? 'null' : 'nút ' + el(p), chg === 'p'], ['current', c === undefined ? '—' : c == null ? 'null' : 'nút ' + el(c), chg === 'c']]; };
+    var head = 'insert(' + e + ')' + (keys.length > 1 ? ' · lần ' + (ki + 1) + '/' + keys.length : '');
+    if (t.root == null) {
+      R.s({ln: L('insert', 'if (root == null)'), title: head, body: 'Cây rỗng: <code>root == null</code> đúng.', vars: V()});
+      t.root = t.mk(e);
+      R.s({ln: L('insert', 'root = new TreeNode(e)'), title: head, body: 'Tạo nút ' + e + ' làm gốc rồi trả về <code>true</code>.', hl: mapOf([t.root], 'ok'), vars: V()});
+      return;
+    }
+    var parent = null, cur = t.root, seen = [];
+    R.s({ln: Lr('insert', 'TreeNode parent = null', 'TreeNode current = root'), title: head, body: 'Cây không rỗng. <code>parent = null</code>, <code>current</code> trỏ vào gốc ' + el(cur) + '.', hl: mapOf([cur], 'cur'), tags: tagsOf([[cur, 'current']]), vars: V(null, cur, 'c')});
+    while (cur != null) {
+      var base = mapOf(seen, 'path');
+      if (e < el(cur)) {
+        R.s({ln: L('insert', 'if (e < current.element)'), title: head, body: '<code>' + e + ' &lt; ' + el(cur) + '</code>: đi sang trái.', hl: merge(base, mapOf([cur], 'cur')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), vars: V(parent, cur)});
+        parent = cur; seen.push(cur); cur = t.n[cur].l;
+        R.s({ln: Lr('insert', 'parent = current;', 'current = current.left'), title: head, body: '<code>parent</code> giữ nút ' + el(parent) + ', <code>current = current.left</code> → ' + (cur == null ? '<code>null</code>.' : 'nút ' + el(cur) + '.'), hl: merge(mapOf(seen, 'path'), mapOf([cur], 'cur'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), ghost: cur == null ? {of: parent, side: 'l', tag: 'current'} : null, vars: V(parent, cur, 'c')});
+      } else if (e > el(cur)) {
+        R.s({ln: L('insert', 'else if (e > current.element)'), title: head, body: '<code>' + e + ' &gt; ' + el(cur) + '</code>: đi sang phải.', hl: merge(base, mapOf([cur], 'cur')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), vars: V(parent, cur)});
+        parent = cur; seen.push(cur); cur = t.n[cur].r;
+        R.s({ln: [L('insert', 'parent = current;', 2), L('insert', 'current = current.right')], title: head, body: '<code>parent</code> giữ nút ' + el(parent) + ', <code>current = current.right</code> → ' + (cur == null ? '<code>null</code>.' : 'nút ' + el(cur) + '.'), hl: merge(mapOf(seen, 'path'), mapOf([cur], 'cur'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), ghost: cur == null ? {of: parent, side: 'r', tag: 'current'} : null, vars: V(parent, cur, 'c')});
+      } else {
+        R.p('false\n');
+        R.s({ln: L('insert', 'return false; // Duplicate'), title: head + ': trùng', body: e + ' đã có trong cây: trả về <code>false</code>, cây giữ nguyên.', hl: merge(base, mapOf([cur], 'bad')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), vars: V(parent, cur)});
+        return;
+      }
+    }
+    var left = e < el(parent), id = t.mk(e);
+    if (left) t.n[parent].l = id; else t.n[parent].r = id;
+    R.p(e + (left ? ' la con trai cua ' : ' la con phai cua ') + el(parent) + '\n');
+    var em = {}; em[parent + (left ? 'l' : 'r')] = 'chg';
+    R.s({ln: left ? Lr('insert', 'if (e < parent.element)', 'parent.left = new TreeNode(e)') : Lr('insert', 'else {', 'parent.right = new TreeNode(e)'), title: head + ': gắn nút mới', body: '<code>current</code> đã là <code>null</code>, vòng lặp dừng. ' + e + (left ? ' &lt; ' : ' &gt; ') + el(parent) + ' nên nút mới là con <b>' + (left ? 'trái' : 'phải') + '</b> của ' + el(parent) + '. Nút mới luôn là lá.', hl: merge(mapOf(seen, 'path'), mapOf([parent], 'par'), mapOf([id], 'ok')), tags: tagsOf([[parent, 'parent']]), edgeHl: em, vars: V(parent, null)});
+  });
+  return R.steps;
+}
+
+// ---------- [5-05] ba cách duyệt (đệ quy, có ngăn xếp lời gọi) ----------
+function stepsTraverse(t, kind){
+  var R = new Rec(t), el = function(id){ return id == null ? 'null' : t.n[id].el; }, stack = [], visited = [];
+  R.extra = {code: kind};
+  var name = kind, fr = function(){ return stack.map(function(f){ return {name: name + '(' + el(f.id) + ')', at: f.at}; }); };
+  var ln = {check: L(kind, 'if (r == null) return'), left: L(kind, kind + '(r.left)'), right: L(kind, kind + '(r.right)'), print: L(kind, 'System.out.print')};
+  function S(line, title, body, cur, extra){
+    var hlm = merge(mapOf(visited, 'ok'), mapOf(stack.map(function(f){ return f.id; }), 'path'), cur != null ? mapOf([cur], 'cur') : null);
+    R.s(merge({ln: line, title: title, body: body, hl: hlm, tags: cur != null ? tagsOf([[cur, 'r']]) : null, frames: fr()}, extra));
+  }
+  function visit(id){
+    R.p(t.n[id].el + ' '); visited.push(id);
+    S(ln.print, 'In ' + t.n[id].el, 'Thăm nút ' + t.n[id].el + ': in phần tử của nó.', id);
+  }
+  function go(id){
+    stack.push({id: id, at: ''});
+    S(ln.check, 'Gọi ' + name + '(' + el(id) + ')', 'Khung mới được đẩy lên ngăn xếp. <code>r</code> khác <code>null</code> nên chạy tiếp.', id);
+    var order = kind === 'preorder' ? ['v', 'l', 'r'] : kind === 'inorder' ? ['l', 'v', 'r'] : ['l', 'r', 'v'];
+    order.forEach(function(o){
+      if (o === 'v') { visit(id); return; }
+      var c = t.n[id][o];
+      stack[stack.length - 1].at = o === 'l' ? 'r.left' : 'r.right';
+      if (c == null) {
+        S(o === 'l' ? ln.left : ln.right, 'Gọi ' + name + '(null)', 'Nút ' + t.n[id].el + ' không có con ' + (o === 'l' ? 'trái' : 'phải') + ': lời gọi với <code>null</code> trả về ngay.', id, {ghost: {of: id, side: o, text: 'null'}});
+      } else go(c);
+    });
+    stack.pop();
+    S(CODE[kind].length - 1, 'Trả về từ ' + name + '(' + t.n[id].el + ')', 'Xong cây con gốc ' + t.n[id].el + ': khung của nó được gỡ khỏi ngăn xếp' + (stack.length ? ', quay về ' + name + '(' + el(stack[stack.length - 1].id) + ').' : '. Duyệt xong.'), stack.length ? stack[stack.length - 1].id : null);
+  }
+  var label = kind === 'inorder' ? 'Inorder: ' : kind === 'preorder' ? 'Preorder: ' : 'Postorder: ';
+  R.p(label);
+  if (t.root == null) { S(ln.check, 'Cây rỗng', 'Không có gì để duyệt.', null); return R.steps; }
+  go(t.root);
+  R.steps[R.steps.length - 1].done = true;
+  return R.steps;
+}
+
+// ---------- [5-09] xoá trên BST (BST.delete) ----------
+function stepsBSTDelete(t, e){
+  var R = new Rec(t), el = function(id){ return id == null ? 'null' : t.n[id].el; };
+  R.extra = {code: 'bstDelete'};
+  var parent = null, cur = t.root, seen = [];
+  var V = function(extra){ return [['e', e], ['parent', parent == null ? 'null' : 'nút ' + el(parent)], ['current', cur == null ? 'null' : 'nút ' + el(cur)]].concat(extra || []); };
+  R.s({ln: Lr('bstDelete', 'TreeNode<E> parent = null', 'TreeNode<E> current = root'), title: 'delete(' + e + '): tìm nút cần xoá', body: '<code>parent = null</code>, <code>current</code> trỏ vào gốc.', hl: mapOf([cur], 'cur'), tags: tagsOf([[cur, 'current']]), vars: V()});
+  while (cur != null) {
+    if (e < el(cur)) {
+      parent = cur; seen.push(cur); cur = t.n[cur].l;
+      R.s({ln: [L('bstDelete', 'if (e.compareTo('), L('bstDelete', 'current = current.left')], title: 'Tìm ' + e, body: e + ' &lt; ' + el(parent) + ': <code>parent</code> = ' + el(parent) + ', <code>current</code> sang trái → ' + el(cur) + '.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'cur'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), ghost: cur == null ? {of: parent, side: 'l', tag: 'current'} : null, vars: V()});
+    } else if (e > el(cur)) {
+      parent = cur; seen.push(cur); cur = t.n[cur].r;
+      R.s({ln: [L('bstDelete', 'else if (e.compareTo('), L('bstDelete', 'current = current.right')], title: 'Tìm ' + e, body: e + ' &gt; ' + el(parent) + ': <code>parent</code> = ' + el(parent) + ', <code>current</code> sang phải → ' + el(cur) + '.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'cur'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), ghost: cur == null ? {of: parent, side: 'r', tag: 'current'} : null, vars: V()});
+    } else {
+      R.s({ln: L('bstDelete', 'break;'), title: 'Đã thấy ' + e, body: 'Phần tử của <code>current</code> bằng ' + e + ': thoát vòng lặp.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'bad'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), vars: V()});
+      break;
+    }
+  }
+  if (cur == null) {
+    R.s({ln: Lr('bstDelete', 'if (current == null)', 'return false; // Not in the tree'), title: e + ' không có trong cây', body: 'Trả về <code>false</code>, cây không đổi.', hl: mapOf(seen, 'path'), vars: V(), done: true});
+    return R.steps;
+  }
+  if (t.n[cur].l == null) {
+    var right = t.n[cur].r, em = {};
+    R.s({ln: L('bstDelete', 'if (current.left == null)'), title: 'Trường hợp 1: không có con trái', body: 'Nút ' + e + ' không có con trái: chỉ cần nối <code>parent</code> với con phải của nó' + (right == null ? ' (ở đây là <code>null</code>).' : ' (nút ' + el(right) + ').'), hl: merge(mapOf([cur], 'bad'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), vars: V()});
+    var line, gone = mapOf([cur], true);
+    if (parent == null) { t.root = right; line = L('bstDelete', 'root = current.right'); }
+    else if (e < el(parent)) { t.n[parent].l = right; line = Lr('bstDelete', 'else if (e.compareTo(', 'parent.left = current.right'); em[parent + 'l'] = 'chg'; }
+    else { t.n[parent].r = right; line = [L('bstDelete', 'parent.right = current.right') - 1, L('bstDelete', 'parent.right = current.right')]; em[parent + 'r'] = 'chg'; }
+    R.s({ln: line, title: 'Nối lại', body: parent == null ? '<code>current</code> là gốc: <code>root = current.right</code>.' : (e < el(parent) ? '<code>parent.left = current.right</code>' : '<code>parent.right = current.right</code>') + ': nút ' + e + ' bị gỡ khỏi cây.', hl: merge(mapOf([parent], 'par'), mapOf([right], 'ok')), gone: gone, tags: tagsOf([[cur, 'current'], [parent, 'parent']]), edgeHl: em, vars: V()});
+    t.drop(cur); cur = null;
+  } else {
+    var por = cur, rm = t.n[cur].l, cur0 = cur, path2 = [];
+    var V2 = function(){ return V([['rightMost', 'nút ' + el(rm)], ['parentOfRightMost', 'nút ' + el(por)]]); };
+    var tg = function(){ return tagsOf([[cur0, 'current'], [rm, 'rightMost'], [por, por === cur0 ? null : 'parentOfRM']].filter(function(x){ return x[1]; })); };
+    R.s({ln: [L('bstDelete', 'else { // Case 2'), L('bstDelete', 'TreeNode<E> rightMost = current.left')], title: 'Trường hợp 2: có con trái', body: 'Tìm phần tử lớn nhất trong cây con trái: bắt đầu với <code>parentOfRightMost = current</code>, <code>rightMost = current.left</code> (nút ' + el(rm) + ').', hl: merge(mapOf([cur0], 'bad'), mapOf([rm], 'rm')), tags: tg(), vars: V2()});
+    while (t.n[rm].r != null) {
+      path2.push(rm); por = rm; rm = t.n[rm].r;
+      R.s({ln: [L('bstDelete', 'while (rightMost.right != null)'), L('bstDelete', 'rightMost = rightMost.right;')], title: 'Đi về bên phải', body: 'Nút ' + el(por) + ' còn con phải: <code>parentOfRightMost</code> = ' + el(por) + ', <code>rightMost</code> = ' + el(rm) + '.', hl: merge(mapOf([cur0], 'bad'), mapOf(path2, 'path'), mapOf([rm], 'rm'), mapOf([por], 'par')), tags: tg(), vars: V2()});
+    }
+    R.s({ln: L('bstDelete', 'while (rightMost.right != null)'), title: 'Đã tới rightMost', body: 'Nút ' + el(rm) + ' không có con phải: đây là phần tử lớn nhất của cây con trái.', hl: merge(mapOf([cur0], 'bad'), mapOf(path2, 'path'), mapOf([rm], 'rm'), mapOf([por], 'par')), tags: tg(), vars: V2()});
+    var old = t.n[cur0].el;
+    t.n[cur0].el = t.n[rm].el;
+    R.s({ln: L('bstDelete', 'current.element = rightMost.element'), title: 'Chép phần tử', body: 'Chép ' + el(rm) + ' vào nút <code>current</code> (thay cho ' + old + '). Bây giờ phải gỡ nút <code>rightMost</code> cũ.', hl: merge(mapOf([cur0], 'ok'), mapOf([rm], 'rm'), mapOf([por], 'par')), tags: tg(), vars: V2()});
+    var em2 = {}, line2, lc = t.n[rm].l;
+    if (t.n[por].r === rm) { t.n[por].r = lc; em2[por + 'r'] = 'chg'; line2 = [L('bstDelete', 'if (parentOfRightMost.right'), L('bstDelete', '= rightMost.left;')]; }
+    else { t.n[por].l = lc; em2[por + 'l'] = 'chg'; line2 = [L('bstDelete', 'else // parentOfRightMost == current'), L('bstDelete', '= rightMost.left;', 2)]; }
+    R.s({ln: line2, title: por === cur0 ? 'Trường hợp đặc biệt: gán vào left' : 'Gỡ rightMost', body: (por === cur0 ? '<code>parentOfRightMost</code> chính là <code>current</code> nên <code>rightMost</code> là con <b>trái</b> của nó: <code>parentOfRightMost.left = rightMost.left</code>' : '<code>parentOfRightMost.right = rightMost.left</code>') + ' (' + (lc == null ? 'null' : 'nút ' + el(lc)) + ').', hl: merge(mapOf([cur0], 'ok'), mapOf([por], 'par'), mapOf([lc], 'path')), gone: mapOf([rm], true), tags: tg(), edgeHl: em2, vars: V2()});
+    t.drop(rm);
+  }
+  R.s({ln: Lr('bstDelete', 'size--;', 'return true;'), title: 'Xoá xong ' + e, body: 'Giảm <code>size</code>, trả về <code>true</code>. Duyệt trung thứ tự: ' + t.ino().join(' ') + '.', hl: {}, vars: [['e', e]], done: true});
+  return R.steps;
+}
+
+// ---------- [5-16] iterator dùng ngăn xếp ----------
+function stepsStackIter(t){
+  var R = new Rec(t), st = [], ret = [], el = function(id){ return t.n[id].el; };
+  function S(title, body, cur, extra){
+    R.s(merge({title: title, body: body, stack: st.map(el), ret: ret.slice(), hl: merge(mapOf(ret.map(function(v){ return v.id; }), 'ok'), mapOf(st, 'path'), cur != null ? mapOf([cur], 'cur') : null)}, extra));
+  }
+  function pushLeft(id, why){
+    while (id != null) { st.push(id); S(why, 'Đẩy ' + el(id) + ' vào ngăn xếp' + (t.n[id].l != null ? ', rồi đi tiếp sang con trái.' : '. Nút ' + el(id) + ' không có con trái nên dừng.'), id); id = t.n[id].l; }
+  }
+  S('Cây ban đầu', 'Chưa tạo iterator. Ngăn xếp rỗng.', null);
+  pushLeft(t.root, 'Tạo iterator: đi trái hết mức');
+  while (st.length) {
+    var id = st.pop(); ret.push({id: id, v: el(id)});
+    var r = t.n[id].r;
+    S('next() trả về ' + el(id), 'Lấy ' + el(id) + ' ở đỉnh ra và trả về. ' + (r == null ? 'Nút ' + el(id) + ' không có con phải.' : 'Nút ' + el(id) + ' có con phải ' + el(r) + ': vào đó rồi đi trái hết mức.'), id, {returned: el(id)});
+    if (r != null) pushLeft(r, 'next(): đi vào con phải của ' + el(id));
+  }
+  S('Hết phần tử', 'Ngăn xếp rỗng: <code>hasNext()</code> trả về <code>false</code>. Thứ tự trả về là thứ tự tăng dần.', null, {done: true});
+  return R.steps;
+}
+
+// ---------- AVL (lớp AVLTree của khoá) ----------
+function hOf(t, id){ return id == null ? -1 : t.n[id].h; }
+function updH(t, id){ t.n[id].h = 1 + Math.max(hOf(t, t.n[id].l), hOf(t, t.n[id].r)); }
+function bfOf(t, id){ return hOf(t, t.n[id].r) - hOf(t, t.n[id].l); }
+function pathTo(t, e){ var list = [], cur = t.root; while (cur != null) { list.push(cur); if (e < t.n[cur].el) cur = t.n[cur].l; else if (e > t.n[cur].el) cur = t.n[cur].r; else break; } return list; }
+function reconnect(t, A, pA, top){ if (A === t.root) t.root = top; else if (t.n[pA].l === A) t.n[pA].l = top; else t.n[pA].r = top; }
+function rotate(t, kind, A, pA){
+  var B, C, n = t.n;
+  if (kind === 'LL') { B = n[A].l; reconnect(t, A, pA, B); n[A].l = n[B].r; n[B].r = A; updH(t, A); updH(t, B); return {B: B}; }
+  if (kind === 'RR') { B = n[A].r; reconnect(t, A, pA, B); n[A].r = n[B].l; n[B].l = A; updH(t, A); updH(t, B); return {B: B}; }
+  if (kind === 'LR') { B = n[A].l; C = n[B].r; reconnect(t, A, pA, C); n[A].l = n[C].r; n[B].r = n[C].l; n[C].l = B; n[C].r = A; updH(t, A); updH(t, B); updH(t, C); return {B: B, C: C}; }
+  B = n[A].r; C = n[B].l; reconnect(t, A, pA, C); n[A].r = n[C].l; n[B].l = n[C].r; n[C].l = A; n[C].r = B; updH(t, A); updH(t, B); updH(t, C); return {B: B, C: C};
+}
+var ROT_TXT = {LL: 'quay phải tại A: B lên thay A, A thành con phải của B, T2 sang làm con trái của A',
+  RR: 'quay trái tại A: B lên thay A, A thành con trái của B, T2 sang làm con phải của A',
+  LR: 'C lên thay A; B thành con trái, A thành con phải của C; T2 sang B, T3 sang A',
+  RL: 'C lên thay A; A thành con trái, B thành con phải của C; T2 sang A, T3 sang B'};
+function balancePath(t, e, R, rotLog){
+  var path = pathTo(t, e), el = function(id){ return id == null ? 'null' : t.n[id].el; };
+  R.s({code: 'balancePath', ln: Lr('balancePath', 'ArrayList<TreeNode<E>> path =', 'path(e);'), title: 'balancePath(' + e + ')', body: 'Các nút trên đường từ gốc tới ' + e + ': ' + path.map(el).join(', ') + '. Xét lần lượt từ cuối danh sách ngược lên gốc.', hl: mapOf(path, 'path'), mark: path.slice()});
+  for (var i = path.length - 1; i >= 0; i--) {
+    var A = path[i], oldH = t.n[A].h;
+    updH(t, A);
+    var pA = A === t.root ? null : path[i - 1], bf = bfOf(t, A);
+    var upper = path.slice(0, i), hlBase = mapOf(upper, 'path');
+    var tg = tagsOf([[A, 'A'], [pA, 'parentOfA']]);
+    var chg = {}; if (oldH !== t.n[A].h) chg[A] = 1;
+    R.s({code: 'balancePath', ln: [L('balancePath', 'TreeNode<E> A = path.get(i)'), L('balancePath', 'switch (balanceFactor(A))')], title: 'Xét nút ' + el(A), body: 'Cập nhật chiều cao: h(' + el(A) + ') = ' + t.n[A].h + (chg[A] ? ' (trước là ' + oldH + ')' : ' (không đổi)') + '. Hệ số cân bằng = ' + hOf(t, t.n[A].r) + ' − (' + hOf(t, t.n[A].l) + ') = <b>' + (bf > 0 ? '+' : '') + bf + '</b>' + (Math.abs(bf) >= 2 ? ': mất cân bằng!' : ': cân bằng, đi tiếp lên.'), hl: merge(hlBase, mapOf([A], Math.abs(bf) >= 2 ? 'bad' : 'cur')), tags: tg, hchg: chg, mark: path.slice(0, i + 1)});
+    if (bf === -2 || bf === 2) {
+      var kind, child = bf === -2 ? t.n[A].l : t.n[A].r, cb = bfOf(t, child);
+      if (bf === -2) kind = cb <= 0 ? 'LL' : 'LR'; else kind = cb >= 0 ? 'RR' : 'RL';
+      var B = child, C = kind === 'LR' ? t.n[B].r : kind === 'RL' ? t.n[B].l : null;
+      var ln = kind === 'LL' ? Lr('balancePath', 'if (balanceFactor(', 'balanceLL(A, parentOfA)') : kind === 'LR' ? [L('balancePath', 'else', 1), L('balancePath', 'balanceLR(A, parentOfA)')] : kind === 'RR' ? [L('balancePath', 'if (balanceFactor(', 2), L('balancePath', 'balanceRR(A, parentOfA)')] : [L('balancePath', 'else', 2), L('balancePath', 'balanceRL(A, parentOfA)')];
+      R.s({code: 'balancePath', ln: ln, title: 'Mất cân bằng ' + kind + ' tại ' + el(A), body: 'Hệ số của A là ' + (bf > 0 ? '+2' : '-2') + ', con ' + (bf < 0 ? 'trái' : 'phải') + ' B (' + el(B) + ') có hệ số ' + (cb > 0 ? '+' : '') + cb + (bf < 0 ? (cb <= 0 ? ' ≤ 0' : ' &gt; 0') : (cb >= 0 ? ' ≥ 0' : ' &lt; 0')) + ' → gọi <code>balance' + kind + '</code>: ' + ROT_TXT[kind] + '.', hl: merge(hlBase, mapOf([A], 'bad'), mapOf([B], 'rm'), mapOf([C], 'cur')), tags: tagsOf([[A, 'A'], [B, 'B'], [C, 'C'], [pA, 'parentOfA']]), mark: path.slice(0, i + 1)});
+      var hb = {}; [A, B, C].forEach(function(x){ if (x != null) hb[x] = t.n[x].h; });
+      rotate(t, kind, A, pA);
+      R.p('  Quay ' + kind + ' tai nut ' + el(A) + '\n');
+      if (rotLog) rotLog.push(kind + ' tại ' + el(A));
+      var top = C != null ? C : B, ch2 = {}; for (var k in hb) if (hb[k] !== t.n[k].h) ch2[k] = 1;
+      R.s({code: 'balancePath', ln: ln[1], title: 'Sau phép quay ' + kind, body: 'Nút ' + el(top) + ' lên thay chỗ của ' + el(A) + '. Chiều cao được cập nhật cho ' + [A, B, C].filter(function(x){ return x != null; }).map(el).join(', ') + '. Cây con này giờ cao ' + t.n[top].h + (i > 0 ? '; tiếp tục xét các nút phía trên.' : '.'), hl: merge(hlBase, mapOf([A, B, C], 'ok')), tags: tagsOf([[A, 'A'], [B, 'B'], [C, 'C'], [pA, 'parentOfA']]), hchg: ch2, mark: path.slice(0, i)});
+    }
+  }
+}
+function avlInsertQuiet(t, e){ var R = quietRec(t); return avlInsert(t, e, R); }
+function avlInsert(t, e, R, rotLog){
+  var el = function(id){ return t.n[id].el; };
+  if (t.root == null) {
+    t.root = t.mk(e);
+    R.s({code: 'avlInsert', ln: L('avlInsert', 'boolean ok = super.insert(e)'), title: 'Chèn ' + e, body: 'Cây rỗng: ' + e + ' thành gốc (chiều cao 0).', hl: mapOf([t.root], 'ok')});
+  } else {
+    var parent = null, cur = t.root, seen = [];
+    while (cur != null) {
+      if (e < el(cur)) { parent = cur; seen.push(cur); cur = t.n[cur].l; }
+      else if (e > el(cur)) { parent = cur; seen.push(cur); cur = t.n[cur].r; }
+      else {
+        R.s({code: 'avlInsert', ln: Lr('avlInsert', 'if (!ok)', 'return false'), title: 'Chèn ' + e + ': trùng', body: e + ' đã có trong cây: <code>super.insert</code> trả về <code>false</code>, không cân bằng gì cả.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'bad'))});
+        return false;
+      }
+    }
+    var left = e < el(parent), id = t.mk(e);
+    if (left) t.n[parent].l = id; else t.n[parent].r = id;
+    var em = {}; em[parent + (left ? 'l' : 'r')] = 'chg';
+    R.s({code: 'avlInsert', ln: L('avlInsert', 'boolean ok = super.insert(e)'), title: 'Chèn ' + e + ' như BST', body: '<code>super.insert</code> đi qua ' + seen.map(el).join(', ') + ' và gắn ' + e + ' làm con ' + (left ? 'trái' : 'phải') + ' của ' + el(parent) + '. Nút mới là lá, chiều cao 0. Chiều cao các nút phía trên chưa được cập nhật.', hl: merge(mapOf(seen, 'path'), mapOf([id], 'ok')), edgeHl: em, stale: seen.slice()});
+  }
+  R.s({code: 'avlInsert', ln: L('avlInsert', 'balancePath(e);'), title: 'Gọi balancePath(' + e + ')', body: 'Chỉ các nút trên đường từ gốc tới ' + e + ' mới có thể đổi chiều cao.', hl: mapOf(pathTo(t, e), 'path')});
+  balancePath(t, e, R, rotLog);
+  return true;
+}
+function buildAVL(list){ var t = new TreeM(); list.forEach(function(e){ avlInsertQuiet(t, e); }); return t; }
+function avlDelete(t, e, R, rotLog){
+  var el = function(id){ return id == null ? 'null' : t.n[id].el; };
+  var parent = null, cur = t.root, seen = [];
+  R.s({code: 'avlDelete', ln: Lr('avlDelete', 'TreeNode<E> parent = null', 'TreeNode<E> current = root'), title: 'Xoá ' + e + ': tìm nút', body: 'Bắt đầu từ gốc ' + el(cur) + '.', hl: mapOf([cur], 'cur'), tags: tagsOf([[cur, 'current']])});
+  while (cur != null) {
+    var c = e < el(cur) ? -1 : e > el(cur) ? 1 : 0;
+    if (c === 0) { R.s({code: 'avlDelete', ln: L('avlDelete', 'if (c == 0) break;'), title: 'Thấy ' + e, body: 'Đã tìm thấy nút cần xoá.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'bad'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']])}); break; }
+    parent = cur; seen.push(cur); cur = c < 0 ? t.n[cur].l : t.n[cur].r;
+    R.s({code: 'avlDelete', ln: [L('avlDelete', 'parent = current;'), L('avlDelete', ': current.right;')], title: 'Tìm ' + e, body: e + (c < 0 ? ' &lt; ' : ' &gt; ') + el(parent) + ': sang ' + (c < 0 ? 'trái' : 'phải') + ' → ' + el(cur) + '.', hl: merge(mapOf(seen, 'path'), mapOf([cur], 'cur'), mapOf([parent], 'par')), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), ghost: cur == null ? {of: parent, side: c < 0 ? 'l' : 'r', tag: 'current'} : null});
+  }
+  if (cur == null) { R.s({code: 'avlDelete', ln: Lr('avlDelete', 'if (current == null)', 'return false;'), title: e + ' không có trong cây', body: 'Trả về <code>false</code>.', hl: mapOf(seen, 'path')}); return false; }
+  if (t.n[cur].l == null) {
+    var right = t.n[cur].r, em = {};
+    if (parent == null) {
+      t.root = right;
+      R.s({code: 'avlDelete', ln: Lr('avlDelete', 'if (parent == null) {', 'root = current.right;'), title: 'Trường hợp 1, current là gốc', body: 'Gốc không có con trái: <code>root = current.right</code>. Không có tổ tiên nào phải kiểm tra nên không cân bằng.', hl: mapOf([right], 'ok'), gone: mapOf([cur], true)});
+      t.drop(cur);
+      return true;
+    }
+    var lft = e < el(parent);
+    if (lft) t.n[parent].l = right; else t.n[parent].r = right;
+    em[parent + (lft ? 'l' : 'r')] = 'chg';
+    R.s({code: 'avlDelete', ln: [L('avlDelete', 'if (element.compareTo('), lft ? L('avlDelete', 'parent.left = current.right') : L('avlDelete', 'parent.right = current.right')], title: 'Trường hợp 1: không có con trái', body: 'Nối ' + el(parent) + ' với con phải của ' + e + ' (' + (right == null ? 'null' : 'nút ' + el(right)) + '). Nút ' + e + ' bị gỡ khỏi cây.', hl: merge(mapOf([parent], 'par'), mapOf([right], 'ok')), gone: mapOf([cur], true), tags: tagsOf([[cur, 'current'], [parent, 'parent']]), edgeHl: em});
+    t.drop(cur);
+    R.s({code: 'avlDelete', ln: L('avlDelete', 'balancePath(parent.element)'), title: 'Gọi balancePath(' + el(parent) + ')', body: 'Chiều cao có thể giảm từ <code>parent</code> (' + el(parent) + ') trở lên.', hl: mapOf(pathTo(t, el(parent)), 'path'), tags: tagsOf([[parent, 'parent']])});
+    balancePath(t, el(parent), R, rotLog);
+  } else {
+    var por = cur, rm = t.n[cur].l;
+    while (t.n[rm].r != null) { por = rm; rm = t.n[rm].r; }
+    R.s({code: 'avlDelete', ln: [L('avlDelete', '// Truong hop 2'), L('avlDelete', 'rightMost = rightMost.right;')], title: 'Trường hợp 2: có con trái', body: '<code>rightMost</code> (lớn nhất trong cây con trái) là ' + el(rm) + ', <code>parentOfRightMost</code> là ' + el(por) + (por === cur ? ' (chính là <code>current</code>)' : '') + '.', hl: merge(mapOf([cur], 'bad'), mapOf([rm], 'rm'), por !== cur ? mapOf([por], 'par') : null), tags: tagsOf([[cur, 'current'], [rm, 'rightMost'], [por === cur ? null : por, 'parentOfRM']])});
+    var old = t.n[cur].el; t.n[cur].el = t.n[rm].el;
+    var lc = t.n[rm].l, em2 = {};
+    if (t.n[por].r === rm) { t.n[por].r = lc; em2[por + 'r'] = 'chg'; } else { t.n[por].l = lc; em2[por + 'l'] = 'chg'; }
+    R.s({code: 'avlDelete', ln: [L('avlDelete', 'current.element ='), L('avlDelete', 'rightMost.left;', 2)], title: 'Chép ' + el(rm) + ' rồi gỡ rightMost', body: 'Nút <code>current</code> nhận phần tử ' + t.n[cur].el + ' (thay cho ' + old + '); ' + el(por) + (t.n[por].l === lc && por === cur ? '.left' : '.right') + ' = con trái của rightMost (' + (lc == null ? 'null' : 'nút ' + el(lc)) + ').', hl: merge(mapOf([cur], 'ok'), mapOf([por], 'par')), gone: mapOf([rm], true), tags: tagsOf([[cur, 'current'], [rm, 'rightMost'], [por === cur ? null : por, 'parentOfRM']]), edgeHl: em2});
+    t.drop(rm);
+    var pe = el(por);
+    R.s({code: 'avlDelete', ln: Lr('avlDelete', 'balancePath(', 'parentOfRightMost.element);'), title: 'Gọi balancePath(' + pe + ')', body: 'Nút thật sự biến mất là rightMost, nên chiều cao chỉ có thể đổi từ <code>parentOfRightMost</code> (' + pe + ') trở lên.', hl: mapOf(pathTo(t, pe), 'path'), tags: tagsOf([[por, 'parentOfRM']])});
+    balancePath(t, pe, R, rotLog);
+  }
+  return true;
+}
+// BST thường + chiều cao tính lại (dùng cho trang hệ số cân bằng)
+function recomputeHeights(t){ (function go(id){ if (id == null) return -1; var h = 1 + Math.max(go(t.n[id].l), go(t.n[id].r)); t.n[id].h = h; return h; })(t.root); }
+
+// ---------- Huffman (HuffmanCode + Heap của khoá) ----------
+function huffman(text){
+  var counts = {}, order = [];
+  for (var i = 0; i < text.length; i++) { var c = text.charCodeAt(i); if (!counts[c]) { counts[c] = 0; } counts[c]++; }
+  var t = new TreeM(), heap = [], log = [];
+  var cmp = function(a, b){ var wa = t.n[a].w, wb = t.n[b].w; return wa < wb ? 1 : wa === wb ? 0 : -1; }; // đảo ngược như lớp Tree
+  function add(x){ heap.push(x); var ci = heap.length - 1; while (ci > 0) { var pi = (ci - 1) >> 1; if (cmp(heap[ci], heap[pi]) > 0) { var tmp = heap[ci]; heap[ci] = heap[pi]; heap[pi] = tmp; } else break; ci = pi; } }
+  function remove(){
+    if (!heap.length) return null;
+    var r = heap[0]; heap[0] = heap[heap.length - 1]; heap.pop();
+    var ci = 0;
+    while (ci < heap.length) {
+      var l = 2 * ci + 1, rr = 2 * ci + 2; if (l >= heap.length) break;
+      var mx = l; if (rr < heap.length && cmp(heap[mx], heap[rr]) < 0) mx = rr;
+      if (cmp(heap[ci], heap[mx]) < 0) { var tmp = heap[mx]; heap[mx] = heap[ci]; heap[ci] = tmp; ci = mx; } else break;
+    }
+    return r;
+  }
+  Object.keys(counts).map(Number).sort(function(a, b){ return a - b; }).forEach(function(c){ var id = t.mk(String.fromCharCode(c)); t.n[id].w = counts[c]; t.n[id].leaf = true; order.push(c); add(id); });
+  var steps = [{heap: heap.slice(), snap: t.snap()}];
+  while (heap.length > 1) {
+    var t1 = remove(), t2 = remove();
+    var id = t.mk(null); t.n[id].l = t1; t.n[id].r = t2; t.n[id].w = t.n[t1].w + t.n[t2].w;
+    add(id);
+    steps.push({t1: t1, t2: t2, nw: id, heap: heap.slice(), snap: t.snap()});
+  }
+  var root = remove(), codes = {};
+  (function go(id, code){ var o = t.n[id]; if (o.l != null) { go(o.l, code + '0'); go(o.r, code + '1'); } else codes[o.el.charCodeAt(0)] = code; })(root, '');
+  return {t: t, root: root, counts: counts, order: order, steps: steps, codes: codes};
+}
+
+// ---------- BitOutputStream ----------
+function bitSteps(bits){
+  var value = 0, count = 0, out = [], steps = [];
+  steps.push({k: 'start', i: -1, value: 0, count: 0, out: []});
+  for (var i = 0; i < bits.length; i++) {
+    value = value << 1;
+    steps.push({k: 'shift', i: i, value: value, count: count, out: out.slice()});
+    if (bits[i] === '1') { value = value | 1; }
+    count++;
+    steps.push({k: bits[i] === '1' ? 'or' : 'zero', i: i, value: value, count: count, out: out.slice()});
+    if (count === 8) { out.push(value); value = 0; count = 0; steps.push({k: 'write', i: i, value: value, count: count, out: out.slice(), wrote: out[out.length - 1]}); }
+  }
+  if (count > 0) { var pad = 8 - count; value = value << pad; steps.push({k: 'pad', i: bits.length, value: value, count: count, pad: pad, out: out.slice()}); out.push(value); steps.push({k: 'close', i: bits.length, value: value, count: count, out: out.slice(), wrote: value}); }
+  else steps.push({k: 'close0', i: bits.length, value: value, count: 0, out: out.slice()});
+  return steps;
+}
+
+// ===== Trang BST: ?vd=tim | chen | duyet | xoa | console | iterator =====
+var VD = qs('vd') || 'tim';
+var TREE_A = [60, 55, 100, 45, 57, 67, 107];
+var NINE = [60, 55, 100, 45, 57, 67, 107, 59, 101];
+var DEL_TREE = [20, 10, 40, 16, 30, 80, 14, 27, 50];
+var BTN = '<div class="btns"><button class="btn" id="next">Bước tiếp</button><button class="btn ghost" id="prev">Lùi lại</button><button class="btn ghost" id="all">Chạy hết</button><button class="btn ghost" id="reset">Làm lại</button></div>';
+var LEG = '<div class="legend"><span><i class="cur"></i>current</span><span><i class="path"></i>đã đi qua</span><span><i class="ok"></i>kết quả</span></div>';
+function chipsHtml(list){ return '<div class="chips">' + list.map(function(c){ return '<button class="chip" data-v="' + esc(c[0]) + '">' + esc(c[1] || c[0]) + '</button>'; }).join('') + '</div>'; }
+function bindChips(fn){ Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(b){ b.addEventListener('click', function(){ fn(b.getAttribute('data-v'), b); }); }); }
+function pressChip(v){ Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-v') === v ? 'true' : 'false'); }); }
+function treeCard(title, extra){ return '<div class="card"><p class="panel-title">' + title + '</p><div class="tree" id="tree"></div>' + (extra || '') + '</div>'; }
+function codeCard(title){ return '<div class="card codecard"><p class="panel-title" id="codeTitle">' + title + '</p><div class="code" id="code"></div></div>'; }
+var tv, stepper, prevOut = 0;
+function makeTV(H, label){ tv = new TreeView($('tree'), {W: 440, H: H || 250, padX: 26, top: 30, bottom: 26, maxSlot: 54, maxDy: 58, maxR: 17, label: label}); }
+function drawStep(st){
+  tv.draw(st.snap, {hl: st.hl, tags: st.tags, ghost: st.ghost, edgeHl: st.edgeHl, gone: st.gone, rootLabel: 'root', emptyText: 'Cây rỗng'});
+  if ($('code') && st.code) { $('code').innerHTML = codeHtml(CODE[st.code], st.ln); scrollToCur($('code')); }
+  if ($('vars') && st.vars) $('vars').innerHTML = varsHtml(st.vars);
+  if ($('con')) { $('con').innerHTML = consoleHtml(st.out, prevOut); $('con').scrollTop = $('con').scrollHeight; }
+}
+// Theo dõi phần output mới: so với bước liền trước
+function withPrev(build){
+  var steps = build();
+  return steps.map(function(s, i){ s.prevOut = i ? steps[i - 1].out.length : 0; return s; });
+}
+function stdRender(st){ prevOut = st.prevOut || 0; drawStep(st); }
+
+var MODES = {};
+// ---------- [5-03] tìm kiếm ----------
+MODES.tim = function(){
+  $('lead').innerHTML = 'Nhập số cần tìm rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem <code>current</code> đi từ gốc xuống.';
+  $('ctl').innerHTML = '<div class="field"><label for="key">Tìm</label><input type="text" id="key" value="58" inputmode="numeric" maxlength="4"><button class="btn ghost" id="go">Tìm</button></div>' + chipsHtml([['57'], ['58'], ['45'], ['99']]) + BTN + '<div class="err" id="err" role="alert"></div>';
+  $('grid').innerHTML = '<div class="col">' + treeCard('Cây A', LEG) + '<div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div><div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div></div>' + codeCard('search');
+  makeTV(230, 'Cây A gốc 60');
+  var key = 58;
+  stepper = Stepper({build: function(){ return withPrev(function(){ return stepsSearch(buildBST(TREE_A), key); }); }, render: stdRender});
+  function go(v){ var k = parseIntIn(v, 0, 999); if (k === null) { $('key').classList.add('bad'); $('err').textContent = 'Nhập số nguyên từ 0 đến 999.'; return; } $('key').classList.remove('bad'); $('err').textContent = ''; key = k; $('key').value = k; pressChip(String(k)); stepper.reset(); }
+  $('go').addEventListener('click', function(){ go($('key').value); });
+  $('key').addEventListener('keydown', function(e){ if (e.key === 'Enter') go($('key').value); });
+  bindChips(go); pressChip('58');
+  stepper.reset();
+};
+// ---------- [5-04] chèn ----------
+MODES.chen = function(){
+  $('lead').innerHTML = 'Cây A đã có sẵn. Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để chèn lần lượt các số trong ô, theo dõi <code>parent</code> và <code>current</code>.';
+  $('ctl').innerHTML = '<div class="field"><label for="keys">Chèn</label><input type="text" id="keys" class="wide" value="101 59" maxlength="40"><button class="btn ghost" id="go">Chèn</button></div>' + chipsHtml([['101 59'], ['70 65'], ['57', '57 (trùng)']]) + BTN + '<div class="err" id="err" role="alert"></div>';
+  $('grid').innerHTML = '<div class="col">' + treeCard('Cây', LEG.replace('current</span>', 'current</span><span><i class="path" style="border-style:dashed"></i>parent</span>')) + '<div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div><div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div></div>' + codeCard('insert');
+  makeTV(250, 'Cây tìm kiếm nhị phân');
+  var keys = [101, 59];
+  stepper = Stepper({build: function(){ return withPrev(function(){ return stepsInsert(buildBST(TREE_A), keys); }); }, render: stdRender});
+  function go(v){ var k = parseList(v, 0, 999, 6); if (k === null) { $('keys').classList.add('bad'); $('err').textContent = 'Nhập 1 đến 6 số nguyên (0 đến 999), cách nhau bởi dấu cách.'; return; } $('keys').classList.remove('bad'); $('err').textContent = ''; keys = k; $('keys').value = k.join(' '); pressChip(k.join(' ')); stepper.reset(); }
+  $('go').addEventListener('click', function(){ go($('keys').value); });
+  $('keys').addEventListener('keydown', function(e){ if (e.key === 'Enter') go($('keys').value); });
+  bindChips(go); pressChip('101 59');
+  stepper.reset();
+};
+// ---------- [5-05] duyệt ----------
+MODES.duyet = function(){
+  var kind = {inorder: 1, preorder: 1, postorder: 1}[qs('kieu')] ? qs('kieu') : 'inorder';
+  $('lead').innerHTML = 'Chọn cách duyệt rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>): mỗi lời gọi đẩy một khung lên ngăn xếp, nút được in ra theo đúng thứ tự.';
+  $('ctl').innerHTML = '<div class="tabs" role="tablist">' + [['inorder', 'Trung thứ tự'], ['preorder', 'Tiền thứ tự'], ['postorder', 'Hậu thứ tự']].map(function(k){ return '<button class="tab" role="tab" data-k="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>' + BTN;
+  $('grid').innerHTML = '<div class="col">' + treeCard('Cây 9 nút', '<div class="legend"><span><i class="cur"></i>nút đang xét (r)</span><span><i class="path"></i>đang chờ trên ngăn xếp</span><span><i class="ok"></i>đã in</span></div>') + '<div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div></div>' +
+    '<div class="col">' + codeCard(kind) + '<div class="card"><p class="panel-title">Ngăn xếp lời gọi (đỉnh ở trên)</p><div id="frames" class="frames"></div></div></div>';
+  makeTV(230, 'Cây 9 nút gốc 60');
+  stepper = Stepper({build: function(){ return withPrev(function(){ return stepsTraverse(buildBST(NINE), kind); }); }, render: function(st){
+    stdRender(st);
+    $('codeTitle').textContent = kind;
+    var fr = st.frames.slice().reverse();
+    $('frames').innerHTML = fr.length ? fr.map(function(f, i){ return '<div class="frame' + (i === 0 ? ' active' : '') + '"><b>' + esc(f.name) + '</b>' + (f.at && i > 0 ? '<small>đang chờ ' + esc(f.at) + '</small>' : '') + '</div>'; }).join('') : '<div class="frame empty">Ngăn xếp rỗng</div>';
+  }, speed: 500});
+  function setKind(k){ kind = k; Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.setAttribute('aria-selected', b.getAttribute('data-k') === k ? 'true' : 'false'); }); stepper.reset(); }
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.addEventListener('click', function(){ setKind(b.getAttribute('data-k')); }); });
+  setKind(kind);
+};
+// ---------- [5-09] xoá ----------
+MODES.xoa = function(){
+  var EX = {'20': {tree: DEL_TREE, key: 20}, '10': {tree: DEL_TREE, key: 10}, '3': {tree: [3, 2, 1], key: 3}};
+  var ex = EX[qs('ex')] ? qs('ex') : '20', tree = EX[ex].tree, key = EX[ex].key;
+  $('lead').innerHTML = 'Chọn ví dụ rồi bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem từng lệnh của <code>delete</code>: tìm nút, tìm <code>rightMost</code>, chép phần tử, nối lại.';
+  $('ctl').innerHTML = chipsHtml([['20', 'Xoá 20 (có con trái)'], ['10', 'Xoá 10 (không có con trái)'], ['3', 'Cây 3 2 1, xoá 3']]) + '<div class="field"><label for="key">Xoá số khác</label><input type="text" id="key" value="" inputmode="numeric" maxlength="4" placeholder="vd 40"><button class="btn ghost" id="go">Xoá</button></div>' + BTN + '<div class="err" id="err" role="alert"></div>';
+  $('grid').innerHTML = '<div class="col">' + treeCard('Cây', '<div class="legend"><span><i class="cur"></i>current</span><span><i class="bad"></i>nút cần xoá</span><span><i class="rm"></i>rightMost</span><span><i class="ok"></i>đã đổi</span></div>') + '<div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div></div>' + codeCard('delete');
+  makeTV(240, 'Cây tìm kiếm nhị phân');
+  stepper = Stepper({build: function(){ return withPrev(function(){ return stepsBSTDelete(buildBST(tree), key); }); }, render: stdRender});
+  bindChips(function(v){ ex = v; tree = EX[v].tree; key = EX[v].key; pressChip(v); $('key').value = ''; $('err').textContent = ''; stepper.reset(); });
+  function go(v){ var k = parseIntIn(v, 0, 999); if (k === null) { $('key').classList.add('bad'); $('err').textContent = 'Nhập số nguyên từ 0 đến 999.'; return; } $('key').classList.remove('bad'); $('err').textContent = ''; key = k; pressChip(''); stepper.reset(); }
+  $('go').addEventListener('click', function(){ go($('key').value); });
+  $('key').addEventListener('keydown', function(e){ if (e.key === 'Enter') go($('key').value); });
+  pressChip(ex);
+  stepper.reset();
+};
+// ---------- [5-16] iterator dùng ngăn xếp ----------
+MODES.iterator = function(){
+  $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>): mỗi lần <code>next()</code> lấy nút ở đỉnh ngăn xếp ra, rồi đẩy thêm các nút cần thiết.';
+  $('ctl').innerHTML = BTN;
+  $('grid').innerHTML = '<div class="col">' + treeCard('Cây 4, 2, 6, 1, 3', '<div class="legend"><span><i class="cur"></i>vừa xử lý</span><span><i class="path"></i>đang ở trong ngăn xếp</span><span><i class="ok"></i>đã trả về</span></div>') + '</div>' +
+    '<div class="col"><div class="card"><p class="panel-title">Ngăn xếp (đỉnh ở trên)</p><div id="stk" class="stk"></div></div><div class="card"><p class="panel-title">Các phần tử next() đã trả về</p><div class="vars" id="ret"></div></div></div>';
+  makeTV(220, 'Cây 4, 2, 6, 1, 3');
+  stepper = Stepper({build: function(){ return stepsStackIter(buildBST([4, 2, 6, 1, 3])); }, render: function(st){
+    tv.draw(st.snap, {hl: st.hl, rootLabel: 'root'});
+    var s = st.stack.slice().reverse();
+    $('stk').innerHTML = s.length ? s.map(function(v, i){ return '<div class="sbox' + (i === 0 ? ' top' : '') + '">' + v + (i === 0 ? '<small>đỉnh</small>' : '') + '</div>'; }).join('') : '<div class="sbox empty">rỗng</div>';
+    $('ret').innerHTML = st.ret.length ? st.ret.map(function(r, i){ return '<div class="var' + (i === st.ret.length - 1 && st.returned != null ? ' chg' : '') + '"><small>lần ' + (i + 1) + '</small><strong>' + r.v + '</strong></div>'; }).join('') : '<span class="ph" style="color:var(--muted);font-size:13px">Chưa gọi next().</span>';
+  }});
+  stepper.reset();
+};
+// ---------- [5-14] BSTAnimation đồ hoạ ----------
+function btview(t){
+  if (t.root == null) return '';
+  var width = 38, vGap = 2, n = t.n;
+  var rows = heightOfSub(n, t.root) * vGap + 1, grid = [];
+  for (var i = 0; i < rows; i++) { grid.push([]); for (var j = 0; j < width; j++) grid[i].push(' '); }
+  (function disp(id, x, y, hGap){
+    var o = n[id];
+    if (o.l != null) { grid[y + 1][x - Math.floor((hGap + 1) / 2)] = '/'; disp(o.l, x - hGap, y + vGap, Math.floor(hGap / 2)); }
+    if (o.r != null) { grid[y + 1][x + Math.floor((hGap + 1) / 2)] = '\\'; disp(o.r, x + hGap, y + vGap, Math.floor(hGap / 2)); }
+    var s = String(o.el);
+    for (var k = 0; k < s.length; k++) if (x + k < width) grid[y][x + k] = s.charAt(k);
+  })(t.root, Math.floor(width / 2), 0, Math.floor(width / 4));
+  return grid.map(function(r){ return r.join('').replace(/\s+$/, ''); }).join('\n') + '\n';
+}
+MODES.console = function(){
+  $('lead').innerHTML = 'Nhập một số rồi bấm <b>Insert</b>, <b>Delete</b> hoặc <b>Search</b>. Cây được vẽ lại sau mỗi lệnh; khung bên phải là những gì chương trình in ra.';
+  $('ctl').innerHTML = '<div class="field"><label for="key">Số</label><input type="text" id="key" value="50" inputmode="numeric" maxlength="4"></div><div class="btns"><button class="btn" id="bi">Insert</button><button class="btn" id="bd">Delete</button><button class="btn ghost" id="bs">Search</button><button class="btn ghost" id="bc">Làm lại</button></div><div class="err" id="err" role="alert"></div>';
+  $('status').innerHTML = '<b>Trạng thái</b><span id="msg">Cây đang rỗng. Hãy thử chèn 50, 30, 70, 20, 40.</span>';
+  $('grid').innerHTML = treeCard('Cây (model BST, vẽ lại sau mỗi lệnh)') + '<div class="card"><p class="panel-title">Console của chương trình</p><div class="console" id="con" style="height:250px;max-height:none"></div></div>';
+  makeTV(260, 'Cây tìm kiếm nhị phân');
+  var t = new TreeM(), out = 'Lenh: i <so> de chen, d <so> de xoa, q de thoat\n';
+  function show(hlm, msg, cmd){
+    tv.draw(t.snap(), {hl: hlm || {}, rootLabel: 'root', emptyText: 'Cây rỗng'});
+    $('msg').innerHTML = msg;
+    var before = out.length;
+    if (cmd) out += cmd;
+    $('con').innerHTML = consoleHtml(out, before); $('con').scrollTop = $('con').scrollHeight;
+  }
+  function key(){ var k = parseIntIn($('key').value, 0, 999); if (k === null) { $('key').classList.add('bad'); $('err').textContent = 'Nhập số nguyên từ 0 đến 999.'; return null; } $('key').classList.remove('bad'); $('err').textContent = ''; return k; }
+  function has(k){ return t.ino().indexOf(k) >= 0; }
+  function pathIds(k){ var p = [], c = t.root; while (c != null) { p.push(c); if (k < t.n[c].el) c = t.n[c].l; else if (k > t.n[c].el) c = t.n[c].r; else break; } return p; }
+  $('bi').addEventListener('click', function(){
+    var k = key(); if (k === null) return;
+    if (has(k)) { var p = pathIds(k); show(merge(mapOf(p, 'path'), mapOf([p[p.length - 1]], 'bad')), '<code>' + k + ' is already in the tree</code>', '> i ' + k + '\n' + k + ' is already in the tree\n' + btview(t)); return; }
+    if (t.size() >= 20) { $('err').textContent = 'Trang này giới hạn 20 nút. Bấm Làm lại để bắt đầu cây mới.'; return; }
+    bstInsertQuiet(t, k); var p2 = pathIds(k);
+    show(merge(mapOf(p2, 'path'), mapOf([p2[p2.length - 1]], 'ok')), '<code>' + k + ' is inserted in the tree</code>', '> i ' + k + '\n' + k + ' is inserted in the tree\n' + btview(t));
+  });
+  $('bd').addEventListener('click', function(){
+    var k = key(); if (k === null) return;
+    if (!has(k)) { show(mapOf(pathIds(k), 'path'), '<code>' + k + ' is not in the tree</code>', '> d ' + k + '\n' + k + ' is not in the tree\n' + btview(t)); return; }
+    stepsBSTDelete(t, k);
+    show({}, '<code>' + k + ' is deleted from the tree</code>', '> d ' + k + '\n' + k + ' is deleted from the tree\n' + btview(t));
+  });
+  $('bs').addEventListener('click', function(){
+    var k = key(); if (k === null) return;
+    var p = pathIds(k), f = has(k);
+    show(merge(mapOf(p, 'path'), f ? mapOf([p[p.length - 1]], 'ok') : null), f ? '<code>' + k + ' is found in the tree</code> (đường đi tô xanh)' : '<code>' + k + ' is not in the tree</code> (đường đã đi tô xanh)', '');
+  });
+  $('bc').addEventListener('click', function(){ t = new TreeM(); out = 'Lenh: i <so> de chen, d <so> de xoa, q de thoat\n'; show({}, 'Cây đang rỗng.', ''); });
+  $('key').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('bi').click(); });
+  show({}, 'Cây đang rỗng. Hãy thử chèn 50, 30, 70, 20, 40.', '');
+};
+(MODES[VD] || MODES.tim)();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="610">
+<title>Hình tròn liên thông</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --edge:#c3c9d4; --orange:#ea7a0c; --orange-soft:#fdecd9; --purple:#9333ea;
+    --l0:#2563eb; --l1:#0d9488; --l2:#ca8a04; --l3:#db2777; --l4:#7c3aed; --l5:#64748b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --edge:#3d4554; --orange:#fb923c; --orange-soft:#3a2614; --purple:#c084fc;
+      --l0:#6ea0ff; --l1:#2dd4bf; --l2:#facc15; --l3:#f472b6; --l4:#a78bfa; --l5:#94a3b8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px}
+  .field label{font-weight:600}
+  select{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;font-size:13.5px}
+  .chk{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:56px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;white-space:pre-wrap;word-break:break-word;
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  [hidden]{display:none !important}
+  .area{display:block;width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;cursor:crosshair;touch-action:manipulation}
+  .area .gridln{stroke:var(--line);stroke-width:1}
+  .area .ax{fill:var(--muted);font:10px ui-monospace,Menlo,Consolas,monospace}
+  .area .edge{stroke:var(--text);stroke-width:1.5;stroke-dasharray:4 3;opacity:.55}
+  .area circle.c{stroke-width:2.5;fill-opacity:.28}
+  .area circle.c.new{animation:pop .3s ease-out}
+  @keyframes pop{from{opacity:0}to{opacity:1}}
+  .area text.id{font:700 12px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--text)}
+  .area .bad{fill:none;stroke:var(--false);stroke-width:2.5}
+  .row{display:grid;grid-template-columns:1fr 210px;gap:10px;margin-top:8px}
+  .row>*{min-width:0}
+  @media (max-width:600px){.row{grid-template-columns:1fr}}
+  .groups{display:flex;flex-direction:column;gap:3px;font-size:13px;max-height:104px;overflow:auto}
+  .groups .g{display:flex;gap:6px;align-items:baseline}
+  .groups .sw{width:12px;height:12px;border-radius:50%;flex:none;border:2px solid;align-self:center}
+  .groups code{font-size:12px;word-break:break-word}
+  textarea{width:100%;height:104px;resize:none;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--text);
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:5px 8px}
+  .rowh{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px}
+  .rowh .panel-title{margin:0}
+  .btn.sm{padding:2px 9px;font-size:12px}
+  .big{font:800 22px ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm vào chỗ trống để thêm hình tròn bán kính 20; các hình nối liền nhau có cùng màu.</p>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn ghost" id="undo">Xoá hình vừa thêm</button>
+      <button class="btn ghost" id="sample">Ví dụ</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+    <label class="field" style="font-weight:400"><input type="checkbox" id="showE" checked> Hiện cạnh (hai hình giao nhau)</label>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <svg class="area" id="area" viewBox="0 0 640 260" role="application" aria-label="Vùng vẽ hình tròn"></svg>
+  <div class="row">
+    <div class="card"><p class="panel-title">Các nhóm liên thông (theo thứ tự DFS)</p><div class="groups" id="groups"></div></div>
+    <div class="card"><div class="rowh"><p class="panel-title">Dữ liệu vào</p><button class="btn ghost sm" id="copy">Chép</button></div><textarea id="data" readonly aria-label="Dữ liệu vào cho chương trình ConnectedCircles"></textarea></div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|public|private|protected|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // cur: chỉ số dòng (0-based) hoặc [từ, đến]
+  function codeHtml(lines, cur){
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      return '<div class="ln' + (i >= a && i <= b ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void, speed: ms}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, redraw: function(){ if (snaps.length) draw(); }};
+  }
+var W = 640, H = 260, R = 20, MAX = 40;
+var COLORS = ['#2563eb', '#ea580c', '#16a34a', '#9333ea', '#db2777', '#0891b2', '#ca8a04', '#64748b'];
+var SAMPLE = [[90, 80], [120, 105], [150, 85], [300, 150], [330, 170], [520, 70], [470, 200], [505, 215], [540, 200]];
+var circles = [], lastBad = null, msg = '';
+
+function overlaps(a, b){ var dx = a[0] - b[0], dy = a[1] - b[1]; return Math.sqrt(dx * dx + dy * dy) <= R + R; }
+// Giống ConnectedCircles: cạnh (i, j) và (j, i) theo thứ tự i < j; đếm nhóm bằng DFS từ đỉnh chưa thấy
+function analyse(){
+  var n = circles.length, nb = [], i, j;
+  var edges = [];
+  for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) if (overlaps(circles[i], circles[j])) edges.push([i, j]);
+  // danh sách kề theo đúng thứ tự thêm cạnh (i, j), (j, i) của chương trình
+  for (i = 0; i < n; i++) nb.push([]);
+  edges.forEach(function(e){ nb[e[0]].push(e[1]); nb[e[1]].push(e[0]); });
+  var seen = [], group = [], groups = [];
+  function dfs(u, vis, order){ order.push(u); vis[u] = true; nb[u].forEach(function(v){ if (!vis[v]) dfs(v, vis, order); }); }
+  for (i = 0; i < n; i++) if (!seen[i]) {
+    var order = [];
+    dfs(i, [], order);
+    order.forEach(function(v){ seen[v] = true; group[v] = groups.length; });
+    groups.push(order);
+  }
+  return {edges: edges, group: group, groups: groups};
+}
+function draw(fresh){
+  var A = analyse(), h = '';
+  for (var x = 0; x <= W; x += 80) h += '<line class="gridln" x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '"/>' + (x > 0 && x < W ? '<text class="ax" x="' + (x + 2) + '" y="11">' + x + '</text>' : '');
+  for (var y = 0; y <= H; y += 80) h += '<line class="gridln" x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '"/>' + (y > 0 ? '<text class="ax" x="2" y="' + (y - 2) + '">' + y + '</text>' : '');
+  if ($('showE').checked) A.edges.forEach(function(e){ var a = circles[e[0]], b = circles[e[1]]; h += '<line class="edge" x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '"/>'; });
+  circles.forEach(function(c, i){
+    var col = COLORS[A.group[i] % COLORS.length];
+    h += '<circle class="c' + (fresh && i === circles.length - 1 ? ' new' : '') + '" cx="' + c[0] + '" cy="' + c[1] + '" r="' + R + '" style="stroke:' + col + ';fill:' + col + '"/><text class="id" x="' + c[0] + '" y="' + c[1] + '">' + i + '</text>';
+  });
+  if (lastBad) h += '<circle class="bad" cx="' + lastBad[0] + '" cy="' + lastBad[1] + '" r="5"/>';
+  $('area').innerHTML = h;
+  var n = circles.length;
+  $('status').innerHTML = '<b>' + n + ' hình tròn · <span class="big">' + A.groups.length + '</span> nhóm liên thông</b><span>' +
+    (msg || (n === 0 ? 'Chưa có hình nào. Bấm vào vùng lưới để thêm.' : A.groups.length === 1 ? 'Mọi hình tròn đều nối liền nhau: một lần DFS từ hình 0 tìm được đủ ' + n + ' đỉnh.' : 'DFS phải khởi động ' + A.groups.length + ' lần, mỗi lần đánh dấu một nhóm.')) + '</span>';
+  $('groups').innerHTML = A.groups.length ? A.groups.map(function(g, k){
+    var col = COLORS[k % COLORS.length];
+    return '<div class="g"><span class="sw" style="border-color:' + col + ';background:' + col + '55"></span><span>Nhóm ' + (k + 1) + ': <code>' + g.join(', ') + '</code></span></div>';
+  }).join('') : '<span style="color:var(--muted);font-size:12.5px">Chưa có nhóm nào.</span>';
+  $('data').value = n + '\n' + circles.map(function(c){ return c[0] + ' ' + c[1] + ' ' + R; }).join('\n');
+  $('undo').disabled = n === 0;
+}
+function pt(evt){
+  var svg = $('area'), p = svg.createSVGPoint(); p.x = evt.clientX; p.y = evt.clientY;
+  var q = p.matrixTransform(svg.getScreenCTM().inverse());
+  return [Math.round(q.x), Math.round(q.y)];
+}
+$('area').addEventListener('click', function(e){
+  var p = pt(e); lastBad = null; msg = '';
+  if (p[0] < 0 || p[1] < 0 || p[0] > W || p[1] > H) return;
+  for (var i = 0; i < circles.length; i++) {
+    var dx = p[0] - circles[i][0], dy = p[1] - circles[i][1];
+    if (Math.sqrt(dx * dx + dy * dy) < R) { lastBad = p; msg = 'Không thêm được: điểm (' + p[0] + ', ' + p[1] + ') nằm trong hình ' + i + '. Hãy bấm vào chỗ trống.'; draw(); return; }
+  }
+  if (circles.length >= MAX) { msg = 'Tối đa ' + MAX + ' hình tròn. Bấm Làm lại hoặc Xoá hình vừa thêm.'; draw(); return; }
+  circles.push(p);
+  msg = 'Đã thêm hình ' + (circles.length - 1) + ' tâm (' + p[0] + ', ' + p[1] + ').';
+  draw(true);
+});
+$('undo').addEventListener('click', function(){ circles.pop(); lastBad = null; msg = ''; draw(); });
+$('reset').addEventListener('click', function(){ circles = []; lastBad = null; msg = ''; draw(); });
+$('sample').addEventListener('click', function(){ circles = SAMPLE.map(function(c){ return c.slice(); }); lastBad = null; msg = ''; draw(); });
+$('showE').addEventListener('change', function(){ draw(); });
+$('copy').addEventListener('click', function(){
+  var t = $('data'); t.focus(); t.select();
+  var done = function(){ $('copy').textContent = 'Đã chép'; setTimeout(function(){ $('copy').textContent = 'Chép'; }, 1500); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(done, function(){ try { if (document.execCommand('copy')) done(); } catch (e) {} });
+    else if (document.execCommand('copy')) done();
+  } catch (e) {}
+});
+circles = SAMPLE.map(function(c){ return c.slice(); });
+draw();
+})();
+</script>
+</body>
+</html>

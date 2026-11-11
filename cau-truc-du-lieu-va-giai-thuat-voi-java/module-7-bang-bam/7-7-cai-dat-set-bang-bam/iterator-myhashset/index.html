@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="635">
+<title>Iterator của MyHashSet</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc;
+  --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+  --node:#ffffff; --node-line:#c9ced8;
+  --run:#e3f4e8; --run-bar:#15803d;
+  --b2:#0e7490; --b2-soft:#e0f4f8;
+  --vio:#7c3aed; --vio-soft:#f1eafe;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44;
+    --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+    --node:#1d222c; --node-line:#3a4250;
+    --run:#13301f; --run-bar:#4ade80;
+    --b2:#67e8f9; --b2-soft:#0f2e36;
+    --vio:#c4a1ff; --vio-soft:#2a2140;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:8px 10px 10px}
+.lead{color:var(--muted);margin:0 0 6px;font-size:13.5px;line-height:1.4}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:6px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs:empty{display:none}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+  border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.op{background:var(--card);color:var(--text);border-color:var(--node-line);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:12.5px}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.inp{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+.inp label{color:var(--muted)}
+.inp input[type=text],.inp input[type=number]{font:13px ui-monospace,Menlo,Consolas,monospace;padding:4px 7px;border:1px solid var(--node-line);
+  border-radius:7px;background:var(--card);color:var(--text);min-width:0}
+.inp input.bad{border-color:var(--false);background:var(--false-soft)}
+.inp .err{color:var(--false);font-size:12px}
+.chk{display:inline-flex;gap:5px;align-items:center;font-size:13px;cursor:pointer}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+  padding:4px 10px;margin-bottom:6px;min-height:52px;font-size:13.5px;line-height:1.4}
+.status>b{display:block;font-size:12.5px;color:var(--accent)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:8px;margin-top:6px}
+.grid>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 0 4px;flex-wrap:wrap}
+.head .panel-title{margin:0}
+.code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;max-height:206px;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s;width:max-content;min-width:100%}
+.ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.ln.curf{background:var(--false-soft);border-left-color:var(--false)}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+.vars{display:flex;gap:6px;flex-wrap:wrap}
+.var{background:var(--code-bg);border:2px solid transparent;border-radius:8px;padding:2px 10px;min-width:58px;text-align:center;transition:all .25s}
+.var small{display:block;color:var(--muted);font:11.5px ui-monospace,Menlo,Consolas,monospace}
+.var strong{font:700 14px ui-monospace,Menlo,Consolas,monospace;display:block;min-height:21px;white-space:nowrap}
+.var.chg{border-color:var(--cur-bar);background:var(--cur)}
+.var.ok{border-color:var(--true);background:var(--true-soft)}
+.var.bad{border-color:var(--false);background:var(--false-soft)}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;max-height:112px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px}
+.console .new{color:#fde68a}
+.console .er{color:#fca5a5}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.note{font-size:11.5px;color:var(--muted);margin-top:4px}
+.note b{color:var(--text)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:600px){.code{max-height:220px}}
+
+/* ===== Dải ô mảng ===== */
+.viz{overflow-x:auto;overflow-y:hidden}
+.srow{display:flex;align-items:center;gap:8px;min-width:max-content}
+.srow+.srow{margin-top:2px}
+.rlabel{flex:none;width:var(--lw,62px);text-align:right;font:700 12px/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.rlabel small{display:block;font-weight:400;font-size:10.5px}
+.strip{display:flex;gap:var(--gap,4px);padding:17px 2px 16px;position:relative}
+.strip.noix{padding-bottom:4px}
+.strip.notop{padding-top:4px}
+.cell{position:relative;width:var(--cw,36px);height:var(--ch,36px);flex:none;border:2px solid var(--node-line);border-radius:7px;
+  background:var(--node);display:flex;align-items:center;justify-content:center;
+  font:700 var(--fs,14px) ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:background .25s,border-color .25s,opacity .25s,color .25s}
+.cell .ix{position:absolute;top:100%;margin-top:1px;left:-6px;right:-6px;text-align:center;font:10.5px/1.3 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400}
+.cell .pt{position:absolute;bottom:100%;margin-bottom:1px;left:-14px;right:-14px;text-align:center;font:700 10.5px/1.25 ui-monospace,Menlo,monospace;color:var(--accent);white-space:nowrap}
+.cell .pt.b{bottom:auto;top:100%;margin:13px 0 0}
+.cell .sub{position:absolute;right:2px;top:0;font:9.5px/1.2 ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400}
+.cell.range{background:var(--accent-soft);border-color:var(--accent)}
+.cell.dim{opacity:.3}
+.cell.cmp{background:var(--cur);border-color:var(--cur-bar)}
+.cell.min{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cell.done{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+.cell.sw{background:var(--b2-soft);border-color:var(--b2)}
+.cell.piv{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+.cell.wr{background:var(--true-soft);border-color:var(--true)}
+.cell.rest{background:var(--vio-soft);border-color:var(--vio)}
+.cell.empty{border-style:dashed;color:var(--muted);font-weight:400;background:transparent}
+.cell.hole{border-style:dashed;color:var(--muted);opacity:.65;background:transparent}
+.cell.bad{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+.cell.gone{opacity:.25;text-decoration:line-through}
+.cell.ghost{border-color:var(--cur-bar);background:var(--cur)}
+.cell.wall::before{content:"";position:absolute;left:calc(-2px - var(--gap,4px) / 2 - 1px);top:-6px;bottom:-6px;width:3px;border-radius:2px;background:var(--true)}
+.cell.wallr::after{content:"";position:absolute;right:calc(-2px - var(--gap,4px) / 2 - 1px);top:-6px;bottom:-6px;width:3px;border-radius:2px;background:var(--true)}
+.cell .dg{color:var(--false)}
+.flipping{z-index:5}
+/* cột (histogram) */
+.bars{display:flex;gap:8px;align-items:flex-end;padding:18px 2px 18px;height:var(--bh,170px);min-width:max-content}
+.bar{position:relative;width:var(--cw,40px);flex:none;border:2px solid var(--node-line);border-bottom-width:2px;border-radius:6px 6px 2px 2px;background:var(--accent-soft);
+  transition:background .25s,border-color .25s,height .3s}
+.bar b{position:absolute;bottom:100%;left:0;right:0;text-align:center;font:700 13px ui-monospace,Menlo,monospace}
+.bar .ix{position:absolute;top:100%;left:0;right:0;text-align:center;font:10.5px ui-monospace,Menlo,monospace;color:var(--muted);margin-top:2px}
+.bar.cmp{background:var(--cur);border-color:var(--cur-bar)}
+.bar.sw{background:var(--b2-soft);border-color:var(--b2)}
+.bar.done{background:var(--true-soft);border-color:var(--true)}
+/* thùng */
+.bins{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:4px;min-width:420px}
+.bin{border:1px solid var(--line);border-radius:7px;background:var(--code-bg);min-height:72px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:2px;padding:2px 2px 4px}
+.bin>small{flex:0 0 100%;text-align:center;font:700 11px ui-monospace,Menlo,monospace;color:var(--muted)}
+.bin.on{border-color:var(--false);box-shadow:0 0 0 1px var(--false)}
+.chip{width:28px;border:2px solid var(--node-line);border-radius:5px;background:var(--node);text-align:center;font:700 11px/1.45 ui-monospace,Menlo,monospace;letter-spacing:-.3px}
+.chip.wr{background:var(--true-soft);border-color:var(--true)}
+/* khung lời gọi */
+.frames{display:flex;flex-direction:column-reverse;gap:3px}
+.frame{border:1px solid var(--node-line);border-radius:6px;padding:1px 8px;background:var(--code-bg);font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;animation:pop .25s ease-out;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame.top{white-space:normal}
+.frame.top{border-color:var(--accent);background:var(--accent-soft)}
+.frame.ret{border-color:var(--true);background:var(--true-soft)}
+.frame small{color:var(--muted)}
+.frame .rv{float:right;font-weight:700;color:var(--true)}
+.frames:empty::before{content:"(trống)";color:var(--muted);font-size:12px}
+/* ref mảng */
+.ref{font:700 12px ui-monospace,Menlo,monospace;color:var(--accent)}
+
+.ops{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.srow{--lw:96px}
+.cell.ret{box-shadow:0 0 0 3px var(--b2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Gọi các phương thức của iterator trên tập <code>{An, Binh, Cuc, Nam}</code> và theo dõi <code>current</code>; bật ô bên phải để thấy iterator lệch khỏi set.</p>
+  <div class="ops">
+    <div class="btns"><button class="btn op" id="hn">hasNext()</button><button class="btn op" id="nx">next()</button><button class="btn op" id="rm">remove()</button><button class="btn op" id="nw">set.iterator()</button></div>
+    <label class="chk"><input type="checkbox" id="skip"> Bỏ lệnh <code>list.remove(current)</code></label>
+  </div>
+  <div class="controls"><div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div></div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="card viz" id="viz"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title">MyHashSetIterator (MyHashSet.java)</p><div class="code" id="code"></div></div>
+    <div class="col">
+      <div class="card"><p class="panel-title">Biến</p><div class="vars" id="vars"></div></div>
+      <div class="card"><p class="panel-title">Kết quả các lời gọi</p><div class="console" id="con"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+// Engine dải ô mảng dùng chung cho nhóm "mang" (khoá 113).
+//PURE-START
+function clone(o){ return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+// Arrays.toString của Java cho mảng số nguyên / chuỗi
+function jArr(a){ return '[' + a.map(function(x){ return x === null || x === undefined ? 'null' : String(x); }).join(', ') + ']'; }
+// Double.toString cho số trong phạm vi nhỏ (không dùng dạng mũ)
+function jDbl(x){ var s = String(x); return /[.eE]/.test(s) ? s : s + '.0'; }
+// Tìm số dòng (đếm từ 1) của dòng đầu tiên chứa chuỗi s, bắt đầu từ dòng from.
+function lineOf(lines, s, from){ for (var i = (from || 1) - 1; i < lines.length; i++) if (lines[i].indexOf(s) >= 0) return i + 1; throw new Error('Không thấy dòng: ' + s); }
+// Đọc danh sách số. o: {min, max, minLen, maxLen, dec (cho phép số thập phân), sorted}
+function parseNums(text, o){
+  var parts = String(text).trim().split(/[\s,;]+/).filter(function(s){ return s !== ''; }), out = [];
+  if (parts.length < o.minLen) return {err: 'Cần ít nhất ' + o.minLen + ' số.'};
+  if (parts.length > o.maxLen) return {err: 'Tối đa ' + o.maxLen + ' số.'};
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i], re = o.dec ? /^-?\d+(\.\d{1,2})?$/ : /^-?\d+$/;
+    if (!re.test(p)) return {err: '"' + p + '" không phải ' + (o.dec ? 'số (tối đa 2 chữ số thập phân)' : 'số nguyên') + '.'};
+    var v = Number(p); if (v === 0) v = 0;
+    if (v < o.min || v > o.max) return {err: 'Mỗi số phải từ ' + o.min + ' đến ' + o.max + '.'};
+    out.push(v);
+  }
+  if (o.sorted) for (var j = 1; j < out.length; j++) if (out[j] < out[j - 1]) return {err: 'Dãy phải tăng dần (không giảm).'};
+  return {vals: out};
+}
+//PURE-END
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|package|public|private|protected|class|interface|extends|implements|super|abstract|static|final|void|int|long|double|float|char|boolean|byte|if|else|while|do|for|try|catch|finally|throw|throws|return|new|true|false|null|this)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+// lines: các dòng code; o: {start, cur: số dòng hoặc [từ, đến], bad}
+function codeHtml(lines, o){
+  o = o || {}; var cur = o.cur, st = o.start || 1;
+  var none = cur === undefined || cur === null;
+  var a = none ? -1 : (Array.isArray(cur) ? cur[0] : cur), b = none ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+  return lines.map(function(l, i){
+    var n = i + st, c = 'ln' + (n >= a && n <= b ? (o.bad ? ' curf' : ' cur') : '');
+    return '<div class="' + c + '"><span class="no">' + n + '</span><span>' + (hl(l) || ' ') + '</span></div>';
+  }).join('');
+}
+function scrollToCur(box){
+  var el = box.querySelector('.ln.cur,.ln.curf'); if (!el) return;
+  if (box.scrollHeight <= box.clientHeight + 2) return;
+  box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2);
+}
+function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Hoạt cảnh dịch chuyển: các phần tử có data-k giữ vị trí cũ rồi trượt tới vị trí mới.
+// data-from: khoá của phần tử nguồn (ô được chép từ đâu).
+function snapRects(root){
+  var m = {}; if (!root) return m;
+  [].forEach.call(root.querySelectorAll('[data-k]'), function(el){ m[el.getAttribute('data-k')] = el.getBoundingClientRect(); });
+  return m;
+}
+function flip(root, prev){
+  if (!root || REDUCED) return;
+  [].forEach.call(root.querySelectorAll('[data-k]'), function(el){
+    var r0 = prev[el.getAttribute('data-k')] || prev[el.getAttribute('data-from')]; if (!r0) return;
+    var r1 = el.getBoundingClientRect(), dx = r0.left - r1.left, dy = r0.top - r1.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    el.classList.add('flipping');
+    el.style.transition = 'none'; el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    el.getBoundingClientRect();
+    el.style.transition = 'transform .38s ease';
+    el.style.transform = '';
+    setTimeout(function(){ el.style.transition = ''; el.classList.remove('flipping'); }, 420);
+  });
+}
+// cfg: build() -> snaps; render(sn, i, n); anim: phần tử gốc để tạo hoạt cảnh; speed (ms)
+function Stepper(cfg){
+  var snaps = [], step = 0, timer = null, jump = parseInt(qs('buoc'), 10), shown = -1;
+  function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+  function draw(){
+    var sn = snaps[step], run = timer !== null, root = cfg.anim ? $(cfg.anim) : null;
+    var prev = (shown >= 0 && Math.abs(step - shown) === 1) ? snapRects(root) : null;
+    $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + sn.title + '</b><span>' + sn.body + '</span>';
+    cfg.render(sn, step, snaps.length);
+    if (prev) flip(root, prev);
+    shown = step;
+    $('next').disabled = step >= snaps.length - 1 || run;
+    $('prev').disabled = step <= 0 || run;
+    $('all').disabled = run || step >= snaps.length - 1;
+    if (cfg.after) cfg.after(sn, step, snaps.length, run);
+  }
+  function reset(){
+    stop(); snaps = cfg.build(); step = 0; shown = -1;
+    if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; }
+    draw();
+  }
+  // Thêm các bước mới sau bước hiện tại (bỏ các bước phía sau nếu đã lùi lại), chuyển tới bước mới đầu tiên.
+  function append(more){
+    stop(); snaps = snaps.slice(0, step + 1).concat(more); step++; draw();
+  }
+  function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+  function prev(){ if (step > 0) { step--; draw(); } }
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+  $('all').addEventListener('click', function(){
+    if (timer) return;
+    timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 450);
+    draw();
+  });
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+    if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+  });
+  return {reset: reset, append: append, cur: function(){ return snaps[step]; },
+    step: function(){ return step; }, atEnd: function(){ return step >= snaps.length - 1; }, running: function(){ return timer !== null; }};
+}
+// opts: [{k, label}]; param: tên tham số URL mở sẵn (mặc định vd)
+function setupTabs(boxId, opts, onChange, param){
+  var box = $(boxId), sel = opts[0].k, want = qs(param || 'vd');
+  opts.forEach(function(o){ if (o.k === want) sel = o.k; });
+  box.setAttribute('role', 'tablist');
+  opts.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.innerHTML = o.label; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', o.k === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      [].forEach.call(box.children, function(c){ c.setAttribute('aria-selected', 'false'); });
+      b.setAttribute('aria-selected', 'true'); onChange(o.k);
+    });
+    box.appendChild(b);
+  });
+  return sel;
+}
+// out: mảng dòng; dòng cuối mới in được tô sáng nếu fresh
+function drawCon(box, out, ph, fresh){
+  box.innerHTML = out.length ? out.map(function(s, i){
+    var line = typeof s === 'string' ? [s, ''] : s;
+    var cls = line[1] || (fresh && i === out.length - 1 ? 'new' : '');
+    return cls ? '<span class="' + cls + '">' + esc(line[0]) + '</span>' : esc(line[0]);
+  }).join('\n') : '<span class="ph">' + (ph || 'Chưa có kết quả.') + '</span>';
+  box.scrollTop = box.scrollHeight;
+}
+// list: [[tên, giá trị, lớp]]
+function varsHtml(list){
+  return list.map(function(v){ return '<div class="var' + (v[2] ? ' ' + v[2] : '') + '"><small>' + esc(v[0]) + '</small><strong>' + esc(v[1]) + '</strong></div>'; }).join('');
+}
+// Một hàng dải ô. o: {label, labelSub, cells: [{v, k, cls, pt, ptb, ix, sub, from}], cls, style, noix}
+function stripHtml(o){
+  var h = '<div class="srow"' + (o.rowStyle ? ' style="' + o.rowStyle + '"' : '') + '>';
+  if (o.label !== undefined) h += '<div class="rlabel">' + o.label + (o.labelSub ? '<small>' + o.labelSub + '</small>' : '') + '</div>';
+  h += '<div class="strip' + (o.cls ? ' ' + o.cls : '') + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>';
+  (o.cells || []).forEach(function(c, i){
+    var ix = c.ix !== undefined ? c.ix : (o.noix ? '' : i);
+    h += '<div class="cell' + (c.cls ? ' ' + c.cls : '') + '"' + (c.k !== undefined ? ' data-k="' + c.k + '"' : '') + (c.from !== undefined ? ' data-from="' + c.from + '"' : '') + '>' +
+      (c.html !== undefined ? c.html : esc(c.v === null || c.v === undefined ? '' : c.v)) +
+      (c.sub !== undefined ? '<span class="sub">' + esc(c.sub) + '</span>' : '') +
+      (ix !== '' ? '<span class="ix">' + esc(ix) + '</span>' : '') +
+      (c.pt ? '<span class="pt">' + c.pt + '</span>' : '') +
+      (c.ptb ? '<span class="pt b">' + c.ptb + '</span>' : '') + '</div>';
+  });
+  return h + '</div></div>';
+}
+// Khung lời gọi. frames: [{t: tiêu đề, sub, rv, cls}] (phần tử cuối là đỉnh ngăn xếp)
+function framesHtml(frames){
+  return frames.map(function(f, i){
+    var cls = 'frame' + (f.cls ? ' ' + f.cls : (i === frames.length - 1 ? ' top' : ''));
+    return '<div class="' + cls + '">' + (f.rv !== undefined ? '<span class="rv">' + esc(f.rv) + '</span>' : '') + '<b>' + esc(f.t) + '</b>' + (f.sub ? ' <small>' + esc(f.sub) + '</small>' : '') + '</div>';
+  }).join('');
+}
+// Ô nhập danh sách số có kiểm tra. Trả về hàm đọc: null nếu sai (và hiện lỗi).
+function numInput(inpId, errId, o){
+  var inp = $(inpId), err = $(errId);
+  return function(){
+    var r = parseNums(inp.value, o);
+    if (r.err) { inp.classList.add('bad'); err.textContent = r.err; return null; }
+    inp.classList.remove('bad'); err.textContent = ''; return r.vals;
+  };
+}
+
+//SIM-START
+var ALL = ["import java.util.ArrayList;","import java.util.Iterator;","import java.util.LinkedList;","","public class MyHashSet<E>","    implements MySet<E> {","  private static int DEFAULT_CAP = 4;","  private static int MAX_CAPACITY =","    1 << 30;","  private static float DEFAULT_LOAD =","    0.75f;","","  private int capacity;","  private float threshold;","  private int size = 0;","  LinkedList<E>[] table;","","  public MyHashSet() {","    this(DEFAULT_CAP, DEFAULT_LOAD);","  }","","  public MyHashSet(int initCap) {","    this(initCap, DEFAULT_LOAD);","  }","","  @SuppressWarnings(\"unchecked\")","  public MyHashSet(int initCap,","      float threshold) {","    if (initCap > MAX_CAPACITY)","      capacity = MAX_CAPACITY;","    else","      capacity =","        trimToPowerOf2(initCap);","    this.threshold = threshold;","    table = new LinkedList[capacity];","  }","","  @Override","  public void clear() {","    size = 0;","    for (int i = 0; i < capacity; i++)","      if (table[i] != null)","        table[i].clear();","  }","","  @Override","  public boolean contains(E e) {","    int i = hash(e.hashCode());","    if (table[i] != null)","      for (E x : table[i])","        if (x.equals(e))","          return true;","    return false;","  }","","  @Override","  public boolean add(E e) {","    if (contains(e))","      return false;","    if (size + 1 > capacity * threshold) {","      if (capacity == MAX_CAPACITY)","        throw new RuntimeException(","          \"Vuot suc chua toi da\");","      rehash();","    }","    int i = hash(e.hashCode());","    if (table[i] == null)","      table[i] = new LinkedList<>();","    table[i].add(e);","    size++;","    return true;","  }","","  @Override","  public boolean remove(E e) {","    if (!contains(e))","      return false;","    int i = hash(e.hashCode());","    table[i].remove(e);","    size--;","    return true;","  }","","  @Override","  public boolean isEmpty() {","    return size == 0;","  }","","  @Override","  public int size() {","    return size;","  }","","  @Override","  public Iterator<E> iterator() {","    return new MyHashSetIterator();","  }","","  private class MyHashSetIterator","      implements Iterator<E> {","    private ArrayList<E> list =","      setToList();","    private int current = 0;","","    @Override","    public boolean hasNext() {","      return current < list.size();","    }","","    @Override","    public E next() {","      return list.get(current++);","    }","","    @Override","    public void remove() {","      if (current == 0)","        throw new IllegalStateException();","      current--;","      MyHashSet.this.remove(","        list.get(current));","      list.remove(current);","    }","  }","","  private int hash(int hashCode) {","    return supplementalHash(hashCode)","      & (capacity - 1);","  }","","  private static int supplementalHash(","      int h) {","    h ^= (h >>> 20) ^ (h >>> 12);","    return h ^ (h >>> 7) ^ (h >>> 4);","  }","","  private int trimToPowerOf2(int c) {","    int result = 1;","    while (result < c)","      result <<= 1;","    return result;","  }","","  @SuppressWarnings(\"unchecked\")","  private void rehash() {","    ArrayList<E> list = setToList();","    capacity <<= 1;","    table = new LinkedList[capacity];","    size = 0;","    for (E e : list)","      add(e);","  }","","  private ArrayList<E> setToList() {","    ArrayList<E> list =","      new ArrayList<>();","    for (int i = 0; i < capacity; i++)","      if (table[i] != null)","        list.addAll(table[i]);","    return list;","  }","","  @Override","  public String toString() {","    return setToList().toString();","  }","}"];
+var START = lineOf(ALL, 'private class MyHashSetIterator');
+var END = lineOf(ALL, 'private int hash(int hashCode)') - 2;
+var LINES = ALL.slice(START - 1, END);
+var RML = lineOf(ALL, 'list.remove(current);');
+var SKIP = LINES.slice(); SKIP[RML - START] = '      // list.remove(current);  (da bo)';
+// setToList() của MyHashSet sau khi thêm Nam, An, Binh, Cuc cho thứ tự này (đã chạy thật).
+var ORDER = ['An', 'Binh', 'Cuc', 'Nam'];
+function initState(){ return {set: ORDER.slice(), list: ORDER.slice(), current: 0, out: [], last: null}; }
+function L(s, f){ return lineOf(ALL, s, f || START); }
+function opSteps(st0, op, skip){
+  var st = clone(st0), S = [], mk = {};
+  function s(cur, title, body, ev, bad){ S.push({cur: cur, title: title, body: body, st: clone(st), mk: clone(mk), skip: skip, bad: bad, ev: ev}); }
+  if (op === 'new') {
+    st.list = st.set.slice(); st.current = 0; st.last = null;
+    st.out.push('set.iterator(): list = ' + jArr(st.list) + ', current = 0');
+    s([L('private ArrayList<E> list ='), L('private int current = 0;')], 'Tạo iterator mới', 'Iterator chép mọi phần tử hiện có của set vào <code>list</code> bằng <code>setToList()</code>, đặt <code>current = 0</code>.', 'new ' + jArr(st.list));
+  } else if (op === 'hasNext') {
+    var r = st.current < st.list.length;
+    st.out.push('hasNext() -> ' + r);
+    s(L('return current < list.size();'), 'hasNext() trả về ' + r, '<code>current = ' + st.current + '</code>, <code>list.size() = ' + st.list.length + '</code>.', 'hasNext ' + r);
+  } else if (op === 'next') {
+    if (st.current >= st.list.length) {
+      var bad = st.current; st.current++;
+      st.out.push(['next() -> IndexOutOfBoundsException: Index ' + bad + ' out of bounds for length ' + st.list.length, 'er']);
+      mk = {err: true};
+      s(L('return list.get(current++);'), 'next() ném IndexOutOfBoundsException', '<code>current++</code> đã chạy (current thành ' + st.current + ') rồi <code>list.get(' + bad + ')</code> mới ném ngoại lệ vì vượt quá cuối danh sách (độ dài ' + st.list.length + '). Lẽ ra phải hỏi <code>hasNext()</code> trước.', 'next ex', true);
+    } else {
+      var e = st.list[st.current]; st.current++; st.last = st.current - 1;
+      var inSet = st.set.indexOf(e) >= 0;
+      st.out.push('next() -> ' + e + (inSet ? '' : '   (phần tử này không còn trong set!)'));
+      mk = {ret: st.current - 1};
+      s(L('return list.get(current++);'), 'next() trả về ' + e, 'Lấy <code>list.get(' + (st.current - 1) + ')</code> rồi tăng <code>current</code> lên ' + st.current + '.' + (inSet ? '' : ' <b>Phần tử này đã bị xoá khỏi set</b>: iterator và set đã lệch nhau.'), 'next ' + e + (inSet ? '' : ' stale'));
+    }
+  } else if (op === 'remove') {
+    var R = L('public void remove()');
+    if (st.current === 0) {
+      st.out.push(['remove() -> IllegalStateException', 'er']); mk = {err: true};
+      s([R + 1, R + 2], 'remove() ném IllegalStateException', '<code>current == 0</code>: chưa có phần tử nào được <code>next()</code> trả về để xoá.', 'remove ex', true);
+      return S;
+    }
+    s(R + 1, 'current = ' + st.current + ', khác 0', 'Có phần tử vừa được trả về ở chỉ số <code>current - 1</code>.');
+    st.current--; mk = {ret: st.current};
+    s(L('current--;'), 'current-- → ' + st.current, 'Lùi lại chỉ vào phần tử vừa trả về: <code>' + st.list[st.current] + '</code>.');
+    if (st.current >= st.list.length) {
+      st.out.push(['remove() -> IndexOutOfBoundsException: Index ' + st.current + ' out of bounds for length ' + st.list.length, 'er']); mk = {err: true};
+      s([L('MyHashSet.this.remove('), L('list.get(current));')], 'list.get(' + st.current + ') ném IndexOutOfBoundsException', '<code>current</code> đã vượt quá cuối danh sách từ lần <code>next()</code> lỗi trước đó.', 'remove ex2', true);
+      return S;
+    }
+    var x = st.list[st.current], ok = st.set.indexOf(x) >= 0;
+    if (ok) st.set.splice(st.set.indexOf(x), 1);
+    mk = {ret: st.current, setGone: x};
+    s([L('MyHashSet.this.remove('), L('list.get(current));')], 'Xoá ' + x + ' khỏi set: ' + ok, ok ? 'Set còn ' + st.set.length + ' phần tử.' : '<code>' + x + '</code> đã không còn trong set nên <code>remove</code> trả về false, không xoá được gì.', 'setRemove ' + x + ' ' + ok);
+    if (!skip) {
+      st.list.splice(st.current, 1); mk = {};
+      st.out.push('remove() -> đã xoá ' + x);
+      s(L('list.remove(current);'), 'Xoá ' + x + ' khỏi list', 'Các phần tử sau dồn lên, <code>current = ' + st.current + '</code> lại chỉ đúng phần tử kế tiếp.', 'listRemove ' + jArr(st.list));
+    } else {
+      mk = {ret: st.current, stale: st.current};
+      st.out.push('remove() -> đã xoá ' + x + ' khỏi set (list vẫn giữ)');
+      s(RML, 'Bỏ qua list.remove(current)', '<code>list</code> vẫn còn <code>' + x + '</code> ở chỉ số ' + st.current + ', mà <code>current</code> lại chỉ vào nó: lần <code>next()</code> sau sẽ trả về một phần tử đã bị xoá.', 'skip ' + jArr(st.list));
+    }
+  }
+  return S;
+}
+//SIM-END
+function start(){ var s0 = initState(); return [{cur: [L('private ArrayList<E> list ='), L('private int current = 0;')], title: 'Iterator vừa được tạo', body: '<code>list = setToList() = [An, Binh, Cuc, Nam]</code>, <code>current = 0</code>.', st: s0, mk: {}, skip: false}]; }
+var st = Stepper({
+  anim: 'viz',
+  build: start,
+  render: function(sn){
+    $('code').innerHTML = codeHtml(sn.skip ? SKIP : LINES, {start: START, cur: sn.cur, bad: sn.bad}); scrollToCur($('code'));
+    var S0 = sn.st, m = sn.mk;
+    var setCells = S0.set.length ? S0.set.map(function(x){ return {v: x, k: 'set' + x, cls: 'range'}; }) : [{v: '', cls: 'empty', ix: ''}];
+    var lc = S0.list.map(function(x, i){
+      var cl = [];
+      if (S0.set.indexOf(x) < 0) cl.push('bad'); else if (i < S0.current) cl.push('done');
+      if (m.ret === i) cl.push('ret');
+      return {v: x, k: 'it' + x, cls: cl.join(' '), pt: i === S0.current ? 'current' : ''};
+    });
+    if (S0.current >= S0.list.length) lc.push({v: '', cls: 'empty', pt: S0.current === S0.list.length ? 'current' : 'current = ' + S0.current, ix: S0.list.length});
+    $('viz').innerHTML = stripHtml({label: 'set', labelSub: 'setToList()', cells: setCells, style: '--cw:56px;--fs:13px;padding-top:6px', noix: true, cls: 'noix'}) +
+      stripHtml({label: 'list', labelSub: 'của iterator', cells: lc, style: '--cw:56px;--fs:13px'}) +
+      '<p class="note">Xanh lá: <code>next()</code> đã đi qua. Viền xanh lục lam: vừa trả về. Đỏ: còn trong <code>list</code>, không còn trong set.</p>';
+    $('vars').innerHTML = varsHtml([['current', S0.current, 'chg'], ['list.size()', S0.list.length], ['set.size()', S0.set.length, 'ok']]);
+    drawCon($('con'), S0.out, 'Bấm một phương thức ở trên.', true);
+  },
+  after: function(sn, i, n, run){
+    var ok = i === n - 1 && !run;
+    ['hn', 'nx', 'rm', 'nw'].forEach(function(id){ $(id).disabled = !ok; });
+  }
+});
+function op(kind){ st.append(opSteps(st.cur().st, kind, $('skip').checked)); }
+$('hn').addEventListener('click', function(){ op('hasNext'); });
+$('nx').addEventListener('click', function(){ op('next'); });
+$('rm').addEventListener('click', function(){ op('remove'); });
+$('nw').addEventListener('click', function(){ op('new'); });
+st.reset();
+})();
+</script>
+</body>
+</html>

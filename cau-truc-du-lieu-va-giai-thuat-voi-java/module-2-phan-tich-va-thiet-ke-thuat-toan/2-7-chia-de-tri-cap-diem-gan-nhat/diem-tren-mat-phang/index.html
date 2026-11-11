@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Điểm trên mặt phẳng</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --g0:#dbeafe; --g1:#fde68a; --g2:#bbf7d0; --g3:#fbcfe8; --g4:#ddd6fe; --g5:#fed7aa; --g6:#a5f3fc; --g7:#e5e7eb;
+    --c0:#2563eb; --c1:#d97706; --c2:#16a34a; --c3:#db2777; --c4:#7c3aed; --c5:#ea580c; --c6:#0891b2; --c7:#64748b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --g0:#1e3a6b; --g1:#5a4710; --g2:#14532d; --g3:#5b1f3d; --g4:#3b2d6b; --g5:#5c2e0e; --g6:#164e5a; --g7:#2a303b;
+      --c0:#6ea0ff; --c1:#fbbf24; --c2:#4ade80; --c3:#f472b6; --c4:#a78bfa; --c5:#fb923c; --c6:#22d3ee; --c7:#94a3b8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;
+    border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .field label{font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  .field input[type=text],.field select{width:72px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);color:var(--text);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .field select{width:auto}
+  .field input.bad{border-color:var(--false);background:var(--false-soft)}
+  .chip{border:1px dashed var(--node-line);background:transparent;color:var(--text);padding:2px 9px;
+    border-radius:999px;cursor:pointer;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip[aria-pressed="true"]{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px;min-height:0}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:52px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b{color:var(--true)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b{color:var(--false)}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:10px}
+  .grid>*{min-width:0}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  @media (max-width:600px){.grid{grid-template-columns:1fr !important}}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px;display:flex;justify-content:space-between;gap:8px}
+  .panel-title span{text-transform:none;letter-spacing:0;font-weight:600;color:var(--accent)}
+  .code{background:var(--code-bg);border-radius:8px;padding:6px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s,opacity .2s}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.run{background:var(--run);border-left-color:var(--run-bar)}
+  .ln.skip{opacity:.35}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar);opacity:1}
+  .ln .tagln{margin-left:10px;font:600 11px system-ui,sans-serif;color:var(--muted);align-self:center}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .tag{display:inline-block;padding:0 7px;border-radius:6px;font-weight:700;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .tag.t{background:var(--true-soft);color:var(--true)}.tag.f{background:var(--false-soft);color:var(--false)}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:40px;white-space:pre;overflow:auto;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif;font-size:12.5px;white-space:normal}
+  .console .new{color:#fde68a}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .stat{display:inline-block;background:var(--code-bg);border-radius:8px;padding:2px 10px;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+  .stat b{font-size:14px}
+
+  /* ngăn xếp lời gọi */
+  .stack{display:flex;flex-direction:column;gap:4px;padding:5px;border:2px dashed var(--line);border-top:none;border-radius:0 0 10px 10px;overflow:auto}
+  .stack>:first-child{margin-top:auto}
+  .stack .empty{color:var(--muted);font-size:13px;text-align:center;margin:auto}
+  .frame{border:2px solid var(--node-line);border-radius:8px;background:var(--node);padding:2px 8px;transition:all .3s;flex:none}
+  .frame.fresh{animation:push .35s ease-out}
+  @keyframes push{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+  .frame.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .frame.popping{opacity:.5;border-style:dashed;border-color:var(--true)}
+  .frame .fh{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 12.5px ui-monospace,Menlo,Consolas,monospace}
+  .frame .fh small{font:600 11px system-ui,sans-serif;color:var(--muted);text-align:right}
+  .frame.active .fh small{color:var(--accent)}
+  .frame.popping .fh small{color:var(--true)}
+  .frame .fv{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px}
+  .frame .cell{background:var(--code-bg);border:2px solid transparent;border-radius:6px;padding:0 6px;font:12px ui-monospace,Menlo,Consolas,monospace;transition:all .25s}
+  .frame .cell b{font-weight:700}
+  .frame .cell.chg{border-color:var(--cur-bar);background:var(--cur)}
+  .frame .cell.blank b{color:var(--muted);font-weight:400}
+  .stlabel{font-size:11px;color:var(--muted);text-align:center}
+
+  /* cây lời gọi */
+  .tree svg{display:block;width:100%}
+  .tree .edge{stroke:var(--node-line);stroke-width:1.5;fill:none}
+  .tree .edge.hot{stroke:var(--accent);stroke-width:2.2}
+  .tree .nd rect{fill:var(--node);stroke:var(--node-line);stroke-width:1.5}
+  .tree .nd text{fill:var(--text);font:600 12px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle;dominant-baseline:central}
+  .tree .nd.wait rect{stroke:var(--accent);stroke-dasharray:4 3;stroke-width:2}
+  .tree .nd.active rect{stroke:var(--accent);stroke-width:3}
+  .tree .nd.active .halo{fill:var(--accent-soft);stroke:none}
+  .tree .nd .ord{font:600 9.5px system-ui,sans-serif;fill:var(--muted);text-anchor:start}
+  .tree .nd .val{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--true)}
+  .tree .nd.done rect{stroke:var(--true)}
+  .tree .nd.ghost{opacity:.18}
+  .frame.cf{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;padding:3px 8px}
+  .frame.cf .fn{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;margin-right:2px}
+  .frame.cf .fnote{margin-left:auto;font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .frame.cf.active .fnote{color:var(--accent)}
+  .frame.cf.popping .fnote{color:var(--true)}
+  .grid{grid-template-columns:1.3fr 1fr}
+  #plot svg{display:block;width:100%;cursor:crosshair;touch-action:manipulation}
+  .gl{stroke:var(--line);stroke-width:1}
+  .ax{stroke:var(--muted);stroke-width:1.2}
+  .tk{font:10px ui-monospace,Menlo,monospace;fill:var(--muted);text-anchor:middle}
+  .pt{fill:var(--node);stroke:var(--text);stroke-width:1.6}
+  .pt.dim{opacity:.3}
+  .pl{font:700 11px ui-monospace,Menlo,Consolas,monospace;fill:var(--text);paint-order:stroke;stroke:var(--card);stroke-width:3px}
+  .pl.dim{opacity:.35}
+  .rng{fill:var(--accent-soft);opacity:.7}
+  .band{fill:var(--cur);opacity:.6}
+  .midl{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4}
+  .ringL{fill:none;stroke:var(--c1);stroke-width:3}
+  .ringR{fill:none;stroke:var(--c4);stroke-width:3}
+  .ringP{fill:none;stroke:var(--c5);stroke-width:3.5}
+  .ringQ{fill:none;stroke:var(--accent);stroke-width:3}
+  .seg{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 3}
+  .pair{stroke:var(--true);stroke-width:3}
+  .hull{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+  .hull.closed{fill:var(--accent-soft);fill-opacity:.6}
+  .ray{stroke:var(--c5);stroke-width:2;stroke-dasharray:6 4}
+  .ray0{stroke:var(--node-line);stroke-width:1}
+  .side-bad{fill:var(--false)}.side-ok{fill:var(--true)}
+  .popx{stroke:var(--false);stroke-width:3;stroke-linecap:round}
+  .lst{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0 6px;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .lst .it{border:2px solid var(--node-line);border-radius:6px;padding:0 6px;background:var(--node);position:relative}
+  .lst .it.cur{border-color:var(--c5);background:var(--cur)}
+  .lst .it.q{border-color:var(--accent);background:var(--accent-soft)}
+  .lst .it.gone{opacity:.35;text-decoration:line-through}
+  .lst .lab{font:600 11.5px system-ui,sans-serif;color:var(--muted);min-width:52px}
+  .hstack{display:flex;flex-direction:column;gap:3px;font:12.5px ui-monospace,Menlo,Consolas,monospace;max-height:210px;overflow:auto}
+  .hstack .it{border:2px solid var(--node-line);border-radius:6px;padding:1px 8px;background:var(--node)}
+  .hstack .it.top{border-color:var(--accent)}
+  .hstack .it.new{border-color:var(--true);background:var(--true-soft)}
+  .hstack .it.pop{border-color:var(--false);background:var(--false-soft);text-decoration:line-through}
+  .big{font:700 16px ui-monospace,Menlo,Consolas,monospace}
+  .frames{font:12px/1.55 ui-monospace,Menlo,Consolas,monospace}
+  .frames .top{font-weight:700;color:var(--accent)}
+  .hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+  #code{font-size:11.5px}
+  #code .ln>span:nth-child(2){white-space:pre-wrap;padding-left:2ch;text-indent:-2ch}
+  .grid{grid-template-columns:1.2fr 1fr}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+      <button class="btn ghost" id="sample">Bộ điểm mẫu</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="card"><p class="panel-title" id="ptitle">Mặt phẳng<span id="npts"></span></p><div id="plot"></div><p class="hint">Bấm vào chỗ trống để thêm điểm, bấm vào một điểm để xoá.</p></div>
+    <div class="col">
+      <div class="card"><p class="panel-title" id="ctitle"></p><div class="code" id="code"></div></div>
+      <div class="card" id="side"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$|\/\*\*.*\*\/)|\b(import|public|private|class|static|void|int|long|double|char|boolean|String|File|if|else|for|while|new|true|false|null|return|throws)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // lines: mảng chuỗi; o.cur: số dòng (đếm từ 1) hoặc [từ, đến]
+  function codeHtml(lines, o){
+    o = o || {}; var cur = o.cur, tags = o.tags || {};
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      var n = i + 1;
+      return '<div class="ln' + (n >= a && n <= b ? ' cur' : '') + '"><span class="no">' + n + '</span><span>' + hl(l) + '</span>' +
+        (tags[n] ? '<span class="tagln">' + esc(tags[n]) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; }
+  function parseIntIn(s, lo, hi){ s = String(s).trim(); if (!/^-?\d+$/.test(s)) return null; var v = parseInt(s, 10); return v < lo || v > hi ? null : v; }
+
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void, interval?: ms}
+  // snap cần có title, body; snap.tone = 'ok' | 'bad' đổi màu dòng giải thích.
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      var st = $('status');
+      st.className = 'status' + (sn.tone ? ' ' + sn.tone : '');
+      st.innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', function(){ if (cfg.onReset) cfg.onReset(); reset(); });
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      var ms = typeof cfg.interval === 'function' ? cfg.interval(snaps.length) : (cfg.interval || 550);
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, ms);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (cfg.enabled && !cfg.enabled()) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, stop: stop, redraw: function(){ if (snaps.length) draw(); }};
+  }
+
+  // frames: [{name, vars:[[tên, giá trị]], state:'active'|'paused'|'popping', note, chg:[tên], fresh}] từ đáy lên đỉnh
+  function stackHtml(frames, compact){
+    if (!frames.length) return '<div class="empty">Ngăn xếp trống</div>';
+    return frames.slice().reverse().map(function(f){
+      var st = f.state === 'active' ? 'đang chạy' : f.state === 'popping' ? 'trả về, sắp bị gỡ' : 'đang chờ';
+      var cells = (f.vars || []).map(function(v){
+        var blank = v[1] === null || v[1] === undefined;
+        return '<span class="cell' + (blank ? ' blank' : '') + ((f.chg || []).indexOf(v[0]) >= 0 ? ' chg' : '') + '">' + esc(v[0]) + ': <b>' + (blank ? '?' : esc(v[1])) + '</b></span>';
+      }).join('');
+      if (compact) return '<div class="frame cf ' + f.state + (f.fresh ? ' fresh' : '') + '"><b class="fn">' + esc(f.name) + '</b>' + cells + '<small class="fnote">' + (f.note ? esc(f.note) : st) + '</small></div>';
+      return '<div class="frame ' + f.state + (f.fresh ? ' fresh' : '') + '"><div class="fh"><span>' + esc(f.name) + '</span><small>' + (f.note ? esc(f.note) : st) + '</small></div>' +
+        (cells ? '<div class="fv">' + cells + '</div>' : '') + '</div>';
+    }).join('');
+  }
+// E10: hình học trên mặt phẳng (cặp điểm gần nhất, gói quà, Graham). Hệ trục y hướng lên.
+function gCross(a, b, c){ return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y); }
+function gDist(a, b){ return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)); }
+function gFmt(v){ return v === Infinity ? '∞' : (Math.round(v * 1000) / 1000).toString().replace('.', ','); }
+function gP(p){ return '(' + String(p.x).replace('.', ',') + '; ' + String(p.y).replace('.', ',') + ')'; }
+
+// ---------- cặp điểm gần nhất: chia để trị ----------
+var CLOSEST_LINES = [
+'d = min(d1, d2); r = 0',
+'voi moi p trong stripL:',
+'  bo qua cac q[r] co q[r].y <= p.y - d',
+'  r1 = r',
+'  trong khi r1 < stripR.size va |q[r1].y - p.y| <= d:',
+'    neu distance(p, q[r1]) < d: cap nhat d',
+'    r1 = r1 + 1'];
+function simClosest(input){
+  var pts = input.map(function(p, i){ return {x: p.x, y: p.y, id: i}; });
+  pts.sort(function(a, b){ return a.x !== b.x ? a.x - b.x : a.y !== b.y ? a.y - b.y : a.id - b.id; });
+  pts.forEach(function(p, i){ p.k = i; });
+  var snaps = [], stack = [], best = null, calls = 0;
+  function snap(o){
+    snaps.push({ln: o.ln === undefined ? null : o.ln, title: o.title, body: o.body, tone: o.tone || '',
+      stack: stack.map(function(f){ return {lo: f.lo, hi: f.hi, d1: f.d1, d2: f.d2, d: f.d}; }),
+      range: o.range || null, mid: o.mid === undefined ? null : o.mid, d: o.d === undefined ? null : o.d,
+      sL: o.sL || null, sR: o.sR || null, p: o.p === undefined ? null : o.p, r: o.r === undefined ? null : o.r, r1: o.r1 === undefined ? null : o.r1,
+      seg: o.seg || null, pair: o.pair || null, done: !!o.done});
+  }
+  snap({title: 'Sắp các điểm theo x', body: 'Bước 1: sắp ' + pts.length + ' điểm theo <i>x</i> tăng dần (cùng <i>x</i> thì theo <i>y</i>), đánh số 0 đến ' + (pts.length - 1) + '. Đây là danh sách <i>S</i>.'});
+  function rec(lo, hi, byY){
+    calls++;
+    if (lo >= hi) return {d: Infinity, pair: null};
+    var f = {lo: lo, hi: hi, d1: null, d2: null, d: null}; stack.push(f);
+    var mid = (lo + hi) >> 1, m = pts[mid];
+    snap({range: [lo, hi], mid: mid, title: 'closest(' + lo + '..' + hi + ')', body: 'Xét các điểm ' + lo + ' đến ' + hi + '. Chia tại điểm giữa <code>mid</code> = điểm ' + mid + ': nửa trái ' + lo + '..' + mid + ', nửa phải ' + (mid + 1) + '..' + hi + '.' + (hi - lo === 1 ? ' Mỗi nửa chỉ còn một điểm, lời gọi đệ quy trả về ∞ ngay.' : '')});
+    var leftY = byY.filter(function(p){ return p.k <= mid; }), rightY = byY.filter(function(p){ return p.k > mid; });
+    var A = rec(lo, mid, leftY); f.d1 = A.d;
+    var B = rec(mid + 1, hi, rightY); f.d2 = B.d;
+    var d = Math.min(A.d, B.d), pair = A.d <= B.d ? A.pair : B.pair; f.d = d;
+    var sL = leftY.filter(function(p){ return m.x - p.x <= d; }).map(function(p){ return p.k; });
+    var sR = rightY.filter(function(p){ return p.x - m.x <= d; }).map(function(p){ return p.k; });
+    snap({range: [lo, hi], mid: mid, d: d, sL: sL, sR: sR, pair: pair, ln: 1, title: 'd = min(' + gFmt(A.d) + ', ' + gFmt(B.d) + ') = ' + gFmt(d),
+      body: 'Hai nửa đã giải xong: d1 = ' + gFmt(A.d) + ', d2 = ' + gFmt(B.d) + '. Dải giữa gồm các điểm cách đường thẳng đứng qua <code>mid</code> không quá d: stripL = {' + sL.join(', ') + '}, stripR = {' + sR.join(', ') + '}, đều sắp theo <i>y</i>.'});
+    var r = 0;
+    for (var a = 0; a < sL.length; a++) {
+      var p = pts[sL[a]], skipped = [];
+      while (r < sR.length && pts[sR[r]].y <= p.y - d) { skipped.push(sR[r]); r++; }
+      var r1 = r, any = false;
+      while (r1 < sR.length && Math.abs(pts[sR[r1]].y - p.y) <= d) {
+        var q = pts[sR[r1]], dd = gDist(p, q), upd = dd < d;
+        any = true;
+        if (upd) { d = dd; pair = [p.k, q.k]; f.d = d; }
+        snap({range: [lo, hi], mid: mid, d: d, sL: sL, sR: sR, p: a, r: r, r1: r1, seg: [p.k, q.k], pair: pair, ln: upd ? 6 : [5, 6], tone: upd ? 'ok' : '',
+          title: 'p = điểm ' + p.k + ', q[r1] = điểm ' + q.k,
+          body: (skipped.length ? 'Bỏ qua điểm ' + skipped.join(', ') + ' (thấp hơn p.y − d). ' : '') + 'distance = ' + gFmt(dd) + (upd ? ' &lt; d nên <b>cập nhật d = ' + gFmt(d) + '</b>.' : ' không nhỏ hơn d = ' + gFmt(d) + '.')});
+        skipped = [];
+        r1++;
+      }
+      if (!any) snap({range: [lo, hi], mid: mid, d: d, sL: sL, sR: sR, p: a, r: r, r1: r1, pair: pair, ln: [3, 5],
+        title: 'p = điểm ' + p.k + ': không có ứng viên',
+        body: (skipped.length ? 'Bỏ qua điểm ' + skipped.join(', ') + '. ' : '') + 'Không điểm nào của stripR có |q.y − p.y| ≤ d = ' + gFmt(d) + '.'});
+    }
+    stack.pop();
+    snap({range: [lo, hi], mid: mid, d: d, pair: pair, tone: 'ok', title: 'closest(' + lo + '..' + hi + ') trả về ' + gFmt(d),
+      body: (pair ? 'Cặp gần nhất trong đoạn này: điểm ' + pair[0] + ' và ' + pair[1] + '.' : '') + (stack.length ? ' Quay về lời gọi closest(' + stack[stack.length - 1].lo + '..' + stack[stack.length - 1].hi + ').' : '')});
+    return {d: d, pair: pair};
+  }
+  var byY = pts.slice().sort(function(a, b){ return a.y - b.y; });
+  var res = rec(0, pts.length - 1, byY);
+  best = res;
+  snap({pair: res.pair, d: res.d, done: true, tone: 'ok', title: 'Kết quả: d = ' + gFmt(res.d),
+    body: 'Cặp gần nhất: điểm ' + res.pair[0] + ' ' + gP(pts[res.pair[0]]) + ' và điểm ' + res.pair[1] + ' ' + gP(pts[res.pair[1]]) + '.'});
+  return {snaps: snaps, pts: pts, d: res.d, pair: res.pair, calls: calls, lines: CLOSEST_LINES};
+}
+
+// ---------- gói quà ----------
+var GIFT_LINES = [
+'Buoc 1: h0 = diem thap nhat (cung thap: phai nhat)',
+'        them h0 vao H; t0 = h0',
+'Buoc 2: t1 = mot diem khac t0',
+'        voi moi p: neu p ben phai t0 -> t1',
+'                   (hoac thang hang, xa hon): t1 = p',
+'Buoc 3: neu t1 la h0: xong',
+'        nguoc lai: them t1 vao H; t0 = t1; ve Buoc 2'];
+function lowestRight(pts){
+  var h = pts[0];
+  pts.forEach(function(p){ if (p.y < h.y || (p.y === h.y && p.x > h.x)) h = p; });
+  return h;
+}
+function simGift(input){
+  var pts = input.map(function(p, i){ return {x: p.x, y: p.y, k: i}; });
+  var snaps = [], H = [];
+  function snap(o){ snaps.push({ln: o.ln, title: o.title, body: o.body, tone: o.tone || '', H: H.slice(), t0: o.t0 === undefined ? null : o.t0, t1: o.t1 === undefined ? null : o.t1, p: o.p === undefined ? null : o.p, done: !!o.done, side: o.side || ''}); }
+  var h0 = lowestRight(pts);
+  H.push(h0.k);
+  snap({ln: [1, 2], t0: h0.k, title: 'h0 = điểm ' + h0.k + ' ' + gP(h0), body: 'Điểm ' + h0.k + ' thấp nhất' + (pts.some(function(p){ return p !== h0 && p.y === h0.y; }) ? ' (cùng thấp với điểm khác nhưng nằm bên phải hơn)' : '') + '. Thêm vào H, đặt t0 = h0.'});
+  var t0 = h0, guard = 0;
+  while (guard++ <= pts.length + 1) {
+    var t1 = null;
+    for (var i = 0; i < pts.length; i++) if (pts[i] !== t0) { t1 = pts[i]; break; }
+    snap({ln: 3, t0: t0.k, t1: t1.k, title: 't1 khởi đầu = điểm ' + t1.k, body: 'Bước 2: chọn tạm t1 là điểm đầu tiên khác t0. Tia t0 → t1 sẽ quay dần qua các điểm.'});
+    pts.forEach(function(p){
+      if (p === t0) return;
+      var c = gCross(t0, t1, p), side, chg = false;
+      if (p === t1) { side = 'là t1'; }
+      else if (c < 0) { side = 'phải'; chg = true; }
+      else if (c === 0 && gDist(t0, p) > gDist(t0, t1)) { side = 'thẳng hàng, xa hơn'; chg = true; }
+      else side = c === 0 ? 'thẳng hàng, gần hơn' : 'trái';
+      var old = t1;
+      if (chg) t1 = p;
+      snap({ln: chg ? [4, 5] : 4, t0: t0.k, t1: t1.k, p: p.k, side: side, tone: chg ? 'bad' : '',
+        title: 'Xét điểm ' + p.k + (chg ? ': t1 = ' + p.k : ''),
+        body: p === old ? 'Điểm ' + p.k + ' chính là t1, bỏ qua.' : chg ? 'Điểm ' + p.k + ' nằm <b>' + (side === 'phải' ? 'bên phải' : side) + '</b> đường thẳng có hướng t0 → t1 (điểm ' + old.k + '), nên t1 đổi thành điểm ' + p.k + '.'
+          : 'Điểm ' + p.k + ' nằm ' + (side === 'trái' ? 'bên trái' : side) + ' đường thẳng t0 → t1 (điểm ' + t1.k + '): giữ nguyên t1.'});
+    });
+    if (t1 === h0) {
+      snap({ln: 6, t0: t0.k, t1: t1.k, done: true, tone: 'ok', title: 't1 là h0: xong', body: 'Không điểm nào nằm bên phải cạnh cuối. H = {' + H.join(', ') + '} là các đỉnh của bao lồi, theo chiều ngược kim đồng hồ.'});
+      break;
+    }
+    H.push(t1.k);
+    snap({ln: 7, t0: t1.k, t1: null, tone: 'ok', title: 'Thêm điểm ' + t1.k + ' vào H', body: 'Không còn điểm nào bên phải t0 → t1, nên cạnh này thuộc bao lồi. H = {' + H.join(', ') + '}. Đặt t0 = điểm ' + t1.k + ', quay lại Bước 2.'});
+    t0 = t1;
+  }
+  return {snaps: snaps, pts: pts, H: H};
+}
+
+// ---------- Graham ----------
+var GRAHAM_LINES = [
+'i = 3',
+'trong khi i < n:',
+'  t1 = dinh ngan xep, t2 = phan tu ngay duoi t1',
+'  neu p[i] nam ben trai duong thang t2 -> t1:',
+'    day p[i] vao H; i++',
+'  nguoc lai:',
+'    lay t1 ra khoi H'];
+function simGraham(input){
+  var raw = input.map(function(p, i){ return {x: p.x, y: p.y, id: i}; });
+  var p0 = lowestRight(raw);
+  var rest = raw.filter(function(p){ return p !== p0; });
+  rest.sort(function(a, b){ var c = gCross(p0, a, b); return c > 0 ? -1 : c < 0 ? 1 : 0; });
+  var dropped = [], kept = [];
+  rest.forEach(function(p){
+    var last = kept[kept.length - 1];
+    if (last && gCross(p0, last, p) === 0) {
+      if (gDist(p0, p) > gDist(p0, last)) { dropped.push(last); kept[kept.length - 1] = p; } else dropped.push(p);
+    } else kept.push(p);
+  });
+  var P = [p0].concat(kept);
+  P.forEach(function(p, i){ p.k = i; });
+  var all = P.concat(dropped.map(function(p){ p.k = -1; return p; }));
+  var snaps = [], H = [];
+  function snap(o){ snaps.push({ln: o.ln === undefined ? null : o.ln, title: o.title, body: o.body, tone: o.tone || '', H: H.slice(), i: o.i === undefined ? null : o.i, rays: !!o.rays, test: o.test || null, popped: o.popped === undefined ? null : o.popped, done: !!o.done}); }
+  snap({title: 'p0 = điểm thấp nhất bên phải nhất', body: 'Bước 1: chọn p0 ' + gP(p0) + '.'});
+  snap({rays: true, title: 'Sắp theo góc quanh p0', body: 'Bước 2: các điểm được đánh số p1, p2, ... theo góc tạo với trục <i>x</i> tăng dần.' + (dropped.length ? ' Có ' + dropped.length + ' điểm cùng góc với điểm khác nhưng gần p0 hơn nên bị bỏ (vẽ mờ).' : '')});
+  if (P.length < 3) { snap({title: 'Quá ít điểm', body: 'Cần ít nhất 3 điểm khác góc để có bao lồi.', done: true}); return {snaps: snaps, pts: all, H: H, n: P.length}; }
+  H.push(0, 1, 2);
+  snap({rays: true, title: 'Đẩy p0, p1, p2 vào H', body: 'Bước 3: ngăn xếp H = [p0, p1, p2].'});
+  var i = 3, guard = 0;
+  while (i < P.length && guard++ < 4 * P.length) {
+    var t1 = H[H.length - 1], t2 = H[H.length - 2];
+    var c = gCross(P[t2], P[t1], P[i]);
+    if (c > 0) {
+      H.push(i);
+      snap({ln: [4, 5], i: i, test: [t2, t1, i], tone: 'ok', title: 'p' + i + ' bên trái p' + t2 + ' → p' + t1 + ': đẩy p' + i,
+        body: 'Chỗ rẽ t2 → t1 → p' + i + ' vẫn lồi (rẽ trái). Đẩy p' + i + ' vào H, tăng i.'});
+      i++;
+    } else {
+      H.pop();
+      snap({ln: [6, 7], i: i, test: [t2, t1, i], popped: t1, tone: 'bad', title: 'p' + i + ' không bên trái p' + t2 + ' → p' + t1 + ': lấy p' + t1 + ' ra',
+        body: 'p' + t1 + ' bị lõm vào trong (rẽ phải' + (c === 0 ? ' hoặc thẳng hàng' : '') + '). Lấy p' + t1 + ' khỏi H rồi kiểm tra lại với p' + i + '.'});
+    }
+  }
+  snap({done: true, tone: 'ok', title: 'Xong: H có ' + H.length + ' đỉnh', body: 'Bước 5: H = [' + H.map(function(k){ return 'p' + k; }).join(', ') + '] là bao lồi.'});
+  return {snaps: snaps, pts: all, H: H, n: P.length};
+}
+var MODES = {
+  closest: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem chia để trị: chia đôi theo <i>x</i>, giải hai nửa, rồi quét dải giữa stripL/stripR. Số trên điểm là thứ tự theo <i>x</i>.',
+    title: 'Bước kết hợp (mã giả)', lines: CLOSEST_LINES, min: 2,
+    pts: [[0.5,2],[1,6.5],[2,4],[2.5,1],[3,7.5],[3.5,2.5],[4.5,5.5],[4.5,3.5],[5,1.5],[5.5,4],[6.5,5],[6.5,7],[7,2.5],[8,6],[8.5,3.5],[9.5,1]]},
+  gift: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem tia t0 → t1 quét qua từng điểm; điểm nào nằm bên phải tia thì thành t1 mới.',
+    title: 'Thuật toán gói quà', lines: GIFT_LINES, min: 3,
+    pts: [[1,2],[3,0.5],[6,1],[8,2.5],[7,5],[4,6.5],[1.5,5],[4,3],[5.5,3.5],[2.5,3.5]]},
+  graham: {lead: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem các điểm được đánh số theo góc quanh p0, rồi ngăn xếp H đẩy vào (xanh) và lấy ra (đỏ) các đỉnh.',
+    title: 'Bước 4 của Graham (mã giả)', lines: GRAHAM_LINES, min: 3,
+    pts: [[2,1],[6,0.5],[9,2],[8,5],[5,7],[1,5],[3,3],[6,3],[4,5],[7,2.5],[2.5,6]]}
+};
+var mode = MODES[qs('mode')] ? qs('mode') : 'closest', M = MODES[mode];
+$('lead').innerHTML = M.lead; $('ctitle').textContent = M.title;
+var pts = M.pts.map(function(p){ return {x: p[0], y: p[1]}; });
+var XM = 11, YM = 8, S = 36, OX = 22, OY = 8;
+function X(x){ return OX + x * S; }
+function Y(y){ return OY + (YM - y) * S; }
+var R = null;
+function build(){ R = mode === 'closest' ? simClosest(pts) : mode === 'gift' ? simGift(pts) : simGraham(pts); return R.snaps; }
+function byK(k){ for (var i = 0; i < R.pts.length; i++) if (R.pts[i].k === k) return R.pts[i]; return null; }
+function circle(p, r, cls){ return '<circle class="' + cls + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="' + r + '"/>'; }
+function line(a, b, cls){ return '<line class="' + cls + '" x1="' + X(a.x) + '" y1="' + Y(a.y) + '" x2="' + X(b.x) + '" y2="' + Y(b.y) + '"/>'; }
+function rayEnd(a, b){ // kéo dài tia a → b tới mép khung
+  var dx = b.x - a.x, dy = b.y - a.y, t = 1e9;
+  if (dx > 0) t = Math.min(t, (XM + 0.5 - a.x) / dx); if (dx < 0) t = Math.min(t, (-0.5 - a.x) / dx);
+  if (dy > 0) t = Math.min(t, (YM + 0.3 - a.y) / dy); if (dy < 0) t = Math.min(t, (-0.3 - a.y) / dy);
+  if (t === 1e9) t = 1;
+  return {x: a.x + dx * t, y: a.y + dy * t};
+}
+function grid(){
+  var s = '';
+  for (var x = 0; x <= XM; x++) s += '<line class="gl" x1="' + X(x) + '" y1="' + Y(0) + '" x2="' + X(x) + '" y2="' + Y(YM) + '"/>' + '<text class="tk" x="' + X(x) + '" y="' + (Y(0) + 13) + '">' + x + '</text>';
+  for (var y = 0; y <= YM; y++) s += '<line class="gl" x1="' + X(0) + '" y1="' + Y(y) + '" x2="' + X(XM) + '" y2="' + Y(y) + '"/>' + '<text class="tk" x="' + (X(0) - 10) + '" y="' + (Y(y) + 3) + '">' + y + '</text>';
+  s += '<line class="ax" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(XM) + '" y2="' + Y(0) + '"/><line class="ax" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(0) + '" y2="' + Y(YM) + '"/>';
+  return s;
+}
+function label(p, txt, dim){ return '<text class="pl' + (dim ? ' dim' : '') + '" x="' + (X(p.x) + 6) + '" y="' + (Y(p.y) - 6) + '">' + txt + '</text>'; }
+
+function renderClosest(sn){
+  var s = '', P = R.pts;
+  if (sn.range) s += '<rect class="rng" x="' + (X(P[sn.range[0]].x) - 9) + '" y="' + Y(YM) + '" width="' + (X(P[sn.range[1]].x) - X(P[sn.range[0]].x) + 18) + '" height="' + (YM * S) + '"/>';
+  if (sn.mid !== null && sn.sL && sn.d !== Infinity) {
+    var mx = P[sn.mid].x, lo = Math.max(-0.3, mx - sn.d), hi = Math.min(XM + 0.3, mx + sn.d);
+    s += '<rect class="band" x="' + X(lo) + '" y="' + Y(YM) + '" width="' + (X(hi) - X(lo)) + '" height="' + (YM * S) + '"/>';
+  }
+  if (sn.mid !== null) s += '<line class="midl" x1="' + X(P[sn.mid].x) + '" y1="' + Y(YM) + '" x2="' + X(P[sn.mid].x) + '" y2="' + Y(0) + '"/>';
+  if (sn.pair) s += line(P[sn.pair[0]], P[sn.pair[1]], 'pair');
+  if (sn.seg) s += line(P[sn.seg[0]], P[sn.seg[1]], 'seg');
+  var inR = function(k){ return !sn.range || (k >= sn.range[0] && k <= sn.range[1]); };
+  P.forEach(function(p){ s += circle(p, 5, 'pt' + (inR(p.k) || sn.done ? '' : ' dim')); });
+  if (sn.sL) sn.sL.forEach(function(k){ s += circle(P[k], 9, 'ringL'); });
+  if (sn.sR) sn.sR.forEach(function(k){ s += circle(P[k], 9, 'ringR'); });
+  if (sn.p !== null) s += circle(P[sn.sL[sn.p]], 13, 'ringP');
+  if (sn.seg) s += circle(P[sn.seg[1]], 13, 'ringQ');
+  P.forEach(function(p){ s += label(p, p.k, !(inR(p.k) || sn.done)); });
+  // bảng bên
+  var h = '<p class="panel-title">Trạng thái<span class="big">d = ' + (sn.d === null ? '?' : gFmt(sn.d)) + '</span></p>';
+  h += '<div class="frames">' + (sn.stack.length ? sn.stack.slice().reverse().map(function(f, i){
+    return '<div class="' + (i === 0 ? 'top' : '') + '">closest(' + f.lo + '..' + f.hi + ')' + (f.d1 !== null ? ' d1=' + gFmt(f.d1) : '') + (f.d2 !== null ? ' d2=' + gFmt(f.d2) : '') + '</div>';
+  }).join('') : '<div>Ngăn xếp lời gọi trống</div>') + '</div>';
+  if (sn.sL) {
+    h += '<div class="lst"><span class="lab">stripL</span>' + sn.sL.map(function(k, i){ return '<span class="it' + (i === sn.p ? ' cur' : '') + '">' + k + (i === sn.p ? ' ←p' : '') + '</span>'; }).join('') + (sn.sL.length ? '' : '—') + '</div>';
+    h += '<div class="lst"><span class="lab">stripR</span>' + sn.sR.map(function(k, i){
+      var tag = (i === sn.r ? 'r' : '') + (i === sn.r1 ? (i === sn.r ? ',' : '') + 'r1' : '');
+      return '<span class="it' + (sn.seg && sn.seg[1] === k ? ' q' : '') + (sn.r !== null && i < sn.r ? ' gone' : '') + '">' + k + (tag ? ' ←' + tag : '') + '</span>'; }).join('') + (sn.sR.length ? '' : '—') + '</div>';
+  }
+  return {svg: s, side: h};
+}
+function renderGift(sn){
+  var s = '', P = R.pts;
+  if (sn.H.length > 1 || sn.done) {
+    var hp = sn.H.map(function(k){ return P[k]; });
+    s += '<polyline class="hull' + (sn.done ? ' closed' : '') + '" points="' + hp.concat(sn.done ? [hp[0]] : []).map(function(p){ return X(p.x) + ',' + Y(p.y); }).join(' ') + '"/>';
+  }
+  if (sn.t0 !== null && sn.t1 !== null && !sn.done) { var e = rayEnd(P[sn.t0], P[sn.t1]); s += line(P[sn.t0], e, 'ray'); }
+  P.forEach(function(p){ s += circle(p, 5, 'pt'); });
+  if (sn.t0 !== null) s += circle(P[sn.t0], 11, 'ringQ');
+  if (sn.t1 !== null && !sn.done) s += circle(P[sn.t1], 11, 'ringP');
+  if (sn.p !== null) s += circle(P[sn.p], 15, sn.tone === 'bad' ? 'ringR' : 'ringL');
+  P.forEach(function(p){ s += label(p, p.k + (sn.H[0] === p.k ? ' h0' : '') + (p.k === sn.t0 ? ' t0' : '') + (p.k === sn.t1 && !sn.done ? ' t1' : '')); });
+  var h = '<p class="panel-title">Danh sách H<span>' + sn.H.length + ' đỉnh</span></p><div class="lst">' + sn.H.map(function(k){ return '<span class="it">' + k + '</span>'; }).join('→') + '</div>';
+  h += '<p class="hint">Vòng xanh: t0. Vòng cam: t1. Đường nét đứt: tia t0 → t1. Vòng ngoài cùng: điểm p đang xét.</p>';
+  return {svg: s, side: h};
+}
+function renderGraham(sn, i){
+  var s = '', P = R.pts, p0 = byK(0), showK = i >= 1;
+  if (showK) R.pts.forEach(function(p){ if (p.k > 0) s += line(p0, p, 'ray0'); });
+  var hp = sn.H.map(byK);
+  if (hp.length > 1) s += '<polyline class="hull' + (sn.done ? ' closed' : '') + '" points="' + hp.concat(sn.done ? [hp[0]] : []).map(function(p){ return X(p.x) + ',' + Y(p.y); }).join(' ') + '"/>';
+  if (sn.test) {
+    var a = byK(sn.test[0]), b = byK(sn.test[1]), c = byK(sn.test[2]);
+    s += line(a, rayEnd(a, b), 'ray');
+    s += line(b, c, 'seg');
+  }
+  R.pts.forEach(function(p){ s += circle(p, 5, 'pt' + (p.k < 0 && showK ? ' dim' : '')); });
+  if (sn.i !== null) s += circle(byK(sn.i), 13, 'ringP');
+  if (sn.popped !== null) { var q = byK(sn.popped); s += '<path class="popx" d="M' + (X(q.x) - 8) + ' ' + (Y(q.y) - 8) + 'L' + (X(q.x) + 8) + ' ' + (Y(q.y) + 8) + 'M' + (X(q.x) + 8) + ' ' + (Y(q.y) - 8) + 'L' + (X(q.x) - 8) + ' ' + (Y(q.y) + 8) + '"/>'; }
+  R.pts.forEach(function(p){ s += label(p, p.k === 0 ? 'p0' : showK ? (p.k > 0 ? 'p' + p.k : '×') : '', p.k < 0); });
+  var top = sn.H.length - 1;
+  var h = '<p class="panel-title">Ngăn xếp H<span>' + (sn.i !== null ? 'i = ' + sn.i : '') + '</span></p><div class="hstack">';
+  if (sn.popped !== null) h += '<div class="it pop">p' + sn.popped + ' (vừa lấy ra)</div>';
+  h += sn.H.slice().reverse().map(function(k, j){ return '<div class="it' + (j === 0 ? (sn.tone === 'ok' && sn.i !== null ? ' new' : ' top') : '') + '">p' + k + (j === 0 ? '  ← đỉnh' : '') + '</div>'; }).join('') + (sn.H.length ? '' : '<div>trống</div>') + '</div>';
+  return {svg: s, side: h};
+}
+function render(sn, i){
+  $('code').innerHTML = codeHtml(R.lines || M.lines, {cur: sn.ln});
+  var o = mode === 'closest' ? renderClosest(sn) : mode === 'gift' ? renderGift(sn) : renderGraham(sn, i);
+  $('plot').innerHTML = '<svg id="svg" viewBox="0 0 ' + (OX + XM * S + 10) + ' ' + (OY + YM * S + 18) + '" role="img" aria-label="Mặt phẳng toạ độ với ' + pts.length + ' điểm">' + grid() + o.svg + '</svg>';
+  $('side').innerHTML = o.side;
+  $('npts').textContent = pts.length + ' điểm';
+}
+var st = Stepper({build: build, render: render, interval: function(n){ return n > 60 ? 380 : 550; }});
+// thêm / xoá điểm
+$('plot').addEventListener('click', function(e){
+  var svg = $('svg'); if (!svg) return;
+  var pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  var q = pt.matrixTransform(svg.getScreenCTM().inverse());
+  var x = (q.x - OX) / S, y = YM - (q.y - OY) / S;
+  for (var i = 0; i < pts.length; i++) {
+    var dx = X(pts[i].x) - q.x, dy = Y(pts[i].y) - q.y;
+    if (dx * dx + dy * dy <= 12 * 12) {
+      if (pts.length <= M.min) { $('err').textContent = 'Cần ít nhất ' + M.min + ' điểm.'; return; }
+      pts.splice(i, 1); $('err').textContent = ''; st.reset(); return;
+    }
+  }
+  x = Math.round(x * 2) / 2; y = Math.round(y * 2) / 2;
+  if (x < 0 || x > XM || y < 0 || y > YM) return;
+  if (pts.some(function(p){ return p.x === x && p.y === y; })) return;
+  if (pts.length >= 20) { $('err').textContent = 'Tối đa 20 điểm.'; return; }
+  pts.push({x: x, y: y}); $('err').textContent = ''; st.reset();
+});
+$('sample').addEventListener('click', function(){ pts = M.pts.map(function(p){ return {x: p[0], y: p[1]}; }); $('err').textContent = ''; st.reset(); });
+st.reset();
+})();
+</script>
+</body>
+</html>

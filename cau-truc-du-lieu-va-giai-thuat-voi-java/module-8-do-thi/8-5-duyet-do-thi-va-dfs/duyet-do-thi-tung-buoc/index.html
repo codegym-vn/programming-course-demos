@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="640">
+<title>Duyệt đồ thị từng bước</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c; --cmt:#6b7280;
+    --node:#ffffff; --node-line:#c9ced8;
+    --run:#e3f4e8; --run-bar:#15803d;
+    --edge:#c3c9d4; --orange:#ea7a0c; --orange-soft:#fdecd9; --purple:#9333ea;
+    --l0:#2563eb; --l1:#0d9488; --l2:#ca8a04; --l3:#db2777; --l4:#7c3aed; --l5:#64748b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cmt:#8b93a1;
+      --node:#1d222c; --node-line:#3a4250;
+      --run:#13301f; --run-bar:#4ade80;
+      --edge:#3d4554; --orange:#fb923c; --orange-soft:#3a2614; --purple:#c084fc;
+      --l0:#6ea0ff; --l1:#2dd4bf; --l2:#facc15; --l3:#f472b6; --l4:#a78bfa; --l5:#94a3b8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .field{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px}
+  .field label{font-weight:600}
+  select{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;font-size:13.5px}
+  .chk{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:13.5px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .err{color:var(--false);font-size:12.5px}
+  .err:empty{display:none}
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;
+    padding:6px 12px;margin-bottom:8px;min-height:56px;font-size:13.5px}
+  .status>b{display:block;font-size:12.5px;color:var(--accent)}
+  .status code{font-size:12.5px}
+  .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+  .code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow:auto;position:relative;
+    font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent;transition:background .2s}
+  .ln .no{width:26px;flex:none;text-align:right;padding-right:9px;color:var(--muted);opacity:.6;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cmt);font-style:italic}
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:44px;white-space:pre-wrap;word-break:break-word;
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+  kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  [hidden]{display:none !important}
+  .grid{display:grid;grid-template-columns:250px 1fr;gap:10px;align-items:start}
+  .grid .status{margin-bottom:0}
+  @media (max-width:600px){.status{margin-bottom:8px}}
+  .grid.small{grid-template-columns:1fr 1.15fr}
+  .grid>*{min-width:0}
+  @media (max-width:600px){.grid,.grid.small{grid-template-columns:1fr}}
+  svg.g{display:block;width:100%;height:auto}
+  svg .e{stroke:var(--edge);stroke-width:2;fill:none}
+  svg .e.tree{stroke:var(--true);stroke-width:4.5}
+  svg .e.go{stroke:var(--accent);stroke-width:4.5;stroke-dasharray:7 4}
+  svg .e.skip{stroke:var(--false);stroke-width:2.5;stroke-dasharray:3 4}
+  svg .e.cut{stroke:var(--orange);stroke-width:3}
+  svg .e.pick{stroke:var(--accent);stroke-width:6}
+  svg .e.tent{stroke:var(--orange);stroke-width:2.5;stroke-dasharray:6 4}
+  svg .e.dfs{stroke:var(--purple);stroke-width:3}
+  svg .v{fill:var(--node);stroke:var(--node-line);stroke-width:2}
+  svg .v.active{fill:var(--accent-soft);stroke:var(--accent)}
+  svg .v.done,svg .v.T{fill:var(--true-soft);stroke:var(--true)}
+  svg .v.tent{fill:var(--orange-soft);stroke:var(--orange)}
+  svg .v.cur{fill:var(--cur);stroke:var(--cur-bar);stroke-width:4}
+  svg .v.inq{stroke-dasharray:4 3}
+  svg .halo{fill:none;stroke:var(--cur-bar);stroke-width:2;opacity:.55}
+  svg text{fill:var(--text);font:600 12px system-ui,sans-serif}
+  svg text.vn{font:700 15px ui-monospace,Menlo,Consolas,monospace;text-anchor:middle;dominant-baseline:central}
+  svg text.lv{font:700 10.5px system-ui,sans-serif;fill:var(--muted)}
+  svg text.w{font:600 10.5px ui-monospace,Menlo,Consolas,monospace;fill:var(--muted);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--card);stroke-width:3px}
+  .legend{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11.5px;color:var(--muted);margin-top:4px}
+  .legend i{display:inline-block;width:16px;height:0;border-top:4px solid;vertical-align:middle;margin-right:4px}
+  .legend i.dot{width:11px;height:11px;border:2px solid;border-radius:50%;margin-right:4px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;padding:4px;border:2px dashed var(--line);border-top:none;border-radius:0 0 8px 8px;min-height:40px}
+  .frame{border:2px solid var(--node-line);border-radius:7px;background:var(--node);padding:1px 8px;font:12.5px ui-monospace,Menlo,Consolas,monospace;display:flex;justify-content:space-between;gap:6px}
+  .frame span{white-space:pre}
+  .frame small{font:600 11px system-ui,sans-serif;color:var(--muted)}
+  .frame.top{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .frame.top small{color:var(--accent)}
+  .frame.popping{opacity:.45;border-style:dashed}
+  .frame.fresh{animation:push .3s ease-out}
+  @keyframes push{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+  .chips{display:flex;flex-wrap:wrap;gap:3px}
+  .chip{background:var(--code-bg);border:2px solid transparent;border-radius:6px;padding:0 5px;font:11.5px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  .chip small{color:var(--muted);font-size:10.5px}
+  .chip.top{border-color:var(--accent);background:var(--accent-soft)}
+  .chip.new{border-color:var(--cur-bar);background:var(--cur)}
+  .chip.pop{opacity:.45;border-style:dashed;border-color:var(--node-line)}
+  .chip .arrow{color:var(--muted)}
+  .queue{display:flex;gap:4px;flex-wrap:wrap;min-height:30px;align-items:center}
+  .queue .cell{border:2px solid var(--node-line);border-radius:6px;padding:1px 8px;font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--node)}
+  .queue .cell.new{border-color:var(--cur-bar);background:var(--cur)}
+  .queue .end{font-size:11px;color:var(--muted)}
+  .queue .empty{color:var(--muted);font-size:12.5px}
+  .kv{font-size:12px;color:var(--muted);margin:0 0 3px}
+  .kv+.chips{margin-bottom:6px}
+  table.t{width:100%;border-collapse:collapse;font:12.5px ui-monospace,Menlo,Consolas,monospace}
+  table.t th{font:600 11.5px system-ui,sans-serif;color:var(--muted);text-align:left;padding:2px 6px;border-bottom:1px solid var(--line)}
+  table.t td{padding:2px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.t td:first-child{font-family:system-ui,sans-serif}
+  table.t tr.inT td:first-child{color:var(--true);font-weight:700}
+  table.t tr.cur td{background:var(--cur)}
+  table.t td.chg{background:var(--cur);box-shadow:inset 0 0 0 2px var(--cur-bar);animation:blink .9s ease-out 1}
+  @keyframes blink{0%{background:var(--cur-bar)}100%{background:var(--cur)}}
+  table.t td s{color:var(--muted)}
+  .tot{font-size:13px;margin-top:6px}
+  #code{max-height:164px}
+  .grid.small #code{max-height:206px}
+  .grid.small .console{line-height:1.35}
+  @media (max-width:600px){#code{max-height:230px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+  <div class="controls">
+    <div class="field"><label for="start" id="startLbl">Xuất phát</label><select id="start"></select></div>
+    <label class="chk" id="cmpWrap" hidden><input type="checkbox" id="cmp"> So với cây DFS</label>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+// Engine E8: sinh các bước DFS / BFS / Prim / Dijkstra, khớp đúng code Java của khoá
+// (thứ tự cạnh theo mảng edges; chọn min bằng phép so sánh < nghiêm ngặt; cập nhật bằng >).
+// Chạy được trong trình duyệt (gắn vào window.GraphSim) và trong node (module.exports).
+(function (root) {
+  var CITIES = ['Ha Noi', 'Hai Phong', 'Vinh', 'Hue', 'Da Nang', 'Quy Nhon', 'Nha Trang',
+    'Da Lat', 'Buon Ma Thuot', 'TP HCM', 'Can Tho', 'Ca Mau'];
+  // Toạ độ chung (DECISIONS D10): kinh độ, vĩ độ
+  var LONLAT = [[105.85, 21.03], [106.68, 20.86], [105.69, 18.68], [107.59, 16.46], [108.21, 16.05],
+    [109.22, 13.78], [109.19, 12.24], [108.44, 11.94], [108.04, 12.67], [106.66, 10.76],
+    [105.78, 10.03], [105.15, 9.18]];
+  // Mảng edges của TestDFS / TestBFS / TestMinimumSpanningTree / TestShortestPath (đúng thứ tự)
+  var WEDGES = [[0, 1, 120], [0, 2, 295], [1, 0, 120], [1, 2, 340], [2, 0, 295], [2, 1, 340], [2, 3, 370],
+    [3, 2, 370], [3, 4, 100], [4, 3, 100], [4, 5, 320], [4, 8, 540], [5, 4, 320], [5, 6, 215], [5, 8, 200],
+    [6, 5, 215], [6, 7, 135], [6, 8, 190], [6, 9, 430], [7, 6, 135], [7, 8, 200], [7, 9, 300],
+    [8, 4, 540], [8, 5, 200], [8, 6, 190], [8, 7, 200], [8, 9, 350], [9, 6, 430], [9, 7, 300],
+    [9, 8, 350], [9, 10, 170], [9, 11, 350], [10, 9, 170], [10, 11, 180], [11, 9, 350], [11, 10, 180]];
+  var SMALL_DFS = [[1, 2], [0, 2, 4], [0, 1, 3], [2], [1]];
+  var SMALL_BFS = [[1, 2, 3], [0, 2, 4], [0, 1, 3], [0, 2, 4], [1, 3]];
+
+  function mapAdj() {
+    var adj = [], w = [];
+    for (var i = 0; i < 12; i++) { adj.push([]); w.push([]); }
+    WEDGES.forEach(function (e) { adj[e[0]].push(e[1]); w[e[0]].push(e[2]); });
+    return {adj: adj, w: w};
+  }
+  function ekey(a, b) { return a < b ? a + '-' + b : b + '-' + a; }
+  function fill(n, v) { var a = []; for (var i = 0; i < n; i++) a.push(v); return a; }
+  function treeEdges(parent, only) {
+    var o = {};
+    parent.forEach(function (p, v) { if (p >= 0 && (!only || only[v])) o[ekey(p, v)] = 'tree'; });
+    return o;
+  }
+
+  // ---------- DFS ----------
+  // small: true = DfsDemo (in "tham/xong"), false = AbstractGraph.dfs (searchOrder, parent)
+  function dfsSteps(adj, s, small, name) {
+    var n = adj.length, vis = fill(n, false), parent = fill(n, -1), order = [], stack = [], out = [], done = fill(n, false);
+    var S = [];
+    function vst(cur) {
+      return adj.map(function (_, v) {
+        if (v === cur) return 'cur';
+        if (stack.indexOf(v) >= 0) return 'active';
+        if (done[v]) return 'done';
+        return vis[v] ? 'active' : '';
+      });
+    }
+    function snap(ln, title, body, cur, check, extra) {
+      var edges = treeEdges(parent);
+      if (check) edges[ekey(check[0], check[1])] = check[2];
+      var o = {ln: ln, title: title, body: body, v: vst(cur), edges: edges, stack: stack.slice(), order: order.slice(),
+        parent: parent.slice(), out: out.slice(), vis: vis.slice()};
+      if (extra) for (var k in extra) o[k] = extra[k];
+      S.push(o);
+    }
+    var nm = function (v) { return name(v); };
+    if (small) snap(17, 'main gọi dfs(' + s + ', "")', '<code>main</code> gọi <code>dfs(' + s + ', "")</code>. Chưa đỉnh nào được thăm.', -1);
+    else snap(null, 'Bắt đầu dfs(' + nm(s) + ')', 'Phương thức công khai đã tạo <code>searchOrder</code> rỗng, <code>parent</code> toàn -1, <code>isVisited</code> toàn false, rồi gọi phương thức trợ giúp với <code>u = ' + nm(s) + '</code>.', -1);
+    function rec(u, indent) {
+      stack.push(u);
+      vis[u] = true; order.push(u);
+      if (small) {
+        out.push(indent + 'tham ' + u);
+        snap([7, 8], 'Thăm ' + u, 'In <code>' + (indent ? '"' + indent + '" + ' : '') + '"tham ' + u + '"</code> rồi đánh dấu <code>isVisited[' + u + '] = true</code>. Khung <code>dfs(' + u + ')</code> nằm trên đỉnh ngăn xếp lời gọi.', u, null, {fresh: true});
+      } else {
+        snap([3, 4], 'Thăm ' + nm(u), '<code>searchOrder.add(' + nm(u) + ')</code> và <code>isVisited[' + nm(u) + '] = true</code>. Đây là đỉnh thứ ' + order.length + ' được thăm.', u, null, {fresh: true});
+      }
+      adj[u].forEach(function (w) {
+        if (vis[w]) {
+          snap(small ? 10 : 6, 'Xét ' + nm(u) + ' → ' + nm(w), (small ? 'Hàng xóm <code>w = ' + w + '</code>' : 'Cạnh tới <code>e.v = ' + nm(w) + '</code>') + ': đỉnh này đã thăm, bỏ qua.', u, [u, w, 'skip']);
+        } else {
+          if (small) snap([10, 11], 'Xét ' + u + ' → ' + w, 'Hàng xóm <code>w = ' + w + '</code> chưa thăm, nên gọi đệ quy <code>dfs(' + w + ', ...)</code>. <code>dfs(' + u + ')</code> tạm dừng ở dòng này.', u, [u, w, 'go']);
+          else {
+            parent[w] = u;
+            snap([6, 8], 'Xét ' + nm(u) + ' → ' + nm(w), '<code>' + nm(w) + '</code> chưa thăm: ghi <code>parent[' + nm(w) + '] = ' + nm(u) + '</code> rồi gọi đệ quy <code>dfs(' + nm(w) + ', ...)</code>. <code>dfs(' + nm(u) + ')</code> tạm dừng.', u, [u, w, 'go']);
+          }
+          if (small) parent[w] = u;
+          rec(w, indent + '  ');
+        }
+      });
+      if (small) out.push(indent + 'xong ' + u);
+      done[u] = true;
+      var back = stack.length > 1 ? stack[stack.length - 2] : -1;
+      snap(small ? 13 : 12, 'dfs(' + nm(u) + ') kết thúc',
+        (small ? 'In <code>"xong ' + u + '"</code>. ' : 'Đã xét hết các cạnh của ' + nm(u) + '. ') +
+        (back >= 0 ? 'Khung <code>dfs(' + nm(u) + ')</code> bị gỡ, quay lui về <code>dfs(' + nm(back) + ')</code>.' : 'Khung cuối cùng bị gỡ, ngăn xếp lời gọi trống.'), u, null, {popping: true});
+      stack.pop();
+    }
+    rec(s, '');
+    snap(null, 'Hoàn tất', (small ? 'Thứ tự thăm: ' + order.join(', ') + '. ' : 'Đã thăm đủ ' + order.length + ' đỉnh. ') + 'Các cạnh tô đậm là cây DFS (mỗi đỉnh nối với <code>parent</code> của nó).', -1, null, {end: true});
+    return S;
+  }
+
+  // ---------- BFS ----------
+  function bfsSteps(adj, s, small, name) {
+    var n = adj.length, vis = fill(n, false), parent = fill(n, -1), level = fill(n, -1), order = [], q = [], out = [], line = '';
+    var S = [], polled = fill(n, false);
+    var nm = function (v) { return name(v); };
+    function vst(cur) {
+      return adj.map(function (_, v) {
+        if (v === cur) return 'cur';
+        if (polled[v]) return 'done';
+        if (q.indexOf(v) >= 0) return 'inq';
+        return '';
+      });
+    }
+    function snap(ln, title, body, cur, check, extra) {
+      var edges = treeEdges(parent);
+      if (check) edges[ekey(check[0], check[1])] = check[2];
+      var o = {ln: ln, title: title, body: body, v: vst(cur), edges: edges, queue: q.slice(), order: order.slice(),
+        parent: parent.slice(), level: level.slice(), out: out.concat(line ? [line] : []), vis: vis.slice()};
+      if (extra) for (var k in extra) o[k] = extra[k];
+      S.push(o);
+    }
+    q.push(s); vis[s] = true; level[s] = 0;
+    snap(small ? [11, 12] : [2, 3], 'Đưa ' + nm(s) + ' vào hàng đợi', '<code>queue.offer(' + nm(s) + ')</code> và đánh dấu <code>isVisited[' + nm(s) + '] = true</code> ngay lúc đưa vào. ' + nm(s) + ' là mức 0.', -1, null, {added: [s]});
+    while (q.length) {
+      var u = q.shift();
+      polled[u] = true;
+      if (small) { order.push(u); line = 'Lay ' + u; snap([14, 15], 'Lấy ' + u + ' ra', '<code>queue.poll()</code> trả về ' + u + ' (đầu hàng đợi), in <code>"Lay ' + u + '"</code>. Giờ xét các hàng xóm của ' + u + '.', u); }
+      else { order.push(u); snap([5, 6], 'Lấy ' + nm(u) + ' ra', '<code>queue.poll()</code> trả về ' + nm(u) + ' (mức ' + level[u] + '), <code>searchOrder.add(' + nm(u) + ')</code>. Giờ xét các cạnh của ' + nm(u) + '.', u); }
+      adj[u].forEach(function (w) {
+        if (vis[w]) {
+          snap(small ? 17 : 8, 'Xét ' + nm(u) + ' → ' + nm(w), nm(w) + ' đã được đánh dấu (đã hoặc đang ở trong hàng đợi), bỏ qua.', u, [u, w, 'skip']);
+        } else {
+          q.push(w); vis[w] = true; parent[w] = u; level[w] = level[u] + 1;
+          snap(small ? [17, 19] : [8, 11], 'Xét ' + nm(u) + ' → ' + nm(w), nm(w) + ' chưa đánh dấu: đưa vào cuối hàng đợi, ' + (small ? '' : 'ghi <code>parent[' + nm(w) + '] = ' + nm(u) + '</code>, ') + 'đánh dấu đã thăm. ' + nm(w) + ' thuộc mức ' + level[w] + '.', u, [u, w, 'go'], {added: [w]});
+        }
+      });
+      if (small) {
+        line += ', hang doi: [' + q.join(', ') + ']';
+        out.push(line); line = '';
+        snap([22, 23], 'In hàng đợi', 'Xét xong hàng xóm của ' + u + '. In nội dung hàng đợi: <code>[' + q.join(', ') + ']</code>.', u);
+      }
+    }
+    snap(small ? 13 : 15, 'Hàng đợi rỗng', 'Vòng <code>while</code> dừng. ' + (small ? 'Thứ tự thăm: ' + order.join(', ') + '. ' : 'Cạnh xanh đậm là cây BFS: đường từ gốc tới mỗi đỉnh trong cây có ít cạnh nhất. ') + 'Màu đỉnh cho biết mức.', -1, null, {end: true});
+    return S;
+  }
+
+  // ---------- Prim / Dijkstra (WeightedGraph) ----------
+  function weightedSteps(g, s, dijkstra, name) {
+    var n = g.adj.length, cost = fill(n, Infinity), parent = fill(n, -1), T = [], total = 0, S = [];
+    cost[s] = 0;
+    var nm = function (v) { return name(v); };
+    var fmt = function (c) { return c === Infinity ? '∞' : String(c); };
+    function inT(v) { return T.indexOf(v) >= 0; }
+    function snap(kind, title, body, pick, extra) {
+      var edges = {};
+      parent.forEach(function (p, v) { if (p >= 0) edges[ekey(p, v)] = inT(v) ? 'tree' : 'tent'; });
+      var o = {kind: kind, title: title, body: body, cost: cost.slice(), parent: parent.slice(), T: T.slice(), total: total, pick: pick,
+        edges: edges, v: g.adj.map(function (_, v) { return v === pick ? 'cur' : inT(v) ? 'T' : cost[v] < Infinity ? 'tent' : ''; })};
+      if (extra) for (var k in extra) o[k] = extra[k];
+      S.push(o);
+    }
+    snap('init', 'Khởi tạo', '<code>cost[' + nm(s) + '] = 0</code>, mọi đỉnh khác có <code>cost</code> vô cực; <code>T</code> rỗng.', -1, {chg: [s], old: {}});
+    while (T.length < n) {
+      var u = -1, min = Infinity;
+      for (var i = 0; i < n; i++) if (!inT(i) && cost[i] < min) { min = cost[i]; u = i; }
+      if (u < 0) break;
+      // trạng thái trước khi thêm u: cạnh cắt (T, V - T) cho Prim
+      var cut = {};
+      if (!dijkstra) T.forEach(function (a) { g.adj[a].forEach(function (b) { if (!inT(b)) cut[ekey(a, b)] = 'cut'; }); });
+      var cand = [];
+      for (var j = 0; j < n; j++) if (!inT(j) && cost[j] < Infinity) cand.push(nm(j) + ' ' + cost[j]);
+      var body;
+      if (dijkstra) body = 'Đỉnh ngoài T có <code>cost</code> nhỏ nhất là ' + nm(u) + ' (' + cost[u] + ')' + (cand.length > 1 ? ' trong số: ' + cand.join(', ') : '') + '. Đưa ' + nm(u) + ' vào T' + (parent[u] >= 0 ? '; đường đi tới nó kết thúc bằng cạnh ' + nm(parent[u]) + '–' + nm(u) : '') + '. <code>cost[' + nm(u) + ']</code> từ nay không đổi nữa.';
+      else body = (parent[u] >= 0 ? 'Cạnh nhẹ nhất nối T với phần còn lại là ' + nm(parent[u]) + '–' + nm(u) + ' (' + cost[u] + '), tức đỉnh ngoài T có <code>cost</code> nhỏ nhất' + (cand.length > 1 ? ' (ứng viên: ' + cand.join(', ') + ')' : '') + '. Đưa ' + nm(u) + ' vào T.' : nm(u) + ' có <code>cost</code> = 0 nên được chọn đầu tiên.') + ' Tổng trọng số: ' + total + ' + ' + cost[u] + ' = ' + (total + cost[u]) + '.';
+      T.push(u);
+      if (!dijkstra) total += cost[u];
+      snap('pick', 'Chọn ' + nm(u) + ' (' + cost[u] + ')', body, u, {cut: cut, pickEdge: parent[u] >= 0 ? ekey(parent[u], u) : null, chg: [], old: {}});
+      var chg = [], old = {}, notes = [];
+      g.adj[u].forEach(function (v, k) {
+        var w = g.w[u][k];
+        if (inT(v)) return;
+        var nv = dijkstra ? cost[u] + w : w;
+        var expr = dijkstra ? cost[u] + ' + ' + w + ' = ' + nv : String(w);
+        if (cost[v] > nv) {
+          old[v] = {c: cost[v], p: parent[v]};
+          notes.push(nm(v) + ': ' + fmt(cost[v]) + ' &gt; ' + expr + ' → <b>cập nhật</b>' + (parent[v] >= 0 && parent[v] !== u ? ', parent đổi từ ' + nm(parent[v]) + ' thành ' + nm(u) : ''));
+          cost[v] = nv; parent[v] = u; chg.push(v);
+        } else {
+          notes.push(nm(v) + ': ' + fmt(cost[v]) + ' &gt; ' + expr + ' sai, giữ nguyên');
+        }
+      });
+      var fin = T.length === n;
+      snap('upd', fin ? 'Hoàn tất' : 'Cập nhật các đỉnh kề ' + nm(u),
+        (notes.length ? (dijkstra ? 'So sánh <code>cost[v] &gt; cost[u] + w</code> với các đỉnh kề ngoài T: ' : 'Các đỉnh kề ngoài T, so <code>cost</code> hiện tại với trọng số cạnh nối tới ' + nm(u) + ': ') + notes.join('; ') + '.' : 'Mọi đỉnh kề của ' + nm(u) + ' đã ở trong T, không có gì để cập nhật.') +
+        (fin ? (dijkstra ? ' T đủ ' + n + ' đỉnh, thuật toán kết thúc. Các cạnh đậm tạo thành cây đường đi ngắn nhất.' : ' T đủ ' + n + ' đỉnh. Tổng trọng số cây khung nhỏ nhất: <b>' + total + '</b>.') : ''),
+        u, {chg: chg, old: old, end: fin});
+    }
+    return S;
+  }
+
+  var api = {CITIES: CITIES, LONLAT: LONLAT, WEDGES: WEDGES, SMALL_DFS: SMALL_DFS, SMALL_BFS: SMALL_BFS,
+    mapAdj: mapAdj, ekey: ekey, dfsSteps: dfsSteps, bfsSteps: bfsSteps, weightedSteps: weightedSteps};
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GraphSim = api;
+})(this);
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qs(name){ var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : ''; }
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(import|public|private|protected|class|static|void|int|double|char|boolean|String|if|else|return|for|while|new|true|false)\b|(\b\d+(?:\.\d+)?\b)/g, out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  // cur: chỉ số dòng (0-based) hoặc [từ, đến]
+  function codeHtml(lines, cur){
+    var a = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[0] : cur);
+    var b = cur === undefined || cur === null ? -1 : (Array.isArray(cur) ? cur[1] : cur);
+    return lines.map(function(l, i){
+      return '<div class="ln' + (i >= a && i <= b ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+  function scrollToCur(box){
+    var el = box.querySelector('.ln.cur'); if (!el) return;
+    if (box.scrollHeight <= box.clientHeight + 2) return;
+    var top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2;
+    box.scrollTop = Math.max(0, top);
+  }
+  // Stepper: cfg = {build: () => snaps, render: (snap, i, n) => void, speed: ms}
+  function Stepper(cfg){
+    var snaps = [], step = 0, timer = null;
+    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+    function draw(){
+      var sn = snaps[step];
+      $('status').innerHTML = '<b>Bước ' + (step + 1) + '/' + snaps.length + ' · ' + esc(sn.title) + '</b><span>' + sn.body + '</span>';
+      cfg.render(sn, step, snaps.length);
+      var run = timer !== null;
+      $('next').disabled = step >= snaps.length - 1 || run;
+      $('prev').disabled = step <= 0 || run;
+      $('all').disabled = run || step >= snaps.length - 1;
+    }
+    var jump = parseInt(qs('buoc'), 10);
+    function reset(){ stop(); snaps = cfg.build(); step = 0; if (jump > 0) { step = Math.min(jump - 1, snaps.length - 1); jump = 0; } draw(); }
+    function next(){ if (step < snaps.length - 1) { step++; draw(); } }
+    function prev(){ if (step > 0) { step--; draw(); } }
+    $('next').addEventListener('click', next);
+    $('prev').addEventListener('click', prev);
+    $('reset').addEventListener('click', reset);
+    $('all').addEventListener('click', function(){
+      if (timer) return;
+      timer = setInterval(function(){ if (step >= snaps.length - 1) { stop(); draw(); return; } step++; draw(); }, cfg.speed || 550);
+      draw();
+    });
+    document.addEventListener('keydown', function(e){
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || timer) return;
+      if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prev(); e.preventDefault(); }
+    });
+    return {reset: reset, redraw: function(){ if (snaps.length) draw(); }};
+  }
+var G = window.GraphSim;
+var ALGO = qs('algo'); if (['dfs', 'bfs', 'prim', 'dijkstra'].indexOf(ALGO) < 0) ALGO = 'dfs';
+var VD = qs('vd');
+var SMALL = (ALGO === 'dfs' || ALGO === 'bfs') && VD === 'nho';
+var COSTMODE = ALGO === 'prim' && VD === 'cost';
+var WEIGHTED = ALGO === 'prim' || ALGO === 'dijkstra';
+var MAP = G.mapAdj();
+var ADJ = SMALL ? (ALGO === 'dfs' ? G.SMALL_DFS : G.SMALL_BFS) : MAP.adj;
+var N = ADJ.length;
+var name = SMALL ? function(v){ return String(v); } : function(v){ return G.CITIES[v]; };
+var defStart = SMALL ? 0 : (ALGO === 'dfs' || ALGO === 'bfs') ? 4 : 0;
+var START = parseInt(qs('dinh'), 10); if (!(START >= 0 && START < N)) START = defStart;
+
+// ---- vị trí đỉnh ----
+var POS = [], VB, LABEL = [];
+if (SMALL) {
+  POS = [[150, 26], [52, 100], [150, 112], [248, 100], [150, 192]];
+  VB = '0 0 300 218';
+} else {
+  var K = 44, OX = 64, OY = 4;
+  POS = G.LONLAT.map(function(p){ return [Math.round(((p[0] - 104.5) * K + OX) * 10) / 10, Math.round(((22 - p[1]) * K + OY) * 10) / 10]; });
+  // nhãn: [dx, dy, anchor]
+  LABEL = [[-11, 4, 'end'], [11, 4, 'start'], [-11, 4, 'end'], [-11, 0, 'end'], [11, 4, 'start'], [11, 4, 'start'],
+    [11, 6, 'start'], [9, 15, 'start'], [-11, -2, 'end'], [-11, 4, 'end'], [-11, 4, 'end'], [-11, 4, 'end']];
+  VB = '24 30 330 556';
+}
+// vị trí nhãn trọng số (lệch khỏi trung điểm để tránh chồng nhau)
+// [t dọc cạnh từ đỉnh chỉ số nhỏ, dx, dy]
+var WOFF = {'0-1': [.5, 0, -9], '0-2': [.5, -12, 0], '1-2': [.5, 12, 2], '2-3': [.5, 8, -8], '3-4': [.5, -9, 10], '4-5': [.5, 12, -6], '4-8': [.5, -14, 0],
+  '5-6': [.5, 13, 0], '5-8': [.5, -6, -7], '6-7': [.5, -1, -9], '6-8': [.5, 2, -9], '6-9': [.38, 4, 11], '7-8': [.5, -14, 4], '7-9': [.55, -10, 3],
+  '8-9': [.5, -12, -3], '9-10': [.5, 10, 4], '9-11': [.8, 12, 4], '10-11': [.5, -14, -2]};
+function undirected(){
+  var seen = {}, out = [];
+  ADJ.forEach(function(nb, u){ nb.forEach(function(v, k){ var key = G.ekey(u, v); if (!seen[key]) { seen[key] = 1; out.push({a: Math.min(u, v), b: Math.max(u, v), key: key, w: SMALL ? 0 : MAP.w[u][k]}); } }); });
+  return out;
+}
+var EDGES = undirected();
+var LV = ['var(--l0)', 'var(--l1)', 'var(--l2)', 'var(--l3)', 'var(--l4)', 'var(--l5)'];
+
+function svgHtml(sn, extraEdges){
+  var h = '<svg class="g" viewBox="' + VB + '" role="img" aria-label="Đồ thị">';
+  EDGES.forEach(function(e){
+    var c = (sn.edges && sn.edges[e.key]) || '';
+    if (sn.cut && sn.cut[e.key] && !c) c = 'cut';
+    if (sn.cut && sn.cut[e.key] && c === 'tent') c = 'cut';
+    if (sn.pickEdge === e.key) c = 'pick';
+    if (COSTMODE && c === 'cut') c = '';
+    var A = POS[e.a], B = POS[e.b];
+    h += '<line class="e ' + c + '" x1="' + A[0] + '" y1="' + A[1] + '" x2="' + B[0] + '" y2="' + B[1] + '"/>';
+  });
+  if (extraEdges) EDGES.forEach(function(e){
+    if (!extraEdges[e.key]) return; var A = POS[e.a], B = POS[e.b];
+    var dx = B[0] - A[0], dy = B[1] - A[1], L = Math.sqrt(dx * dx + dy * dy) || 1, ox = -dy / L * 4.5, oy = dx / L * 4.5;
+    h += '<line class="e dfs" x1="' + (A[0] + ox) + '" y1="' + (A[1] + oy) + '" x2="' + (B[0] + ox) + '" y2="' + (B[1] + oy) + '"/>';
+  });
+  if (WEIGHTED) EDGES.forEach(function(e){
+    var A = POS[e.a], B = POS[e.b], o = WOFF[e.key] || [.5, 0, 0];
+    h += '<text class="w" x="' + Math.round(A[0] + (B[0] - A[0]) * o[0] + o[1]) + '" y="' + Math.round(A[1] + (B[1] - A[1]) * o[0] + o[2]) + '">' + e.w + '</text>';
+  });
+  var r = SMALL ? 16 : 8;
+  for (var v = 0; v < N; v++) {
+    var P = POS[v], c = sn.v[v] || '', style = '';
+    if (ALGO === 'bfs' && sn.level && sn.level[v] >= 0 && c !== 'cur') { style = ' style="fill:' + LV[Math.min(sn.level[v], 5)] + ';fill-opacity:' + (c === 'done' ? '.85' : '.35') + ';stroke:' + LV[Math.min(sn.level[v], 5)] + '"'; }
+    if (c === 'cur') h += '<circle class="halo" cx="' + P[0] + '" cy="' + P[1] + '" r="' + (r + 6) + '"/>';
+    h += '<circle class="v ' + c + '" cx="' + P[0] + '" cy="' + P[1] + '" r="' + r + '"' + style + '/>';
+    if (SMALL) {
+      h += '<text class="vn" x="' + P[0] + '" y="' + P[1] + '"' + (ALGO === 'bfs' && sn.level && sn.level[v] >= 0 && sn.v[v] === 'done' ? ' style="fill:#fff"' : '') + '>' + v + '</text>';
+      var LO = [[22, 4, 'start'], [-4, -22, 'end'], [0, 31, 'middle'], [4, -22, 'start'], [22, 4, 'start']][v];
+      if (ALGO === 'bfs' && sn.level && sn.level[v] >= 0) h += '<text class="lv" x="' + (P[0] + LO[0]) + '" y="' + (P[1] + LO[1]) + '" text-anchor="' + LO[2] + '">mức ' + sn.level[v] + '</text>';
+    } else {
+      var L = LABEL[v];
+      h += '<text x="' + (P[0] + L[0]) + '" y="' + (P[1] + L[1]) + '" text-anchor="' + L[2] + '">' + esc(G.CITIES[v]) + (ALGO === 'bfs' && sn.level && sn.level[v] >= 0 ? ' ·' + sn.level[v] : '') + '</text>';
+    }
+  }
+  return h + '</svg>';
+}
+
+// ---- code hiển thị (khớp bài đọc) ----
+function codeLines(){
+  if (ALGO === 'dfs' && SMALL) return [
+'public class DfsDemo {',
+'  static int[][] neighbors = {',
+'    {1, 2}, {0, 2, 4}, {0, 1, 3}, {2}, {1}',
+'  };',
+'  static boolean[] isVisited = new boolean[5];',
+'',
+'  static void dfs(int u, String indent) {',
+'    System.out.println(indent + "tham " + u);',
+'    isVisited[u] = true;',
+'    for (int w : neighbors[u]) {',
+'      if (!isVisited[w])',
+'        dfs(w, indent + "  ");',
+'    }',
+'    System.out.println(indent + "xong " + u);',
+'  }',
+'',
+'  public static void main(String[] args) {',
+'    dfs(' + START + ', "");',
+'  }',
+'}'];
+  if (ALGO === 'bfs' && SMALL) return [
+'import java.util.*;',
+'',
+'public class BfsDemo {',
+'  public static void main(String[] args) {',
+'    int[][] neighbors = {',
+'      {1, 2, 3}, {0, 2, 4}, {0, 1, 3},',
+'      {0, 2, 4}, {1, 3}',
+'    };',
+'    boolean[] isVisited = new boolean[5];',
+'    LinkedList<Integer> queue =',
+'        new LinkedList<>();',
+'    queue.offer(' + START + ');',
+'    isVisited[' + START + '] = true;',
+'    while (!queue.isEmpty()) {',
+'      int u = queue.poll();',
+'      System.out.print("Lay " + u);',
+'      for (int w : neighbors[u]) {',
+'        if (!isVisited[w]) {',
+'          queue.offer(w);',
+'          isVisited[w] = true;',
+'        }',
+'      }',
+'      System.out.println(", hang doi: "',
+'          + queue);',
+'    }',
+'  }',
+'}'];
+  if (ALGO === 'dfs') return [
+'private void dfs(int u, int[] parent,',
+'    List<Integer> searchOrder,',
+'    boolean[] isVisited) {',
+'  searchOrder.add(u);',
+'  isVisited[u] = true;',
+'  for (Edge e : neighbors.get(u)) {',
+'    if (!isVisited[e.v]) {',
+'      parent[e.v] = u;',
+'      dfs(e.v, parent, searchOrder,',
+'          isVisited);',
+'    }',
+'  }',
+'}'];
+  return [
+'LinkedList<Integer> queue =',
+'    new LinkedList<>();',
+'queue.offer(v);',
+'isVisited[v] = true;',
+'while (!queue.isEmpty()) {',
+'  int u = queue.poll();',
+'  searchOrder.add(u);',
+'  for (Edge e : neighbors.get(u)) {',
+'    if (!isVisited[e.v]) {',
+'      queue.offer(e.v);',
+'      parent[e.v] = u;',
+'      isVisited[e.v] = true;',
+'    }',
+'  }',
+'}',
+'return new Tree(v, parent, searchOrder);'];
+}
+
+// ---- bố cục ----
+var LEADS = {
+  dfsnho: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem DFS đệ quy thăm từng đỉnh, ngăn xếp lời gọi và cây DFS.',
+  bfsnho: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để xem BFS lấy đỉnh khỏi hàng đợi và thêm hàng xóm mới; màu đỉnh là mức.',
+  dfs: 'Chọn nơi xuất phát, bấm <b>Bước tiếp</b> (<kbd>→</kbd>): DFS xét cạnh đúng theo thứ tự trong mảng <code>edges</code>.',
+  bfs: 'Chọn nơi xuất phát, bấm <b>Bước tiếp</b> (<kbd>→</kbd>): BFS lan theo mức (số sau tên). Có thể bật cây DFS để so sánh.',
+  prim: 'Chọn đỉnh bắt đầu, bấm <b>Bước tiếp</b> (<kbd>→</kbd>): T tô xanh lá, cạnh nối T với phần còn lại tô cam.',
+  primcost: 'Bấm <b>Bước tiếp</b> (<kbd>→</kbd>) để theo dõi <code>cost</code> và <code>parent</code>; ô vừa đổi tô vàng, giá trị cũ gạch ngang.',
+  dijkstra: 'Chọn nguồn, bấm <b>Bước tiếp</b> (<kbd>→</kbd>): mỗi bước chốt đỉnh có <code>cost</code> nhỏ nhất ngoài T.'
+};
+$('lead').innerHTML = LEADS[SMALL ? ALGO + 'nho' : COSTMODE ? 'primcost' : ALGO];
+$('startLbl').textContent = ALGO === 'dijkstra' ? 'Nguồn' : ALGO === 'prim' ? 'Bắt đầu' : 'Xuất phát';
+for (var i = 0; i < N; i++) { var o = document.createElement('option'); o.value = i; o.textContent = SMALL ? 'Đỉnh ' + i : G.CITIES[i]; if (i === START) o.selected = true; $('start').appendChild(o); }
+if (ALGO === 'bfs' && !SMALL) { $('cmpWrap').hidden = false; if (qs('sosanh') === '1') $('cmp').checked = true; }
+
+var grid = $('grid');
+var legendHtml;
+if (ALGO === 'dfs') legendHtml = '<span><i class="dot" style="border-color:var(--cur-bar);background:var(--cur)"></i>đang thăm</span><span><i class="dot" style="border-color:var(--accent);background:var(--accent-soft)"></i>trong ngăn xếp</span><span><i class="dot" style="border-color:var(--true);background:var(--true-soft)"></i>đã xong</span><span><i style="border-color:var(--true)"></i>cạnh cây</span>';
+else if (ALGO === 'bfs') legendHtml = '<span><i class="dot" style="border-color:var(--l0)"></i>mức 0</span><span><i class="dot" style="border-color:var(--l1)"></i>mức 1</span><span><i class="dot" style="border-color:var(--l2)"></i>mức 2</span><span><i class="dot" style="border-color:var(--l3)"></i>mức 3</span><span>viền đứt: trong hàng đợi</span><span><i style="border-color:var(--true)"></i>cạnh cây</span><span id="lgdfs" hidden><i style="border-color:var(--purple)"></i>cây DFS (cùng điểm xuất phát)</span>';
+else legendHtml = '<span><i class="dot" style="border-color:var(--true);background:var(--true-soft)"></i>trong T</span><span><i style="border-color:var(--true)"></i>cạnh cây</span>' + (ALGO === 'prim' && !COSTMODE ? '<span><i style="border-color:var(--orange)"></i>cạnh nối T với V − T</span>' : '<span><i style="border-color:var(--orange);border-top-style:dashed"></i>parent tạm</span>') + '<span><i style="border-color:var(--accent)"></i>cạnh vừa chọn</span>';
+var mapCard = '<div class="card"><div id="svg"></div><div class="legend">' + legendHtml + '</div></div>';
+if (SMALL) {
+  grid.className = 'grid small';
+  grid.innerHTML = '<div class="col">' + mapCard + '<div class="card"><p class="panel-title">' + (ALGO === 'dfs' ? 'Ngăn xếp lời gọi' : 'Hàng đợi (đầu bên trái)') + '</p><div id="aux"></div></div></div>' +
+    '<div class="col"><div class="card"><p class="panel-title">' + (ALGO === 'dfs' ? 'DfsDemo' : 'BfsDemo') + '</p><div class="code" id="code"></div></div><div class="card"><p class="panel-title">Output</p><div class="console" id="con"></div></div></div>';
+} else if (!WEIGHTED) {
+  grid.innerHTML = mapCard + '<div class="col"><div class="card"><p class="panel-title">' + (ALGO === 'dfs' ? 'Phương thức trợ giúp dfs' : 'Thân phương thức bfs') + '</p><div class="code" id="code"></div></div>' +
+    '<div class="card"><p class="panel-title">' + (ALGO === 'dfs' ? 'Ngăn xếp lời gọi (đáy bên trái)' : 'Hàng đợi (đầu bên trái)') + '</p><div id="aux"></div></div>' +
+    '<div class="card"><p class="kv"><code>searchOrder</code> (kèm <code>parent</code> của mỗi đỉnh)</p><div class="chips" id="order"></div></div></div>';
+} else {
+  grid.innerHTML = mapCard + '<div class="col"><div class="card"><p class="panel-title">Mảng cost và parent</p><table class="t"><thead><tr><th>Đỉnh</th><th>cost</th><th>parent</th></tr></thead><tbody id="tb"></tbody></table><div class="tot" id="tot"></div></div></div>';
+}
+
+// Màn rộng: dòng giải thích nằm đầu cột phải (cạnh bản đồ); màn hẹp: nằm trên bản đồ
+if (!SMALL) {
+  var mq = window.matchMedia('(max-width:600px)');
+  var placeStatus = function(){
+    var rc = grid.children[1];
+    if (mq.matches) grid.parentNode.insertBefore($('status'), grid); else rc.insertBefore($('status'), rc.firstChild);
+  };
+  placeStatus();
+  if (mq.addEventListener) mq.addEventListener('change', placeStatus); else if (mq.addListener) mq.addListener(placeStatus);
+}
+var dfsCmp = null;
+function compareTree(){
+  if (dfsCmp && dfsCmp.s === START) return dfsCmp.e;
+  var d = G.dfsSteps(ADJ, START, false, name), last = d[d.length - 1], e = {};
+  last.parent.forEach(function(p, v){ if (p >= 0) e[G.ekey(p, v)] = 1; });
+  dfsCmp = {s: START, e: e};
+  return e;
+}
+
+function render(sn){
+  var cmpOn = ALGO === 'bfs' && !SMALL && $('cmp').checked;
+  $('svg').innerHTML = svgHtml(sn, cmpOn ? compareTree() : null);
+  if ($('lgdfs')) $('lgdfs').hidden = !cmpOn;
+  if ($('code')) { $('code').innerHTML = codeHtml(codeLines(), sn.ln); scrollToCur($('code')); }
+  if ($('con')) $('con').innerHTML = sn.out.length ? sn.out.map(esc).join('\n') : '<span class="ph">Chưa có kết quả.</span>';
+  if (ALGO === 'dfs' && $('aux')) {
+    if (SMALL) {
+      var fr = ['<div class="frame"><span>main</span><small>' + (sn.stack.length ? 'tạm dừng' : 'đang chạy') + '</small></div>'];
+      var indent = '';
+      sn.stack.forEach(function(u, k){
+        var top = k === sn.stack.length - 1;
+        fr.push('<div class="frame' + (top ? ' top' : '') + (top && sn.popping ? ' popping' : '') + (top && sn.fresh ? ' fresh' : '') + '"><span>dfs(' + u + ', "' + indent + '")</span><small>' + (top ? (sn.popping ? 'đang bị gỡ' : 'đang chạy') : 'tạm dừng') + '</small></div>');
+        indent += '  ';
+      });
+      $('aux').innerHTML = '<div class="stack">' + fr.join('') + '</div>';
+    } else {
+      $('aux').innerHTML = sn.stack.length ? '<div class="chips">' + sn.stack.map(function(u, k){
+        var top = k === sn.stack.length - 1;
+        return '<span class="chip' + (top ? (sn.popping ? ' pop' : ' top') : '') + '">' + esc(name(u)) + '</span>';
+      }).join('<span class="arrow">›</span>') + '</div>' : '<span class="kv">' + (sn.end ? 'Ngăn xếp lời gọi trống.' : 'Chưa có lời gọi đệ quy.') + '</span>';
+    }
+  }
+  if (ALGO === 'bfs' && $('aux')) {
+    $('aux').innerHTML = '<div class="queue">' + (sn.queue.length ? sn.queue.map(function(u){
+      return '<span class="cell' + (sn.added && sn.added.indexOf(u) >= 0 ? ' new' : '') + '">' + esc(name(u)) + '</span>';
+    }).join('') : '<span class="empty">Hàng đợi rỗng</span>') + '</div>';
+  }
+  if ($('order')) {
+    var lastV = sn.order[sn.order.length - 1];
+    $('order').innerHTML = sn.order.length ? sn.order.map(function(u){ return '<span class="chip' + (u === lastV && /Thăm|Lấy/.test(sn.title) ? ' new' : '') + '">' + esc(name(u)) + (sn.parent[u] >= 0 ? ' <small>← ' + esc(name(sn.parent[u])) + '</small>' : '') + '</span>'; }).join('') : '<span class="kv">trống</span>';
+  }
+  if ($('tb')) {
+    var rows = '';
+    for (var v = 0; v < N; v++) {
+      var inT = sn.T.indexOf(v) >= 0, ch = sn.chg && sn.chg.indexOf(v) >= 0, old = sn.old && sn.old[v];
+      var c = sn.cost[v] === Infinity ? '∞' : sn.cost[v];
+      var p = sn.parent[v] >= 0 ? name(sn.parent[v]) : '-1';
+      var cc = ch && old ? '<s>' + (old.c === Infinity ? '∞' : old.c) + '</s> ' + c : c;
+      var pc = ch && old && old.p !== sn.parent[v] ? '<s>' + (old.p >= 0 ? esc(name(old.p)) : '-1') + '</s> ' + esc(p) : esc(p);
+      rows += '<tr class="' + (inT ? 'inT' : '') + (v === sn.pick && sn.kind === 'pick' ? ' cur' : '') + '"><td>' + (inT ? '✓ ' : '') + esc(name(v)) + '</td><td' + (ch ? ' class="chg"' : '') + '>' + cc + '</td><td' + (ch && old && old.p !== sn.parent[v] ? ' class="chg"' : '') + '>' + pc + '</td></tr>';
+    }
+    $('tb').innerHTML = rows;
+    $('tot').innerHTML = 'T = {' + sn.T.map(name).join(', ') + '}' + (ALGO === 'prim' ? '<br>Tổng trọng số: <b>' + sn.total + '</b>' : '');
+  }
+}
+
+var st = Stepper({
+  speed: SMALL ? 600 : 320,
+  build: function(){
+    if (ALGO === 'dfs') return G.dfsSteps(ADJ, START, SMALL, name);
+    if (ALGO === 'bfs') return G.bfsSteps(ADJ, START, SMALL, name);
+    return G.weightedSteps(MAP, START, ALGO === 'dijkstra', name);
+  },
+  render: render
+});
+$('start').addEventListener('change', function(){ START = parseInt(this.value, 10); st.reset(); });
+$('cmp').addEventListener('change', function(){ st.redraw(); });
+st.reset();
+})();
+</script>
+</body>
+</html>
