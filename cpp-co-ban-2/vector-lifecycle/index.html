@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="600">
+<title>Mô phỏng Vòng đời co giãn std::vector C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --spare-bg:#f8fafc; --spare-border:#cbd5e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --spare-bg:#141923; --spare-border:#334155;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn.sm{padding:3px 7px;font-size:12px}
+  .btn.warn-btn{background:transparent;border-color:var(--false);color:var(--false)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .action-bar{display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;background:var(--card);border:1px solid var(--line);
+    border-radius:8px;padding:5px 8px;margin-bottom:6px}
+  .act-lbl{font-size:12px;font-weight:700;color:var(--muted)}
+  .num-in{width:54px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--code-bg);
+    color:var(--text);font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-align:center}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:52px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:6px}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:5px 0;max-height:185px;overflow-y:auto;
+    font:11.5px/1.48 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Unsigned trap box */
+  .trap-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:6px 7px}
+  .trap-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap}
+  .trap-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .trap-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 5px;text-align:center}
+  .trap-cell.danger{border-color:var(--false);background:var(--false-soft)}
+  .trap-cell.safe{border-color:var(--true);background:var(--true-soft)}
+  .trap-k{font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--muted)}
+  .trap-v{font:700 9.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:2px;letter-spacing:-0.02em;white-space:nowrap}
+  .trap-cell.danger .trap-v{color:var(--false)}
+  .trap-cell.safe .trap-v{color:var(--true)}
+
+  /* Metrics 4 boxes */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .m-card{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:5px 6px;text-align:center}
+  .m-k{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .m-v{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);margin-top:1px}
+  .m-v.true{color:var(--true)}.m-v.false{color:var(--false)}.m-v.warn{color:var(--warn)}.m-v.accent{color:var(--accent)}
+
+  /* Buffer Stage */
+  .buf-stage{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:5px;flex:1;justify-content:center}
+  .buf-box{background:var(--card);border:2px solid var(--cell-border);border-radius:7px;padding:5px 7px}
+  .buf-box.old-buf{border-style:dashed;opacity:.75}
+  .buf-box.new-buf{border-color:var(--true)}
+  .buf-box.err-buf{border-color:var(--false);background:var(--false-soft)}
+  .buf-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;font-size:11.5px;font-weight:700}
+  .slots{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+  .slot{border:2px solid var(--accent);background:var(--accent-soft);border-radius:5px;padding:3px 2px;text-align:center;min-width:0}
+  .slot.just-added{border-color:var(--true);background:var(--true-soft)}
+  .slot.copied{border-color:var(--warn);background:var(--warn-soft)}
+  .slot.spare{border:1.5px dashed var(--spare-border);background:var(--spare-bg);color:var(--muted)}
+  .slot-idx{font:700 9.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .slot-val{font:700 13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);line-height:1.18}
+  .slot.spare .slot-val{color:var(--muted);font-weight:500;font-size:12px}
+  .empty-buf{text-align:center;padding:10px 8px;color:var(--muted);font-size:12.5px;border:1.5px dashed var(--cell-border);border-radius:6px}
+
+  .copy-arrow{text-align:center;font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--warn);
+    background:var(--warn-soft);border-radius:5px;padding:3px 6px}
+  .legend-row{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:11.5px;color:var(--muted)}
+  .lg-chip{display:inline-flex;align-items:center;gap:4px}
+  .lg-sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    .slots{grid-template-columns:repeat(4,1fr)}
+    .trap-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn kịch bản hoặc tự bấm <code>push_back</code>, <code>pop_back</code>, <code>reserve</code>, <code>clear</code> để quan sát <code>size</code>, <code>capacity</code>, mở rộng vùng chứa mới và bẫy <code>v.size() - 1</code>.</p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <span class="act-lbl">Thử trực tiếp:</span>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600">x =
+      <input class="num-in" id="in-x" type="number" value="77" min="-999" max="999">
+    </label>
+    <button class="btn sm" id="act-push">push_back(x)</button>
+    <button class="btn sm ghost" id="act-pop">pop_back()</button>
+    <button class="btn sm ghost" id="act-clear">clear()</button>
+    <button class="btn sm ghost" id="act-res6">reserve(6)</button>
+    <button class="btn sm warn-btn" id="act-oob">Thử v[0] = 10</button>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card left-col">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Nhật ký lệnh C++ đã chạy</p>
+          <span class="badge" id="step-badge">Bước 1/1</span>
+        </div>
+        <div class="code" id="code-view"></div>
+      </div>
+      <div class="trap-box">
+        <div class="trap-title">
+          <span>Bẫy size_t</span>
+          <span id="trap-state-lbl"></span>
+        </div>
+        <div class="trap-grid" id="trap-grid"></div>
+      </div>
+    </div>
+
+    <div class="card right-col">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Trạng thái std::vector&lt;int&gt; v</p>
+          <span class="badge" id="cap-rule-badge">Gấp đôi sức chứa: 0&rarr;1&rarr;2&rarr;4&rarr;8</span>
+        </div>
+        <div class="metrics" id="metrics"></div>
+      </div>
+
+      <div class="buf-stage" id="buf-stage"></div>
+
+      <div class="legend-row">
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--accent-soft);border:1.5px solid var(--accent)"></i>Đang dùng (0..size-1)</span>
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--true-soft);border:1.5px solid var(--true)"></i>Vừa thêm</span>
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--spare-bg);border:1.5px dashed var(--spare-border)"></i>Ô dự phòng (size..cap-1)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  var BUOC = parseInt(qparam('buoc') || '0', 10) || 0;
+  var MAX_CAP = 16;
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(vector|int|void|return|push_back|pop_back|clear|reserve|size|capacity|empty)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  /* ==========================================================
+   * PURE VECTOR STATE ENGINE
+   * ========================================================== */
+  function createEmptyState(){
+    return {
+      data: [],
+      cap: 0,
+      reallocCount: 0,
+      lines: ['vector<int> v;'],
+      curLn: 0,
+      errLn: -1,
+      st: '',
+      justAddedIdx: -1,
+      reallocInfo: null,
+      oobError: null,
+      t: 'Khởi tạo vector<int> v; (rỗng)',
+      desc: 'Vector bắt đầu với size = 0, capacity = 0, empty() == true. Chú ý hộp bên trái: khi size == 0, v.size() - 1 quay vòng thành 18446744073709551615!'
+    };
+  }
+
+  function applyOp(prev, op){
+    var data = prev.data.slice();
+    var cap = prev.cap;
+    var reallocCount = prev.reallocCount;
+    var lines = prev.lines.slice();
+
+    if (op.type === 'push') {
+      var x = op.val;
+      if (data.length >= MAX_CAP) {
+        return {
+          data: data, cap: cap, reallocCount: reallocCount,
+          lines: lines.concat(['// Đã đạt giới hạn hiển thị 16 phần tử']),
+          curLn: lines.length, errLn: -1, st: 'warn',
+          justAddedIdx: -1, reallocInfo: null, oobError: null,
+          t: 'Đạt giới hạn hiển thị (' + MAX_CAP + ' phần tử)',
+          desc: 'Mô phỏng giới hạn tối đa ' + MAX_CAP + ' ô để giữ sơ đồ rõ ràng. Bạn có thể bấm pop_back() hoặc clear().'
+        };
+      }
+      var oldCap = cap;
+      var oldData = data.slice();
+      var didRealloc = false;
+      if (data.length === cap) {
+        cap = (cap === 0) ? 1 : Math.min(MAX_CAP, cap * 2);
+        reallocCount++;
+        didRealloc = true;
+      }
+      data.push(x);
+      var newLn = 'v.push_back(' + x + '); // sz=' + data.length + ', cap=' + cap;
+      lines.push(newLn);
+      return {
+        data: data, cap: cap, reallocCount: reallocCount,
+        lines: lines, curLn: lines.length - 1, errLn: -1,
+        st: didRealloc ? 'warn' : 'ok',
+        justAddedIdx: data.length - 1,
+        reallocInfo: didRealloc ? { oldCap: oldCap, newCap: cap, copied: oldData } : null,
+        oobError: null,
+        t: didRealloc
+          ? ('push_back(' + x + ') → Mở rộng vùng chứa: cap ' + oldCap + ' → ' + cap)
+          : ('push_back(' + x + ') → Thêm vào ô dự phòng [' + (data.length - 1) + ']'),
+        desc: didRealloc
+          ? (oldCap === 0
+              ? 'Vùng chứa chưa được cấp (cap = 0). Vector tạo vùng chứa mới sức chứa 1, đặt ' + x + ' vào v[0].'
+              : 'Vùng cũ đã đầy (size == cap == ' + oldCap + '). Vector tạo vùng chứa mới sức chứa ' + cap + ', chép ' + oldData.length + ' phần tử cũ sang, thêm ' + x + ' rồi thu hồi vùng cũ!')
+          : ('Còn ô dự phòng (size ' + (data.length - 1) + ' < cap ' + cap + '), chỉ đặt ngay ' + x + ' vào cuối mà không cần mở rộng.')
+      };
+    }
+
+    if (op.type === 'pop') {
+      if (data.length === 0) {
+        lines.push('v.pop_back(); // LỖI: vector đang rỗng!');
+        return {
+          data: data, cap: cap, reallocCount: reallocCount,
+          lines: lines, curLn: lines.length - 1, errLn: lines.length - 1, st: 'bad',
+          justAddedIdx: -1, reallocInfo: null,
+          oobError: 'pop_back() khi v.empty() == true',
+          t: 'Lỗi! Gọi v.pop_back() trên vector rỗng',
+          desc: 'Không có phần tử nào để xoá! Gọi pop_back() khi v.empty() == true gây hành vi không xác định (UB). Luôn kiểm tra if (!v.empty()) trước!'
+        };
+      }
+      var popped = data.pop();
+      lines.push('v.pop_back(); // bỏ ' + popped + ', sz=' + data.length + ', cap=' + cap);
+      return {
+        data: data, cap: cap, reallocCount: reallocCount,
+        lines: lines, curLn: lines.length - 1, errLn: -1, st: '',
+        justAddedIdx: -1, reallocInfo: null, oobError: null,
+        t: 'pop_back() bỏ phần tử cuối (' + popped + ')',
+        desc: 'size giảm từ ' + (data.length + 1) + ' xuống ' + data.length + ', nhưng capacity vẫn giữ nguyên ' + cap + ' để sẵn sàng nếu lại push_back().'
+      };
+    }
+
+    if (op.type === 'clear') {
+      data = [];
+      lines.push('v.clear(); // size=0, cap=' + cap);
+      return {
+        data: data, cap: cap, reallocCount: reallocCount,
+        lines: lines, curLn: lines.length - 1, errLn: -1, st: '',
+        justAddedIdx: -1, reallocInfo: null, oobError: null,
+        t: 'v.clear() → Xoá sạch các phần tử (size = 0)',
+        desc: 'Toàn bộ phần tử bị loại bỏ (size = 0, empty() = true), nhưng capacity vẫn giữ ' + cap + '. Chú ý hộp v.size() - 1 đã quay vòng thành số cực lớn!'
+      };
+    }
+
+    if (op.type === 'reserve') {
+      var target = Math.min(MAX_CAP, Math.max(0, op.cap));
+      if (target <= cap) {
+        lines.push('v.reserve(' + target + '); // cap=' + cap + ' >= ' + target + ', giữ nguyên');
+        return {
+          data: data, cap: cap, reallocCount: reallocCount,
+          lines: lines, curLn: lines.length - 1, errLn: -1, st: '',
+          justAddedIdx: -1, reallocInfo: null, oobError: null,
+          t: 'reserve(' + target + ') không đổi sức chứa',
+          desc: 'Vì sức chứa hiện tại (' + cap + ') đã lớn hơn hoặc bằng ' + target + ', reserve(' + target + ') không làm gì cả.'
+        };
+      }
+      var oldC = cap;
+      var oldD = data.slice();
+      cap = target;
+      reallocCount++;
+      lines.push('v.reserve(' + target + '); // mở trước cap=' + target);
+      return {
+        data: data, cap: cap, reallocCount: reallocCount,
+        lines: lines, curLn: lines.length - 1, errLn: -1, st: 'ok',
+        justAddedIdx: -1,
+        reallocInfo: { oldCap: oldC, newCap: cap, copied: oldD },
+        oobError: null,
+        t: 'v.reserve(' + target + ') → Mở rộng trước sức chứa lên ' + target,
+        desc: 'reserve(' + target + ') chuẩn bị trước ' + target + ' chỗ dự phòng (nhưng size vẫn là ' + data.length + '!). Nhờ vậy các lần push_back kế tiếp không phải mở rộng nhiều lần.'
+      };
+    }
+
+    if (op.type === 'oob') {
+      if (data.length === 0) {
+        lines.push('v[0] = 10; // LỖI NGOÀI BIÊN (size == 0)!');
+        return {
+          data: data, cap: cap, reallocCount: reallocCount,
+          lines: lines, curLn: lines.length - 1, errLn: lines.length - 1, st: 'bad',
+          justAddedIdx: -1, reallocInfo: null,
+          oobError: 'v[0] = 10 khi v.size() == 0',
+          t: 'Lỗi ngoài biên! v[0] = 10 khi vector đang rỗng',
+          desc: 'Toán tử v[0] KHÔNG tự thêm phần tử mới! Dù capacity có là ' + cap + ' đi nữa, v.size() đang là 0 nên v[0] chưa tồn tại → gây hành vi không xác định (UB). Phải dùng v.push_back(10)!'
+        };
+      } else {
+        data[0] = 10;
+        lines.push('v[0] = 10; // hợp lệ vì size=' + data.length + ' > 0');
+        return {
+          data: data, cap: cap, reallocCount: reallocCount,
+          lines: lines, curLn: lines.length - 1, errLn: -1, st: 'ok',
+          justAddedIdx: 0, reallocInfo: null, oobError: null,
+          t: 'v[0] = 10 hợp lệ vì phần tử [0] đã tồn tại',
+          desc: 'Vì size = ' + data.length + ' > 0, phần tử v[0] đã tồn tại nên ghi đè v[0] = 10 hoàn toàn hợp lệ.'
+        };
+      }
+    }
+
+    return prev;
+  }
+
+  function buildScenarioSteps(sc){
+    var ops = [];
+    if (sc === 'growth') {
+      ops = [
+        { type: 'push', val: 12 },
+        { type: 'push', val: 25 },
+        { type: 'push', val: 38 },
+        { type: 'push', val: 44 },
+        { type: 'push', val: 57 },
+        { type: 'pop' },
+        { type: 'clear' }
+      ];
+    } else if (sc === 'reserve') {
+      ops = [
+        { type: 'reserve', cap: 6 },
+        { type: 'push', val: 12 },
+        { type: 'push', val: 25 },
+        { type: 'push', val: 38 },
+        { type: 'push', val: 44 },
+        { type: 'pop' }
+      ];
+    } else { // traps
+      ops = [
+        { type: 'oob' },
+        { type: 'pop' },
+        { type: 'push', val: 10 },
+        { type: 'oob' }
+      ];
+    }
+    var arr = [createEmptyState()];
+    for (var i = 0; i < ops.length; i++) {
+      arr.push(applyOp(arr[arr.length - 1], ops[i]));
+    }
+    return arr;
+  }
+
+  /* ==========================================================
+   * UI CONTROLLER
+   * ========================================================== */
+  var state = {
+    sc: 'growth',
+    snaps: buildScenarioSteps('growth'),
+    stepIdx: 0,
+    timer: null
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(){
+    var items = [
+      { id: 'growth', label: '1. Mở rộng 0→1→2→4→8' },
+      { id: 'reserve', label: '2. Dùng reserve(6)' },
+      { id: 'traps', label: '3. Bẫy vector rỗng' }
+    ];
+    $('tabs').innerHTML = items.map(function(t){
+      return '<button class="tab" role="tab" aria-selected="' + (t.id === state.sc ? 'true' : 'false') + '" data-id="' + t.id + '">' + esc(t.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(b){
+      b.onclick = function(){
+        stopTimer();
+        state.sc = b.getAttribute('data-id');
+        state.snaps = buildScenarioSteps(state.sc);
+        state.stepIdx = 0;
+        renderTabs();
+        renderCurrent();
+      };
+    });
+  }
+
+  function renderSlots(data, cap, opts){
+    opts = opts || {};
+    if (cap === 0) {
+      return '<div class="empty-buf">Chưa có vùng chứa phần tử (<code>capacity == 0</code>)</div>';
+    }
+    var out = [];
+    for (var i = 0; i < cap; i++) {
+      var used = i < data.length;
+      var cls = 'slot';
+      if (!used) cls += ' spare';
+      else if (opts.justAddedIdx === i) cls += ' just-added';
+      else if (opts.copiedAll) cls += ' copied';
+      out.push(
+        '<div class="' + cls + '">' +
+          '<div class="slot-idx">[' + i + ']</div>' +
+          '<div class="slot-val">' + (used ? data[i] : '&mdash;') + '</div>' +
+        '</div>'
+      );
+    }
+    return '<div class="slots">' + out.join('') + '</div>';
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var total = state.snaps.length;
+
+    $('step-badge').textContent = 'Bước ' + (state.stepIdx + 1) + '/' + total;
+
+    var stEl = $('status');
+    stEl.className = 'status' + (s.st ? ' ' + s.st : '');
+    stEl.innerHTML = '<b>Bước ' + (state.stepIdx + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+    $('code-view').innerHTML = s.lines.map(function(l, i){
+      var cls = 'ln';
+      if (s.errLn === i) cls += ' err-line';
+      else if (s.curLn === i) cls += ' cur';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+    $('code-view').scrollTop = $('code-view').scrollHeight;
+
+    // Unsigned trap comparison
+    var sz = s.data.length;
+    var isZero = sz === 0;
+    var uVal = isZero ? '18446744073709551615' : String(sz - 1);
+    var sVal = String(sz - 1);
+    $('trap-state-lbl').textContent = isZero ? 'CẢNH BÁO QUAY VÒNG!' : 'An toàn (size > 0)';
+    $('trap-state-lbl').style.color = isZero ? 'var(--false)' : 'var(--true)';
+    $('trap-grid').innerHTML =
+      '<div class="trap-cell ' + (isZero ? 'danger' : '') + '">' +
+        '<div class="trap-k">v.size() - 1 (size_t)</div>' +
+        '<div class="trap-v">' + uVal + '</div>' +
+      '</div>' +
+      '<div class="trap-cell safe">' +
+        '<div class="trap-k">static_cast&lt;int&gt;(v.size()) - 1</div>' +
+        '<div class="trap-v">' + sVal + '</div>' +
+      '</div>';
+
+    // Metrics
+    var isEmpty = sz === 0;
+    $('metrics').innerHTML =
+      '<div class="m-card"><div class="m-k">v.size()</div><div class="m-v accent">' + sz + '</div></div>' +
+      '<div class="m-card"><div class="m-k">v.capacity()</div><div class="m-v">' + s.cap + '</div></div>' +
+      '<div class="m-card"><div class="m-k">v.empty()</div><div class="m-v ' + (isEmpty ? 'warn' : 'true') + '">' + (isEmpty ? 'true' : 'false') + '</div></div>' +
+      '<div class="m-card"><div class="m-k">Số lần mở rộng</div><div class="m-v">' + s.reallocCount + '</div></div>';
+
+    // Buffer stage
+    var bufHtml = '';
+    if (s.oobError) {
+      bufHtml += '<div class="buf-box err-buf">' +
+        '<div class="buf-head"><span style="color:var(--false)">Cảnh báo truy cập / thao tác sai</span><span class="badge bad">UB!</span></div>' +
+        '<div style="font-size:12.5px;color:var(--false)"><b>' + esc(s.oobError) + '</b> — Ô hợp lệ chỉ nằm trong <code>0 .. size - 1</code> (hiện <code>size = ' + sz + '</code>).</div>' +
+      '</div>';
+    }
+    if (s.reallocInfo) {
+      var ri = s.reallocInfo;
+      if (ri.oldCap > 0) {
+        bufHtml += '<div class="buf-box old-buf">' +
+          '<div class="buf-head"><span>Vùng chứa cũ (đã đầy / sắp thu hồi)</span><span class="badge">cap = ' + ri.oldCap + '</span></div>' +
+          renderSlots(ri.copied, ri.oldCap, { copiedAll: true }) +
+        '</div>' +
+        '<div class="copy-arrow">&darr; Tạo vùng chứa mới (cap = ' + ri.newCap + '), sao chép ' + ri.copied.length + ' phần tử sang &amp; thu hồi vùng cũ &darr;</div>';
+      }
+      bufHtml += '<div class="buf-box new-buf">' +
+        '<div class="buf-head"><span style="color:var(--true)">Vùng chứa mới đang sử dụng</span><span class="badge ok">size=' + sz + ' / cap=' + s.cap + '</span></div>' +
+        renderSlots(s.data, s.cap, { justAddedIdx: s.justAddedIdx }) +
+      '</div>';
+    } else {
+      bufHtml += '<div class="buf-box">' +
+        '<div class="buf-head"><span>Vùng chứa nội bộ của v</span><span class="badge">size=' + sz + ' / cap=' + s.cap + '</span></div>' +
+        renderSlots(s.data, s.cap, { justAddedIdx: s.justAddedIdx }) +
+      '</div>';
+    }
+    $('buf-stage').innerHTML = bufHtml;
+
+    $('prev').disabled = state.stepIdx <= 0;
+    $('next').disabled = state.stepIdx >= total - 1;
+    $('all').disabled = state.stepIdx >= total - 1;
+  }
+
+  function execManualOp(op){
+    stopTimer();
+    var base = state.snaps[state.stepIdx];
+    var nextSnap = applyOp(base, op);
+    state.snaps = state.snaps.slice(0, state.stepIdx + 1).concat([nextSnap]);
+    state.stepIdx = state.snaps.length - 1;
+    renderCurrent();
+  }
+
+  $('next').onclick = function(){ stopTimer(); if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+  $('prev').onclick = function(){ stopTimer(); if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+  $('all').onclick = function(){
+    stopTimer();
+    if (state.stepIdx >= state.snaps.length - 1) return;
+    state.timer = setInterval(function(){
+      if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); }
+      else stopTimer();
+    }, 750);
+  };
+  $('reset').onclick = function(){
+    stopTimer();
+    state.snaps = buildScenarioSteps(state.sc);
+    state.stepIdx = 0;
+    renderCurrent();
+  };
+
+  $('act-push').onclick = function(){
+    var raw = parseInt($('in-x').value, 10);
+    if (isNaN(raw)) raw = 0;
+    raw = Math.max(-999, Math.min(999, raw));
+    $('in-x').value = raw;
+    execManualOp({ type: 'push', val: raw });
+  };
+  $('act-pop').onclick = function(){ execManualOp({ type: 'pop' }); };
+  $('act-clear').onclick = function(){ execManualOp({ type: 'clear' }); };
+  $('act-res6').onclick = function(){ execManualOp({ type: 'reserve', cap: 6 }); };
+  $('act-oob').onclick = function(){ execManualOp({ type: 'oob' }); };
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+
+  window.VectorLifecycleModel = {
+    createEmptyState: createEmptyState,
+    applyOp: applyOp,
+    buildScenarioSteps: buildScenarioSteps
+  };
+
+  renderTabs();
+  if (BUOC > 0) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+  renderCurrent();
+})();
+</script>
+</body>
+</html>

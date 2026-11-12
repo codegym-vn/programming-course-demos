@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Tìm kiếm và Sắp xếp Cơ bản C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --violet:#7c3aed; --violet-soft:#f3e8ff;
+    --amber:#d97706; --amber-soft:#fef3c7;
+    --bar-default:#94a3b8; --bar-sorted:#16a34a; --bar-target:#2563eb; --bar-scan:#f59e0b; --bar-min:#7c3aed;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --violet:#c084fc; --violet-soft:#2e1065;
+      --amber:#fbbf24; --amber-soft:#3a2e10;
+      --bar-default:#475569; --bar-sorted:#22c55e; --bar-target:#3b82f6; --bar-scan:#f59e0b; --bar-min:#a855f7;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  code{font-size:12.5px;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .toggle-chip{border:1px solid var(--line);background:var(--code-bg);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:600 12px system-ui,-apple-system,sans-serif;transition:all .15s}
+  .toggle-chip.on{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+  .toggle-chip.off{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .toggle-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:54px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge-group{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .badge{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:2px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+  .badge.violet{background:var(--violet-soft);color:var(--violet)}
+  .badge.muted{background:var(--code-bg);color:var(--muted);border:1px solid var(--line)}
+
+  .stage-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+
+  /* Search tracks */
+  .track{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin-bottom:7px}
+  .track:last-child{margin-bottom:0}
+  .track-strip{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px}
+  .s-col{display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0}
+  .s-idx{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);text-align:center}
+  .s-cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;padding:5px 2px;text-align:center;
+    font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;transition:all .16s}
+  .s-cell.in-range{border-color:var(--accent);background:var(--accent-soft)}
+  .s-cell.is-mid{border-color:var(--warn);background:var(--warn-soft);box-shadow:0 0 0 2px rgba(217,119,6,.2)}
+  .s-cell.is-cur{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+  .s-cell.is-found{border-color:var(--true);background:var(--true-soft);color:var(--true);box-shadow:0 0 0 2px rgba(21,128,61,.2)}
+  .s-cell.is-dim{opacity:.38;border-style:dashed;text-decoration:line-through}
+  .s-cell.is-miss{border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .marker-slot{min-height:20px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .mpill{font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 4px;border-radius:4px;white-space:nowrap;line-height:1.2}
+  .mp-i{background:var(--accent-fill);color:#fff}
+  .mp-l{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+  .mp-m{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+  .mp-r{background:var(--violet-soft);color:var(--violet);border:1px solid var(--violet)}
+  .mp-ok{background:var(--true-soft);color:var(--true);border:1px solid var(--true)}
+  .mp-j{background:var(--amber-soft);color:var(--warn);border:1px solid var(--warn)}
+
+  .info-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:7px}
+  .info-card{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+  .info-k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  .info-v{font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--text);word-break:break-word}
+
+  /* Sort bars + cells */
+  .metrics-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:8px}
+  .m-card{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:5px 7px;text-align:center}
+  .m-k{font-size:11px;color:var(--muted);font-weight:600}
+  .m-v{font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--text);margin-top:1px}
+  .m-v.ok{color:var(--true)} .m-v.warn{color:var(--warn)} .m-v.violet{color:var(--violet)}
+
+  .sort-cols{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;padding:4px 2px}
+  .sort-cols.n7{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+  .bar-col{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-width:0}
+  .bar-wrap{height:98px;display:flex;align-items:flex-end;justify-content:center;padding:0 6px}
+  .bar{width:100%;max-width:44px;border-radius:5px 5px 2px 2px;background:var(--bar-default);transition:height .18s,background .18s}
+  .bar.sorted{background:var(--bar-sorted)}
+  .bar.target{background:var(--bar-target)}
+  .bar.scan{background:var(--bar-scan)}
+  .bar.min{background:var(--bar-min)}
+  .bar.swap{background:var(--warn)}
+  .bar.hole{background:transparent;border:2px dashed var(--line)}
+
+  .val-box{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:7px;padding:6px 2px;
+    text-align:center;font:700 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;transition:all .16s}
+  .val-box.sorted{border-color:var(--true);background:var(--true-soft)}
+  .val-box.target{border-color:var(--accent);background:var(--accent-soft)}
+  .val-box.scan{border-color:var(--warn);background:var(--warn-soft)}
+  .val-box.min{border-color:var(--violet);background:var(--violet-soft)}
+  .val-box.swap{border-color:var(--warn);background:var(--warn-soft);box-shadow:0 0 0 2px rgba(217,119,6,.2)}
+  .val-box.hole{border-style:dashed;border-color:var(--accent);background:transparent;color:var(--accent);font-size:11.5px}
+  .val-box.sentinel{border-style:dashed;border-color:var(--line);background:var(--bg);color:var(--muted);font-size:11.5px}
+  .val-box.sentinel.hit{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+
+  /* Insertion key hand */
+  .hand-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);
+    border:1px solid var(--line);border-radius:7px;padding:6px 10px;margin-bottom:7px;min-height:44px}
+  .hand-card{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;
+    border:2px solid var(--violet);background:var(--violet-soft);color:var(--violet);
+    font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .hand-card.empty{border-style:dashed;border-color:var(--line);background:var(--code-bg);color:var(--muted);font-weight:600;font-size:12.5px}
+
+  .op-strip{display:grid;grid-template-columns:1.25fr 1fr;gap:7px;margin-top:7px}
+  .op-card{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+  .op-line{font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--text);margin-top:2px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--muted);margin-top:7px}
+  .lg-dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:middle}
+
+  /* Merge rows */
+  .merge-row{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 9px;margin-bottom:6px}
+  .merge-row:last-child{margin-bottom:0}
+  .merge-cells{display:grid;gap:5px}
+  .merge-cells.c3{grid-template-columns:repeat(3,minmax(0,1fr));max-width:290px}
+  .merge-cells.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .merge-cells.c6{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .merge-cells.c7{grid-template-columns:repeat(7,minmax(0,1fr))}
+  .merge-cells.c9{grid-template-columns:repeat(9,minmax(0,1fr))}
+  .m-cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;padding:5px 2px;
+    text-align:center;font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;transition:all .16s}
+  .m-cell.used{opacity:.38;border-style:dashed}
+  .m-cell.cur-a{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+  .m-cell.cur-b{border-color:var(--warn);background:var(--warn-soft);box-shadow:0 0 0 2px rgba(217,119,6,.18)}
+  .m-cell.from-a{border-color:var(--accent);background:var(--accent-soft)}
+  .m-cell.from-b{border-color:var(--warn);background:var(--warn-soft)}
+  .m-cell.fresh{box-shadow:0 0 0 2px var(--true)}
+  .m-cell.end{border-style:dashed;background:var(--code-bg);color:var(--muted);font-size:11.5px}
+  .m-cell.end.hit{border-color:var(--true);color:var(--true)}
+  .prog-track{height:6px;background:var(--line);border-radius:99px;overflow:hidden;flex:1;min-width:80px}
+  .prog-fill{height:100%;background:var(--true);transition:width .2s}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .lead{font-size:12.5px}
+    .track-strip{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+    .info-strip{grid-template-columns:1fr}
+    .metrics-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .op-strip{grid-template-columns:1fr}
+    .bar-wrap{height:76px;padding:0 3px}
+    .sort-cols{gap:4px}
+    .sort-cols.n7{gap:3px}
+    .val-box{font-size:13.5px;padding:5px 1px}
+    .merge-cells.c7,.merge-cells.c9{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .merge-cells.c6{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .merge-cells.c3{max-width:none}
+    .m-cell{font-size:13px;padding:4px 1px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div id="workspace"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  /* =========================================================
+     PURE ALGORITHM STEP MODELS (Verified with Node & g++ -std=c++20)
+     ========================================================= */
+
+  var SEARCH_ARRAY = [4, 9, 13, 18, 22, 27, 35, 41, 50, 62, 71, 84];
+  var SEARCH_SCENARIOS = {
+    x71: { x: 71, label: 'x = 71 (Gần cuối)' },
+    x27: { x: 27, label: 'x = 27 (Ngay giữa)' },
+    x84: { x: 84, label: 'x = 84 (Biên phải)' },
+    x45: { x: 45, label: 'x = 45 (Không có)' }
+  };
+
+  function buildSearchSteps(scKey, binOnly){
+    var sc = SEARCH_SCENARIOS[scKey] || SEARCH_SCENARIOS.x71;
+    var a = SEARCH_ARRAY.slice();
+    var n = a.length;
+    var x = sc.x;
+
+    // Precompute linear search trace
+    var linStates = [{ i: -1, comps: 0, done: false, foundIdx: -1, desc: 'Chưa so sánh phần tử nào.' }];
+    var linFound = -1;
+    for (var li = 0; li < n; li++) {
+      var lComps = li + 1;
+      if (a[li] === x) {
+        linFound = li;
+        linStates.push({
+          i: li, comps: lComps, done: true, foundIdx: li,
+          desc: 'a[' + li + '] = ' + a[li] + ' == ' + x + ' -> Tìm thấy!'
+        });
+        break;
+      } else {
+        linStates.push({
+          i: li, comps: lComps, done: false, foundIdx: -1,
+          desc: 'a[' + li + '] = ' + a[li] + ' != ' + x + ' -> đi tiếp'
+        });
+      }
+    }
+    if (linFound === -1) {
+      linStates.push({
+        i: n, comps: n, done: true, foundIdx: -1,
+        desc: 'Đã quét hết ' + n + ' phần tử -> trả về -1.'
+      });
+    }
+
+    // Precompute binary search trace
+    var binStates = [{
+      left: 0, right: n - 1, mid: null, comps: 0, done: false, foundIdx: -1,
+      formula: 'mid = left + (right - left) / 2',
+      action: 'Khởi tạo đoạn ứng viên [0, ' + (n - 1) + ']'
+    }];
+    var l = 0, r = n - 1, bComps = 0, bFound = -1;
+    while (l <= r) {
+      var mid = l + Math.floor((r - l) / 2);
+      bComps++;
+      var fStr = l + ' + (' + r + ' - ' + l + ') / 2 = ' + mid;
+      if (a[mid] === x) {
+        bFound = mid;
+        binStates.push({
+          left: l, right: r, mid: mid, comps: bComps, done: true, foundIdx: mid,
+          formula: fStr,
+          action: 'a[' + mid + '] = ' + a[mid] + ' == ' + x + ' -> Tìm thấy tại chỉ số ' + mid + '!'
+        });
+        break;
+      } else if (a[mid] < x) {
+        binStates.push({
+          left: l, right: r, mid: mid, comps: bComps, done: false, foundIdx: -1,
+          formula: fStr,
+          action: 'a[' + mid + '] = ' + a[mid] + ' < ' + x + ' -> bỏ nửa trái, đặt left = ' + (mid + 1)
+        });
+        l = mid + 1;
+      } else {
+        binStates.push({
+          left: l, right: r, mid: mid, comps: bComps, done: false, foundIdx: -1,
+          formula: fStr,
+          action: 'a[' + mid + '] = ' + a[mid] + ' > ' + x + ' -> bỏ nửa phải, đặt right = ' + (mid - 1)
+        });
+        r = mid - 1;
+      }
+    }
+    if (bFound === -1) {
+      binStates.push({
+        left: l, right: r, mid: null, comps: bComps, done: true, foundIdx: -1,
+        formula: 'left = ' + l + ' > right = ' + r,
+        action: 'Khoảng ứng viên rỗng (left > right) -> dừng và trả về -1.'
+      });
+    }
+
+    var total = binOnly ? binStates.length : Math.max(linStates.length, binStates.length);
+    var snaps = [];
+    for (var k = 0; k < total; k++) {
+      var ls = linStates[Math.min(k, linStates.length - 1)];
+      var bs = binStates[Math.min(k, binStates.length - 1)];
+      var st = '';
+      var title, desc;
+      if (k === 0) {
+        title = 'Khởi tạo tìm x = ' + x + ' trên 12 phần tử đã sắp xếp';
+        desc = binOnly
+          ? 'Đoạn ứng viên ban đầu là [0, 11]. Bấm Bước tiếp để tính mid = left + (right - left) / 2.'
+          : 'Linear Search bắt đầu từ i = 0; Binary Search giữ đoạn ứng viên [0, 11].';
+      } else if (k === total - 1) {
+        if (bs.foundIdx !== -1) {
+          st = 'ok';
+          title = 'Kết thúc: Tìm thấy x = ' + x + ' tại chỉ số ' + bs.foundIdx;
+          desc = binOnly
+            ? 'Binary Search chỉ cần ' + bs.comps + ' phép so sánh để tìm ra chỉ số ' + bs.foundIdx + '.'
+            : 'Binary Search tìm thấy sau ' + bs.comps + ' phép so sánh, so với ' + ls.comps + ' phép so sánh của Linear Search.';
+        } else {
+          st = 'warn';
+          title = 'Kết thúc: Không tìm thấy x = ' + x + ' (trả về -1)';
+          desc = binOnly
+            ? 'Khi left = ' + bs.left + ' > right = ' + bs.right + ', không còn phần tử nào để xét -> dừng sau ' + bs.comps + ' phép so sánh.'
+            : 'Binary Search kết luận -1 sau ' + bs.comps + ' phép so sánh; Linear Search phải duyệt hết ' + ls.comps + ' phần tử.';
+        }
+      } else {
+        if (bs.done && bs.foundIdx !== -1 && !binOnly && !ls.done) {
+          st = 'ok';
+          title = 'Binary Search đã xong (' + bs.comps + ' phép), Linear vẫn đang quét tiếp!';
+          desc = 'Linear đang kiểm tra ' + ls.desc;
+        } else {
+          title = 'Lượt so sánh thứ ' + k + ' (tìm x = ' + x + ')';
+          desc = bs.action + (binOnly ? '' : ' | Linear: ' + ls.desc);
+        }
+      }
+      snaps.push({
+        arr: a, x: x, binOnly: !!binOnly,
+        lin: ls, bin: bs, st: st, t: title, desc: desc
+      });
+    }
+    return snaps;
+  }
+
+  var SELECTION_DATASETS = {
+    rand:   { label: 'Ngẫu nhiên',    arr: [38, 12, 27, 8, 44, 19] },
+    sorted: { label: 'Đã sắp xếp',    arr: [5, 11, 18, 24, 31, 40] },
+    rev:    { label: 'Đảo ngược',     arr: [42, 33, 25, 17, 9, 4] },
+    dup:    { label: 'Có phần tử trùng', arr: [22, 10, 22, 5, 15, 10] }
+  };
+
+  function buildSelectionSteps(dsKey){
+    var ds = SELECTION_DATASETS[dsKey] || SELECTION_DATASETS.rand;
+    var a = ds.arr.slice();
+    var n = a.length;
+    var comps = 0, swaps = 0;
+    var snaps = [];
+
+    snaps.push({
+      arr: a.slice(), sortedEnd: 0, i: 0, j: null, minIdx: 0, swapPair: null,
+      comps: 0, swaps: 0, st: '',
+      op: 'Chưa bắt đầu vòng lặp i = 0 .. ' + (n - 2),
+      t: 'Khởi tạo Selection Sort (' + ds.label + ')',
+      desc: 'Đoạn đã sắp xếp ban đầu rỗng. Mỗi lượt i tìm vị trí min_idx nhỏ nhất trong [i, ' + (n - 1) + '] rồi đưa về i.'
+    });
+
+    for (var i = 0; i < n - 1; i++) {
+      var minIdx = i;
+      for (var j = i + 1; j < n; j++) {
+        comps++;
+        var updated = false;
+        if (a[j] < a[minIdx]) {
+          minIdx = j;
+          updated = true;
+        }
+        snaps.push({
+          arr: a.slice(), sortedEnd: i, i: i, j: j, minIdx: minIdx, swapPair: null,
+          comps: comps, swaps: swaps, st: updated ? 'warn' : '',
+          op: 'if (a[' + j + '] < a[min_idx]) -> ' + a[j] + (updated ? ' < ' : ' >= ') + a[updated ? minIdx : minIdx] + (updated ? ' : min_idx = ' + minIdx : ' : giữ nguyên'),
+          t: 'Lượt i = ' + i + ': so sánh a[' + j + '] = ' + a[j] + ' với min hiện tại',
+          desc: updated
+            ? 'Phát hiện giá trị nhỏ hơn ' + a[minIdx] + ' tại chỉ số ' + minIdx + ', cập nhật min_idx = ' + minIdx + '.'
+            : 'Không nhỏ hơn min hiện tại (tại chỉ số ' + minIdx + '), giữ nguyên min_idx = ' + minIdx + '.'
+        });
+        // Fix op string cleanly when updated is true so it compares against previous min value
+        if (updated) {
+          var prevMinVal = snaps[snaps.length - 2].arr[snaps[snaps.length - 2].minIdx];
+          if (snaps.length >= 2 && snaps[snaps.length - 2].i === i) {
+            snaps[snaps.length - 1].op = 'a[' + j + '] (' + a[j] + ') < a[' + snaps[snaps.length - 2].minIdx + '] (' + prevMinVal + ') -> min_idx = ' + minIdx;
+          } else {
+            snaps[snaps.length - 1].op = 'a[' + j + '] (' + a[j] + ') < a[' + i + '] (' + a[i] + ') -> min_idx = ' + minIdx;
+          }
+        } else {
+          snaps[snaps.length - 1].op = 'a[' + j + '] (' + a[j] + ') >= a[' + minIdx + '] (' + a[minIdx] + ') -> giữ min_idx = ' + minIdx;
+        }
+      }
+
+      if (minIdx !== i) {
+        var tmp = a[i]; a[i] = a[minIdx]; a[minIdx] = tmp;
+        swaps++;
+        snaps.push({
+          arr: a.slice(), sortedEnd: i + 1, i: i, j: null, minIdx: minIdx, swapPair: [i, minIdx],
+          comps: comps, swaps: swaps, st: 'ok',
+          op: 'swap(a[' + i + '], a[' + minIdx + '])',
+          t: 'Kết thúc lượt i = ' + i + ': hoán đổi a[' + i + '] và a[' + minIdx + ']',
+          desc: 'Đưa giá trị nhỏ nhất ' + a[i] + ' về vị trí cố định i = ' + i + '. Tổng số lần hoán đổi: ' + swaps + '.'
+        });
+      } else {
+        snaps.push({
+          arr: a.slice(), sortedEnd: i + 1, i: i, j: null, minIdx: i, swapPair: null,
+          comps: comps, swaps: swaps, st: 'ok',
+          op: 'min_idx == ' + i + ': không cần hoán đổi',
+          t: 'Kết thúc lượt i = ' + i + ': giữ nguyên tại chỗ',
+          desc: 'Phần tử a[' + i + '] = ' + a[i] + ' đã là nhỏ nhất trong đoạn còn lại nên không tốn lần hoán đổi nào.'
+        });
+      }
+    }
+
+    snaps.push({
+      arr: a.slice(), sortedEnd: n, i: n - 1, j: null, minIdx: null, swapPair: null,
+      comps: comps, swaps: swaps, st: 'ok',
+      op: 'Hoàn tất: 15 phép so sánh, ' + swaps + ' lần hoán đổi',
+      t: 'Hoàn tất Selection Sort (' + ds.label + ')',
+      desc: 'Phần tử cuối a[' + (n - 1) + '] tự động đúng vị trí. Tổng cộng luôn là ' + comps + ' phép so sánh (6*5/2) và chỉ ' + swaps + ' lần hoán đổi.'
+    });
+
+    return snaps;
+  }
+
+  var BUBBLE_DATASETS = {
+    rand:   { label: 'Ngẫu nhiên', arr: [34, 15, 42, 8, 23, 11] },
+    sorted: { label: 'Đã sắp xếp', arr: [7, 14, 21, 28, 35, 42] },
+    near:   { label: 'Gần xếp',    arr: [7, 14, 28, 21, 35, 42] },
+    rev:    { label: 'Đảo ngược',  arr: [48, 39, 30, 22, 13, 5] }
+  };
+
+  function buildBubbleSteps(dsKey, useOpt){
+    var ds = BUBBLE_DATASETS[dsKey] || BUBBLE_DATASETS.rand;
+    var a = ds.arr.slice();
+    var n = a.length;
+    var comps = 0, swaps = 0, passes = 0;
+    var snaps = [];
+
+    snaps.push({
+      arr: a.slice(), sortedFrom: n, pass: 0, pair: null, didSwap: false,
+      swappedFlag: false, useOpt: !!useOpt, earlyStop: false,
+      passes: 0, comps: 0, swaps: 0, st: '',
+      op: 'Chế độ cờ swapped: ' + (useOpt ? 'BẬT (dừng sớm)' : 'TẮT (chạy đủ n - 1 lượt)'),
+      t: 'Khởi tạo Bubble Sort (' + ds.label + ')',
+      desc: 'Mỗi lượt duyệt so sánh từng cặp kề nhau (a[j], a[j + 1]) để đẩy phần tử lớn nhất về cuối đoạn chưa xếp.'
+    });
+
+    for (var i = 0; i < n - 1; i++) {
+      passes++;
+      var swapped = false;
+      for (var j = 0; j < n - 1 - i; j++) {
+        comps++;
+        var swappedNow = false;
+        var beforeL = a[j], beforeR = a[j + 1];
+        if (a[j] > a[j + 1]) {
+          var tmp = a[j]; a[j] = a[j + 1]; a[j + 1] = tmp;
+          swapped = true;
+          swappedNow = true;
+          swaps++;
+        }
+        snaps.push({
+          arr: a.slice(), sortedFrom: n - i, pass: passes, pair: [j, j + 1], didSwap: swappedNow,
+          swappedFlag: swapped, useOpt: !!useOpt, earlyStop: false,
+          passes: passes, comps: comps, swaps: swaps, st: swappedNow ? 'warn' : '',
+          op: beforeL + (swappedNow ? ' > ' : ' <= ') + beforeR + (swappedNow ? ' -> swap & swapped = true' : ' -> giữ nguyên'),
+          t: 'Lượt ' + passes + ' (i = ' + i + '): xét cặp a[' + j + '] và a[' + (j + 1) + ']',
+          desc: swappedNow
+            ? beforeL + ' > ' + beforeR + ': hoán đổi vị trí hai phần tử kề nhau và bật cờ swapped = true.'
+            : beforeL + ' <= ' + beforeR + ': đúng thứ tự, không hoán đổi (cờ swapped = ' + swapped + ').'
+        });
+      }
+
+      if (useOpt && !swapped) {
+        snaps.push({
+          arr: a.slice(), sortedFrom: 0, pass: passes, pair: null, didSwap: false,
+          swappedFlag: false, useOpt: true, earlyStop: true,
+          passes: passes, comps: comps, swaps: swaps, st: 'ok',
+          op: 'Hết lượt ' + passes + ' với swapped == false -> Thoát sớm!',
+          t: 'Hết lượt ' + passes + ' với swapped == false -> Thoát sớm!',
+          desc: 'Không có bất kỳ cặp nào đổi chỗ trong lượt ' + passes + ', dãy đã có thứ tự tăng dần. Dừng ngay với ' + comps + ' phép so sánh!'
+        });
+        return snaps;
+      } else {
+        snaps.push({
+          arr: a.slice(), sortedFrom: n - 1 - i, pass: passes, pair: null, didSwap: false,
+          swappedFlag: swapped, useOpt: !!useOpt, earlyStop: false,
+          passes: passes, comps: comps, swaps: swaps, st: 'ok',
+          op: 'Cuối lượt ' + passes + ': a[' + (n - 1 - i) + '] = ' + a[n - 1 - i] + ' cố định',
+          t: 'Kết thúc lượt ' + passes + ': cố định a[' + (n - 1 - i) + '] = ' + a[n - 1 - i],
+          desc: (!swapped && !useOpt)
+            ? 'Không có hoán đổi nào ở lượt này, nhưng vì đã TẮT cờ swapped nên thuật toán vẫn tiếp tục các lượt còn lại.'
+            : 'Phần tử lớn nhất của đoạn chưa xếp đã nổi về vị trí ' + (n - 1 - i) + '.'
+        });
+      }
+    }
+
+    snaps.push({
+      arr: a.slice(), sortedFrom: 0, pass: passes, pair: null, didSwap: false,
+      swappedFlag: false, useOpt: !!useOpt, earlyStop: false,
+      passes: passes, comps: comps, swaps: swaps, st: 'ok',
+      op: 'Hoàn tất sau ' + passes + ' lượt, ' + comps + ' so sánh, ' + swaps + ' hoán đổi',
+      t: 'Hoàn tất Bubble Sort (' + ds.label + ')',
+      desc: 'Toàn bộ dãy đã được sắp xếp tăng dần. Tổng cộng ' + passes + ' lượt, ' + comps + ' phép so sánh và ' + swaps + ' lần hoán đổi.'
+    });
+
+    return snaps;
+  }
+
+  var INSERTION_DATASETS = {
+    rand:   { label: 'Ngẫu nhiên',  arr: [26, 14, 35, 9, 21, 17] },
+    near:   { label: 'Gần như xếp', arr: [8, 13, 19, 16, 28, 34] },
+    sorted: { label: 'Đã sắp xếp',  arr: [5, 11, 17, 23, 29, 36] },
+    rev:    { label: 'Đảo ngược',   arr: [40, 32, 24, 18, 10, 3] }
+  };
+
+  function buildInsertionSteps(dsKey){
+    var ds = INSERTION_DATASETS[dsKey] || INSERTION_DATASETS.rand;
+    var a = ds.arr.slice();
+    var n = a.length;
+    var comps = 0, shifts = 0;
+    var snaps = [];
+
+    snaps.push({
+      arr: a.slice(), sortedEnd: 1, i: 0, j: null, key: null, hole: null, shifted: null,
+      hitSentinel: false, comps: 0, shifts: 0, st: '',
+      op: 'Coi đoạn đầu a[0..0] = {' + a[0] + '} đã có thứ tự',
+      t: 'Khởi tạo Insertion Sort (' + ds.label + ')',
+      desc: 'Bắt đầu từ i = 1, mỗi lượt nhấc a[i] lên làm thẻ key, dịch các phần tử lớn hơn sang phải rồi chèn key vào a[j + 1].'
+    });
+
+    for (var i = 1; i < n; i++) {
+      var key = a[i];
+      var j = i - 1;
+      var disp = a.slice();
+      disp[i] = null; // hole at i
+      snaps.push({
+        arr: disp.slice(), sortedEnd: i, i: i, j: j, key: key, hole: i, shifted: null,
+        hitSentinel: false, comps: comps, shifts: shifts, st: '',
+        op: 'key = a[' + i + '] = ' + key + ';  j = ' + j,
+        t: 'Lượt i = ' + i + ': nhấc thẻ key = ' + key + ' lên tay',
+        desc: 'Tạo chỗ trống tạm thời tại chỉ số ' + i + ' và chuẩn bị so sánh ngược từ j = ' + j + '.'
+      });
+
+      while (j >= 0) {
+        comps++;
+        if (disp[j] > key) {
+          var movedVal = disp[j];
+          disp[j + 1] = movedVal;
+          disp[j] = null;
+          shifts++;
+          snaps.push({
+            arr: disp.slice(), sortedEnd: i + 1, i: i, j: j - 1, key: key, hole: j, shifted: [j, j + 1],
+            hitSentinel: false, comps: comps, shifts: shifts, st: 'warn',
+            op: 'a[' + j + '] (' + movedVal + ') > key (' + key + ') -> dịch sang a[' + (j + 1) + '], j = ' + (j - 1),
+            t: 'Dịch ' + movedVal + ' từ a[' + j + '] sang phải một ô',
+            desc: 'Vì ' + movedVal + ' > ' + key + ', đẩy ' + movedVal + ' sang a[' + (j + 1) + '], ô trống dịch về ' + j + ' và giảm j xuống ' + (j - 1) + '.'
+          });
+          j--;
+        } else {
+          snaps.push({
+            arr: disp.slice(), sortedEnd: i + 1, i: i, j: j, key: key, hole: j + 1, shifted: null,
+            hitSentinel: false, comps: comps, shifts: shifts, st: '',
+            op: 'a[' + j + '] (' + disp[j] + ') <= key (' + key + ') -> dừng while',
+            t: 'Gặp a[' + j + '] = ' + disp[j] + ' <= ' + key + ': dừng dịch chuyển',
+            desc: 'Điều kiện a[j] > key sai tại j = ' + j + '. Ô trống ngay bên phải là j + 1 = ' + (j + 1) + '.'
+          });
+          break;
+        }
+      }
+
+      if (j < 0) {
+        // Reached sentinel j = -1 (only when we shifted all the way past 0)
+        snaps[snaps.length - 1].hitSentinel = true;
+        snaps[snaps.length - 1].desc += ' j đã lùi tới biên j = -1 (không còn phần tử đứng trước).';
+      }
+
+      disp[j + 1] = key;
+      a = disp.slice();
+      snaps.push({
+        arr: a.slice(), sortedEnd: i + 1, i: i, j: j, key: null, hole: null, shifted: null, placedAt: j + 1,
+        hitSentinel: j < 0, comps: comps, shifts: shifts, st: 'ok',
+        op: 'a[j + 1] = a[' + (j + 1) + '] = ' + key,
+        t: 'Hạ thẻ key = ' + key + ' vào a[' + (j + 1) + ']',
+        desc: 'Đoạn a[0..' + i + '] lúc này đã được sắp xếp tăng dần.'
+      });
+    }
+
+    snaps.push({
+      arr: a.slice(), sortedEnd: n, i: n - 1, j: null, key: null, hole: null, shifted: null,
+      hitSentinel: false, comps: comps, shifts: shifts, st: 'ok',
+      op: 'Hoàn tất: ' + comps + ' phép so sánh, ' + shifts + ' lần dịch chuyển',
+      t: 'Hoàn tất Insertion Sort (' + ds.label + ')',
+      desc: 'Tổng cộng ' + comps + ' phép so sánh phần tử và ' + shifts + ' lần dịch chuyển (shifts).'
+    });
+
+    return snaps;
+  }
+
+  var MERGE_DATASETS = {
+    mix:     { label: 'Xen kẽ có trùng', a: [3, 8, 14, 21],     b: [1, 8, 12, 25, 30] },
+    a_short: { label: 'Dãy a hết sớm',   a: [2, 5],             b: [10, 14, 19, 24] },
+    b_short: { label: 'Dãy b hết sớm',   a: [6, 11, 17, 23, 29], b: [1, 4] }
+  };
+
+  function buildMergeSteps(dsKey){
+    var ds = MERGE_DATASETS[dsKey] || MERGE_DATASETS.mix;
+    var a = ds.a.slice(), b = ds.b.slice();
+    var n = a.length, m = b.length, total = n + m;
+    var i = 0, j = 0, res = [];
+    var snaps = [];
+
+    snaps.push({
+      a: a, b: b, i: 0, j: 0, res: [], phase: 1, lastFrom: null, st: '',
+      op: 'Khởi tạo i = 0, j = 0, res rỗng (tổng ' + total + ' phần tử)',
+      t: 'Khởi tạo Trộn hai dãy (' + ds.label + ')',
+      desc: 'Hai chỉ số i và j cùng bắt đầu ở đầu mỗi dãy đã sắp xếp. Sau đúng n + m = ' + total + ' bước, tất cả phần tử sẽ vào res.'
+    });
+
+    while (i < n && j < m) {
+      if (a[i] <= b[j]) {
+        var valA = a[i];
+        var prevI = i;
+        res.push({ val: valA, from: 'a' });
+        i++;
+        snaps.push({
+          a: a, b: b, i: i, j: j, res: res.slice(), phase: 1, lastFrom: 'a', st: '',
+          op: 'a[' + prevI + '] (' + valA + ') <= b[' + j + '] (' + b[j] + ') -> lấy từ a, ++i',
+          t: 'Pha 1: Chọn a[' + prevI + '] = ' + valA + ' vào res[' + (res.length - 1) + ']',
+          desc: 'Vì ' + valA + ' <= ' + b[j] + ', đẩy ' + valA + ' từ dãy a vào res và tăng i lên ' + i + '.'
+        });
+      } else {
+        var valB = b[j];
+        var prevJ = j;
+        res.push({ val: valB, from: 'b' });
+        j++;
+        snaps.push({
+          a: a, b: b, i: i, j: j, res: res.slice(), phase: 1, lastFrom: 'b', st: 'warn',
+          op: 'a[' + i + '] (' + a[i] + ') > b[' + prevJ + '] (' + valB + ') -> lấy từ b, ++j',
+          t: 'Pha 1: Chọn b[' + prevJ + '] = ' + valB + ' vào res[' + (res.length - 1) + ']',
+          desc: 'Vì ' + valB + ' < ' + a[i] + ', đẩy ' + valB + ' từ dãy b vào res và tăng j lên ' + j + '.'
+        });
+      }
+    }
+
+    while (i < n) {
+      var remA = a[i];
+      var pI = i;
+      res.push({ val: remA, from: 'a' });
+      i++;
+      snaps.push({
+        a: a, b: b, i: i, j: j, res: res.slice(), phase: 2, lastFrom: 'a', st: '',
+        op: 'j == m (' + m + ') -> chép phần dư a[' + pI + '] = ' + remA,
+        t: 'Pha 2 (while i < n): Chép phần dư a[' + pI + '] = ' + remA,
+        desc: 'Dãy b đã hết (j == ' + m + '). Đẩy nốt a[' + pI + '] = ' + remA + ' vào cuối res.'
+      });
+    }
+
+    while (j < m) {
+      var remB = b[j];
+      var pJ = j;
+      res.push({ val: remB, from: 'b' });
+      j++;
+      snaps.push({
+        a: a, b: b, i: i, j: j, res: res.slice(), phase: 3, lastFrom: 'b', st: 'warn',
+        op: 'i == n (' + n + ') -> chép phần dư b[' + pJ + '] = ' + remB,
+        t: 'Pha 3 (while j < m): Chép phần dư b[' + pJ + '] = ' + remB,
+        desc: 'Dãy a đã hết (i == ' + n + '). Đẩy nốt b[' + pJ + '] = ' + remB + ' vào cuối res.'
+      });
+    }
+
+    snaps.push({
+      a: a, b: b, i: i, j: j, res: res.slice(), phase: 4, lastFrom: null, st: 'ok',
+      op: 'i == ' + n + ' và j == ' + m + ' -> hoàn tất đúng ' + total + ' bước',
+      t: 'Hoàn tất Trộn hai dãy (' + res.length + ' phần tử)',
+      desc: 'Cả hai chỉ số đã đi đến cuối dãy (i + j = ' + (i + j) + ' = n + m). Mảng res giữ đầy đủ và đúng thứ tự tăng dần.'
+    });
+
+    return snaps;
+  }
+
+  window.SearchSortModel = {
+    SEARCH_ARRAY: SEARCH_ARRAY,
+    buildSearchSteps: buildSearchSteps,
+    buildSelectionSteps: buildSelectionSteps,
+    buildBubbleSteps: buildBubbleSteps,
+    buildInsertionSteps: buildInsertionSteps,
+    buildMergeSteps: buildMergeSteps
+  };
+
+  /* =========================================================
+     UI CONTROLLERS & RENDERERS
+     ========================================================= */
+
+  var VD = qparam('vd') || 'search';
+  if (['search', 'selection', 'bubble', 'insertion', 'merge'].indexOf(VD) === -1) VD = 'search';
+  var BUOC = Number(qparam('buoc'));
+  var SC = qparam('sc');
+
+  var state = {
+    stepIdx: 0,
+    timer: null,
+    snaps: [],
+    searchSc: (SC && SEARCH_SCENARIOS[SC]) ? SC : 'x71',
+    binOnly: qparam('only') === '1',
+    selDs: (SC && SELECTION_DATASETS[SC]) ? SC : 'rand',
+    bubDs: (SC && BUBBLE_DATASETS[SC]) ? SC : 'rand',
+    bubOpt: qparam('opt') !== '0',
+    insDs: (SC && INSERTION_DATASETS[SC]) ? SC : 'rand',
+    mrgDs: (SC && MERGE_DATASETS[SC]) ? SC : 'mix'
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function setStatus(st, title, desc){
+    var el = $('status');
+    el.className = 'status' + (st ? ' ' + st : '');
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  }
+
+  function renderTabs(items, activeId, onPick){
+    $('tabs').innerHTML = items.map(function(it){
+      var on = it.id === activeId;
+      return '<button class="tab" role="tab" aria-selected="' + on + '" data-id="' + esc(it.id) + '">' + esc(it.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(btn){
+      btn.onclick = function(){ onPick(btn.getAttribute('data-id')); };
+    });
+  }
+
+  function renderStepperChrome(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateStepperButtons(); return; }
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); }
+      }, 650);
+      updateStepperButtons();
+    };
+  }
+
+  function updateStepperButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  /* --- 1. SEARCH --- */
+  function initSearch(){
+    $('lead').innerHTML = 'Chọn giá trị <code>x</code> và bấm <b>Bước tiếp</b> (hoặc phím →) để đối chiếu Tìm kiếm tuyến tính và Tìm kiếm nhị phân.';
+    renderTabs([
+      { id: 'x71', label: 'x = 71 (Gần cuối)' },
+      { id: 'x27', label: 'x = 27 (Giữa)' },
+      { id: 'x84', label: 'x = 84 (Biên phải)' },
+      { id: 'x45', label: 'x = 45 (Không có)' }
+    ], state.searchSc, function(id){
+      state.searchSc = id;
+      stopTimer();
+      state.snaps = buildSearchSteps(state.searchSc, state.binOnly);
+      state.stepIdx = 0;
+      initSearch();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Đường đua Thuật toán Tìm kiếm (n = 12)</p>' +
+          '<div class="badge-group">' +
+            '<button class="toggle-chip ' + (!state.binOnly ? 'active' : '') + '" id="mode-both">Song song Linear vs Binary</button>' +
+            '<button class="toggle-chip ' + (state.binOnly ? 'active' : '') + '" id="mode-bin">Chỉ Binary Search</button>' +
+            '<span class="badge" id="step-badge"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stage-box">' +
+          '<div class="track" id="lin-track" style="' + (state.binOnly ? 'display:none' : '') + '">' +
+            '<div class="panel-head" style="margin-bottom:4px">' +
+              '<span class="panel-title">1. Tìm kiếm tuyến tính (Linear Search)</span>' +
+              '<span class="badge" id="lin-badge"></span>' +
+            '</div>' +
+            '<div class="track-strip" id="lin-strip"></div>' +
+          '</div>' +
+          '<div class="track">' +
+            '<div class="panel-head" style="margin-bottom:4px">' +
+              '<span class="panel-title">' + (state.binOnly ? 'Tìm kiếm nhị phân (Binary Search)' : '2. Tìm kiếm nhị phân (Binary Search)') + '</span>' +
+              '<div class="badge-group"><span class="badge muted" id="bin-range"></span><span class="badge" id="bin-badge"></span></div>' +
+            '</div>' +
+            '<div class="track-strip" id="bin-strip"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="info-strip">' +
+          '<div class="info-card"><div class="info-k">Công thức mid an toàn</div><div class="info-v" id="s-formula"></div></div>' +
+          '<div class="info-card"><div class="info-k">Quyết định thu hẹp</div><div class="info-v" id="s-action"></div></div>' +
+          '<div class="info-card"><div class="info-k">Đối chiếu phép so sánh</div><div class="info-v" id="s-perf"></div></div>' +
+        '</div>' +
+      '</div>';
+
+    $('mode-both').onclick = function(){
+      if (!state.binOnly) return;
+      state.binOnly = false; stopTimer();
+      state.snaps = buildSearchSteps(state.searchSc, false); state.stepIdx = 0; initSearch();
+    };
+    $('mode-bin').onclick = function(){
+      if (state.binOnly) return;
+      state.binOnly = true; stopTimer();
+      state.snaps = buildSearchSteps(state.searchSc, true); state.stepIdx = 0; initSearch();
+    };
+    state.snaps = buildSearchSteps(state.searchSc, state.binOnly);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderSearch(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+
+    if (!s.binOnly) {
+      var lCls = s.lin.foundIdx !== -1 ? 'ok' : (s.lin.done ? 'bad' : '');
+      $('lin-badge').className = 'badge ' + lCls;
+      $('lin-badge').textContent = 'So sánh: ' + s.lin.comps + (s.lin.foundIdx !== -1 ? ' · Khớp [' + s.lin.foundIdx + ']' : (s.lin.done ? ' · Trả -1' : ''));
+      $('lin-strip').innerHTML = s.arr.map(function(val, idx){
+        var cls = 's-cell';
+        var pill = '';
+        if (s.lin.foundIdx === idx) { cls += ' is-found'; pill = '<span class="mpill mp-ok">i=' + idx + '</span>'; }
+        else if (s.lin.i === idx) { cls += ' is-cur'; pill = '<span class="mpill mp-i">i=' + idx + '</span>'; }
+        else if (idx < s.lin.i) { cls += ' is-dim'; }
+        return '<div class="s-col"><div class="s-idx">' + idx + '</div><div class="' + cls + '">' + val + '</div><div class="marker-slot">' + pill + '</div></div>';
+      }).join('');
+    }
+
+    var b = s.bin;
+    var bCls = b.foundIdx !== -1 ? 'ok' : (b.done ? 'bad' : '');
+    $('bin-badge').className = 'badge ' + bCls;
+    $('bin-badge').textContent = 'So sánh: ' + b.comps + (b.foundIdx !== -1 ? ' · Khớp [' + b.foundIdx + ']' : (b.done ? ' · Trả -1' : ''));
+    $('bin-range').textContent = b.left <= b.right ? ('[' + b.left + '..' + b.right + ']') : ('left=' + b.left + ' > right=' + b.right);
+
+    $('bin-strip').innerHTML = s.arr.map(function(val, idx){
+      var cls = 's-cell';
+      var inWin = idx >= b.left && idx <= b.right;
+      if (b.foundIdx === idx) cls += ' is-found';
+      else if (b.mid === idx) cls += ' is-mid';
+      else if (inWin) cls += ' in-range';
+      else cls += ' is-dim';
+
+      var tags = [];
+      if (idx === b.left && idx === b.right && idx === b.mid) tags.push('<span class="mpill mp-m">L=M=R</span>');
+      else {
+        var lbls = [];
+        if (idx === b.left) lbls.push('L');
+        if (idx === b.mid) lbls.push('M');
+        if (idx === b.right) lbls.push('R');
+        if (lbls.length) {
+          var pCls = idx === b.mid ? 'mp-m' : (idx === b.left ? 'mp-l' : 'mp-r');
+          tags.push('<span class="mpill ' + pCls + '">' + lbls.join('=') + '</span>');
+        }
+      }
+      return '<div class="s-col"><div class="s-idx">' + idx + '</div><div class="' + cls + '">' + val + '</div><div class="marker-slot">' + tags.join('') + '</div></div>';
+    }).join('');
+
+    $('s-formula').textContent = b.formula;
+    $('s-action').textContent = b.action;
+    $('s-perf').textContent = s.binOnly
+      ? ('Binary: ' + b.comps + ' phép (tối đa 4 với n=12)')
+      : ('Linear: ' + s.lin.comps + ' phép  vs  Binary: ' + b.comps + ' phép');
+    updateStepperButtons();
+  }
+
+  /* --- 2. SELECTION SORT --- */
+  function initSelection(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi cách Selection Sort tìm <code>min_idx</code> và hoán đổi tối đa <code>n - 1</code> lần.';
+    renderTabs([
+      { id: 'rand', label: 'Ngẫu nhiên' },
+      { id: 'sorted', label: 'Đã sắp xếp' },
+      { id: 'rev', label: 'Đảo ngược' },
+      { id: 'dup', label: 'Có trùng' }
+    ], state.selDs, function(id){
+      state.selDs = id; stopTimer();
+      state.snaps = buildSelectionSteps(id); state.stepIdx = 0; initSelection();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Minh hoạ Selection Sort (n = 6)</p>' +
+          '<span class="badge" id="step-badge"></span>' +
+        '</div>' +
+        '<div class="stage-box">' +
+          '<div class="metrics-bar">' +
+            '<div class="m-card"><div class="m-k">Lượt i</div><div class="m-v" id="sel-pass"></div></div>' +
+            '<div class="m-card"><div class="m-k">min_idx</div><div class="m-v violet" id="sel-min"></div></div>' +
+            '<div class="m-card"><div class="m-k">Số phép so sánh</div><div class="m-v" id="sel-cmp"></div></div>' +
+            '<div class="m-card"><div class="m-k">Số lần hoán đổi</div><div class="m-v ok" id="sel-swp"></div></div>' +
+          '</div>' +
+          '<div class="sort-cols" id="sel-cols"></div>' +
+        '</div>' +
+        '<div class="op-strip">' +
+          '<div class="op-card"><div class="info-k">Thao tác hiện tại</div><div class="op-line" id="sel-op"></div></div>' +
+          '<div class="op-card"><div class="info-k">Chi phí cố định</div><div class="op-line">n(n-1)/2 = 15 so sánh · ít hoán đổi</div></div>' +
+        '</div>' +
+        '<div class="legend">' +
+          '<span><i class="lg-dot" style="background:var(--bar-sorted)"></i>Đã cố định [0..i-1]</span>' +
+          '<span><i class="lg-dot" style="background:var(--bar-target)"></i>Đích lượt i</span>' +
+          '<span><i class="lg-dot" style="background:var(--bar-min)"></i>min_idx nhỏ nhất</span>' +
+          '<span><i class="lg-dot" style="background:var(--bar-scan)"></i>Đang quét j / Hoán đổi</span>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildSelectionSteps(state.selDs);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderSelection(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('sel-pass').textContent = s.sortedEnd >= 6 ? 'Xong' : ('i = ' + s.i);
+    $('sel-min').textContent = s.minIdx === null ? '-' : String(s.minIdx);
+    $('sel-cmp').textContent = s.comps + ' / 15';
+    $('sel-swp').textContent = String(s.swaps);
+    $('sel-op').textContent = s.op;
+
+    var maxV = Math.max.apply(null, s.arr);
+    $('sel-cols').innerHTML = s.arr.map(function(val, idx){
+      var h = Math.max(18, Math.round((val / maxV) * 90));
+      var cls = '';
+      if (s.swapPair && (idx === s.swapPair[0] || idx === s.swapPair[1])) cls = 'swap';
+      else if (idx < s.sortedEnd) cls = 'sorted';
+      else if (idx === s.j) cls = 'scan';
+      else if (idx === s.minIdx) cls = 'min';
+      else if (idx === s.i && s.sortedEnd < 6) cls = 'target';
+
+      var pills = [];
+      if (s.sortedEnd < 6) {
+        if (idx === s.i) pills.push('<span class="mpill mp-l">i=' + idx + '</span>');
+        if (idx === s.minIdx) pills.push('<span class="mpill mp-r">min</span>');
+        if (idx === s.j) pills.push('<span class="mpill mp-j">j=' + idx + '</span>');
+      }
+      return '<div class="bar-col">' +
+        '<div class="bar-wrap"><div class="bar ' + cls + '" style="height:' + h + 'px"></div></div>' +
+        '<div class="val-box ' + cls + '">' + val + '</div>' +
+        '<div class="s-idx">[' + idx + ']</div>' +
+        '<div class="marker-slot">' + pills.join('') + '</div>' +
+      '</div>';
+    }).join('');
+    updateStepperButtons();
+  }
+
+  /* --- 3. BUBBLE SORT --- */
+  function initBubble(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để quan sát cặp kề <code>(a[j], a[j+1])</code> và tác dụng dừng sớm của cờ <code>swapped</code>.';
+    renderTabs([
+      { id: 'rand', label: 'Ngẫu nhiên' },
+      { id: 'sorted', label: 'Đã sắp xếp' },
+      { id: 'near', label: 'Gần xếp' },
+      { id: 'rev', label: 'Đảo ngược' }
+    ], state.bubDs, function(id){
+      state.bubDs = id; stopTimer();
+      state.snaps = buildBubbleSteps(state.bubDs, state.bubOpt); state.stepIdx = 0; initBubble();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Minh hoạ Bubble Sort (n = 6)</p>' +
+          '<div class="badge-group">' +
+            '<button class="toggle-chip ' + (state.bubOpt ? 'on' : 'off') + '" id="bub-opt-btn">' +
+              'Tối ưu cờ swapped: ' + (state.bubOpt ? 'BẬT' : 'TẮT') +
+            '</button>' +
+            '<span class="badge" id="step-badge"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stage-box">' +
+          '<div class="metrics-bar">' +
+            '<div class="m-card"><div class="m-k">Cờ swapped</div><div class="m-v" id="bub-flag"></div></div>' +
+            '<div class="m-card"><div class="m-k">Số lượt (passes)</div><div class="m-v" id="bub-pass"></div></div>' +
+            '<div class="m-card"><div class="m-k">Số phép so sánh</div><div class="m-v" id="bub-cmp"></div></div>' +
+            '<div class="m-card"><div class="m-k">Số lần hoán đổi</div><div class="m-v ok" id="bub-swp"></div></div>' +
+          '</div>' +
+          '<div class="sort-cols" id="bub-cols"></div>' +
+        '</div>' +
+        '<div class="op-strip">' +
+          '<div class="op-card"><div class="info-k">Kiểm tra cặp kề</div><div class="op-line" id="bub-op"></div></div>' +
+          '<div class="op-card"><div class="info-k">Biên vòng trong</div><div class="op-line" id="bub-bound"></div></div>' +
+        '</div>' +
+        '<div class="legend">' +
+          '<span><i class="lg-dot" style="background:var(--bar-scan)"></i>Cặp đang xét a[j], a[j+1]</span>' +
+          '<span><i class="lg-dot" style="background:var(--bar-sorted)"></i>Đuôi đã nổi về đúng chỗ</span>' +
+        '</div>' +
+      '</div>';
+
+    $('bub-opt-btn').onclick = function(){
+      state.bubOpt = !state.bubOpt; stopTimer();
+      state.snaps = buildBubbleSteps(state.bubDs, state.bubOpt); state.stepIdx = 0; initBubble();
+    };
+    state.snaps = buildBubbleSteps(state.bubDs, state.bubOpt);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderBubble(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+
+    var flagEl = $('bub-flag');
+    flagEl.textContent = s.swappedFlag ? 'true' : 'false';
+    flagEl.className = 'm-v ' + (s.swappedFlag ? 'warn' : (s.earlyStop ? 'ok' : ''));
+    $('bub-pass').textContent = String(s.passes);
+    $('bub-cmp').textContent = String(s.comps);
+    $('bub-swp').textContent = String(s.swaps);
+    $('bub-op').textContent = s.op;
+    $('bub-bound').textContent = s.sortedFrom === 0 ? 'Đã cố định toàn dãy' : ('j < ' + (s.sortedFrom - 1) + ' (đuôi [' + s.sortedFrom + '..5] cố định)');
+
+    var maxV = Math.max.apply(null, s.arr);
+    $('bub-cols').innerHTML = s.arr.map(function(val, idx){
+      var h = Math.max(18, Math.round((val / maxV) * 90));
+      var cls = '';
+      if (s.pair && (idx === s.pair[0] || idx === s.pair[1])) cls = s.didSwap ? 'swap' : 'scan';
+      else if (idx >= s.sortedFrom) cls = 'sorted';
+
+      var pills = [];
+      if (s.pair) {
+        if (idx === s.pair[0]) pills.push('<span class="mpill mp-j">j</span>');
+        if (idx === s.pair[1]) pills.push('<span class="mpill mp-l">j+1</span>');
+      }
+      return '<div class="bar-col">' +
+        '<div class="bar-wrap"><div class="bar ' + cls + '" style="height:' + h + 'px"></div></div>' +
+        '<div class="val-box ' + cls + '">' + val + '</div>' +
+        '<div class="s-idx">[' + idx + ']</div>' +
+        '<div class="marker-slot">' + pills.join('') + '</div>' +
+      '</div>';
+    }).join('');
+    updateStepperButtons();
+  }
+
+  /* --- 4. INSERTION SORT --- */
+  function initInsertion(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi thẻ <code>key</code> đang cầm, phép dịch sang phải và điểm dừng <code>j = -1</code>.';
+    renderTabs([
+      { id: 'rand', label: 'Ngẫu nhiên' },
+      { id: 'near', label: 'Gần như xếp' },
+      { id: 'sorted', label: 'Đã sắp xếp' },
+      { id: 'rev', label: 'Đảo ngược' }
+    ], state.insDs, function(id){
+      state.insDs = id; stopTimer();
+      state.snaps = buildInsertionSteps(id); state.stepIdx = 0; initInsertion();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Minh hoạ Insertion Sort (n = 6 + ô biên j = -1)</p>' +
+          '<span class="badge" id="step-badge"></span>' +
+        '</div>' +
+        '<div class="stage-box">' +
+          '<div class="hand-row">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+              '<span style="font-size:12px;font-weight:700;color:var(--muted)">THẺ KEY ĐANG CẦM:</span>' +
+              '<span class="hand-card" id="ins-key"></span>' +
+            '</div>' +
+            '<div class="badge-group">' +
+              '<span class="badge" id="ins-cmp"></span>' +
+              '<span class="badge warn" id="ins-shf"></span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="sort-cols n7" id="ins-cols"></div>' +
+        '</div>' +
+        '<div class="op-strip">' +
+          '<div class="op-card"><div class="info-k">Trạng thái vòng lặp while</div><div class="op-line" id="ins-op"></div></div>' +
+          '<div class="op-card"><div class="info-k">Vị trí chèn sau while</div><div class="op-line" id="ins-pos"></div></div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildInsertionSteps(state.insDs);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderInsertion(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+
+    var keyEl = $('ins-key');
+    if (s.key !== null) {
+      keyEl.className = 'hand-card';
+      keyEl.textContent = 'key = ' + s.key + ' (từ i = ' + s.i + ')';
+    } else {
+      keyEl.className = 'hand-card empty';
+      keyEl.textContent = 'Không cầm thẻ nào';
+    }
+    $('ins-cmp').textContent = 'So sánh: ' + s.comps;
+    $('ins-shf').textContent = 'Dịch chuyển: ' + s.shifts;
+    $('ins-op').textContent = s.op;
+    $('ins-pos').textContent = s.j === null ? 'Đoạn đầu đã xếp: [0..' + (s.sortedEnd - 1) + ']' : ('j = ' + s.j + ' -> ô chèn j + 1 = ' + (s.j + 1));
+
+    var nums = s.arr.filter(function(v){ return v !== null; });
+    if (s.key !== null) nums.push(s.key);
+    var maxV = Math.max.apply(null, nums);
+
+    var sentCls = 'val-box sentinel' + (s.hitSentinel ? ' hit' : '');
+    var sentPill = s.j === -1 ? '<span class="mpill mp-j">j=-1</span>' : '';
+    var html = '<div class="bar-col">' +
+      '<div class="bar-wrap"><div class="bar hole" style="height:26px;border-color:transparent"></div></div>' +
+      '<div class="' + sentCls + '">biên</div>' +
+      '<div class="s-idx">[-1]</div>' +
+      '<div class="marker-slot">' + sentPill + '</div>' +
+    '</div>';
+
+    html += s.arr.map(function(val, idx){
+      var isHole = val === null;
+      var h = isHole ? 24 : Math.max(18, Math.round((val / maxV) * 86));
+      var cls = '';
+      if (isHole) cls = 'hole';
+      else if (s.placedAt === idx) cls = 'min';
+      else if (s.shifted && idx === s.shifted[1]) cls = 'swap';
+      else if (idx < s.sortedEnd) cls = 'sorted';
+
+      var pills = [];
+      if (s.key !== null && idx === s.i && !isHole) pills.push('<span class="mpill mp-r">i</span>');
+      if (s.j === idx) pills.push('<span class="mpill mp-j">j=' + idx + '</span>');
+      if (s.shifted && idx === s.shifted[1]) pills.push('<span class="mpill mp-l">→ sang</span>');
+      if (s.placedAt === idx) pills.push('<span class="mpill mp-ok">chèn</span>');
+
+      return '<div class="bar-col">' +
+        '<div class="bar-wrap"><div class="bar ' + cls + '" style="height:' + h + 'px"></div></div>' +
+        '<div class="val-box ' + cls + '">' + (isHole ? 'trống' : val) + '</div>' +
+        '<div class="s-idx">[' + idx + ']</div>' +
+        '<div class="marker-slot">' + pills.join('') + '</div>' +
+      '</div>';
+    }).join('');
+
+    $('ins-cols').innerHTML = html;
+    updateStepperButtons();
+  }
+
+  /* --- 5. MERGE --- */
+  function initMerge(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi hai chỉ số <code>i</code>, <code>j</code> trộn hai dãy tăng dần vào <code>res</code> trong đúng <code>n + m</code> bước.';
+    renderTabs([
+      { id: 'mix', label: 'Xen kẽ có trùng' },
+      { id: 'a_short', label: 'Dãy a hết sớm' },
+      { id: 'b_short', label: 'Dãy b hết sớm' }
+    ], state.mrgDs, function(id){
+      state.mrgDs = id; stopTimer();
+      state.snaps = buildMergeSteps(id); state.stepIdx = 0; initMerge();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Trộn hai dãy đã sắp xếp (Hai chỉ số i, j)</p>' +
+          '<div class="badge-group">' +
+            '<span class="badge" id="mrg-phase"></span>' +
+            '<span class="badge ok" id="mrg-prog-lbl"></span>' +
+            '<span class="badge" id="step-badge"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stage-box">' +
+          '<div class="merge-row">' +
+            '<div class="panel-head" style="margin-bottom:4px"><span class="panel-title">Dãy a (chỉ số i)</span><span class="badge" id="mrg-i-badge"></span></div>' +
+            '<div class="merge-cells" id="mrg-a"></div>' +
+          '</div>' +
+          '<div class="merge-row">' +
+            '<div class="panel-head" style="margin-bottom:4px"><span class="panel-title">Dãy b (chỉ số j)</span><span class="badge warn" id="mrg-j-badge"></span></div>' +
+            '<div class="merge-cells" id="mrg-b"></div>' +
+          '</div>' +
+          '<div class="merge-row">' +
+            '<div class="panel-head" style="margin-bottom:4px">' +
+              '<span class="panel-title">Kết quả res (mảng tạm trộn tăng dần)</span>' +
+              '<div style="display:flex;align-items:center;gap:8px;min-width:160px">' +
+                '<div class="prog-track"><div class="prog-fill" id="mrg-bar"></div></div>' +
+                '<span class="mono" style="font-size:11.5px;font-weight:700" id="mrg-op"></span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="merge-cells c9" id="mrg-res"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildMergeSteps(state.mrgDs);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderMergeInputRow(arr, posIdx, label, activeCls, pillCls){
+    var html = arr.map(function(val, idx){
+      var cls = 'm-cell';
+      if (idx < posIdx) cls += ' used';
+      else if (idx === posIdx) cls += ' ' + activeCls;
+      var pill = idx === posIdx ? '<span class="mpill ' + pillCls + '">' + label + '=' + idx + '</span>' : '';
+      return '<div class="s-col"><div class="' + cls + '">' + val + '</div><div class="marker-slot">' + pill + '</div></div>';
+    }).join('');
+    var atEnd = posIdx === arr.length;
+    html += '<div class="s-col"><div class="m-cell end' + (atEnd ? ' hit' : '') + '">hết</div><div class="marker-slot">' +
+      (atEnd ? '<span class="mpill mp-ok">' + label + '=' + arr.length + '</span>' : '') + '</div></div>';
+    return html;
+  }
+
+  function renderMerge(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+
+    var phTxt = s.phase === 1 ? 'Pha 1: while (i < n && j < m)'
+              : s.phase === 2 ? 'Pha 2: while (i < n)'
+              : s.phase === 3 ? 'Pha 3: while (j < m)'
+              : 'Hoàn tất 3 pha';
+    $('mrg-phase').textContent = phTxt;
+    var tot = s.a.length + s.b.length;
+    $('mrg-prog-lbl').textContent = 'i + j = ' + (s.i + s.j) + ' / ' + tot;
+    $('mrg-bar').style.width = Math.round(((s.i + s.j) / tot) * 100) + '%';
+    $('mrg-op').textContent = (s.i + s.j) + '/' + tot + ' phần tử';
+
+    $('mrg-i-badge').textContent = 'i = ' + s.i + ' / n = ' + s.a.length;
+    $('mrg-j-badge').textContent = 'j = ' + s.j + ' / m = ' + s.b.length;
+
+    var aEl = $('mrg-a');
+    aEl.className = 'merge-cells c' + (s.a.length + 1);
+    aEl.innerHTML = renderMergeInputRow(s.a, s.i, 'i', 'cur-a', 'mp-i');
+
+    var bEl = $('mrg-b');
+    bEl.className = 'merge-cells c' + (s.b.length + 1);
+    bEl.innerHTML = renderMergeInputRow(s.b, s.j, 'j', 'cur-b', 'mp-j');
+
+    var resHtml = [];
+    for (var r = 0; r < tot; r++) {
+      if (r < s.res.length) {
+        var item = s.res[r];
+        var cls = 'm-cell ' + (item.from === 'a' ? 'from-a' : 'from-b') + (r === s.res.length - 1 ? ' fresh' : '');
+        var tag = '<span class="mpill ' + (item.from === 'a' ? 'mp-l' : 'mp-j') + '">từ ' + item.from + '</span>';
+        resHtml.push('<div class="s-col"><div class="' + cls + '">' + item.val + '</div><div class="marker-slot">' + tag + '</div></div>');
+      } else {
+        resHtml.push('<div class="s-col"><div class="m-cell" style="opacity:.35;border-style:dashed">·</div><div class="marker-slot"></div></div>');
+      }
+    }
+    $('mrg-res').className = 'merge-cells c' + tot;
+    $('mrg-res').innerHTML = resHtml.join('');
+    updateStepperButtons();
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var n = state.snaps.length;
+    if (VD === 'search') renderSearch(s, state.stepIdx, n);
+    else if (VD === 'selection') renderSelection(s, state.stepIdx, n);
+    else if (VD === 'bubble') renderBubble(s, state.stepIdx, n);
+    else if (VD === 'insertion') renderInsertion(s, state.stepIdx, n);
+    else if (VD === 'merge') renderMerge(s, state.stepIdx, n);
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); if ($('next')) $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if ($('prev')) $('prev').click(); }
+  });
+
+  var initDone = false;
+  if (VD === 'search') initSearch();
+  else if (VD === 'selection') initSelection();
+  else if (VD === 'bubble') initBubble();
+  else if (VD === 'insertion') initInsertion();
+  else if (VD === 'merge') initMerge();
+  initDone = true;
+})();
+</script>
+</body>
+</html>

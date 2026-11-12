@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="510">
+<title>Mô phỏng Thao tác Mảng và Vector C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --idx-l:#2563eb; --idx-l-soft:#eff6ff;
+    --idx-r:#d97706; --idx-r-soft:#fef3c7;
+    --blk-a:#2563eb; --blk-a-soft:#dbeafe;
+    --blk-b:#d97706; --blk-b-soft:#fef3c7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --idx-l:#60a5fa; --idx-l-soft:#172554;
+      --idx-r:#fbbf24; --idx-r-soft:#3a2e10;
+      --blk-a:#60a5fa; --blk-a-soft:#1e3a8a;
+      --blk-b:#fbbf24; --blk-b-soft:#451a03;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .sub-ctrl{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-bottom:6px}
+  .chips{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .chip-lbl{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px}
+  .chip{border:1px solid var(--line);background:var(--code-bg);color:var(--text);padding:2.5px 8px;
+    border-radius:5px;cursor:pointer;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .chip.warn-active{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:54px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.02fr 1.38fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:12px/1.56 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent;transition:background .15s}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 9px;
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;min-height:54px}
+  .con-head{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:2px;display:flex;justify-content:space-between}
+  .con-line{white-space:pre-wrap;word-break:break-word}
+  .con-empty{color:#6b7280;font-style:italic}
+
+  /* Metrics strip */
+  .meta-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+  .meta-box{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px;text-align:center}
+  .meta-k{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--muted)}
+  .meta-v{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);margin-top:1px}
+
+  /* Array strip */
+  .mem-stage{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:9px 8px;display:flex;flex-direction:column;gap:8px;flex:1;justify-content:center}
+  .arr-strip{display:grid;gap:6px;align-items:stretch}
+  .arr-col{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-width:0}
+  .arr-idx{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);text-align:center}
+  .arr-cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:7px;padding:6px 2px;
+    text-align:center;transition:all .18s;position:relative}
+  .arr-cell.active{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px rgba(37,99,235,.16)}
+  .arr-cell.done{border-color:var(--true);background:var(--true-soft)}
+  .arr-cell.skip{border-color:var(--warn);border-style:dashed;background:var(--warn-soft)}
+  .arr-cell.oob{border-color:var(--false);border-style:dashed;background:var(--cell-bg)}
+  .arr-cell.oob-hit{border-color:var(--false);border-style:dashed;background:var(--false-soft);box-shadow:0 0 0 2px rgba(180,35,24,.22)}
+  .arr-cell.left-hi{border-color:var(--idx-l);background:var(--idx-l-soft)}
+  .arr-cell.right-hi{border-color:var(--idx-r);background:var(--idx-r-soft)}
+  .arr-cell.mid-stay{border-color:var(--true);background:var(--true-soft)}
+  .arr-cell.blk-a{background:var(--blk-a-soft);border-color:var(--blk-a)}
+  .arr-cell.blk-b{background:var(--blk-b-soft);border-color:var(--blk-b)}
+  .arr-cell.chg{border-color:var(--warn);background:var(--warn-soft)}
+  .arr-cell.lost{border-color:var(--false);background:var(--false-soft)}
+  .arr-cell.dim{opacity:.42;border-style:dashed}
+  .arr-val{font:700 17px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);line-height:1.2}
+  .arr-val.sm{font-size:14px}
+  .arr-sub{font:600 9.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .arr-cell.oob-hit .arr-val,.arr-cell.lost .arr-val{color:var(--false)}
+
+  .ptr-row{min-height:22px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .pill{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 5px;border-radius:4px;white-space:nowrap}
+  .pill-l{background:var(--idx-l-soft);color:var(--idx-l);border:1px solid var(--idx-l)}
+  .pill-r{background:var(--idx-r-soft);color:var(--idx-r);border:1px solid var(--idx-r)}
+  .pill-ok{background:var(--true-soft);color:var(--true);border:1px solid var(--true)}
+  .pill-bad{background:var(--false-soft);color:var(--false);border:1px solid var(--false)}
+  .pill-warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+  .pill-cur{background:var(--accent-fill);color:#fff}
+
+  .expr-bar{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 9px;
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px}
+  .mono-val{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+
+  /* Reverse tmp box */
+  .rev-extra{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .info-box{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 8px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .info-lbl{font-size:11.5px;color:var(--muted);font-weight:600}
+  .info-num{font:700 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+  .info-box.active{border-color:var(--warn);background:var(--warn-soft)}
+
+  /* Range-for stage */
+  .rf-stage{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;align-items:center;background:var(--code-bg);
+    border:1px solid var(--line);border-radius:8px;padding:10px 9px;flex:1}
+  .rf-vec{display:flex;flex-direction:column;gap:6px}
+  .rf-item{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--cell-bg);
+    border:2px solid var(--cell-border);border-radius:7px;padding:5px 8px;transition:all .18s}
+  .rf-item.cur{border-color:var(--accent);background:var(--accent-soft)}
+  .rf-item.alias{border-color:var(--idx-r);background:var(--idx-r-soft)}
+  .rf-item.const-alias{border-color:var(--true);background:var(--true-soft)}
+  .rf-item.changed{border-color:var(--warn);box-shadow:0 0 0 2px rgba(217,119,6,.2)}
+  .rf-left{display:flex;align-items:center;gap:6px}
+  .rf-tag{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .rf-val{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+  .rf-alias-box{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+  .x-card{background:var(--card);border:2px solid var(--cell-border);border-radius:8px;padding:9px 8px;text-align:center}
+  .x-card.copy{border-color:var(--accent)}
+  .x-card.alias{border-color:var(--idx-r);background:var(--idx-r-soft)}
+  .x-card.const-alias{border-color:var(--true);background:var(--true-soft)}
+  .x-card.err{border-color:var(--false);background:var(--false-soft)}
+  .x-name{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .x-num{font:700 22px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:4px 0}
+  .x-note{font-size:11.5px;color:var(--muted);line-height:1.35}
+
+  /* Shift/Rotate arrows & blocks */
+  .move-banner{background:var(--card);border:1px dashed var(--accent);border-radius:7px;padding:6px 9px;
+    font-size:12.5px;text-align:center;min-height:34px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .move-banner.bad{border-color:var(--false);background:var(--false-soft);color:var(--false);font-weight:600}
+  .move-banner.ok{border-color:var(--true);background:var(--true-soft);color:var(--true);font-weight:600}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .meta-row{grid-template-columns:repeat(3,1fr);gap:4px}
+    .meta-k{font-size:9.5px}
+    .meta-v{font-size:12px}
+    .arr-val{font-size:14px}
+    .rev-extra{grid-template-columns:1fr}
+    .rf-stage{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+
+  <div class="controls" id="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+  <div class="sub-ctrl" id="sub-ctrl" style="display:none"></div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div id="workspace"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  var VALID_MODES = ['bounds', 'reverse', 'range-for', 'shift-rotate'];
+  var rawVd = qparam('vd');
+  var VD = VALID_MODES.indexOf(rawVd) >= 0 ? rawVd : 'bounds';
+  var BUOC = parseInt(qparam('buoc') || '0', 10) || 0;
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(int|bool|void|for|while|if|else|return|using|namespace|const|auto|vector|cout|std|size|at)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function renderCode(lines, cur, errLn){
+    return lines.map(function(l, i){
+      var cls = 'ln';
+      if (errLn === i) cls += ' err-line';
+      else if (cur === i) cls += ' cur';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+
+  function setStatus(kind, title, desc){
+    var el = $('status');
+    el.className = 'status' + (kind ? ' ' + kind : '');
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  }
+
+  /* ==========================================================
+   * 1. BOUNDS (A14296): sizeof, std::size, off-by-one, .at()
+   * ========================================================== */
+  function buildBoundsSteps(tab){
+    var arr = [15, 28, 6, 41];
+    var flag = 99;
+    var S = [];
+
+    if (tab === 'safe') {
+      var lines = [
+        'int arr[4] = {15, 28, 6, 41};',
+        'int flag = 99; // biến lân cận',
+        'int n = std::size(arr); // n = 4',
+        'for (int i = 0; i < n; i++) {',
+        '  cout << arr[i] << \' \';',
+        '}'
+      ];
+      S.push({
+        tab: tab, lines: lines, ln: 2, errLn: -1, st: '',
+        arr: arr, flag: flag, i: null, condText: 'std::size(arr) == 4', condOk: true,
+        visited: [], skipped: [], oobHit: false, out: [],
+        t: 'Tính kích thước mảng tĩnh',
+        desc: 'Mảng arr có 4 phần tử int (mỗi ô 4 byte, tổng 16 byte). Phép chia sizeof(arr)/sizeof(arr[0]) hoặc std::size(arr) đều trả về n = 4.'
+      });
+      var out = [], vis = [];
+      for (var i = 0; i < 4; i++) {
+        S.push({
+          tab: tab, lines: lines, ln: 3, errLn: -1, st: '',
+          arr: arr, flag: flag, i: i, condText: i + ' < 4 → true', condOk: true,
+          visited: vis.slice(), skipped: [], oobHit: false, out: out.slice(),
+          t: 'Kiểm tra điều kiện i = ' + i,
+          desc: 'Vì ' + i + ' < 4 đúng, vòng lặp đi vào thân để đọc phần tử hợp lệ arr[' + i + '].'
+        });
+        out.push(arr[i]);
+        vis.push(i);
+        S.push({
+          tab: tab, lines: lines, ln: 4, errLn: -1, st: 'ok',
+          arr: arr, flag: flag, i: i, condText: 'Đọc arr[' + i + '] = ' + arr[i], condOk: true,
+          visited: vis.slice(), skipped: [], oobHit: false, out: out.slice(),
+          t: 'In arr[' + i + '] = ' + arr[i],
+          desc: 'Truy cập hợp lệ trong đoạn [0..3], in ra ' + arr[i] + '. Biến lân cận flag = 99 hoàn toàn an toàn.'
+        });
+      }
+      S.push({
+        tab: tab, lines: lines, ln: 3, errLn: -1, st: 'ok',
+        arr: arr, flag: flag, i: 4, condText: '4 < 4 → false (Dừng)', condOk: true,
+        visited: vis.slice(), skipped: [], oobHit: false, out: out.slice(),
+        t: 'Dừng an toàn tại i = 4',
+        desc: 'Khi i tăng lên 4, điều kiện 4 < 4 sai nên vòng lặp dừng ngay, không chạm vào ô ngoài biên [4]. In đủ 4 phần tử: 15 28 6 41.'
+      });
+      return S;
+    }
+
+    if (tab === 'off1') {
+      var lines1 = [
+        'int arr[4] = {15, 28, 6, 41};',
+        'int flag = 99; // biến lân cận',
+        'int n = std::size(arr); // n = 4',
+        'for (int i = 1; i <= n; i++) {',
+        '  cout << arr[i] << \' \';',
+        '}'
+      ];
+      S.push({
+        tab: tab, lines: lines1, ln: 3, errLn: -1, st: 'warn',
+        arr: arr, flag: flag, i: 1, condText: 'i bắt đầu từ 1 → sót arr[0]!', condOk: false,
+        visited: [], skipped: [0], oobHit: false, out: [],
+        t: 'Khởi tạo sai: i = 1',
+        desc: 'Chỉ số mảng bắt đầu từ 0, nên cho i = 1 sẽ bỏ sót phần tử đầu tiên arr[0] = 15 ngay từ bước đầu!'
+      });
+      var out1 = [], vis1 = [];
+      for (var j = 1; j <= 3; j++) {
+        out1.push(arr[j]);
+        vis1.push(j);
+        S.push({
+          tab: tab, lines: lines1, ln: 4, errLn: -1, st: 'warn',
+          arr: arr, flag: flag, i: j, condText: j + ' <= 4 → true (in arr[' + j + '])', condOk: true,
+          visited: vis1.slice(), skipped: [0], oobHit: false, out: out1.slice(),
+          t: 'Lặp i = ' + j + ' (đang thiếu arr[0])',
+          desc: 'In arr[' + j + '] = ' + arr[j] + '. Kết quả đã thiếu mất số 15 ở đầu dãy.'
+        });
+      }
+      S.push({
+        tab: tab, lines: lines1, ln: 3, errLn: 3, st: 'bad',
+        arr: arr, flag: flag, i: 4, condText: '4 <= 4 → true (Vượt biên!)', condOk: false,
+        visited: vis1.slice(), skipped: [0], oobHit: true, out: out1.slice(),
+        t: 'Bẫy i <= n tại i = 4',
+        desc: 'Dùng <= khiến điều kiện 4 <= 4 vẫn ĐÚNG! Vòng lặp tiến vào đọc arr[4] — vị trí ngoài biên mảng!'
+      });
+      out1.push('99?(UB)');
+      S.push({
+        tab: tab, lines: lines1, ln: 4, errLn: 4, st: 'bad',
+        arr: arr, flag: flag, i: 4, condText: 'arr[4] → Hành vi không xác định (UB)', condOk: false,
+        visited: vis1.slice(), skipped: [0], oobHit: true, out: out1.slice(),
+        t: 'Lỗi ngoài biên tại arr[4]',
+        desc: 'C++ không tự kiểm tra biên cho arr[4]: chương trình có thể đọc nhầm biến kế bên (flag = 99), in rác hoặc sập bất ngờ (UB)!'
+      });
+      return S;
+    }
+
+    if (tab === 'over') {
+      var lines2 = [
+        'int arr[4] = {15, 28, 6, 41};',
+        'int flag = 99; // biến lân cận',
+        'int n = std::size(arr); // n = 4',
+        'for (int i = 0; i <= n; i++) {',
+        '  cout << arr[i] << \' \';',
+        '}'
+      ];
+      S.push({
+        tab: tab, lines: lines2, ln: 3, errLn: -1, st: '',
+        arr: arr, flag: flag, i: 0, condText: '0 <= 4 → true', condOk: true,
+        visited: [], skipped: [], oobHit: false, out: [],
+        t: 'Bắt đầu đúng từ i = 0, nhưng viết nhầm <= n',
+        desc: 'Bắt đầu từ i = 0 đúng, nhưng điều kiện i <= n sẽ cho phép lặp dư 1 bước khi i == 4.'
+      });
+      var out2 = [], vis2 = [];
+      for (var k = 0; k <= 3; k++) {
+        out2.push(arr[k]);
+        vis2.push(k);
+        S.push({
+          tab: tab, lines: lines2, ln: 4, errLn: -1, st: '',
+          arr: arr, flag: flag, i: k, condText: k + ' <= 4 → true (in arr[' + k + '])', condOk: true,
+          visited: vis2.slice(), skipped: [], oobHit: false, out: out2.slice(),
+          t: 'Đọc hợp lệ arr[' + k + '] = ' + arr[k],
+          desc: 'Các chỉ số 0..3 đều nằm trong biên hợp lệ, in ra ' + arr[k] + '.'
+        });
+      }
+      S.push({
+        tab: tab, lines: lines2, ln: 3, errLn: 3, st: 'bad',
+        arr: arr, flag: flag, i: 4, condText: '4 <= 4 → true (Dư bước!)', condOk: false,
+        visited: vis2.slice(), skipped: [], oobHit: true, out: out2.slice(),
+        t: 'Lặp dư 1 bước tại i = 4',
+        desc: 'Đáng lẽ phải dừng ở 4, nhưng vì viết i <= n nên 4 <= 4 vẫn đúng và truy cập arr[4].'
+      });
+      out2.push('99?(UB)');
+      S.push({
+        tab: tab, lines: lines2, ln: 4, errLn: 4, st: 'bad',
+        arr: arr, flag: flag, i: 4, condText: 'arr[4] → Đọc ngoài biên (UB)!', condOk: false,
+        visited: vis2.slice(), skipped: [], oobHit: true, out: out2.slice(),
+        t: 'Truy cập ngoài biên arr[4] (UB)',
+        desc: 'Chỉ số hợp lệ cuối là n - 1 = 3. Truy cập arr[4] vượt ra ngoài mảng, gây hành vi không xác định (UB).'
+      });
+      return S;
+    }
+
+    // tab === 'at'
+    var lines3 = [
+      'vector<int> v{15, 28, 6, 41};',
+      'int flag = 99; // biến lân cận',
+      'for (int i = 0; i <= 4; i++) {',
+      '  cout << v.at(i) << \' \';',
+      '}'
+    ];
+    S.push({
+      tab: tab, lines: lines3, ln: 2, errLn: -1, st: '',
+      arr: arr, flag: flag, i: 0, condText: 'v.size() == 4, thử chạy tới i = 4', condOk: true,
+      visited: [], skipped: [], oobHit: false, out: [],
+      t: 'So sánh với phương thức v.at(i)',
+      desc: 'Khác với arr[i] không kiểm tra biên, phương thức v.at(i) của std::vector luôn kiểm tra 0 <= i < v.size() trước khi đọc.'
+    });
+    var out3 = [], vis3 = [];
+    for (var m = 0; m <= 3; m++) {
+      out3.push(arr[m]);
+      vis3.push(m);
+      S.push({
+        tab: tab, lines: lines3, ln: 3, errLn: -1, st: 'ok',
+        arr: arr, flag: flag, i: m, condText: '0 <= ' + m + ' < 4 (Hợp lệ)', condOk: true,
+        visited: vis3.slice(), skipped: [], oobHit: false, out: out3.slice(),
+        t: 'v.at(' + m + ') = ' + arr[m] + ' (Qua cổng kiểm tra)',
+        desc: 'Chỉ số ' + m + ' thoả 0 <= ' + m + ' < 4 nên v.at(' + m + ') trả về ' + arr[m] + ' an toàn.'
+      });
+    }
+    S.push({
+      tab: tab, lines: lines3, ln: 3, errLn: 3, st: 'warn',
+      arr: arr, flag: flag, i: 4, condText: '4 < 4 sai → Chặn & ném std::out_of_range!', condOk: false,
+      visited: vis3.slice(), skipped: [], oobHit: 'caught', out: out3.slice().concat(['[Ngoại lệ: std::out_of_range]']),
+      t: 'v.at(4) chặn vượt biên ngay lập tức',
+      desc: 'Tại i = 4, v.at(4) phát hiện 4 >= v.size() nên chặn lại và ném ngoại lệ std::out_of_range thay vì đọc bừa vào vùng nhớ bên cạnh (UB)!'
+    });
+    return S;
+  }
+
+  /* ==========================================================
+   * 2. REVERSE (A14310): Two-index in-place reversal
+   * ========================================================== */
+  function buildReverseSteps(preset){
+    var initArr = preset === 'even' ? [8, 15, 23, 4, 19, 30] : [14, 27, 9, 42, 18];
+    var a = initArr.slice();
+    var n = a.length;
+    var lines = [
+      'int a[' + n + '] = {' + initArr.join(', ') + '};',
+      'int left = 0, right = ' + (n - 1) + ';',
+      'while (left < right) {',
+      '  int tmp = a[left];',
+      '  a[left] = a[right];',
+      '  a[right] = tmp;',
+      '  left++; right--;',
+      '}'
+    ];
+    var S = [];
+    var left = 0, right = n - 1;
+    var swappedPairs = [];
+
+    S.push({
+      preset: preset, lines: lines, ln: 1, st: '',
+      a: a.slice(), left: left, right: right, tmp: '?', tmpActive: false,
+      condText: left + ' < ' + right + ' (Chưa kiểm tra)', swappedPairs: [], midIdx: null,
+      t: 'Khởi tạo hai chỉ số đối xứng',
+      desc: 'Đặt left = 0 ở đầu mảng và right = ' + (n - 1) + ' ở cuối mảng (n = ' + n + ').'
+    });
+
+    while (left < right) {
+      S.push({
+        preset: preset, lines: lines, ln: 2, st: '',
+        a: a.slice(), left: left, right: right, tmp: '?', tmpActive: false,
+        condText: left + ' < ' + right + ' → true', swappedPairs: swappedPairs.slice(), midIdx: null,
+        t: 'Kiểm tra while (' + left + ' < ' + right + ')',
+        desc: 'Vì left (' + left + ') < right (' + right + ') đúng, tiến hành hoán đổi cặp a[' + left + '] = ' + a[left] + ' và a[' + right + '] = ' + a[right] + '.'
+      });
+
+      var tmp = a[left];
+      S.push({
+        preset: preset, lines: lines, ln: 3, st: 'warn',
+        a: a.slice(), left: left, right: right, tmp: tmp, tmpActive: true,
+        condText: 'Bước 1/3: giữ tạm a[' + left + '] = ' + tmp, swappedPairs: swappedPairs.slice(), midIdx: null,
+        t: 'tmp = a[' + left + '] (' + tmp + ')',
+        desc: 'Cất giá trị a[' + left + '] = ' + tmp + ' vào biến tạm tmp để lát nữa không bị mất khi ghi đè.'
+      });
+
+      a[left] = a[right];
+      S.push({
+        preset: preset, lines: lines, ln: 4, st: 'warn',
+        a: a.slice(), left: left, right: right, tmp: tmp, tmpActive: true,
+        condText: 'Bước 2/3: chép a[' + right + '] sang a[' + left + ']', swappedPairs: swappedPairs.slice(), midIdx: null,
+        t: 'a[' + left + '] = a[' + right + '] (' + a[right] + ')',
+        desc: 'Ghi giá trị từ phải a[' + right + '] = ' + a[right] + ' đè vào a[' + left + ']. Nhờ có tmp, giá trị cũ ' + tmp + ' vẫn còn nguyên.'
+      });
+
+      a[right] = tmp;
+      swappedPairs.push(left, right);
+      S.push({
+        preset: preset, lines: lines, ln: 5, st: 'ok',
+        a: a.slice(), left: left, right: right, tmp: tmp, tmpActive: true,
+        condText: 'Bước 3/3: chép tmp sang a[' + right + ']', swappedPairs: swappedPairs.slice(), midIdx: null,
+        t: 'a[' + right + '] = tmp (' + tmp + ')',
+        desc: 'Hoàn tất hoán đổi cặp (' + left + ', ' + right + '): mảng hiện tại là {' + a.join(', ') + '}.'
+      });
+
+      left++;
+      right--;
+      S.push({
+        preset: preset, lines: lines, ln: 6, st: '',
+        a: a.slice(), left: left, right: right, tmp: tmp, tmpActive: false,
+        condText: 'Dịch vào giữa: left = ' + left + ', right = ' + right, swappedPairs: swappedPairs.slice(), midIdx: null,
+        t: 'left++; right--;',
+        desc: 'Tăng left lên ' + left + ' và giảm right xuống ' + right + ' để tiến vào cặp kế tiếp.'
+      });
+    }
+
+    var mid = (n % 2 === 1) ? left : null;
+    S.push({
+      preset: preset, lines: lines, ln: 2, st: 'ok',
+      a: a.slice(), left: left, right: right, tmp: '-', tmpActive: false,
+      condText: left + ' < ' + right + ' → false (Kết thúc)', swappedPairs: swappedPairs.slice(), midIdx: mid,
+      t: 'Hoàn tất đảo ngược tại chỗ!',
+      desc: (mid !== null
+        ? 'Vì left == right (' + left + ' == ' + right + '), vòng lặp dừng. Phần tử giữa a[' + mid + '] = ' + a[mid] + ' đứng yên, mảng thành {' + a.join(', ') + '}.'
+        : 'Vì left (' + left + ') > right (' + right + '), vòng lặp dừng. Toàn bộ ' + (n / 2) + ' cặp đã hoán đổi xong: {' + a.join(', ') + '}.')
+    });
+    return S;
+  }
+
+  /* ==========================================================
+   * 3. RANGE-FOR (A14359): int x vs int& x vs const int& x
+   * ========================================================== */
+  function buildRangeForSteps(tab, tryConstErr){
+    var initV = [4, 7, 10, 13];
+    var v = initV.slice();
+    var S = [];
+
+    if (tab === 'val') {
+      var lines = [
+        'vector<int> v{4, 7, 10, 13};',
+        'for (int x : v) { // bản sao',
+        '  x *= 2;',
+        '}',
+        'for (int x : v) cout << x << \' \';'
+      ];
+      S.push({
+        tab: tab, lines: lines, ln: 0, errLn: -1, st: '',
+        v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: null, changedIdx: -1, out: [],
+        t: 'Khởi tạo vector v{4, 7, 10, 13}',
+        desc: 'Biến lặp int x (không có &) sẽ tạo một bản sao tách rời trên mỗi vòng lặp.'
+      });
+      for (var i = 0; i < v.length; i++) {
+        var copyX = v[i];
+        S.push({
+          tab: tab, lines: lines, ln: 1, errLn: -1, st: '',
+          v: v.slice(), curIdx: i, xVal: copyX, xState: 'copy', sumVal: null, changedIdx: -1, out: [],
+          t: 'Sao chép v[' + i + '] = ' + v[i] + ' sang x',
+          desc: 'Ô x nhận bản sao giá trị ' + copyX + ' từ v[' + i + ']. Hai ô độc lập nhau hoàn toàn.'
+        });
+        copyX *= 2;
+        S.push({
+          tab: tab, lines: lines, ln: 2, errLn: -1, st: 'warn',
+          v: v.slice(), curIdx: i, xVal: copyX, xState: 'copy-chg', sumVal: null, changedIdx: -1, out: [],
+          t: 'x *= 2 → x thành ' + copyX + ', v[' + i + '] vẫn là ' + v[i],
+          desc: 'Phép nhân đôi chỉ thay đổi ô bản sao x thành ' + copyX + '; phần tử gốc v[' + i + '] giữ nguyên ' + v[i] + '!'
+        });
+      }
+      S.push({
+        tab: tab, lines: lines, ln: 4, errLn: -1, st: 'ok',
+        v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: null, changedIdx: -1, out: v.slice(),
+        t: 'Kết quả in ra: ' + v.join(' '),
+        desc: 'Sau vòng lặp dùng bản sao int x, vector gốc v vẫn không hề thay đổi: {' + v.join(', ') + '}.'
+      });
+      return S;
+    }
+
+    if (tab === 'ref') {
+      var linesR = [
+        'vector<int> v{4, 7, 10, 13};',
+        'for (int& x : v) { // tham chiếu',
+        '  x *= 2;',
+        '}',
+        'for (int x : v) cout << x << \' \';'
+      ];
+      S.push({
+        tab: tab, lines: linesR, ln: 0, errLn: -1, st: '',
+        v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: null, changedIdx: -1, out: [],
+        t: 'Khởi tạo vector v{4, 7, 10, 13}',
+        desc: 'Khai báo int& x (có dấu &) biến x thành tên gọi khác (alias) gắn thẳng vào từng ô của v.'
+      });
+      for (var j = 0; j < v.length; j++) {
+        S.push({
+          tab: tab, lines: linesR, ln: 1, errLn: -1, st: '',
+          v: v.slice(), curIdx: j, xVal: v[j], xState: 'alias', sumVal: null, changedIdx: -1, out: [],
+          t: 'x trở thành đồng danh của v[' + j + ']',
+          desc: 'Không có bản sao nào được tạo ra! Nhãn x và v[' + j + '] cùng gắn vào một ô dữ liệu chứa ' + v[j] + '.'
+        });
+        v[j] *= 2;
+        S.push({
+          tab: tab, lines: linesR, ln: 2, errLn: -1, st: 'ok',
+          v: v.slice(), curIdx: j, xVal: v[j], xState: 'alias-chg', sumVal: null, changedIdx: j, out: [],
+          t: 'x *= 2 → sửa trực tiếp v[' + j + '] = ' + v[j],
+          desc: 'Thay đổi qua x chính là sửa thẳng vào ô v[' + j + '], giá trị mới là ' + v[j] + '.'
+        });
+      }
+      S.push({
+        tab: tab, lines: linesR, ln: 4, errLn: -1, st: 'ok',
+        v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: null, changedIdx: -1, out: v.slice(),
+        t: 'Kết quả in ra: ' + v.join(' '),
+        desc: 'Toàn bộ vector v đã được nhân đôi tại chỗ thành {' + v.join(', ') + '} nhờ tham chiếu int& x.'
+      });
+      return S;
+    }
+
+    // tab === 'cref'
+    if (tryConstErr) {
+      var linesErr = [
+        'vector<int> v{4, 7, 10, 13};',
+        'for (const int& x : v) {',
+        '  x *= 2; // LỖI BIÊN DỊCH!',
+        '}'
+      ];
+      return [{
+        tab: tab, lines: linesErr, ln: 2, errLn: 2, st: 'bad',
+        v: v.slice(), curIdx: 0, xVal: v[0], xState: 'const-err', sumVal: null, changedIdx: -1, out: ['[Lỗi biên dịch: cannot assign to variable \'x\' with const-qualified type]'],
+        t: 'Lỗi biên dịch khi sửa const int& x!',
+        desc: 'Từ khoá const khoá quyền ghi ngay lúc biên dịch: x gắn trực tiếp vào v[i] không tốn chi phí sao chép nhưng tuyệt đối cấm thay đổi giá trị.'
+      }];
+    }
+
+    var linesC = [
+      'vector<int> v{4, 7, 10, 13};',
+      'int sum = 0;',
+      'for (const int& x : v) { // chỉ đọc',
+      '  sum += x;',
+      '}',
+      'cout << sum;'
+    ];
+    var sum = 0;
+    S.push({
+      tab: tab, lines: linesC, ln: 1, errLn: -1, st: '',
+      v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: 0, changedIdx: -1, out: [],
+      t: 'Khởi tạo sum = 0, chuẩn bị duyệt const int& x',
+      desc: 'const int& x vừa gắn trực tiếp vào phần tử gốc (0 bản sao), vừa đặt ổ khoá chỉ đọc để tránh sửa nhầm.'
+    });
+    for (var k = 0; k < v.length; k++) {
+      S.push({
+        tab: tab, lines: linesC, ln: 2, errLn: -1, st: '',
+        v: v.slice(), curIdx: k, xVal: v[k], xState: 'const-alias', sumVal: sum, changedIdx: -1, out: [],
+        t: 'x đọc trực tiếp v[' + k + '] = ' + v[k] + ' (có khoá const)',
+        desc: 'x là tên gọi khác chỉ đọc của v[' + k + ']. Không tạo bản sao và không cho phép gán lại x.'
+      });
+      sum += v[k];
+      S.push({
+        tab: tab, lines: linesC, ln: 3, errLn: -1, st: 'ok',
+        v: v.slice(), curIdx: k, xVal: v[k], xState: 'const-alias', sumVal: sum, changedIdx: -1, out: [],
+        t: 'sum += x → sum = ' + sum,
+        desc: 'Cộng dồn giá trị đọc được ' + v[k] + ' vào sum, thu được ' + sum + '.'
+      });
+    }
+    S.push({
+      tab: tab, lines: linesC, ln: 5, errLn: -1, st: 'ok',
+      v: v.slice(), curIdx: -1, xVal: null, xState: 'none', sumVal: sum, changedIdx: -1, out: [sum],
+      t: 'Hoàn tất duyệt an toàn: sum = ' + sum,
+      desc: 'Kết quả in ra 34. Vector v vẫn được giữ nguyên vẹn {' + v.join(', ') + '}.'
+    });
+    return S;
+  }
+
+  /* ==========================================================
+   * 4. SHIFT-ROTATE (A14374): Insert, Erase, Rotate by 3 reversals
+   * ========================================================== */
+  function buildShiftRotateSteps(tab, opts){
+    opts = opts || {};
+    var S = [];
+
+    if (tab === 'insert') {
+      var wrong = !!opts.wrongShift;
+      var v = [15, 25, 35, 45];
+      var k = 1, x = 99, n = 4;
+      var lines = wrong ? [
+        'vector<int> v{15, 25, 35, 45};',
+        'int n = 4, k = 1, x = 99;',
+        'v.push_back(0); // mở thêm 1 chỗ',
+        'for (int i = k + 1; i <= n; i++) {',
+        '  v[i] = v[i - 1]; // SAI CHIỀU!',
+        '}',
+        'v[k] = x;'
+      ] : [
+        'vector<int> v{15, 25, 35, 45};',
+        'int n = 4, k = 1, x = 99;',
+        'v.push_back(0); // mở thêm 1 chỗ',
+        'for (int i = n; i > k; i--) {',
+        '  v[i] = v[i - 1]; // phải -> trái',
+        '}',
+        'v[k] = x;'
+      ];
+
+      S.push({
+        tab: tab, wrong: wrong, lines: lines, ln: 0, errLn: -1, st: '',
+        arr: v.slice(), activeIdx: -1, fromIdx: -1, toIdx: -1, lostIdx: -1, blockSplit: null,
+        banner: 'Chèn x = 99 vào vị trí k = 1 (hiện size = 4)',
+        t: 'Trạng thái ban đầu trước khi chèn',
+        desc: 'Muốn chèn 99 vào chỉ số k = 1 mà giữ nguyên {25, 35, 45}, ta phải mở thêm 1 chỗ cuối rồi dịch các phần tử từ k trở đi sang phải.'
+      });
+
+      v.push(0);
+      S.push({
+        tab: tab, wrong: wrong, lines: lines, ln: 2, errLn: -1, st: '',
+        arr: v.slice(), activeIdx: 4, fromIdx: -1, toIdx: -1, lostIdx: -1, blockSplit: null,
+        banner: 'v.push_back(0) → mở thêm ô trống ở cuối [4]',
+        t: 'Bước 1: Mở rộng cuối dãy thêm 1 chỗ',
+        desc: 'Sau v.push_back(0), vector dài 5 phần tử: {15, 25, 35, 45, 0}.'
+      });
+
+      if (!wrong) {
+        for (var i = n; i > k; i--) {
+          var moved = v[i - 1];
+          v[i] = moved;
+          S.push({
+            tab: tab, wrong: false, lines: lines, ln: 4, errLn: -1, st: '',
+            arr: v.slice(), activeIdx: i, fromIdx: i - 1, toIdx: i, lostIdx: -1, blockSplit: null,
+            banner: 'v[' + i + '] = v[' + (i - 1) + '] (dịch ' + moved + ' sang phải 1 ô)',
+            t: 'i = ' + i + ': dịch v[' + (i - 1) + '] (' + moved + ') → v[' + i + ']',
+            desc: 'Dịch từ phải sang trái nên ô đích v[' + i + '] luôn là ô vừa được dời chỗ trước đó, không bao giờ mất dữ liệu!'
+          });
+        }
+        v[k] = x;
+        S.push({
+          tab: tab, wrong: false, lines: lines, ln: 6, errLn: -1, st: 'ok',
+          arr: v.slice(), activeIdx: k, fromIdx: -1, toIdx: k, lostIdx: -1, blockSplit: null,
+          banner: 'Hoàn tất: v[1] = 99 → {' + v.join(', ') + '}',
+          t: 'Bước 3: Gán v[k] = 99 thành công',
+          desc: 'Chèn hoàn chỉnh vào vị trí k = 1: dãy mới là {15, 99, 25, 35, 45} (size = 5).'
+        });
+      } else {
+        for (var j = k + 1; j <= n; j++) {
+          var lost = v[j];
+          v[j] = v[j - 1];
+          S.push({
+            tab: tab, wrong: true, lines: lines, ln: 4, errLn: 4, st: 'bad',
+            arr: v.slice(), activeIdx: j, fromIdx: j - 1, toIdx: j, lostIdx: j, blockSplit: null,
+            banner: 'GHI ĐÈ! v[' + j + '] = v[' + (j - 1) + '] → mất giá trị ' + lost + '!',
+            t: 'i = ' + j + ': v[' + j + '] bị ghi đè thành ' + v[j] + ' (mất ' + lost + ')',
+            desc: 'Dịch xuôi từ trái sang phải khiến giá trị v[' + (j - 1) + '] = 25 liên tục sao chép đè lên các phần tử phía sau!'
+          });
+        }
+        v[k] = x;
+        S.push({
+          tab: tab, wrong: true, lines: lines, ln: 6, errLn: 6, st: 'bad',
+          arr: v.slice(), activeIdx: k, fromIdx: -1, toIdx: k, lostIdx: -1, blockSplit: null,
+          banner: 'HỎNG DỮ LIỆU: {' + v.join(', ') + '} (mất 35 và 45!)',
+          t: 'Hậu quả của dịch sai chiều',
+          desc: 'Trước khi gán 99, mảng đã bị biến thành {15, 25, 25, 25, 25}. Gán v[1] = 99 cho ra {15, 99, 25, 25, 25} — mất hẳn 35 và 45!'
+        });
+      }
+      return S;
+    }
+
+    if (tab === 'erase') {
+      var ve = [15, 25, 35, 45, 55];
+      var ke = 2;
+      var ne = ve.length;
+      var linesE = [
+        'vector<int> v{15, 25, 35, 45, 55};',
+        'int n = 5, k = 2;',
+        'for (int i = k; i + 1 < n; i++) {',
+        '  v[i] = v[i + 1]; // trái -> phải',
+        '}',
+        'v.pop_back(); // bỏ phần tử thừa cuối'
+      ];
+      S.push({
+        tab: tab, wrong: false, lines: linesE, ln: 0, errLn: -1, st: '',
+        arr: ve.slice(), activeIdx: ke, fromIdx: -1, toIdx: -1, lostIdx: -1, blockSplit: null,
+        banner: 'Chuẩn bị xoá v[2] = 35 (dịch trái từ k = 2 tới n - 2 = 3)',
+        t: 'Trạng thái ban đầu trước khi xoá k = 2',
+        desc: 'Để xoá v[2] = 35, ta kéo lần lượt các phần tử bên phải sang trái 1 ô (từ trái sang phải), rồi mới pop_back().'
+      });
+      for (var p = ke; p + 1 < ne; p++) {
+        ve[p] = ve[p + 1];
+        S.push({
+          tab: tab, wrong: false, lines: linesE, ln: 3, errLn: -1, st: '',
+          arr: ve.slice(), activeIdx: p, fromIdx: p + 1, toIdx: p, lostIdx: -1, blockSplit: null,
+          banner: 'v[' + p + '] = v[' + (p + 1) + '] (kéo ' + ve[p] + ' sang trái)',
+          t: 'i = ' + p + ': v[' + p + '] = v[' + (p + 1) + '] (' + ve[p] + ')',
+          desc: 'Đưa giá trị ' + ve[p] + ' từ v[' + (p + 1) + '] lùi về v[' + p + '].'
+        });
+      }
+      ve.pop();
+      S.push({
+        tab: tab, wrong: false, lines: linesE, ln: 5, errLn: -1, st: 'ok',
+        arr: ve.slice(), activeIdx: -1, fromIdx: -1, toIdx: -1, lostIdx: -1, blockSplit: null,
+        banner: 'v.pop_back() → cắt ô dư cuối, còn {' + ve.join(', ') + '}',
+        t: 'Bước cuối: v.pop_back() hoàn tất xoá',
+        desc: 'Loại bỏ bản sao thừa ở cuối mảng. Dãy còn 4 phần tử: {15, 25, 45, 55}.'
+      });
+      return S;
+    }
+
+    // tab === 'rotate'
+    var kRot = (opts.kRot != null) ? opts.kRot : 7;
+    var vr = [10, 20, 30, 40, 50];
+    var nr = vr.length;
+    var shift = kRot % nr;
+    // Tag each element with block 'a' (initial front n-shift) or 'b' (initial tail shift)
+    var tags = vr.map(function(val, idx){
+      return { val: val, blk: idx < nr - shift ? 'a' : 'b' };
+    });
+    function revSeg(arrObjs, l, r){
+      while (l < r) {
+        var t = arrObjs[l]; arrObjs[l] = arrObjs[r]; arrObjs[r] = t;
+        l++; r--;
+      }
+    }
+    function cloneTags(ts){ return ts.map(function(o){ return { val: o.val, blk: o.blk }; }); }
+
+    var linesRot = [
+      'vector<int> v{10, 20, 30, 40, 50};',
+      'int n = 5, k = ' + kRot + ';',
+      'int shift = k % n; // shift = ' + shift,
+      'if (shift > 0) {',
+      '  reverse_range(v, 0, n - 1);     // 1. Cả dãy',
+      '  reverse_range(v, 0, shift - 1); // 2. ' + shift + ' đầu',
+      '  reverse_range(v, shift, n - 1); // 3. ' + (nr - shift) + ' cuối',
+      '}'
+    ];
+
+    S.push({
+      tab: tab, kRot: kRot, shift: shift, lines: linesRot, ln: 2, errLn: -1, st: '',
+      tags: cloneTags(tags), seg: null,
+      banner: 'k = ' + kRot + ' trên n = 5 → rút gọn shift = ' + kRot + ' % 5 = ' + shift,
+      t: 'Rút gọn số bước xoay k % n = ' + shift,
+      desc: shift === 0
+        ? 'Vì ' + kRot + ' chia hết cho 5 (shift = 0), xoay ' + kRot + ' bước đưa dãy về đúng vị trí ban đầu!'
+        : 'Xoay phải ' + shift + ' bước sẽ đưa khối cuối [' + vr.slice(nr - shift).join(', ') + '] lên trước khối đầu [' + vr.slice(0, nr - shift).join(', ') + '].'
+    });
+
+    if (shift === 0) {
+      S.push({
+        tab: tab, kRot: kRot, shift: shift, lines: linesRot, ln: 3, errLn: -1, st: 'ok',
+        tags: cloneTags(tags), seg: null,
+        banner: 'shift == 0 → Giữ nguyên {' + vr.join(', ') + '}',
+        t: 'Hoàn tất (không cần đảo)',
+        desc: 'Điều kiện if (shift > 0) sai nên dãy giữ nguyên {' + vr.join(', ') + '}.'
+      });
+      return S;
+    }
+
+    revSeg(tags, 0, nr - 1);
+    S.push({
+      tab: tab, kRot: kRot, shift: shift, lines: linesRot, ln: 4, errLn: -1, st: '',
+      tags: cloneTags(tags), seg: [0, nr - 1],
+      banner: 'Lần 1: đảo [0..' + (nr - 1) + '] → đưa khối vàng lên đầu (đang ngược)',
+      t: 'Bước 1/3: Đảo ngược toàn bộ dãy [0..' + (nr - 1) + ']',
+      desc: 'Đảo toàn bộ dãy thu được {' + tags.map(function(o){return o.val;}).join(', ') + '}. Hai khối đã đổi chỗ cho nhau nhưng thứ tự bên trong mỗi khối bị ngược.'
+    });
+
+    revSeg(tags, 0, shift - 1);
+    S.push({
+      tab: tab, kRot: kRot, shift: shift, lines: linesRot, ln: 5, errLn: -1, st: '',
+      tags: cloneTags(tags), seg: [0, shift - 1],
+      banner: 'Lần 2: đảo đoạn đầu [0..' + (shift - 1) + '] → trả đúng thứ tự khối vàng',
+      t: 'Bước 2/3: Đảo ngược ' + shift + ' phần tử đầu [0..' + (shift - 1) + ']',
+      desc: 'Đảo lại đoạn đầu giúp ' + shift + ' phần tử vừa đưa lên đầu trở về đúng thứ tự ban đầu: {' + tags.map(function(o){return o.val;}).join(', ') + '}.'
+    });
+
+    revSeg(tags, shift, nr - 1);
+    S.push({
+      tab: tab, kRot: kRot, shift: shift, lines: linesRot, ln: 6, errLn: -1, st: 'ok',
+      tags: cloneTags(tags), seg: [shift, nr - 1],
+      banner: 'Lần 3: đảo đoạn cuối [' + shift + '..' + (nr - 1) + '] → hoàn tất xoay phải ' + shift + ' bước!',
+      t: 'Bước 3/3: Đảo ngược ' + (nr - shift) + ' phần tử cuối [' + shift + '..' + (nr - 1) + ']',
+      desc: 'Đoạn cuối trở lại đúng thứ tự. Kết quả xoay phải ' + kRot + ' bước tại chỗ: {' + tags.map(function(o){return o.val;}).join(', ') + '}.'
+    });
+    return S;
+  }
+
+  /* ==========================================================
+   * CONTROLLER & UI RENDERING
+   * ========================================================== */
+  var state = {
+    boundsTab: 'safe',
+    revPreset: 'odd',
+    rfTab: 'val',
+    rfTryConstErr: false,
+    srTab: 'insert',
+    srWrongShift: false,
+    srKRot: 7,
+    stepIdx: 0,
+    snaps: [],
+    timer: null
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(items, activeId, onPick){
+    var el = $('tabs');
+    el.innerHTML = items.map(function(t){
+      var sel = t.id === activeId;
+      return '<button class="tab" role="tab" aria-selected="' + (sel ? 'true' : 'false') + '" data-id="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('.tab'), function(b){
+      b.onclick = function(){ onPick(b.getAttribute('data-id')); };
+    });
+  }
+
+  function renderStepperChrome(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ stopTimer(); if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ stopTimer(); if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('all').onclick = function(){
+      stopTimer();
+      if (state.stepIdx >= state.snaps.length - 1) return;
+      state.timer = setInterval(function(){
+        if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); }
+        else stopTimer();
+      }, 650);
+    };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+  }
+
+  function updateStepperButtons(){
+    var k = state.stepIdx, n = state.snaps.length;
+    if ($('prev')) $('prev').disabled = k <= 0;
+    if ($('next')) $('next').disabled = k >= n - 1;
+    if ($('all')) $('all').disabled = k >= n - 1;
+  }
+
+  /* --- Render 1: Bounds --- */
+  function initBounds(){
+    $('lead').innerHTML = 'Chọn vòng lặp hoặc <code>v.at(i)</code> rồi bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi chỉ số hợp lệ và lỗi vượt biên.';
+    $('sub-ctrl').style.display = 'none';
+    renderTabs([
+      { id: 'safe', label: '1. i=0; i<n (Chuẩn)' },
+      { id: 'off1', label: '2. i=1; i<=n (Lệch +1)' },
+      { id: 'over', label: '3. i=0; i<=n (Dư)' },
+      { id: 'at', label: '4. v.at(i) (Kiểm tra biên)' }
+    ], state.boundsTab, function(id){
+      state.boundsTab = id; stopTimer(); state.stepIdx = 0; initBounds();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="console"><div class="con-head"><span>Console Output</span><span id="bnd-flag-badge"></span></div><div class="con-line" id="con-out"></div></div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Thông số kích thước &amp; Ô nhớ</p><span class="badge" id="bnd-i-badge"></span></div>' +
+            '<div class="meta-row" id="bnd-meta"></div>' +
+          '</div>' +
+          '<div class="mem-stage">' +
+            '<div class="arr-strip" id="bnd-strip" style="grid-template-columns:repeat(5,1fr)"></div>' +
+            '<div class="expr-bar">' +
+              '<span style="color:var(--muted);font-weight:600">Kiểm tra bước này:</span>' +
+              '<span class="mono-val" id="bnd-cond"></span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildBoundsSteps(state.boundsTab);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderBounds(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+    $('bnd-i-badge').textContent = 'i = ' + (s.i === null ? '-' : s.i);
+    $('bnd-flag-badge').textContent = 'flag = ' + s.flag;
+
+    if (s.tab === 'at') {
+      $('bnd-meta').innerHTML =
+        '<div class="meta-box"><div class="meta-k">v.size()</div><div class="meta-v">4</div></div>' +
+        '<div class="meta-box"><div class="meta-k">Chỉ số hợp lệ</div><div class="meta-v">0 .. 3</div></div>' +
+        '<div class="meta-box"><div class="meta-k">Kiểm biên</div><div class="meta-v" style="color:var(--true)">Bật (.at)</div></div>';
+    } else {
+      $('bnd-meta').innerHTML =
+        '<div class="meta-box"><div class="meta-k">sizeof(arr)</div><div class="meta-v">16 B</div></div>' +
+        '<div class="meta-box"><div class="meta-k">sizeof(arr[0])</div><div class="meta-v">4 B</div></div>' +
+        '<div class="meta-box"><div class="meta-k">std::size(arr)</div><div class="meta-v">4</div></div>';
+    }
+
+    var cols = [];
+    for (var idx = 0; idx < 4; idx++) {
+      var cls = 'arr-cell';
+      var pill = '';
+      if (s.i === idx) {
+        cls += ' active';
+        pill = '<span class="pill pill-cur">&uarr; i = ' + idx + '</span>';
+      } else if (s.skipped.indexOf(idx) >= 0) {
+        cls += ' skip';
+        pill = '<span class="pill pill-warn">Bị sót</span>';
+      } else if (s.visited.indexOf(idx) >= 0) {
+        cls += ' done';
+      }
+      cols.push(
+        '<div class="arr-col">' +
+          '<div class="arr-idx">[' + idx + ']</div>' +
+          '<div class="' + cls + '">' +
+            '<div class="arr-val">' + s.arr[idx] + '</div>' +
+            '<div class="arr-sub">+' + (idx * 4) + 'B</div>' +
+          '</div>' +
+          '<div class="ptr-row">' + pill + '</div>' +
+        '</div>'
+      );
+    }
+    var oobCls = 'arr-cell ' + (s.oobHit === true || s.oobHit === 'caught' ? 'oob-hit' : 'oob');
+    var oobPill = s.oobHit === true
+      ? '<span class="pill pill-bad">&uarr; UB! (i=4)</span>'
+      : (s.oobHit === 'caught' ? '<span class="pill pill-bad">&uarr; Chặn!</span>' : '<span class="pill pill-warn">Ngoài biên</span>');
+    cols.push(
+      '<div class="arr-col">' +
+        '<div class="arr-idx" style="color:var(--false)">[4] (UB)</div>' +
+        '<div class="' + oobCls + '">' +
+          '<div class="arr-val">' + s.flag + '</div>' +
+          '<div class="arr-sub">biến flag</div>' +
+        '</div>' +
+        '<div class="ptr-row">' + oobPill + '</div>' +
+      '</div>'
+    );
+    $('bnd-strip').innerHTML = cols.join('');
+
+    $('bnd-cond').textContent = s.condText;
+    $('bnd-cond').style.color = s.condOk ? 'var(--true)' : 'var(--false)';
+
+    $('con-out').innerHTML = s.out.length
+      ? esc(s.out.join(' '))
+      : '<span class="con-empty">(chưa in giá trị nào)</span>';
+    updateStepperButtons();
+  }
+
+  /* --- Render 2: Reverse --- */
+  function initReverse(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi hai chỉ số đối xứng <code>left</code>, <code>right</code> và biến tạm <code>tmp</code> đảo ngược mảng tại chỗ.';
+    $('sub-ctrl').style.display = 'none';
+    renderTabs([
+      { id: 'odd', label: '1. Độ dài lẻ (n = 5)' },
+      { id: 'even', label: '2. Độ dài chẵn (n = 6)' }
+    ], state.revPreset, function(id){
+      state.revPreset = id; stopTimer(); state.stepIdx = 0; initReverse();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="console"><div class="con-head"><span>Trạng thái mảng hiện tại</span><span id="rev-n-badge"></span></div><div class="con-line" id="rev-arr-log"></div></div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div class="panel-head"><p class="panel-title">Mảng gốc trong bộ nhớ (tại chỗ)</p><span class="badge" id="rev-cond-badge"></span></div>' +
+          '<div class="mem-stage">' +
+            '<div class="arr-strip" id="rev-strip"></div>' +
+            '<div class="rev-extra">' +
+              '<div class="info-box" id="rev-tmp-box"><span class="info-lbl">Biến tạm <code>tmp</code></span><span class="info-num" id="rev-tmp-val">?</span></div>' +
+              '<div class="info-box"><span class="info-lbl">Điều kiện <code>left &lt; right</code></span><span class="mono-val" id="rev-lr-val"></span></div>' +
+            '</div>' +
+            '<div class="expr-bar">' +
+              '<span style="color:var(--muted);font-weight:600">Thao tác hiện tại:</span>' +
+              '<span class="mono-val" id="rev-cond-text"></span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildReverseSteps(state.revPreset);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderReverse(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, -1);
+    $('rev-n-badge').textContent = 'n = ' + s.a.length;
+    $('rev-arr-log').textContent = 'a = {' + s.a.join(', ') + '}';
+    $('rev-cond-badge').textContent = 'left=' + s.left + ', right=' + s.right;
+
+    var strip = $('rev-strip');
+    strip.style.gridTemplateColumns = 'repeat(' + s.a.length + ', 1fr)';
+    strip.innerHTML = s.a.map(function(val, idx){
+      var cls = 'arr-cell';
+      var pills = [];
+      if (s.midIdx === idx) {
+        cls += ' mid-stay';
+        pills.push('<span class="pill pill-ok">Đứng yên</span>');
+      } else {
+        if (idx === s.left) { cls += ' left-hi'; pills.push('<span class="pill pill-l">&uarr; left</span>'); }
+        if (idx === s.right) { cls += ' right-hi'; pills.push('<span class="pill pill-r">&uarr; right</span>'); }
+        if (idx !== s.left && idx !== s.right && s.swappedPairs.indexOf(idx) >= 0) cls += ' done';
+      }
+      return '<div class="arr-col">' +
+        '<div class="arr-idx">[' + idx + ']</div>' +
+        '<div class="' + cls + '"><div class="arr-val">' + val + '</div></div>' +
+        '<div class="ptr-row">' + pills.join('') + '</div>' +
+      '</div>';
+    }).join('');
+
+    $('rev-tmp-box').className = 'info-box' + (s.tmpActive ? ' active' : '');
+    $('rev-tmp-val').textContent = s.tmp;
+    $('rev-lr-val').textContent = s.left + ' < ' + s.right + (s.left < s.right ? ' (true)' : ' (false)');
+    $('rev-lr-val').style.color = s.left < s.right ? 'var(--true)' : 'var(--muted)';
+    $('rev-cond-text').textContent = s.condText;
+    updateStepperButtons();
+  }
+
+  /* --- Render 3: Range-For --- */
+  function initRangeFor(){
+    $('lead').innerHTML = 'Chọn kiểu biến lặp rồi bấm <b>Bước tiếp</b> để so sánh bản sao <code>int x</code>, đồng danh <code>int&amp; x</code> và chỉ đọc <code>const int&amp; x</code>.';
+    renderTabs([
+      { id: 'val', label: '1. int x (Bản sao)' },
+      { id: 'ref', label: '2. int& x (Tham chiếu)' },
+      { id: 'cref', label: '3. const int& x (Chỉ đọc)' }
+    ], state.rfTab, function(id){
+      state.rfTab = id; state.rfTryConstErr = false; stopTimer(); state.stepIdx = 0; initRangeFor();
+    });
+
+    if (state.rfTab === 'cref') {
+      $('sub-ctrl').style.display = 'flex';
+      $('sub-ctrl').innerHTML =
+        '<div class="chips"><span class="chip-lbl">Thử nghiệm:</span>' +
+        '<button class="chip ' + (!state.rfTryConstErr ? 'active' : '') + '" id="rf-safe-chip">Đọc bình thường (sum += x)</button>' +
+        '<button class="chip ' + (state.rfTryConstErr ? 'warn-active' : '') + '" id="rf-err-chip">Thử sửa x *= 2 (Lỗi biên dịch)</button>' +
+        '</div>';
+      $('rf-safe-chip').onclick = function(){ state.rfTryConstErr = false; stopTimer(); state.stepIdx = 0; initRangeFor(); };
+      $('rf-err-chip').onclick = function(){ state.rfTryConstErr = true; stopTimer(); state.stepIdx = 0; initRangeFor(); };
+    } else {
+      $('sub-ctrl').style.display = 'none';
+    }
+
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="console"><div class="con-head"><span>Console Output</span><span id="rf-sum-badge"></span></div><div class="con-line" id="con-out"></div></div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div class="panel-head"><p class="panel-title">Mô hình Ô nhớ: Vector gốc vs Biến lặp x</p><span class="badge" id="rf-mode-badge"></span></div>' +
+          '<div class="rf-stage">' +
+            '<div class="rf-vec" id="rf-vec"></div>' +
+            '<div class="rf-alias-box" id="rf-xbox"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildRangeForSteps(state.rfTab, state.rfTryConstErr);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderRangeFor(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+    $('rf-sum-badge').textContent = s.sumVal !== null ? ('sum = ' + s.sumVal) : ('v = {' + s.v.join(', ') + '}');
+    $('rf-mode-badge').textContent = s.tab === 'val' ? 'Bản sao tách rời' : (s.tab === 'ref' ? 'Đồng danh (alias)' : 'Đồng danh chỉ đọc');
+
+    $('rf-vec').innerHTML = s.v.map(function(val, idx){
+      var cls = 'rf-item';
+      var badge = '';
+      if (s.curIdx === idx) {
+        if (s.tab === 'val') { cls += ' cur'; badge = '<span class="pill pill-cur">Đang chép</span>'; }
+        else if (s.tab === 'ref') { cls += ' alias' + (s.changedIdx === idx ? ' changed' : ''); badge = '<span class="pill pill-r">&equiv; x</span>'; }
+        else { cls += ' const-alias'; badge = '<span class="pill pill-ok">&#128274; &equiv; x</span>'; }
+      }
+      return '<div class="' + cls + '">' +
+        '<div class="rf-left"><span class="rf-tag">v[' + idx + ']</span>' + badge + '</div>' +
+        '<span class="rf-val">' + val + '</span>' +
+      '</div>';
+    }).join('');
+
+    var xHtml = '';
+    if (s.xState === 'none') {
+      xHtml = '<div class="x-card"><div class="x-name" style="color:var(--muted)">Biến lặp x</div><div class="x-num" style="color:var(--muted)">—</div><div class="x-note">Đang ở ngoài vòng lặp for.</div></div>';
+    } else if (s.xState === 'copy' || s.xState === 'copy-chg') {
+      xHtml = '<div class="x-card copy">' +
+        '<div class="x-name" style="color:var(--accent)">int x (Bản sao riêng)</div>' +
+        '<div class="x-num" style="color:' + (s.xState === 'copy-chg' ? 'var(--warn)' : 'var(--text)') + '">' + s.xVal + '</div>' +
+        '<div class="x-note">' + (s.xState === 'copy-chg' ? 'Đã nhân đôi bản sao x. Ô gốc v[' + s.curIdx + '] không đổi!' : 'Sao chép giá trị từ v[' + s.curIdx + '] sang ô nhớ riêng của x.') + '</div>' +
+      '</div>';
+    } else if (s.xState === 'alias' || s.xState === 'alias-chg') {
+      xHtml = '<div class="x-card alias">' +
+        '<div class="x-name" style="color:var(--idx-r)">int&amp; x (Hộp đồng danh)</div>' +
+        '<div class="x-num">' + s.xVal + '</div>' +
+        '<div class="x-note">x và v[' + s.curIdx + '] là HAI TÊN GỌI cho CÙNG MỘT Ô dữ liệu. Sửa x là sửa v[' + s.curIdx + ']!</div>' +
+      '</div>';
+    } else if (s.xState === 'const-alias') {
+      xHtml = '<div class="x-card const-alias">' +
+        '<div class="x-name" style="color:var(--true)">&#128274; const int&amp; x</div>' +
+        '<div class="x-num">' + s.xVal + '</div>' +
+        '<div class="x-note">Gắn thẳng vào v[' + s.curIdx + '] (không sao chép), có khoá const chỉ cho phép đọc.</div>' +
+      '</div>';
+    } else if (s.xState === 'const-err') {
+      xHtml = '<div class="x-card err">' +
+        '<div class="x-name" style="color:var(--false)">&#128274; Lỗi biên dịch!</div>' +
+        '<div class="x-num" style="color:var(--false)">x *= 2</div>' +
+        '<div class="x-note" style="color:var(--false)">Trình biên dịch chặn phép gán vì x mang khoá const int&amp;.</div>' +
+      '</div>';
+    }
+    if (s.sumVal !== null) {
+      xHtml += '<div class="info-box"><span class="info-lbl">Biến tích luỹ <code>sum</code></span><span class="info-num">' + s.sumVal + '</span></div>';
+    }
+    $('rf-xbox').innerHTML = xHtml;
+
+    $('con-out').innerHTML = s.out.length
+      ? esc(s.out.join(' '))
+      : '<span class="con-empty">(chưa chạy lệnh cout)</span>';
+    updateStepperButtons();
+  }
+
+  /* --- Render 4: Shift & Rotate --- */
+  function initShiftRotate(){
+    $('lead').innerHTML = 'Chọn phép toán rồi bấm <b>Bước tiếp</b> để quan sát hướng dịch phần tử khi chèn/xoá hoặc 3 lần đảo đoạn để xoay vòng phải.';
+    renderTabs([
+      { id: 'insert', label: '1. Chèn x=99 tại k=1' },
+      { id: 'erase', label: '2. Xoá tại k=2' },
+      { id: 'rotate', label: '3. Xoay phải (3 lần đảo)' }
+    ], state.srTab, function(id){
+      state.srTab = id; stopTimer(); state.stepIdx = 0; initShiftRotate();
+    });
+
+    if (state.srTab === 'insert') {
+      $('sub-ctrl').style.display = 'flex';
+      $('sub-ctrl').innerHTML =
+        '<div class="chips"><span class="chip-lbl">Hướng dịch:</span>' +
+        '<button class="chip ' + (!state.srWrongShift ? 'active' : '') + '" id="sr-ok">Đúng (phải &rarr; trái: i = n..k+1)</button>' +
+        '<button class="chip ' + (state.srWrongShift ? 'warn-active' : '') + '" id="sr-bad">Thử dịch sai (trái &rarr; phải)</button>' +
+        '</div>';
+      $('sr-ok').onclick = function(){ state.srWrongShift = false; stopTimer(); state.stepIdx = 0; initShiftRotate(); };
+      $('sr-bad').onclick = function(){ state.srWrongShift = true; stopTimer(); state.stepIdx = 0; initShiftRotate(); };
+    } else if (state.srTab === 'rotate') {
+      $('sub-ctrl').style.display = 'flex';
+      $('sub-ctrl').innerHTML =
+        '<div class="chips"><span class="chip-lbl">Số bước xoay k (n = 5):</span>' +
+        [2, 7, 10].map(function(kv){
+          return '<button class="chip ' + (state.srKRot === kv ? 'active' : '') + '" data-k="' + kv + '">k = ' + kv + ' (shift=' + (kv % 5) + ')</button>';
+        }).join('') +
+        '</div>';
+      Array.prototype.forEach.call($('sub-ctrl').querySelectorAll('[data-k]'), function(b){
+        b.onclick = function(){
+          state.srKRot = parseInt(b.getAttribute('data-k'), 10);
+          stopTimer(); state.stepIdx = 0; initShiftRotate();
+        };
+      });
+    } else {
+      $('sub-ctrl').style.display = 'none';
+    }
+
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="console"><div class="con-head"><span>Vector hiện tại</span><span id="sr-sz-badge"></span></div><div class="con-line" id="sr-arr-log"></div></div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div class="panel-head"><p class="panel-title">Dải phần tử trong Vector</p><span class="badge" id="sr-op-badge"></span></div>' +
+          '<div class="mem-stage">' +
+            '<div class="arr-strip" id="sr-strip"></div>' +
+            '<div class="move-banner" id="sr-banner"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildShiftRotateSteps(state.srTab, { wrongShift: state.srWrongShift, kRot: state.srKRot });
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderShiftRotate(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    var strip = $('sr-strip');
+    if (s.tab === 'rotate') {
+      $('sr-sz-badge').textContent = 'n = 5, shift = ' + s.shift;
+      $('sr-op-badge').textContent = 'k = ' + s.kRot + ' (' + s.kRot + ' % 5 = ' + s.shift + ')';
+      $('sr-arr-log').textContent = 'v = {' + s.tags.map(function(o){ return o.val; }).join(', ') + '}';
+      strip.style.gridTemplateColumns = 'repeat(' + s.tags.length + ', 1fr)';
+      strip.innerHTML = s.tags.map(function(o, idx){
+        var inSeg = s.seg && idx >= s.seg[0] && idx <= s.seg[1];
+        var cls = 'arr-cell ' + (o.blk === 'a' ? 'blk-a' : 'blk-b') + (inSeg ? ' active' : '');
+        var pill = inSeg ? '<span class="pill pill-cur">Đoạn đảo</span>' : '';
+        return '<div class="arr-col">' +
+          '<div class="arr-idx">[' + idx + ']</div>' +
+          '<div class="' + cls + '"><div class="arr-val">' + o.val + '</div><div class="arr-sub">' + (o.blk === 'a' ? 'khối đầu' : 'khối cuối') + '</div></div>' +
+          '<div class="ptr-row">' + pill + '</div>' +
+        '</div>';
+      }).join('');
+    } else {
+      $('sr-sz-badge').textContent = 'v.size() = ' + s.arr.length;
+      $('sr-op-badge').textContent = s.tab === 'insert' ? 'Chèn tại k = 1' : 'Xoá tại k = 2';
+      $('sr-arr-log').textContent = 'v = {' + s.arr.join(', ') + '}';
+      strip.style.gridTemplateColumns = 'repeat(' + s.arr.length + ', 1fr)';
+      strip.innerHTML = s.arr.map(function(val, idx){
+        var cls = 'arr-cell';
+        var pill = '';
+        if (s.lostIdx === idx) {
+          cls += ' lost'; pill = '<span class="pill pill-bad">Bị đè!</span>';
+        } else if (idx === s.toIdx) {
+          cls += ' chg'; pill = '<span class="pill pill-warn">&larr; Nhận</span>';
+        } else if (idx === s.fromIdx) {
+          cls += ' active'; pill = '<span class="pill pill-cur">Nguồn &rarr;</span>';
+        } else if (idx === s.activeIdx) {
+          cls += ' active'; pill = '<span class="pill pill-cur">Mới</span>';
+        }
+        return '<div class="arr-col">' +
+          '<div class="arr-idx">[' + idx + ']</div>' +
+          '<div class="' + cls + '"><div class="arr-val">' + val + '</div></div>' +
+          '<div class="ptr-row">' + pill + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    var ban = $('sr-banner');
+    ban.className = 'move-banner' + (s.st === 'bad' ? ' bad' : (s.st === 'ok' ? ' ok' : ''));
+    ban.textContent = s.banner;
+    updateStepperButtons();
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var n = state.snaps.length;
+    if (VD === 'bounds') renderBounds(s, state.stepIdx, n);
+    else if (VD === 'reverse') renderReverse(s, state.stepIdx, n);
+    else if (VD === 'range-for') renderRangeFor(s, state.stepIdx, n);
+    else if (VD === 'shift-rotate') renderShiftRotate(s, state.stepIdx, n);
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); if ($('next')) $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if ($('prev')) $('prev').click(); }
+  });
+
+  window.ArrayVectorOpsModel = {
+    buildBoundsSteps: buildBoundsSteps,
+    buildReverseSteps: buildReverseSteps,
+    buildRangeForSteps: buildRangeForSteps,
+    buildShiftRotateSteps: buildShiftRotateSteps
+  };
+
+  var initDone = false;
+  if (VD === 'bounds') initBounds();
+  else if (VD === 'reverse') initReverse();
+  else if (VD === 'range-for') initRangeFor();
+  else if (VD === 'shift-rotate') initShiftRotate();
+  initDone = true;
+})();
+</script>
+</body>
+</html>

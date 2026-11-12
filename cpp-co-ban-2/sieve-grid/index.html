@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Sàng Eratosthenes C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --crossed-bg:#f1f5f9; --crossed-text:#94a3b8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --crossed-bg:#141923; --crossed-text:#64748b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .tab-lbl{font-size:12px;font-weight:700;color:var(--muted);margin-right:2px}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 9px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:600;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:54px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  .grid{display:grid;grid-template-columns:1.06fr 1.24fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:11.4px/1.52 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent;transition:background .15s}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .trace-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px}
+  .trace-row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:1px dashed var(--line)}
+  .trace-row:last-child{border-bottom:none}
+  .trace-k{color:var(--muted);font-weight:600}
+  .trace-v{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--text);text-align:right}
+  .why-box{margin-top:6px;padding:5px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-size:12px;line-height:1.38}
+
+  /* Sieve number grid */
+  .sieve-stage{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;flex:1;display:flex;flex-direction:column;justify-content:center}
+  .num-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .n-cell{background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;padding:4px 2px;
+    text-align:center;position:relative;transition:all .15s;min-width:0}
+  .n-val{font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.15;color:var(--text)}
+  .n-tag{font:700 9px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);height:11px;line-height:11px;overflow:hidden}
+
+  .n-cell.not-prime-init{background:var(--crossed-bg);border-color:var(--line);color:var(--crossed-text)}
+  .n-cell.not-prime-init .n-val{color:var(--crossed-text);text-decoration:line-through}
+  .n-cell.crossed{background:var(--crossed-bg);border-color:var(--line)}
+  .n-cell.crossed .n-val{color:var(--crossed-text);text-decoration:line-through;opacity:.72}
+  .n-cell.is-i{border-color:var(--true);background:var(--true-soft);box-shadow:0 0 0 2px rgba(21,128,61,.18)}
+  .n-cell.is-i .n-val{color:var(--true)}
+  .n-cell.is-i .n-tag{color:var(--true)}
+  .n-cell.is-i-skip{border-color:var(--warn);border-style:dashed;background:var(--warn-soft)}
+  .n-cell.is-i-skip .n-tag{color:var(--warn)}
+  .n-cell.is-j{border-color:var(--false);background:var(--false-soft);box-shadow:0 0 0 2px rgba(180,35,24,.2)}
+  .n-cell.is-j .n-val{color:var(--false);text-decoration:line-through}
+  .n-cell.is-j .n-tag{color:var(--false)}
+  .n-cell.final-prime{border-color:var(--true);background:var(--true-soft)}
+  .n-cell.final-prime .n-val{color:var(--true)}
+  .n-cell.prime-found{border-color:var(--true)}
+
+  .legend-row{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;color:var(--muted)}
+  .lg-chip{display:inline-flex;align-items:center;gap:4px}
+  .lg-sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .num-grid{grid-template-columns:repeat(6,1fr);gap:4px}
+    .n-val{font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn giới hạn <code>n</code> và bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi Sàng Eratosthenes loại bội số từ <code>j = i * i</code> cho tới <code>i * i &lt;= n</code>.</p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card left-col">
+      <div>
+        <div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>
+        <div class="code" id="code-view"></div>
+      </div>
+      <div class="trace-box" id="trace-box"></div>
+    </div>
+
+    <div class="card right-col">
+      <div class="panel-head">
+        <p class="panel-title">Bảng lưới is_prime[0..n]</p>
+        <span class="badge" id="prime-count-badge"></span>
+      </div>
+      <div class="sieve-stage">
+        <div class="num-grid" id="num-grid"></div>
+      </div>
+      <div class="legend-row">
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--cell-bg);border:1.5px solid var(--cell-border)"></i>Chờ xét (true)</span>
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--true-soft);border:1.5px solid var(--true)"></i>Nguyên tố</span>
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--false-soft);border:1.5px solid var(--false)"></i>Đang gạch j</span>
+        <span class="lg-chip"><i class="lg-sq" style="background:var(--crossed-bg);border:1.5px solid var(--line)"></i>Đã loại (false)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  var BUOC = parseInt(qparam('buoc') || '0', 10) || 0;
+  var rawN = parseInt(qparam('n') || '30', 10);
+  var initN = (rawN === 20 || rawN === 30 || rawN === 40) ? rawN : 30;
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(vector|bool|int|for|if|true|false)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  /* ==========================================================
+   * PURE SIEVE SIMULATION ENGINE
+   * ========================================================== */
+  function buildSieveSteps(n){
+    var lines = [
+      'int n = ' + n + ';',
+      'vector<bool> is_prime(n + 1, true);',
+      'is_prime[0] = is_prime[1] = false;',
+      'for (int i = 2; i * i <= n; i++) {',
+      '  if (is_prime[i]) {',
+      '    for (int j = i * i; j <= n; j += i) {',
+      '      is_prime[j] = false;',
+      '    }',
+      '  }',
+      '}'
+    ];
+    var isPrime = new Array(n + 1).fill(true);
+    var markedBy = new Array(n + 1).fill(null); // tracks prime factor that first crossed it
+    isPrime[0] = false; markedBy[0] = 'init';
+    isPrime[1] = false; markedBy[1] = 'init';
+
+    var S = [];
+    S.push({
+      n: n, lines: lines, ln: 2, st: '',
+      isPrime: isPrime.slice(), markedBy: markedBy.slice(),
+      curI: null, curJ: null, skipI: false, finished: false,
+      condOuter: 'Chuẩn bị sàng 2..' + n,
+      whyText: '0 và 1 không phải số nguyên tố nên đặt false ngay lúc khởi tạo; các ô 2..' + n + ' tạm đặt true.',
+      t: 'Khởi tạo bảng is_prime[0..' + n + ']',
+      desc: 'Đánh dấu sẵn 0 và 1 là false; toàn bộ các số từ 2 đến ' + n + ' đều bắt đầu ở trạng thái ứng viên (true).'
+    });
+
+    for (var i = 2; i * i <= n; i++) {
+      if (!isPrime[i]) {
+        S.push({
+          n: n, lines: lines, ln: 4, st: 'warn',
+          isPrime: isPrime.slice(), markedBy: markedBy.slice(),
+          curI: i, curJ: null, skipI: true, finished: false,
+          condOuter: i + ' * ' + i + ' = ' + (i * i) + ' <= ' + n + ' (true)',
+          whyText: 'is_prime[' + i + '] đã là false (bị gạch bởi ' + markedBy[i] + '), nên mọi bội của ' + i + ' cũng đã bị gạch rồi!',
+          t: 'i = ' + i + ': Bỏ qua vì is_prime[' + i + '] == false',
+          desc: 'Số ' + i + ' đã bị gạch trước đó (là bội của ' + markedBy[i] + '), nên bỏ qua vòng trong — không lặp lại công việc thừa.'
+        });
+        continue;
+      }
+
+      var skippedSmall = [];
+      for (var k = 2; k < i; k++) skippedSmall.push(k + '×' + i + '=' + (k * i));
+      var whyJump = i === 2
+        ? 'Với i = 2, i * i = 4 là bội đầu tiên lớn hơn 2.'
+        : 'Các bội nhỏ hơn i*i (' + skippedSmall.join(', ') + ') đều đã bị các số nguyên tố nhỏ hơn gạch từ trước, nên nhảy thẳng tới j = ' + i + ' * ' + i + ' = ' + (i * i) + '!';
+
+      S.push({
+        n: n, lines: lines, ln: 4, st: 'ok',
+        isPrime: isPrime.slice(), markedBy: markedBy.slice(),
+        curI: i, curJ: null, skipI: false, finished: false,
+        condOuter: i + ' * ' + i + ' = ' + (i * i) + ' <= ' + n + ' (true)',
+        whyText: whyJump,
+        t: 'i = ' + i + ' là số nguyên tố! Bắt đầu gạch từ j = ' + (i * i),
+        desc: 'is_prime[' + i + '] == true nên ' + i + ' là số nguyên tố. Vòng trong bắt đầu đánh dấu các bội từ j = i * i = ' + (i * i) + '.'
+      });
+
+      for (var j = i * i; j <= n; j += i) {
+        var alreadyCrossed = !isPrime[j];
+        var prevMark = markedBy[j];
+        isPrime[j] = false;
+        if (!alreadyCrossed) markedBy[j] = i;
+        S.push({
+          n: n, lines: lines, ln: 6, st: '',
+          isPrime: isPrime.slice(), markedBy: markedBy.slice(),
+          curI: i, curJ: j, skipI: false, finished: false,
+          condOuter: i + ' * ' + i + ' <= ' + n + ' · j = ' + j,
+          whyText: alreadyCrossed
+            ? ('Số ' + j + ' đã bị gạch bởi ' + prevMark + ' trước đó; đặt lại false vẫn an toàn.')
+            : ('Gạch mới bội số ' + j + ' = ' + i + ' × ' + (j / i) + ' (bước nhảy += ' + i + ').'),
+          t: 'i = ' + i + ': Đặt is_prime[' + j + '] = false',
+          desc: alreadyCrossed
+            ? ('j = ' + j + ' (đã là false từ lượt i = ' + prevMark + '). Tiếp tục cộng j += ' + i + '.')
+            : ('Đánh dấu hợp số j = ' + j + ' là false (ước tìm thấy: ' + i + '). Tiếp tục nhảy j += ' + i + '.')
+        });
+      }
+    }
+
+    var stopI = 2;
+    while (stopI * stopI <= n) stopI++;
+    var primes = [];
+    for (var p = 2; p <= n; p++) if (isPrime[p]) primes.push(p);
+
+    S.push({
+      n: n, lines: lines, ln: 3, st: 'ok',
+      isPrime: isPrime.slice(), markedBy: markedBy.slice(),
+      curI: stopI, curJ: null, skipI: false, finished: true,
+      condOuter: stopI + ' * ' + stopI + ' = ' + (stopI * stopI) + ' > ' + n + ' → Dừng!',
+      whyText: 'Mọi hợp số <= ' + n + ' chắc chắn có ít nhất một ước nguyên tố <= căn(' + n + '), nên tất cả ô còn true đều là số nguyên tố!',
+      t: 'Dừng sàng tại i = ' + stopI + ' (' + (stopI * stopI) + ' > ' + n + ') — Tìm được ' + primes.length + ' số nguyên tố!',
+      desc: 'Các số nguyên tố từ 2 đến ' + n + ': ' + primes.join(', ') + '.',
+      primes: primes
+    });
+    return S;
+  }
+
+  var state = {
+    n: initN,
+    snaps: buildSieveSteps(initN),
+    stepIdx: 0,
+    timer: null
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(){
+    var opts = [20, 30, 40];
+    $('tabs').innerHTML = '<span class="tab-lbl">Giới hạn:</span>' + opts.map(function(nv){
+      return '<button class="tab" role="tab" aria-selected="' + (state.n === nv ? 'true' : 'false') + '" data-n="' + nv + '">n = ' + nv + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(b){
+      b.onclick = function(){
+        stopTimer();
+        state.n = parseInt(b.getAttribute('data-n'), 10);
+        state.snaps = buildSieveSteps(state.n);
+        state.stepIdx = 0;
+        renderTabs();
+        renderCurrent();
+      };
+    });
+  }
+
+  function updateStepperButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var total = state.snaps.length;
+
+    $('step-badge').textContent = 'Bước ' + (state.stepIdx + 1) + '/' + total;
+    var stEl = $('status');
+    stEl.className = 'status' + (s.st ? ' ' + s.st : '');
+    stEl.innerHTML = '<b>Bước ' + (state.stepIdx + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+    $('code-view').innerHTML = s.lines.map(function(l, idx){
+      return '<div class="ln' + (s.ln === idx ? ' cur' : '') + '"><span class="no">' + (idx + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+
+    var trueCount = 0;
+    for (var k = 2; k <= s.n; k++) if (s.isPrime[k]) trueCount++;
+    $('prime-count-badge').textContent = s.finished ? (trueCount + ' số nguyên tố') : ('Đang còn true: ' + trueCount);
+    $('prime-count-badge').className = 'badge' + (s.finished ? ' ok' : '');
+
+    $('trace-box').innerHTML =
+      '<div class="trace-row"><span class="trace-k">i hiện tại</span><span class="trace-v">' + (s.curI === null ? '-' : s.curI) + '</span></div>' +
+      '<div class="trace-row"><span class="trace-k">Điều kiện vòng ngoài</span><span class="trace-v">' + esc(s.condOuter) + '</span></div>' +
+      '<div class="trace-row"><span class="trace-k">j đang gạch</span><span class="trace-v">' + (s.curJ === null ? '-' : s.curJ + ' (nhảy +=' + s.curI + ')') + '</span></div>' +
+      '<div class="why-box">' + esc(s.whyText) + '</div>';
+
+    var cells = [];
+    for (var num = 0; num <= s.n; num++) {
+      var cls = 'n-cell';
+      var tag = '';
+      if (num <= 1) {
+        cls += ' not-prime-init';
+        tag = 'false';
+      } else if (s.finished) {
+        if (s.isPrime[num]) { cls += ' final-prime'; tag = 'NT'; }
+        else { cls += ' crossed'; tag = '×' + s.markedBy[num]; }
+      } else if (num === s.curJ) {
+        cls += ' is-j';
+        tag = 'j=' + num;
+      } else if (num === s.curI) {
+        if (s.skipI) { cls += ' is-i-skip'; tag = 'bỏ qua'; }
+        else { cls += ' is-i'; tag = 'i=' + num; }
+      } else if (!s.isPrime[num]) {
+        cls += ' crossed';
+        tag = '×' + s.markedBy[num];
+      } else if (s.curI !== null && num < s.curI) {
+        cls += ' prime-found';
+        tag = 'NT';
+      }
+      cells.push(
+        '<div class="' + cls + '">' +
+          '<div class="n-val">' + num + '</div>' +
+          '<div class="n-tag">' + esc(tag) + '</div>' +
+        '</div>'
+      );
+    }
+    $('num-grid').innerHTML = cells.join('');
+
+    updateStepperButtons();
+  }
+
+  $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+  $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+  $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+  $('all').onclick = function(){
+    if (state.timer) { stopTimer(); updateStepperButtons(); return; }
+    if (state.stepIdx >= state.snaps.length - 1) return;
+    state.timer = setInterval(function(){
+      if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); return; }
+      state.stepIdx++; renderCurrent();
+      if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); }
+    }, 320);
+    updateStepperButtons();
+  };
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+
+  window.SieveGridModel = {
+    buildSieveSteps: buildSieveSteps
+  };
+
+  renderTabs();
+  if (BUOC > 0) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+  renderCurrent();
+})();
+</script>
+</body>
+</html>

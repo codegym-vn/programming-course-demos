@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Vòng xoay Mật mã Caesar C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --violet:#7c3aed; --violet-soft:#f3e8ff;
+    --code-bg:#f3f5f8; --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --wheel-out:#f8fafc; --wheel-in:#eef2ff; --wheel-stroke:#cbd5e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --violet:#c084fc; --violet-soft:#2e1065;
+      --code-bg:#11151c; --cell-border:#334155; --cell-bg:#1e293b;
+      --wheel-out:#111827; --wheel-in:#1e293b; --wheel-stroke:#334155;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  code{font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn.sm{padding:2px 7px;font-size:12px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:6px;min-height:52px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+
+  .sub-bar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px;
+    background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+  .inp-grp{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .inp{border:1px solid var(--cell-border);background:var(--code-bg);color:var(--text);
+    border-radius:5px;padding:3px 6px;font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .inp.num-in{width:54px;text-align:center}
+  .inp.txt-in{width:128px}
+
+  .grid{display:grid;grid-template-columns:0.95fr 1.15fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;margin-bottom:5px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+
+  .wheel-wrap{display:flex;justify-content:center;align-items:center;background:var(--code-bg);border:1px solid var(--line);
+    border-radius:8px;padding:4px}
+  .wheel-svg{width:100%;max-width:282px;height:auto;display:block}
+
+  .right-stack{display:flex;flex-direction:column;gap:7px}
+  .info-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+  .info-box.ok{border-color:var(--true);background:var(--true-soft)}
+  .info-box.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .info-k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  .info-v{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;color:var(--text);word-break:break-word}
+
+  .pair-strip{display:flex;flex-wrap:wrap;gap:4px}
+  .p-col{display:flex;flex-direction:column;align-items:center;gap:2px;width:32px}
+  .p-idx{font:700 9.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .p-box{width:100%;height:26px;display:flex;align-items:center;justify-content:center;
+    background:var(--cell-bg);border:1.5px solid var(--cell-border);border-radius:5px;
+    font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .p-box.cur{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+  .p-box.done-up{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .p-box.done-lo{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .p-box.done-keep{border-color:var(--line);background:var(--bg);color:var(--muted)}
+  .p-box.pending{border-style:dashed;opacity:.45}
+  .p-arrow{font-size:10px;line-height:1;color:var(--muted)}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .lead{font-size:12.5px}
+    .wheel-svg{max-width:250px}
+    .p-col{width:29px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn khoá <code>k</code> và bấm <b>Bước tiếp</b> (hoặc phím →) để quan sát vòng quay 26 chữ cái, chuẩn hoá <code>((k % 26) + 26) % 26</code> và bảo toàn chữ hoa/thường.</p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="sub-bar">
+    <div class="inp-grp">
+      <span>Khoá k:</span>
+      <button class="btn ghost sm" id="k-dec">-1</button>
+      <input class="inp num-in" id="k-in" type="number" min="-99" max="99" value="3" aria-label="Khoá k">
+      <button class="btn ghost sm" id="k-inc">+1</button>
+    </div>
+    <div class="inp-grp">
+      <span>Chuỗi đầu vào:</span>
+      <input class="inp txt-in" id="txt-in" type="text" maxlength="12" value="Zoo 2025!" aria-label="Chuỗi đầu vào">
+    </div>
+    <span class="badge" id="shift-badge" style="margin-left:auto"></span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Vòng xoay Caesar 26 chữ cái</p>
+        <span class="badge" id="wrap-badge">Ngoài: gốc · Trong: mã</span>
+      </div>
+      <div class="wheel-wrap">
+        <svg class="wheel-svg" id="wheel-svg" viewBox="-152 -152 304 304" role="img" aria-label="Vòng xoay 26 chữ cái Caesar"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Chuẩn hoá khoá &amp; Phép dịch từng ký tự</p>
+        <span class="badge" id="step-badge"></span>
+      </div>
+      <div class="right-stack">
+        <div class="info-box">
+          <div class="info-k">Công thức chuẩn hoá shift</div>
+          <div class="info-v" id="norm-formula"></div>
+        </div>
+        <div class="info-box">
+          <div class="info-k">Biến đổi song song (Trên: gốc · Dưới: kết quả)</div>
+          <div class="pair-strip" id="pair-strip"></div>
+        </div>
+        <div class="info-box" id="char-box">
+          <div class="info-k">Phép tính tại ký tự đang xét</div>
+          <div class="info-v" id="char-math"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  /* =========================================================
+     PURE CAESAR MODEL (Verified with g++ -std=c++20)
+     ========================================================= */
+
+  function normalizeShift(k){
+    // Matches C++20: ((k % 26) + 26) % 26
+    var rem = k % 26;
+    return ((rem + 26) % 26);
+  }
+
+  function shiftChar(ch, shift){
+    var code = ch.charCodeAt(0);
+    if (code >= 65 && code <= 90) {
+      var idx = code - 65;
+      var newIdx = (idx + shift) % 26;
+      return {
+        kind: 'upper', baseChar: 'A', baseCode: 65, idx: idx, newIdx: newIdx,
+        outChar: String.fromCharCode(65 + newIdx),
+        wrapped: (idx + shift) >= 26
+      };
+    }
+    if (code >= 97 && code <= 122) {
+      var idxL = code - 97;
+      var newIdxL = (idxL + shift) % 26;
+      return {
+        kind: 'lower', baseChar: 'a', baseCode: 97, idx: idxL, newIdx: newIdxL,
+        outChar: String.fromCharCode(97 + newIdxL),
+        wrapped: (idxL + shift) >= 26
+      };
+    }
+    return {
+      kind: 'other', baseChar: null, baseCode: null, idx: null, newIdx: null,
+      outChar: ch, wrapped: false
+    };
+  }
+
+  function buildCaesarSteps(text, k){
+    var cleanText = String(text).replace(/[^\x20-\x7E]/g, '').slice(0, 12);
+    if (!cleanText.length) cleanText = 'Zoo 2025!';
+    var shift = normalizeShift(k);
+    var rem = k % 26;
+    var normExpr = '((' + k + ' % 26) + 26) % 26 = (' + rem + ' + 26) % 26 = ' + shift;
+
+    var snaps = [];
+    var outChars = [];
+    for (var p = 0; p < cleanText.length; p++) outChars.push(null);
+
+    snaps.push({
+      text: cleanText, k: k, shift: shift, normExpr: normExpr,
+      curIdx: null, outChars: outChars.slice(), charInfo: null,
+      mathText: 'Chưa xét ký tự nào. Vòng trong đã xoay lệch ' + shift + ' nấc.',
+      st: '',
+      t: 'Chuẩn hoá khoá k = ' + k + ' -> shift = ' + shift,
+      desc: 'Đầu vào "' + cleanText + '" (' + cleanText.length + ' ký tự). Bấm Bước tiếp để dịch từng ký tự trên vòng tròn 26 chữ cái.'
+    });
+
+    for (var i = 0; i < cleanText.length; i++) {
+      var ch = cleanText[i];
+      var info = shiftChar(ch, shift);
+      outChars[i] = info;
+      var mathText, title, desc, st = '';
+      if (info.kind === 'upper' || info.kind === 'lower') {
+        var b = info.baseChar;
+        var rawSum = info.idx + shift;
+        mathText = '\'' + ch + '\' - \'' + b + '\' = ' + info.idx +
+          '  ->  (' + info.idx + ' + ' + shift + ') % 26 = ' + rawSum + ' % 26 = ' + info.newIdx +
+          '  ->  \'' + b + '\' + ' + info.newIdx + ' = \'' + info.outChar + '\'';
+        if (info.wrapped) {
+          st = 'warn';
+          title = 's[' + i + '] = \'' + ch + '\' -> quay vòng qua \'Z\' về \'' + info.outChar + '\'!';
+          desc = 'Tổng ' + info.idx + ' + ' + shift + ' = ' + rawSum + ' >= 26, phép % 26 đưa vòng về chỉ số ' + info.newIdx + ' (\'' + info.outChar + '\'). Bảo toàn chữ ' + (info.kind === 'upper' ? 'hoa' : 'thường') + '.';
+        } else {
+          st = 'ok';
+          title = 's[' + i + '] = \'' + ch + '\' -> dịch ' + shift + ' bước thành \'' + info.outChar + '\'';
+          desc = 'Chữ cái ' + (info.kind === 'upper' ? 'hoa' : 'thường') + ' tại vị trí ' + info.idx + ' cộng ' + shift + ' thành ' + info.newIdx + ' (\'' + info.outChar + '\').';
+        }
+      } else {
+        mathText = '\'' + ch + '\' không thuộc \'A\'..\'Z\' hay \'a\'..\'z\' -> giữ nguyên \'' + ch + '\'';
+        title = 's[' + i + '] = \'' + ch + '\' (không phải chữ cái -> giữ nguyên)';
+        desc = 'Khoảng trắng, chữ số và dấu câu không đi qua công thức dịch vòng.';
+      }
+      snaps.push({
+        text: cleanText, k: k, shift: shift, normExpr: normExpr,
+        curIdx: i, outChars: outChars.slice(), charInfo: info,
+        mathText: mathText, st: st, t: title, desc: desc
+      });
+    }
+
+    var finalOut = outChars.map(function(o){ return o.outChar; }).join('');
+    snaps.push({
+      text: cleanText, k: k, shift: shift, normExpr: normExpr,
+      curIdx: null, outChars: outChars.slice(), charInfo: null,
+      mathText: 'Hoàn tất: "' + cleanText + '"  ->  "' + finalOut + '"',
+      st: 'ok',
+      t: 'Hoàn tất mã hoá/giải mã: "' + finalOut + '"',
+      desc: k >= 0
+        ? 'Đã dịch vòng toàn bộ chữ cái với shift = ' + shift + '. Thử chuyển sang tab "Giải mã (k = -3)" để kiểm chứng giải mã ngược!'
+        : 'Khoá âm k = ' + k + ' được chuẩn hoá thành shift = ' + shift + ', tự động giải mã chính xác về "' + finalOut + '".'
+    });
+
+    return snaps;
+  }
+
+  window.CaesarModel = {
+    normalizeShift: normalizeShift,
+    shiftChar: shiftChar,
+    buildCaesarSteps: buildCaesarSteps
+  };
+
+  /* =========================================================
+     WHEEL SVG & UI CONTROLLER
+     ========================================================= */
+
+  var PRESETS = {
+    enc:   { label: 'Mã hoá (k = 3)',   k: 3,   text: 'Zoo 2025!' },
+    large: { label: 'Khoá lớn (k = 29)', k: 29, text: 'Zoo 2025!' },
+    dec:   { label: 'Giải mã (k = -3)', k: -3,  text: 'Crr 2025!' }
+  };
+
+  var SC = qparam('sc');
+  var BUOC = Number(qparam('buoc'));
+  var initPreset = (SC && PRESETS[SC]) ? SC : 'enc';
+
+  var state = {
+    preset: initPreset,
+    k: PRESETS[initPreset].k,
+    text: PRESETS[initPreset].text,
+    stepIdx: 0,
+    timer: null,
+    snaps: []
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(){
+    $('tabs').innerHTML = Object.keys(PRESETS).map(function(id){
+      var on = id === state.preset;
+      return '<button class="tab" role="tab" aria-selected="' + on + '" data-id="' + id + '">' + esc(PRESETS[id].label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-id');
+        state.preset = id;
+        state.k = PRESETS[id].k;
+        state.text = PRESETS[id].text;
+        $('k-in').value = state.k;
+        $('txt-in').value = state.text;
+        stopTimer();
+        state.snaps = buildCaesarSteps(state.text, state.k);
+        state.stepIdx = 0;
+        renderTabs();
+        renderCurrent();
+      };
+    });
+  }
+
+  function renderButtons(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateButtons(); return; }
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); }
+      }, 650);
+      updateButtons();
+    };
+  }
+
+  function updateButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  function polar(r, deg){
+    var rad = deg * Math.PI / 180;
+    return { x: r * Math.cos(rad), y: r * Math.sin(rad) };
+  }
+
+  function sectorPath(rIn, rOut, a0, a1){
+    var p1 = polar(rOut, a0), p2 = polar(rOut, a1);
+    var p3 = polar(rIn, a1), p4 = polar(rIn, a0);
+    return 'M ' + p1.x.toFixed(2) + ' ' + p1.y.toFixed(2) +
+      ' A ' + rOut + ' ' + rOut + ' 0 0 1 ' + p2.x.toFixed(2) + ' ' + p2.y.toFixed(2) +
+      ' L ' + p3.x.toFixed(2) + ' ' + p3.y.toFixed(2) +
+      ' A ' + rIn + ' ' + rIn + ' 0 0 0 ' + p4.x.toFixed(2) + ' ' + p4.y.toFixed(2) + ' Z';
+  }
+
+  function drawWheel(shift, charInfo){
+    var svg = $('wheel-svg');
+    var step = 360 / 26;
+    var activeSrc = (charInfo && charInfo.idx !== null) ? charInfo.idx : null;
+    var activeDst = (charInfo && charInfo.newIdx !== null) ? charInfo.newIdx : null;
+    var wrapped = !!(charInfo && charInfo.wrapped);
+
+    var parts = [];
+    parts.push('<defs><marker id="cw-arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">' +
+      '<path d="M 1 1 L 9 5 L 1 9 z" fill="' + (wrapped ? 'var(--warn)' : 'var(--true)') + '"/></marker></defs>');
+
+    for (var i = 0; i < 26; i++) {
+      var midDeg = -90 + i * step;
+      var a0 = midDeg - step / 2;
+      var a1 = midDeg + step / 2;
+      var isSrc = activeSrc === i;
+
+      // Outer sector: plaintext A..Z
+      var outFill = isSrc ? 'var(--accent-soft)' : 'var(--wheel-out)';
+      var outStroke = isSrc ? 'var(--accent)' : 'var(--wheel-stroke)';
+      parts.push('<path d="' + sectorPath(102, 130, a0, a1) + '" fill="' + outFill + '" stroke="' + outStroke + '" stroke-width="' + (isSrc ? '1.8' : '0.8') + '"/>');
+
+      // Outer index 0..25
+      var pIdx = polar(141, midDeg);
+      parts.push('<text x="' + pIdx.x.toFixed(1) + '" y="' + pIdx.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" ' +
+        'font-family="ui-monospace,Menlo,Consolas,monospace" font-size="9.5" font-weight="' + (isSrc ? '700' : '600') + '" ' +
+        'fill="' + (isSrc ? 'var(--accent)' : 'var(--muted)') + '">' + i + '</text>');
+
+      // Outer letter A..Z
+      var chOut = String.fromCharCode(65 + i);
+      var pOut = polar(116, midDeg);
+      parts.push('<text x="' + pOut.x.toFixed(1) + '" y="' + pOut.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" ' +
+        'font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12.5" font-weight="700" ' +
+        'fill="' + (isSrc ? 'var(--accent)' : 'var(--text)') + '">' + chOut + '</text>');
+
+      // Inner sector: shifted letter aligned radially at position i -> (i + shift) % 26
+      var mappedIdx = (i + shift) % 26;
+      var mappedCh = String.fromCharCode(65 + mappedIdx);
+      var isDstCell = isSrc && activeDst === mappedIdx;
+      var inFill = isDstCell ? 'var(--true-soft)' : 'var(--wheel-in)';
+      var inStroke = isDstCell ? 'var(--true)' : 'var(--wheel-stroke)';
+      parts.push('<path d="' + sectorPath(72, 100, a0, a1) + '" fill="' + inFill + '" stroke="' + inStroke + '" stroke-width="' + (isDstCell ? '1.8' : '0.8') + '"/>');
+
+      var pIn = polar(86, midDeg);
+      parts.push('<text x="' + pIn.x.toFixed(1) + '" y="' + pIn.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" ' +
+        'font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11.5" font-weight="700" ' +
+        'fill="' + (isDstCell ? 'var(--true)' : 'var(--text)') + '">' + mappedCh + '</text>');
+    }
+
+    // Wrap-around arc on inner hub when shift > 0 and active letter shifts
+    if (activeSrc !== null && shift > 0) {
+      var startDeg = -90 + activeSrc * step;
+      var arcRadius = 59;
+      var sweepDeg = shift * step;
+      var endDeg = startDeg + sweepDeg;
+      var sPt = polar(arcRadius, startDeg);
+      var ePt = polar(arcRadius, endDeg);
+      var largeArc = sweepDeg > 180 ? 1 : 0;
+      var arcCol = wrapped ? 'var(--warn)' : 'var(--true)';
+      parts.push('<path d="M ' + sPt.x.toFixed(1) + ' ' + sPt.y.toFixed(1) + ' A ' + arcRadius + ' ' + arcRadius + ' 0 ' + largeArc + ' 1 ' + ePt.x.toFixed(1) + ' ' + ePt.y.toFixed(1) + '" ' +
+        'fill="none" stroke="' + arcCol + '" stroke-width="2.4" marker-end="url(#cw-arr)"/>');
+    }
+
+    // Center hub
+    parts.push('<circle cx="0" cy="0" r="46" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>');
+    parts.push('<text x="0" y="-11" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" font-weight="700" fill="var(--muted)">shift</text>');
+    parts.push('<text x="0" y="9" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="22" font-weight="700" fill="var(--accent)">+' + shift + '</text>');
+    if (wrapped) {
+      parts.push('<text x="0" y="27" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" font-weight="700" fill="var(--warn)">Vượt Z → A</text>');
+    } else if (activeSrc !== null) {
+      parts.push('<text x="0" y="27" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="10.5" font-weight="700" fill="var(--true)">' +
+        String.fromCharCode(65 + activeSrc) + ' → ' + String.fromCharCode(65 + activeDst) + '</text>');
+    } else {
+      parts.push('<text x="0" y="27" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="10" fill="var(--muted)">k = ' + state.k + '</text>');
+    }
+
+    svg.innerHTML = parts.join('');
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var total = state.snaps.length;
+
+    $('step-badge').textContent = 'Bước ' + (state.stepIdx + 1) + '/' + total;
+    $('shift-badge').textContent = 'shift = ' + s.shift + ' / 26';
+    $('wrap-badge').textContent = (s.charInfo && s.charInfo.wrapped) ? 'Quay vòng qua Z!' : 'Ngoài: gốc · Trong: mã';
+    $('wrap-badge').className = 'badge' + (s.charInfo && s.charInfo.wrapped ? ' warn' : '');
+
+    var statusEl = $('status');
+    statusEl.className = 'status' + (s.st ? ' ' + s.st : '');
+    statusEl.innerHTML = '<b>Bước ' + (state.stepIdx + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+    $('norm-formula').textContent = s.normExpr;
+
+    var charBox = $('char-box');
+    charBox.className = 'info-box' + (s.st ? ' ' + s.st : '');
+    $('char-math').textContent = s.mathText;
+
+    var pairHtml = [];
+    for (var i = 0; i < s.text.length; i++) {
+      var inCh = s.text[i];
+      var outObj = s.outChars[i];
+      var isCur = i === s.curIdx;
+      var inCls = 'p-box' + (isCur ? ' cur' : '');
+      var outCls = 'p-box';
+      var outSym = '·';
+      if (outObj) {
+        outSym = outObj.outChar === ' ' ? '␣' : outObj.outChar;
+        if (isCur) outCls += ' cur';
+        else if (outObj.kind === 'upper') outCls += ' done-up';
+        else if (outObj.kind === 'lower') outCls += ' done-lo';
+        else outCls += ' done-keep';
+      } else {
+        outCls += ' pending';
+      }
+      pairHtml.push(
+        '<div class="p-col">' +
+          '<div class="p-idx">' + i + '</div>' +
+          '<div class="' + inCls + '">' + esc(inCh === ' ' ? '␣' : inCh) + '</div>' +
+          '<div class="p-arrow">↓</div>' +
+          '<div class="' + outCls + '">' + esc(outSym) + '</div>' +
+        '</div>'
+      );
+    }
+    $('pair-strip').innerHTML = pairHtml.join('');
+
+    drawWheel(s.shift, s.charInfo);
+    updateButtons();
+  }
+
+  function applyCustomInputs(){
+    var rawK = parseInt($('k-in').value, 10);
+    if (isNaN(rawK)) rawK = 0;
+    rawK = Math.max(-99, Math.min(99, rawK));
+    state.k = rawK;
+    $('k-in').value = rawK;
+
+    var txt = $('txt-in').value.replace(/[^\x20-\x7E]/g, '').slice(0, 12);
+    state.text = txt || 'Zoo 2025!';
+    state.preset = '';
+    stopTimer();
+    state.snaps = buildCaesarSteps(state.text, state.k);
+    state.stepIdx = 0;
+    renderTabs();
+    renderCurrent();
+  }
+
+  $('k-dec').onclick = function(){ $('k-in').value = Math.max(-99, state.k - 1); applyCustomInputs(); };
+  $('k-inc').onclick = function(){ $('k-in').value = Math.min(99, state.k + 1); applyCustomInputs(); };
+  $('k-in').onchange = applyCustomInputs;
+  $('txt-in').oninput = function(){
+    var txt = $('txt-in').value.replace(/[^\x20-\x7E]/g, '').slice(0, 12);
+    state.text = txt || 'Zoo 2025!';
+    state.preset = '';
+    stopTimer();
+    state.snaps = buildCaesarSteps(state.text, state.k);
+    state.stepIdx = 0;
+    renderTabs();
+    renderCurrent();
+  };
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+
+  state.snaps = buildCaesarSteps(state.text, state.k);
+  if (BUOC > 0) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+  renderTabs();
+  renderButtons();
+  renderCurrent();
+})();
+</script>
+</body>
+</html>

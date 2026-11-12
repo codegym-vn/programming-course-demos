@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="555">
+<title>Mô phỏng Mảng Hai Chiều &amp; Ma trận C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --row-hi:#eff6ff; --col-hi:#fef3c7;
+    --halo-bg:#f1f5f9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --row-hi:#172554; --col-hi:#3a2e10;
+      --halo-bg:#141923;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .sub-ctrl{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-bottom:6px}
+  .chips{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .chip-lbl{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px}
+  .chip{border:1px solid var(--line);background:var(--code-bg);color:var(--text);padding:2.5px 8px;
+    border-radius:5px;cursor:pointer;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:52px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:8px;align-items:stretch}
+  .grid.eq{grid-template-columns:1fr 1.28fr}
+  .grid.mm{grid-template-columns:1fr 1.40fr}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid,.grid.eq,.grid.mm{grid-template-columns:1fr}}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:11px/1.48 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 9px;
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;min-height:48px}
+  .con-head{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:2px;display:flex;justify-content:space-between}
+  .con-line{white-space:pre-wrap;word-break:break-word}
+  .con-empty{color:#6b7280;font-style:italic}
+
+  /* 1. Row-Col-Major */
+  .stage-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:8px;flex:1;justify-content:center}
+  .mat-wrap{display:flex;justify-content:center}
+  .mat-tbl{border-collapse:separate;border-spacing:4px}
+  .mat-tbl th{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);padding:1px 4px;text-align:center}
+  .m2-cell{width:46px;height:36px;background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;
+    text-align:center;vertical-align:middle;font:700 14.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:all .15s}
+  .m2-cell.visited{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .m2-cell.band{background:var(--row-hi)}
+  .m2-cell.cur{border-color:var(--accent);background:var(--accent-fill);color:#fff;box-shadow:0 0 0 2px var(--accent-soft)}
+  .sum-th{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);padding:2px 6px;
+    background:var(--accent-soft);border-radius:5px;white-space:nowrap}
+
+  .ram-flat-head{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:700;color:var(--muted)}
+  .ram-1d{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+  .r1-cell{background:var(--cell-bg);border:1.5px solid var(--cell-border);border-radius:5px;padding:3px 1px;text-align:center;min-width:0}
+  .r1-cell.row-sep{border-left:2.5px solid var(--accent)}
+  .r1-cell.visited{background:var(--true-soft);border-color:var(--true)}
+  .r1-cell.prev{background:var(--warn-soft);border-color:var(--warn)}
+  .r1-cell.cur{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff}
+  .r1-idx{font:700 9px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .r1-cell.cur .r1-idx{color:#dbeafe}
+  .r1-val{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  .stride-bar{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px;
+    display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;font-size:12px}
+
+  /* 2. Matmul */
+  .dim-bar{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+    background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:5px 8px;margin-bottom:6px;
+    font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .dim-k{background:var(--true-soft);color:var(--true);padding:1px 6px;border-radius:4px;border:1px solid var(--true)}
+  .matmul-stage{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px 6px;
+    display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;flex:1}
+  .m-blk{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .m-lbl{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .m-grid{display:grid;gap:3px;background:var(--card);border:1.5px solid var(--cell-border);border-radius:7px;padding:4px}
+  .mc{width:31px;height:28px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--cell-border);
+    border-radius:5px;font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--cell-bg);transition:all .15s}
+  .mc.band-a{background:var(--row-hi);border-color:var(--accent)}
+  .mc.band-b{background:var(--col-hi);border-color:var(--warn)}
+  .mc.hit-a{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff}
+  .mc.hit-b{background:var(--warn);border-color:var(--warn);color:#fff}
+  .mc.c-cell{cursor:pointer}
+  .mc.c-cell:hover{border-color:var(--accent)}
+  .mc.c-done{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+  .mc.c-cur{background:var(--cur);border-color:var(--cur-bar);box-shadow:0 0 0 2px rgba(224,168,0,.25)}
+  .m-op{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+
+  .acc-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px}
+  .acc-expr{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    margin-top:3px;line-height:1.45;word-break:break-word}
+  .term-cur{background:var(--cur);border:1px solid var(--cur-bar);border-radius:4px;padding:0 4px}
+
+  /* 3. Neighbors 4/8 + Halo */
+  .nb-stage{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:1}
+  .halo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;width:100%;max-width:300px}
+  .h-cell{height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;
+    font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;user-select:none}
+  .h-cell.oob-ring{border:1px dashed var(--line);background:var(--halo-bg);color:var(--muted);font-size:9.5px;opacity:.75}
+  .h-cell.oob-hit{border:2px dashed var(--false);background:var(--false-soft);color:var(--false);opacity:1;font-size:11px;box-shadow:0 0 0 2px rgba(180,35,24,.2)}
+  .h-cell.in-cell{border:1.5px solid var(--cell-border);background:var(--cell-bg);color:var(--text)}
+  .h-cell.in-cell.dot-pick{cursor:pointer}
+  .h-cell.in-cell.dot-pick:hover{border-color:var(--accent)}
+  .h-cell.in-cell.mine{color:var(--false);font-size:17px}
+  .h-cell.in-cell.center{border:2.5px solid var(--accent);background:var(--accent-fill);color:#fff}
+  .h-cell.in-cell.nb-safe{border:2px solid var(--true);background:var(--true-soft);color:var(--true)}
+  .h-cell.in-cell.nb-mine{border:2px solid var(--warn);background:var(--warn-soft);color:var(--false);box-shadow:0 0 0 2px rgba(180,83,9,.22)}
+  .h-cell.in-cell.nb-seen{background:var(--true-soft);border-color:var(--line)}
+  .h-coord{position:absolute;bottom:1px;right:2px;font-size:7.5px;opacity:.7;font-weight:600}
+
+  .drdc-tbl{width:100%;border-collapse:collapse;font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-bottom:6px}
+  .drdc-tbl th,.drdc-tbl td{border:1px solid var(--line);padding:3px 2px;text-align:center}
+  .drdc-tbl th{background:var(--code-bg);color:var(--muted);font-size:10.5px}
+  .drdc-tbl td.col-cur{background:var(--cur);color:var(--text);border-color:var(--cur-bar)}
+  .drdc-tbl td.col-oob{background:var(--false-soft);color:var(--false)}
+  .drdc-tbl td.col-ok{background:var(--true-soft);color:var(--true)}
+
+  .sc-card{background:var(--code-bg);border:1.5px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px}
+  .sc-card.ok{border-color:var(--true);background:var(--true-soft)}
+  .sc-card.bad{border-color:var(--false);background:var(--false-soft)}
+  .sc-row{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:3px}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .ram-1d{grid-template-columns:repeat(6,1fr);gap:4px}
+    .m2-cell{width:40px;height:32px;font-size:13px}
+    .mc{width:29px;height:27px;font-size:12px}
+    .h-cell{height:30px;font-size:12.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+  <div class="sub-ctrl" id="sub-ctrl" style="display:none"></div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div id="workspace"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  var VALID_MODES = ['row-col-major', 'matmul', 'neighbors'];
+  var rawVd = qparam('vd');
+  var VD = VALID_MODES.indexOf(rawVd) >= 0 ? rawVd : 'row-col-major';
+  var BUOC = parseInt(qparam('buoc') || '0', 10) || 0;
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(int|long|bool|const|for|if|return|cout)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function renderCode(lines, cur){
+    return lines.map(function(l, i){
+      return '<div class="ln' + (cur === i ? ' cur' : '') + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+
+  function setStatus(kind, title, desc){
+    var el = $('status');
+    el.className = 'status' + (kind ? ' ' + kind : '');
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  }
+
+  /* ==========================================================
+   * 1. ROW-COL-MAJOR (A14508)
+   * ========================================================== */
+  var MAT_A = [
+    [2, 7, 1, 5],
+    [4, 0, 8, 3],
+    [6, 9, 2, 4]
+  ];
+
+  function buildRowColSteps(mode){
+    var R = 3, C = 4;
+    var isRow = mode === 'row';
+    var lines = isRow ? [
+      'int a[3][4] = {{2,7,1,5},{4,0,8,3},',
+      '               {6,9,2,4}};',
+      'for (int r = 0; r < 3; ++r) {',
+      '  int row_sum = 0;',
+      '  for (int c = 0; c < 4; ++c) {',
+      '    row_sum += a[r][c]; // r * 4 + c',
+      '  }',
+      '  cout << row_sum << \' \';',
+      '}'
+    ] : [
+      'int a[3][4] = {{2,7,1,5},{4,0,8,3},',
+      '               {6,9,2,4}};',
+      'for (int c = 0; c < 4; ++c) {',
+      '  int col_sum = 0;',
+      '  for (int r = 0; r < 3; ++r) {',
+      '    col_sum += a[r][c]; // r * 4 + c',
+      '  }',
+      '  cout << col_sum << \' \';',
+      '}'
+    ];
+
+    var S = [];
+    var visited = [];
+    var sums = isRow ? [null, null, null] : [null, null, null, null];
+    var out = [];
+    var prevOffset = null;
+
+    S.push({
+      mode: mode, lines: lines, ln: 0, st: '',
+      r: null, c: null, offset: null, prevOffset: null, stride: null,
+      curSum: 0, sums: sums.slice(), visited: [], out: [],
+      t: 'Khởi tạo bảng 3 × 4 (12 ô liên tiếp theo hàng)',
+      desc: 'Trong bộ nhớ phẳng, 3 hàng xếp nối tiếp nhau: hàng 0 ở [0..3], hàng 1 ở [4..7], hàng 2 ở [8..11]. Công thức ánh xạ: offset = r * 4 + c.'
+    });
+
+    if (isRow) {
+      for (var r = 0; r < R; r++) {
+        var rSum = 0;
+        for (var c = 0; c < C; c++) {
+          var off = r * C + c;
+          var stride = prevOffset === null ? 0 : (off - prevOffset);
+          rSum += MAT_A[r][c];
+          sums[r] = rSum;
+          visited.push(off);
+          S.push({
+            mode: mode, lines: lines, ln: 5, st: '',
+            r: r, c: c, offset: off, prevOffset: prevOffset, stride: stride,
+            curSum: rSum, sums: sums.slice(), visited: visited.slice(), out: out.slice(),
+            t: 'Đọc a[' + r + '][' + c + '] = ' + MAT_A[r][c] + ' (offset ' + off + ')',
+            desc: 'offset = ' + r + ' * 4 + ' + c + ' = ' + off + '. ' + (prevOffset === null ? 'Bắt đầu từ đầu dải nhớ.' : 'Bước nhảy trên dải 1D: +' + stride + ' ô (tuần tự liên tiếp!).') + ' row_sum = ' + rSum + '.'
+          });
+          prevOffset = off;
+        }
+        out.push(rSum);
+        S.push({
+          mode: mode, lines: lines, ln: 7, st: 'ok',
+          r: r, c: null, offset: prevOffset, prevOffset: null, stride: null,
+          curSum: rSum, sums: sums.slice(), visited: visited.slice(), out: out.slice(),
+          t: 'Xong hàng ' + r + ' → row_sum = ' + rSum,
+          desc: 'In tổng hàng ' + r + ' = ' + rSum + '. Toàn bộ các ô trên hàng ' + r + ' nằm kề sát nhau trong bộ nhớ.'
+        });
+      }
+    } else {
+      for (var cc = 0; cc < C; cc++) {
+        var cSum = 0;
+        for (var rr = 0; rr < R; rr++) {
+          var off2 = rr * C + cc;
+          var stride2 = prevOffset === null ? 0 : (off2 - prevOffset);
+          cSum += MAT_A[rr][cc];
+          sums[cc] = cSum;
+          visited.push(off2);
+          S.push({
+            mode: mode, lines: lines, ln: 5, st: stride2 > 1 ? 'warn' : '',
+            r: rr, c: cc, offset: off2, prevOffset: prevOffset, stride: stride2,
+            curSum: cSum, sums: sums.slice(), visited: visited.slice(), out: out.slice(),
+            t: 'Đọc a[' + rr + '][' + cc + '] = ' + MAT_A[rr][cc] + ' (offset ' + off2 + ')',
+            desc: 'offset = ' + rr + ' * 4 + ' + cc + ' = ' + off2 + '. ' + (prevOffset === null ? 'Bắt đầu tại cột 0.' : 'Bước nhảy trên dải 1D: ' + (stride2 >= 0 ? '+' + stride2 : stride2) + ' ô (nhảy cóc qua hàng!).') + ' col_sum = ' + cSum + '.'
+          });
+          prevOffset = off2;
+        }
+        out.push(cSum);
+        S.push({
+          mode: mode, lines: lines, ln: 7, st: 'ok',
+          r: null, c: cc, offset: prevOffset, prevOffset: null, stride: null,
+          curSum: cSum, sums: sums.slice(), visited: visited.slice(), out: out.slice(),
+          t: 'Xong cột ' + cc + ' → col_sum = ' + cSum,
+          desc: 'In tổng cột ' + cc + ' = ' + cSum + '. Dù duyệt theo cột trên bảng 2D, bộ nhớ vẫn xếp theo hàng nên vệt đọc phải nhảy cóc từng bước C = 4 ô.'
+        });
+      }
+    }
+    return S;
+  }
+
+  /* ==========================================================
+   * 2. MATMUL (A14536)
+   * ========================================================== */
+  var MATMUL_DATA = {
+    '2x3': {
+      A: [[1, 2, 3], [4, 5, 6]],
+      B: [[7, 8], [9, 10], [11, 12]]
+    },
+    '3x2': {
+      A: [[2, 1], [0, 3], [4, -1]],
+      B: [[3, 2, 1], [1, 0, 4]]
+    }
+  };
+
+  function buildMatmulSteps(preset){
+    var d = MATMUL_DATA[preset] || MATMUL_DATA['2x3'];
+    var A = d.A, B = d.B;
+    var m = A.length, kLen = A[0].length, n = B[0].length;
+    var lines = [
+      'for (int i = 0; i < ' + m + '; ++i) {',
+      '  for (int j = 0; j < ' + n + '; ++j) {',
+      '    long long sum = 0;',
+      '    for (int p = 0; p < ' + kLen + '; ++p) {',
+      '      sum += A[i][p] * B[p][j];',
+      '    }',
+      '    C[i][j] = sum;',
+      '  }',
+      '}'
+    ];
+
+    var C = [];
+    for (var ri = 0; ri < m; ri++) C.push(new Array(n).fill(null));
+    function cloneC(mat){ return mat.map(function(row){ return row.slice(); }); }
+
+    var S = [];
+    var cellStartStep = {};
+
+    S.push({
+      preset: preset, A: A, B: B, m: m, kLen: kLen, n: n, lines: lines, ln: 0, st: '',
+      i: null, j: null, p: null, sum: 0, terms: [], C: cloneC(C),
+      t: 'Kiểm tra kích thước A(' + m + '×' + kLen + ') × B(' + kLen + '×' + n + ') → C(' + m + '×' + n + ')',
+      desc: 'Số cột của A (' + kLen + ') bằng số hàng của B (' + kLen + ') nên phép nhân hợp lệ! Bấm Bước tiếp hoặc bấm vào một ô C[i][j] bất kỳ.'
+    });
+
+    for (var i = 0; i < m; i++) {
+      for (var j = 0; j < n; j++) {
+        cellStartStep[i + ',' + j] = S.length;
+        var sum = 0;
+        var terms = [];
+        S.push({
+          preset: preset, A: A, B: B, m: m, kLen: kLen, n: n, lines: lines, ln: 2, st: '',
+          i: i, j: j, p: null, sum: 0, terms: [], C: cloneC(C),
+          t: 'Chọn ô đích C[' + i + '][' + j + '], đặt long long sum = 0',
+          desc: 'Tính tích vô hướng của hàng ' + i + ' ma trận A với cột ' + j + ' ma trận B. Luôn đặt lại sum = 0 trước vòng lặp p.'
+        });
+        for (var p = 0; p < kLen; p++) {
+          var prod = A[i][p] * B[p][j];
+          sum += prod;
+          terms.push({ a: A[i][p], b: B[p][j], prod: prod });
+          S.push({
+            preset: preset, A: A, B: B, m: m, kLen: kLen, n: n, lines: lines, ln: 4, st: '',
+            i: i, j: j, p: p, sum: sum, terms: terms.slice(), C: cloneC(C),
+            t: 'p = ' + p + ': sum += ' + A[i][p] + ' * ' + B[p][j] + ' (' + prod + ') → sum = ' + sum,
+            desc: 'Nhân cặp A[' + i + '][' + p + '] = ' + A[i][p] + ' với B[' + p + '][' + j + '] = ' + B[p][j] + ' được ' + prod + ', cộng vào sum thành ' + sum + '.'
+          });
+        }
+        C[i][j] = sum;
+        S.push({
+          preset: preset, A: A, B: B, m: m, kLen: kLen, n: n, lines: lines, ln: 6, st: 'ok',
+          i: i, j: j, p: null, sum: sum, terms: terms.slice(), C: cloneC(C),
+          t: 'Chốt C[' + i + '][' + j + '] = ' + sum,
+          desc: 'Đã chạy xong p = 0..' + (kLen - 1) + '. Gán kết quả sum = ' + sum + ' vào C[' + i + '][' + j + '].'
+        });
+      }
+    }
+    S[S.length - 1].t = 'Hoàn tất phép nhân ma trận C(' + m + '×' + n + ')!';
+    S.cellStartStep = cellStartStep;
+    return S;
+  }
+
+  /* ==========================================================
+   * 3. NEIGHBORS (A14562): 4-dir / 8-dir + in_bounds short-circuit
+   * ========================================================== */
+  var MINE_GRID = [
+    '.*...',
+    '..*.*',
+    '*....',
+    '...*.'
+  ];
+  var DIRS = {
+    4: {
+      dr: [-1, 1, 0, 0],
+      dc: [0, 0, -1, 1],
+      names: ['Lên', 'Xuống', 'Trái', 'Phải']
+    },
+    8: {
+      dr: [-1, -1, -1, 0, 0, 1, 1, 1],
+      dc: [-1, 0, 1, -1, 1, -1, 0, 1],
+      names: ['Trên-Trái', 'Trên', 'Trên-Phải', 'Trái', 'Phải', 'Dưới-Trái', 'Dưới', 'Dưới-Phải']
+    }
+  };
+
+  function inBounds(r, c, R, C){
+    return r >= 0 && r < R && c >= 0 && c < C;
+  }
+
+  function buildNeighborSteps(dirCount, r, c){
+    var R = MINE_GRID.length, C = MINE_GRID[0].length;
+    var dr = DIRS[dirCount].dr, dc = DIRS[dirCount].dc, names = DIRS[dirCount].names;
+    var lines = [
+      'int cnt = 0;',
+      'for (int d = 0; d < ' + dirCount + '; ++d) {',
+      '  int nr = r + dr[d];',
+      '  int nc = c + dc[d];',
+      '  if (in_bounds(nr, nc, 4, 5) &&',
+      '      g[nr][nc] == \'*\') {',
+      '    ++cnt;',
+      '  }',
+      '}'
+    ];
+
+    var S = [];
+    var cnt = 0;
+    var seen = [];
+    S.push({
+      dirCount: dirCount, dr: dr, dc: dc, names: names,
+      R: R, C: C, r: r, c: c, d: null, nr: null, nc: null, inB: null, hitMine: false, cnt: 0, seen: [],
+      lines: lines, ln: 0, st: '',
+      t: 'Đặt tâm tại ô (' + r + ', ' + c + ') — Chế độ ' + dirCount + ' hướng',
+      desc: 'Đặt cnt = 0. Sẽ duyệt d từ 0 đến ' + (dirCount - 1) + ', luôn kiểm tra in_bounds(nr, nc, 4, 5) TRƯỚC khi đọc g[nr][nc].'
+    });
+
+    for (var d = 0; d < dirCount; d++) {
+      var nr = r + dr[d];
+      var nc = c + dc[d];
+      var ok = inBounds(nr, nc, R, C);
+      var isMine = ok && MINE_GRID[nr][nc] === '*';
+      if (ok) seen.push(nr + ',' + nc);
+      if (isMine) cnt++;
+      S.push({
+        dirCount: dirCount, dr: dr, dc: dc, names: names,
+        R: R, C: C, r: r, c: c, d: d, nr: nr, nc: nc, inB: ok, hitMine: isMine, cnt: cnt, seen: seen.slice(),
+        lines: lines, ln: isMine ? 6 : 4, st: !ok ? 'bad' : (isMine ? 'warn' : 'ok'),
+        t: 'd = ' + d + ' (' + names[d] + '): (' + nr + ', ' + nc + ') → ' + (!ok ? 'Ngoài biên!' : (isMine ? 'Có mìn *! (++cnt)' : 'Ô trống .')),
+        desc: !ok
+          ? ('in_bounds(' + nr + ', ' + nc + ', 4, 5) trả về false! Nhờ đoản mạch &&, C++ dừng ngay và KHÔNG đọc g[' + nr + '][' + nc + '].')
+          : (isMine
+              ? ('in_bounds là true và g[' + nr + '][' + nc + '] == \'*\' → Tăng cnt lên ' + cnt + '.')
+              : ('in_bounds là true và g[' + nr + '][' + nc + '] == \'.\' → Không phải mìn, cnt giữ nguyên ' + cnt + '.'))
+      });
+    }
+
+    S.push({
+      dirCount: dirCount, dr: dr, dc: dc, names: names,
+      R: R, C: C, r: r, c: c, d: null, nr: null, nc: null, inB: null, hitMine: false, cnt: cnt, seen: seen.slice(),
+      lines: lines, ln: 8, st: 'ok',
+      t: 'Hoàn tất dò quanh (' + r + ', ' + c + '): tổng cộng ' + cnt + ' quả mìn',
+      desc: 'Một vòng lặp gọn gàng với dr[], dc[] và in_bounds đã kiểm tra đủ ' + dirCount + ' hướng mà không bao giờ vượt biên.'
+    });
+    return S;
+  }
+
+  /* ==========================================================
+   * UI CONTROLLER
+   * ========================================================== */
+  var state = {
+    rcMode: 'row',
+    mmPreset: '2x3',
+    nbDirs: 8,
+    nbR: 0,
+    nbC: 0,
+    snaps: [],
+    stepIdx: 0,
+    timer: null
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(items, activeId, onPick){
+    $('tabs').innerHTML = items.map(function(t){
+      return '<button class="tab" role="tab" aria-selected="' + (t.id === activeId ? 'true' : 'false') + '" data-id="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(b){
+      b.onclick = function(){ onPick(b.getAttribute('data-id')); };
+    });
+  }
+
+  function renderStepperChrome(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateStepperButtons(); return; }
+      if (state.stepIdx >= state.snaps.length - 1) return;
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); }
+      }, 450);
+      updateStepperButtons();
+    };
+  }
+
+  function updateStepperButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  /* --- Render 1: Row-Col-Major --- */
+  function initRowCol(){
+    $('lead').innerHTML = 'Chuyển đổi giữa <b>Duyệt theo hàng</b> và <b>Duyệt theo cột</b> để so sánh thứ tự đi trên bảng 2D và bước nhảy <code>offset = r * 4 + c</code> trên dải bộ nhớ phẳng.';
+    $('sub-ctrl').style.display = 'none';
+    renderTabs([
+      { id: 'row', label: '1. Duyệt theo hàng (Row-Major)' },
+      { id: 'col', label: '2. Duyệt theo cột (Column-Major)' }
+    ], state.rcMode, function(id){
+      state.rcMode = id; stopTimer(); state.stepIdx = 0; initRowCol();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid eq">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="console"><div class="con-head"><span>Console Output</span><span id="rc-rc-badge"></span></div><div class="con-line" id="con-out"></div></div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div class="panel-head"><p class="panel-title">Bảng 2D (3 &times; 4) &amp; Dải bộ nhớ phẳng</p><span class="badge" id="rc-off-badge"></span></div>' +
+          '<div class="stage-box">' +
+            '<div class="mat-wrap"><table class="mat-tbl" id="rc-mat"></table></div>' +
+            '<div class="ram-flat-head"><span>Dải bộ nhớ phẳng (12 ô liên tiếp theo hàng)</span><span id="rc-stride-pill" class="badge"></span></div>' +
+            '<div class="ram-1d" id="rc-1d"></div>' +
+            '<div class="stride-bar">' +
+              '<span style="color:var(--muted);font-weight:600">Công thức ánh xạ:</span>' +
+              '<span id="rc-formula" style="font:700 12px ui-monospace,monospace"></span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildRowColSteps(state.rcMode);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderRowCol(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln);
+    $('rc-rc-badge').textContent = (s.r !== null && s.c !== null) ? ('r=' + s.r + ', c=' + s.c) : '—';
+    $('rc-off-badge').textContent = s.offset !== null ? ('offset = ' + s.offset) : 'offset = —';
+
+    // 2D Matrix Table
+    var tbl = '<tr><th></th>';
+    for (var c = 0; c < 4; c++) tbl += '<th>c=' + c + '</th>';
+    if (s.mode === 'row') tbl += '<th>row_sum</th>';
+    tbl += '</tr>';
+    for (var r = 0; r < 3; r++) {
+      tbl += '<tr><th>r=' + r + '</th>';
+      for (var c2 = 0; c2 < 4; c2++) {
+        var off = r * 4 + c2;
+        var cls = 'm2-cell';
+        if (s.r === r && s.c === c2) cls += ' cur';
+        else if (s.visited.indexOf(off) >= 0) cls += ' visited';
+        else if ((s.mode === 'row' && s.r === r) || (s.mode === 'col' && s.c === c2)) cls += ' band';
+        tbl += '<td class="' + cls + '">' + MAT_A[r][c2] + '</td>';
+      }
+      if (s.mode === 'row') {
+        tbl += '<td>' + (s.sums[r] !== null ? '<span class="sum-th">' + s.sums[r] + '</span>' : '<span style="color:var(--muted)">-</span>') + '</td>';
+      }
+      tbl += '</tr>';
+    }
+    if (s.mode === 'col') {
+      tbl += '<tr><th>col_sum</th>';
+      for (var c3 = 0; c3 < 4; c3++) {
+        tbl += '<td>' + (s.sums[c3] !== null ? '<span class="sum-th">' + s.sums[c3] + '</span>' : '<span style="color:var(--muted)">-</span>') + '</td>';
+      }
+      tbl += '</tr>';
+    }
+    $('rc-mat').innerHTML = tbl;
+
+    // 1D Flat Strip
+    var flat = [];
+    for (var idx = 0; idx < 12; idx++) {
+      var rr = Math.floor(idx / 4), cc = idx % 4;
+      var cls1 = 'r1-cell' + (idx > 0 && idx % 4 === 0 ? ' row-sep' : '');
+      if (s.offset === idx && s.c !== null && s.r !== null) cls1 += ' cur';
+      else if (s.prevOffset === idx) cls1 += ' prev';
+      else if (s.visited.indexOf(idx) >= 0) cls1 += ' visited';
+      flat.push(
+        '<div class="' + cls1 + '">' +
+          '<div class="r1-idx">[' + idx + ']</div>' +
+          '<div class="r1-val">' + MAT_A[rr][cc] + '</div>' +
+        '</div>'
+      );
+    }
+    $('rc-1d').innerHTML = flat.join('');
+
+    var sp = $('rc-stride-pill');
+    if (s.stride === null || s.stride === 0) {
+      sp.textContent = 'Xuất phát'; sp.className = 'badge';
+    } else if (s.stride === 1) {
+      sp.textContent = 'Bước +1 (liên tiếp)'; sp.className = 'badge ok';
+    } else {
+      sp.textContent = 'Nhảy ' + (s.stride > 0 ? '+' + s.stride : s.stride) + ' ô'; sp.className = 'badge warn';
+    }
+
+    $('rc-formula').textContent = (s.r !== null && s.c !== null)
+      ? ('r * 4 + c = ' + s.r + ' * 4 + ' + s.c + ' = ' + s.offset)
+      : 'offset = r * 4 + c';
+
+    $('con-out').innerHTML = s.out.length ? esc(s.out.join(' ')) : '<span class="con-empty">(chưa in tổng nào)</span>';
+    updateStepperButtons();
+  }
+
+  /* --- Render 2: Matmul --- */
+  function initMatmul(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> hoặc bấm trực tiếp vào bất kỳ ô kết quả <code>C[i][j]</code> nào để quan sát tích vô hướng hàng <code>i</code> &times; cột <code>j</code>.';
+    $('sub-ctrl').style.display = 'none';
+    renderTabs([
+      { id: '2x3', label: '1. A(2×3) × B(3×2) → C(2×2)' },
+      { id: '3x2', label: '2. A(3×2) × B(2×3) → C(3×3)' }
+    ], state.mmPreset, function(id){
+      state.mmPreset = id; stopTimer(); state.stepIdx = 0; initMatmul();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid mm">' +
+        '<div class="card left-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+            '<div class="code" id="code-view"></div>' +
+          '</div>' +
+          '<div class="acc-box">' +
+            '<div class="panel-head" style="margin-bottom:2px"><span class="panel-title">Tích luỹ long long sum</span><span class="badge" id="mm-ijp"></span></div>' +
+            '<div class="acc-expr" id="mm-expr"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div class="panel-head"><p class="panel-title">Phép nhân A &times; B = C (bấm ô C[i][j] để nhảy)</p><span class="badge" id="mm-sum-badge"></span></div>' +
+          '<div class="dim-bar" id="mm-dim"></div>' +
+          '<div class="matmul-stage" id="mm-stage"></div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildMatmulSteps(state.mmPreset);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderMatmul(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln);
+
+    $('mm-ijp').textContent = s.i !== null ? ('i=' + s.i + ', j=' + s.j + (s.p !== null ? ', p=' + s.p : '')) : 'Khởi đầu';
+    $('mm-sum-badge').textContent = 'sum = ' + s.sum;
+    $('mm-dim').innerHTML =
+      '<span>A(' + s.m + ' &times; <span class="dim-k">' + s.kLen + '</span>)</span>' +
+      '<span>&times;</span>' +
+      '<span>B(<span class="dim-k">' + s.kLen + '</span> &times; ' + s.n + ')</span>' +
+      '<span>=</span>' +
+      '<span style="color:var(--accent)">C(' + s.m + ' &times; ' + s.n + ')</span>';
+
+    if (s.i === null) {
+      $('mm-expr').textContent = 'Chưa chọn ô C[i][j].';
+    } else if (s.terms.length === 0) {
+      $('mm-expr').textContent = 'C[' + s.i + '][' + s.j + ']: sum = 0';
+    } else {
+      var parts = s.terms.map(function(t, idx){
+        var str = '(' + t.a + '×' + t.b + ')';
+        return (s.p === idx) ? '<span class="term-cur">' + str + '</span>' : str;
+      });
+      $('mm-expr').innerHTML = 'C[' + s.i + '][' + s.j + ']: ' + parts.join(' + ') + ' = <b>' + s.sum + '</b>';
+    }
+
+    function matHtml(mat, kind){
+      var rows = mat.length, cols = mat[0].length;
+      var html = '<div class="m-grid" style="grid-template-columns:repeat(' + cols + ',auto)">';
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var cls = 'mc';
+          var txt = mat[r][c];
+          var extra = '';
+          if (kind === 'A') {
+            if (s.i === r && s.p === c) cls += ' hit-a';
+            else if (s.i === r) cls += ' band-a';
+          } else if (kind === 'B') {
+            if (s.p === r && s.j === c) cls += ' hit-b';
+            else if (s.j === c) cls += ' band-b';
+          } else {
+            cls += ' c-cell';
+            if (s.i === r && s.j === c) {
+              cls += ' c-cur';
+              txt = (mat[r][c] !== null) ? mat[r][c] : (s.terms.length ? s.sum : '?');
+            } else if (mat[r][c] !== null) {
+              cls += ' c-done';
+            } else {
+              txt = '·';
+            }
+            extra = ' data-ci="' + r + '" data-cj="' + c + '" title="Nhảy tới tính C[' + r + '][' + c + ']"';
+          }
+          html += '<div class="' + cls + '"' + extra + '>' + txt + '</div>';
+        }
+      }
+      html += '</div>';
+      return html;
+    }
+
+    $('mm-stage').innerHTML =
+      '<div class="m-blk"><div class="m-lbl">A (' + s.m + '×' + s.kLen + ')</div>' + matHtml(s.A, 'A') + '</div>' +
+      '<div class="m-op">&times;</div>' +
+      '<div class="m-blk"><div class="m-lbl">B (' + s.kLen + '×' + s.n + ')</div>' + matHtml(s.B, 'B') + '</div>' +
+      '<div class="m-op">=</div>' +
+      '<div class="m-blk"><div class="m-lbl">C (' + s.m + '×' + s.n + ')</div>' + matHtml(s.C, 'C') + '</div>';
+
+    var map = state.snaps.cellStartStep || {};
+    Array.prototype.forEach.call($('mm-stage').querySelectorAll('.c-cell'), function(el){
+      el.onclick = function(){
+        stopTimer();
+        var key = el.getAttribute('data-ci') + ',' + el.getAttribute('data-cj');
+        if (map[key] != null) { state.stepIdx = map[key]; renderCurrent(); }
+      };
+    });
+    updateStepperButtons();
+  }
+
+  /* --- Render 3: Neighbors --- */
+  function initNeighbors(){
+    $('lead').innerHTML = 'Chọn 4 hướng hoặc 8 hướng, chọn ô tâm (hoặc bấm trực tiếp ô <code>.</code> trên lưới) để xem <code>dr[]</code>, <code>dc[]</code> và phép đoản mạch <code>in_bounds</code>.';
+    renderTabs([
+      { id: '4', label: '1. Lân cận 4 hướng (d = 0..3)' },
+      { id: '8', label: '2. Lân cận 8 hướng (d = 0..7)' }
+    ], String(state.nbDirs), function(id){
+      state.nbDirs = parseInt(id, 10); stopTimer(); state.stepIdx = 0; initNeighbors();
+    });
+
+    $('sub-ctrl').style.display = 'flex';
+    var presets = [
+      { label: 'Góc (0, 0)', r: 0, c: 0 },
+      { label: 'Cạnh (2, 4)', r: 2, c: 4 },
+      { label: 'Giữa (2, 2)', r: 2, c: 2 }
+    ];
+    $('sub-ctrl').innerHTML =
+      '<div class="chips"><span class="chip-lbl">Ô tâm (r, c):</span>' +
+      presets.map(function(p){
+        var active = state.nbR === p.r && state.nbC === p.c;
+        return '<button class="chip ' + (active ? 'active' : '') + '" data-r="' + p.r + '" data-c="' + p.c + '">' + esc(p.label) + '</button>';
+      }).join('') +
+      '<span style="font-size:11.5px;color:var(--muted)">(hoặc bấm ô . trên lưới)</span></div>';
+    Array.prototype.forEach.call($('sub-ctrl').querySelectorAll('[data-r]'), function(b){
+      b.onclick = function(){
+        state.nbR = parseInt(b.getAttribute('data-r'), 10);
+        state.nbC = parseInt(b.getAttribute('data-c'), 10);
+        stopTimer(); state.stepIdx = 0; initNeighbors();
+      };
+    });
+
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid eq">' +
+        '<div class="card left-col">' +
+          '<div class="panel-head"><p class="panel-title">Lưới 4 &times; 5 và Viền ngoài biên</p><span class="badge" id="nb-center-badge"></span></div>' +
+          '<div class="nb-stage">' +
+            '<div class="halo-grid" id="nb-grid"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card right-col">' +
+          '<div>' +
+            '<div class="panel-head"><p class="panel-title">Mảng dịch chuyển dr[], dc[]</p><span class="badge" id="step-badge"></span></div>' +
+            '<table class="drdc-tbl" id="nb-tbl"></table>' +
+            '<div class="sc-card" id="nb-sc"></div>' +
+          '</div>' +
+          '<div class="code" id="code-view"></div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildNeighborSteps(state.nbDirs, state.nbR, state.nbC);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderNeighbors(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln);
+    $('nb-center-badge').textContent = 'Tâm (' + s.r + ',' + s.c + ') · cnt = ' + s.cnt;
+
+    // 6x7 grid covering r=-1..4, c=-1..5
+    var cells = [];
+    for (var rr = -1; rr <= 4; rr++) {
+      for (var cc = -1; cc <= 5; cc++) {
+        var isHit = s.d !== null && s.nr === rr && s.nc === cc;
+        if (!inBounds(rr, cc, s.R, s.C)) {
+          var cls = 'h-cell oob-ring' + (isHit ? ' oob-hit' : '');
+          var txt = isHit ? ('(' + rr + ',' + cc + ')') : ((rr === -1 || rr === 4) && cc >= 0 && cc < 5 ? ('r=' + rr) : ((cc === -1 || cc === 5) && rr >= 0 && rr < 4 ? ('c=' + cc) : ''));
+          cells.push('<div class="' + cls + '">' + esc(txt) + '</div>');
+        } else {
+          var ch = MINE_GRID[rr][cc];
+          var cls2 = 'h-cell in-cell' + (ch === '*' ? ' mine' : ' dot-pick');
+          if (rr === s.r && cc === s.c) cls2 += ' center';
+          else if (isHit) cls2 += (ch === '*' ? ' nb-mine' : ' nb-safe');
+          else if (s.seen.indexOf(rr + ',' + cc) >= 0) cls2 += ' nb-seen';
+          var attrs = ch === '.' ? (' data-pr="' + rr + '" data-pc="' + cc + '" title="Chọn ô (' + rr + ', ' + cc + ') làm tâm"') : '';
+          cells.push('<div class="' + cls2 + '"' + attrs + '>' + esc(ch) + '<span class="h-coord">' + rr + ',' + cc + '</span></div>');
+        }
+      }
+    }
+    $('nb-grid').innerHTML = cells.join('');
+    Array.prototype.forEach.call($('nb-grid').querySelectorAll('[data-pr]'), function(el){
+      el.onclick = function(){
+        state.nbR = parseInt(el.getAttribute('data-pr'), 10);
+        state.nbC = parseInt(el.getAttribute('data-pc'), 10);
+        stopTimer(); state.stepIdx = 0; initNeighbors();
+      };
+    });
+
+    // dr/dc aligned table
+    var hRow = '<tr><th>d</th>', rRow = '<tr><th>dr[d]</th>', cRow = '<tr><th>dc[d]</th>';
+    for (var d = 0; d < s.dirCount; d++) {
+      var tdCls = '';
+      if (s.d === d) tdCls = s.inB ? ' class="col-cur"' : ' class="col-oob"';
+      hRow += '<th' + (s.d === d ? ' style="color:var(--accent)"' : '') + '>' + d + '</th>';
+      rRow += '<td' + tdCls + '>' + (s.dr[d] > 0 ? '+' + s.dr[d] : s.dr[d]) + '</td>';
+      cRow += '<td' + tdCls + '>' + (s.dc[d] > 0 ? '+' + s.dc[d] : s.dc[d]) + '</td>';
+    }
+    $('nb-tbl').innerHTML = hRow + '</tr>' + rRow + '</tr>' + cRow + '</tr>';
+
+    // Short-circuit card
+    var scEl = $('nb-sc');
+    if (s.d === null) {
+      scEl.className = 'sc-card';
+      scEl.innerHTML = '<div class="sc-row"><b>Tâm (' + s.r + ', ' + s.c + ')</b><span class="badge">cnt = ' + s.cnt + '</span></div>' +
+        '<div style="color:var(--muted)">Bấm <b>Bước tiếp</b> để dò hướng <code>d = 0..' + (s.dirCount - 1) + '</code>.</div>';
+    } else if (!s.inB) {
+      scEl.className = 'sc-card bad';
+      scEl.innerHTML = '<div class="sc-row"><b>(nr, nc) = (' + s.nr + ', ' + s.nc + ')</b><span class="badge bad">in_bounds = false</span></div>' +
+        '<div style="color:var(--false);font-weight:600">Đoản mạch &amp;&amp;: dừng ngay, KHÔNG đọc g[' + s.nr + '][' + s.nc + ']!</div>';
+    } else {
+      scEl.className = 'sc-card ok';
+      scEl.innerHTML = '<div class="sc-row"><b>(nr, nc) = (' + s.nr + ', ' + s.nc + ')</b><span class="badge ok">in_bounds = true</span></div>' +
+        '<div>Đọc an toàn <code>g[' + s.nr + '][' + s.nc + '] == \'' + esc(MINE_GRID[s.nr][s.nc]) + '\'</code>' + (s.hitMine ? ' &rarr; <b>++cnt = ' + s.cnt + '</b>' : ' (không phải mìn)') + '</div>';
+    }
+
+    updateStepperButtons();
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var n = state.snaps.length;
+    if (VD === 'row-col-major') renderRowCol(s, state.stepIdx, n);
+    else if (VD === 'matmul') renderMatmul(s, state.stepIdx, n);
+    else if (VD === 'neighbors') renderNeighbors(s, state.stepIdx, n);
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); if ($('next')) $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if ($('prev')) $('prev').click(); }
+  });
+
+  window.Matrix2DModel = {
+    buildRowColSteps: buildRowColSteps,
+    buildMatmulSteps: buildMatmulSteps,
+    buildNeighborSteps: buildNeighborSteps,
+    inBounds: inBounds,
+    MINE_GRID: MINE_GRID
+  };
+
+  var initDone = false;
+  if (VD === 'row-col-major') initRowCol();
+  else if (VD === 'matmul') initMatmul();
+  else if (VD === 'neighbors') initNeighbors();
+  initDone = true;
+})();
+</script>
+</body>
+</html>

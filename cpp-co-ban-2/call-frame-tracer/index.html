@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Luồng Điều khiển, Ngăn xếp Hàm và Tham chiếu C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --frame-main:#2563eb; --frame-main-soft:#eff6ff;
+    --frame-sub:#0d9488; --frame-sub-soft:#f0fdfa;
+    --static-col:#7c3aed; --static-soft:#f5f3ff;
+    --alias-a:#2563eb; --alias-b:#d97706;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --frame-main:#60a5fa; --frame-main-soft:#172554;
+      --frame-sub:#2dd4bf; --frame-sub-soft:#134e4a;
+      --static-col:#c084fc; --static-soft:#2e1065;
+      --alias-a:#60a5fa; --alias-b:#fbbf24;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:12.8px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .sub-ctrl{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .chips{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+  .chip-lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-right:2px}
+  .chip{border:1px solid var(--line);background:var(--code-bg);color:var(--text);padding:2.5px 7px;
+    border-radius:5px;cursor:pointer;font:600 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .num-in{width:50px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;background:var(--card);
+    color:var(--text);font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-align:center}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:5px 10px;margin-bottom:6px;min-height:46px;font-size:12.4px;line-height:1.36}
+  .status>b:first-child{display:block;font-size:11.8px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b:first-child{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn>b:first-child{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b:first-child{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.03fr 1.27fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+  .badge.stat{background:var(--static-soft);color:var(--static-col)}
+  .badge.sub{background:var(--frame-sub-soft);color:var(--frame-sub)}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:10.9px/1.52 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent;transition:background .15s}
+  .ln .no{width:20px;flex:none;text-align:right;padding-right:5px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.dim{opacity:.42;text-decoration:line-through}
+  .ln.skip-init{opacity:.55;font-style:italic}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:6px 9px;
+    font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:54px}
+  .con-head{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:2px;display:flex;justify-content:space-between}
+  .con-line{white-space:pre-wrap;word-break:break-word}
+  .con-empty{color:#6b7280;font-style:italic}
+
+  /* Stage for Call Stack & Memory Boxes */
+  .stage{position:relative;display:flex;flex-direction:column;gap:8px;flex:1}
+  .svg-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2}
+
+  .flow-banner{background:var(--code-bg);border:1px dashed var(--line);border-radius:6px;padding:5px 8px;
+    font-size:11.8px;line-height:1.38;min-height:28px;display:block;text-align:center}
+  .flow-banner.ret{background:var(--true-soft);border-color:var(--true);color:var(--true);font-weight:600}
+  .flow-banner.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-weight:600}
+  .flow-banner.bad{background:var(--false-soft);border-color:var(--false);color:var(--false);font-weight:600}
+
+  .stack-area{display:flex;flex-direction:column;gap:7px;position:relative}
+  .frame{border:2px solid var(--cell-border);border-radius:8px;padding:6px 8px;background:var(--cell-bg);transition:all .2s;position:relative}
+  .frame.main-frame{border-color:var(--frame-main);background:var(--frame-main-soft)}
+  .frame.sub-frame{border-color:var(--frame-sub);background:var(--frame-sub-soft)}
+  .frame.static-zone{border-color:var(--static-col);background:var(--static-soft)}
+  .frame.popped{opacity:.42;border-style:dashed}
+  .frame.paused{opacity:.78}
+  .frame-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;position:relative;z-index:4}
+  .frame-title{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+  .frame-tag{font:600 10.5px system-ui,sans-serif;padding:1px 6px;border-radius:4px;background:var(--card);border:1px solid var(--line);color:var(--muted);position:relative;z-index:4}
+
+  .vars-row{display:flex;flex-wrap:wrap;gap:7px}
+  .var-box{flex:1 1 88px;min-width:82px;background:var(--card);border:2px solid var(--cell-border);border-radius:7px;
+    padding:5px 7px;text-align:center;position:relative;transition:all .2s}
+  .var-box.hl{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .var-box.chg{border-color:var(--warn);background:var(--warn-soft)}
+  .var-box.ok{border-color:var(--true);background:var(--true-soft)}
+  .var-box.dim{opacity:.45;border-style:dashed}
+  .var-labels{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-bottom:2px}
+  .var-name{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:0 5px;border-radius:4px;
+    background:var(--accent-soft);color:var(--accent)}
+  .var-name.alias-a{background:var(--accent-fill);color:#fff}
+  .var-name.alias-b{background:#d97706;color:#fff}
+  .var-name.stat-n{background:var(--static-col);color:#fff}
+  .var-val{font:700 20px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);line-height:1.2}
+  .var-val.uninit{color:var(--muted);opacity:.55;font-style:italic}
+  .var-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.2}
+
+  .alias-tag-box{flex:1 1 95px;min-width:90px;border:2px dashed var(--accent);border-radius:7px;padding:5px 7px;
+    background:var(--card);text-align:center;position:relative}
+  .alias-tag-box.b-col{border-color:var(--alias-b)}
+  .alias-title{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .alias-dest{font-size:10.5px;color:var(--muted);margin-top:2px}
+
+  .zone-note{font-size:11px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .pill{font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 5px;border-radius:4px;background:var(--code-bg);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead-text"></p>
+
+  <div class="controls">
+    <div class="sub-ctrl">
+      <div class="tabs" id="sub-tabs" role="tablist"></div>
+      <div class="chips" id="arg-picker"></div>
+    </div>
+    <div class="btns" id="btn-bar">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="extra-btn" style="display:none">Gọi hàm lần nữa</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid">
+    <div class="card left-col">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title">Mã nguồn C++</p>
+          <span class="badge" id="step-badge">Bước 1/1</span>
+        </div>
+        <div class="code" id="code-view"></div>
+      </div>
+      <div class="console" id="console-box">
+        <div class="con-head"><span>Màn hình xuất (Console)</span><span id="con-tag">stdout</span></div>
+        <div id="con-lines"><span class="con-empty">(chưa có dữ liệu in ra)</span></div>
+      </div>
+    </div>
+
+    <div class="card right-col">
+      <div>
+        <div class="panel-head">
+          <p class="panel-title" id="right-title">Ngăn xếp khung gọi hàm</p>
+          <span class="badge sub" id="right-badge">Call Stack</span>
+        </div>
+        <div class="stage" id="stage">
+          <svg class="svg-lines" id="svg-lines"></svg>
+          <div class="flow-banner" id="flow-banner"></div>
+          <div class="stack-area" id="stack-area"></div>
+        </div>
+      </div>
+      <div class="zone-note" id="zone-note"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(void|int|static|for|if|return|cout)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur, opts){
+  opts = opts || {};
+  return lines.map(function(l, i){
+    var cls = 'ln';
+    if (cur === i) cls += ' cur';
+    if (opts.dimAfter != null && i > opts.dimAfter) cls += ' dim';
+    if (opts.skipLine === i) cls += ' skip-init';
+    return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var VALID_MODES = ['call-flow', 'pass-by-val', 'storage-life', 'val-vs-ref'];
+var rawVd = qparam('vd');
+var mode = VALID_MODES.indexOf(rawVd) >= 0 ? rawVd : 'call-flow';
+
+var state = {
+  sub: '',
+  signX: 7,
+  pairX: 3,
+  pairY: 8
+};
+
+if (mode === 'call-flow') {
+  state.sub = qparam('sc') === 'sign' ? 'sign' : 'sum';
+  var qx = qparam('x');
+  if (qx === '0' || qx === '-4' || qx === '7') state.signX = Number(qx);
+} else if (mode === 'pass-by-val') {
+  var sc1 = qparam('sc');
+  state.sub = (sc1 === 'swap' || sc1 === 'boost') ? sc1 : 'inc';
+} else if (mode === 'storage-life') {
+  state.sub = 'track';
+} else if (mode === 'val-vs-ref') {
+  state.sub = qparam('sc') === 'ref' ? 'ref' : 'val';
+}
+
+/* ==================== STEP GENERATORS ==================== */
+
+function buildCallFlowSum(){
+  var lines = [
+    'int sum_range(int left, int right) {',
+    '  int total = 0;',
+    '  for (int i = left; i <= right; i++) {',
+    '    total += i;',
+    '  }',
+    '  return total;',
+    '}',
+    'int main() {',
+    '  int kq = sum_range(1, 3 + 2);',
+    '  cout << kq << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+  var S = [];
+  function mkMain(kqVal, active, note){
+    return {
+      title: 'Khung main()', kind: 'main-frame', tag: active ? 'Đang chạy' : 'Tạm dừng chờ hàm con', paused: !active,
+      vars: [{name:'kq', val: kqVal, type:'int', hl: active && kqVal !== '?'}]
+    };
+  }
+  S.push({
+    lines: lines, ln: 8, con: [],
+    t: 'Đánh giá đối số tại nơi gọi main()',
+    desc: 'Trước khi nhảy vào sum_range, máy tính tính giá trị các đối số theo thứ tự: 1 cho 1, và biểu thức 3 + 2 cho 5.',
+    banner: 'Tính đối số: <code>1</code> &rarr; <b>1</b>, <code>3 + 2</code> &rarr; <b>5</b> (chờ gọi <code>sum_range(1, 5)</code>)',
+    frames: [mkMain('?', true)],
+    note: 'Biến <code>kq</code> đã được cấp phát nhưng đang chờ kết quả từ <code>sum_range</code>.'
+  });
+  S.push({
+    lines: lines, ln: 0, con: [],
+    t: 'Đẩy khung sum_range và sao chép đối số',
+    desc: 'Khung sum_range được đẩy lên đỉnh ngăn xếp. Hai tham số left và right nhận bản sao theo đúng vị trí: left = 1, right = 5.',
+    banner: 'Truyền tham số theo vị trí: <code>left = 1</code>, <code>right = 5</code>',
+    frames: [
+      {title:'Khung sum_range(1, 5)', kind:'sub-frame', tag:'Đang chạy (Đỉnh Stack)', vars:[
+        {name:'left', val:1, type:'int', hl:true},
+        {name:'right', val:5, type:'int', hl:true},
+        {name:'total', val:'?', type:'int'}
+      ]},
+      mkMain('?', false)
+    ],
+    note: 'Hàm <code>main()</code> tạm dừng ở dòng 9 cho đến khi <code>sum_range</code> gặp <code>return</code>.'
+  });
+  S.push({
+    lines: lines, ln: 1, con: [],
+    t: 'Khởi tạo biến cục bộ total = 0',
+    desc: 'Biến cục bộ total trong khung sum_range được khởi tạo bằng 0 trước khi bước vào vòng lặp for.',
+    banner: 'Khởi tạo <code>total = 0</code> và bắt đầu vòng lặp <code>i = left (1)</code>',
+    frames: [
+      {title:'Khung sum_range(1, 5)', kind:'sub-frame', tag:'Đang chạy', vars:[
+        {name:'left', val:1, type:'int'},
+        {name:'right', val:5, type:'int'},
+        {name:'total', val:0, type:'int', chg:true}
+      ]},
+      mkMain('?', false)
+    ],
+    note: 'Biến cục bộ <code>total</code> chỉ thuộc về khung <code>sum_range</code>.'
+  });
+
+  var total = 0;
+  for (var i = 1; i <= 5; i++) {
+    total += i;
+    S.push({
+      lines: lines, ln: 3, con: [],
+      t: 'Vòng lặp i = ' + i + ' (<= 5): total += ' + i,
+      desc: 'Vì i = ' + i + ' thoả điều kiện i <= 5, lệnh total += ' + i + ' cộng dồn giúp total tăng lên ' + total + '.',
+      banner: 'Lượt <code>i = ' + i + '</code>: <code>total</code> cập nhật thành <b>' + total + '</b>',
+      frames: [
+        {title:'Khung sum_range(1, 5)', kind:'sub-frame', tag:'Đang chạy', vars:[
+          {name:'i', val:i, type:'int', hl:true},
+          {name:'right', val:5, type:'int'},
+          {name:'total', val:total, type:'int', chg:true}
+        ]},
+        mkMain('?', false)
+      ],
+      note: 'Sau bước này tăng <code>i++</code> lên ' + (i + 1) + (i === 5 ? ' (vượt quá 5 nên thoát vòng lặp).' : ' và kiểm tra lại <code>i <= 5</code>.')
+    });
+  }
+
+  S.push({
+    lines: lines, ln: 5, con: [], st: 'ok', bannerCls: 'ret',
+    t: 'Thực thi return total; (trả về 15)',
+    desc: 'Câu lệnh return gửi giá trị 15 về thay thế đúng vị trí lời gọi sum_range(1, 3 + 2) ở main(), rồi kết thúc hàm sum_range.',
+    banner: '<code>return 15;</code> &rarr; Gửi giá trị <b>15</b> về thế chỗ <code>sum_range(1, 3 + 2)</code>',
+    frames: [
+      {title:'Khung sum_range(1, 5)', kind:'sub-frame', tag:'Sắp thu hồi', vars:[
+        {name:'left', val:1, type:'int'},
+        {name:'right', val:5, type:'int'},
+        {name:'total', val:15, type:'int', ok:true}
+      ]},
+      mkMain('?', false)
+    ],
+    note: 'Giá trị trả về kiểu <code>int</code> khớp với kiểu khai báo của hàm.'
+  });
+
+  S.push({
+    lines: lines, ln: 8, con: [], st: 'ok', bannerCls: 'ret',
+    t: 'Thu hồi khung sum_range & gán kq = 15',
+    desc: 'Khung sum_range bị gỡ bỏ khỏi ngăn xếp. Tại dòng 9 của main(), biểu thức sum_range(1, 3 + 2) giờ là 15 và được gán vào biến kq.',
+    banner: 'Hoàn tất phép gán: <code>int kq = 15;</code> (khung <code>sum_range</code> đã giải phóng)',
+    frames: [
+      {title:'Khung sum_range(1, 5)', kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[
+        {name:'total', val:15, type:'int', dim:true}
+      ]},
+      mkMain(15, true)
+    ],
+    note: 'Tất cả biến cục bộ <code>left, right, total, i</code> không còn tồn tại sau khi thoát hàm.'
+  });
+
+  S.push({
+    lines: lines, ln: 9, con: ['15'], st: 'ok',
+    t: 'In kết quả và kết thúc main()',
+    desc: 'Hàm main() tiếp tục chạy dòng 10 để in giá trị kq = 15 ra màn hình, sau đó gặp return 0; kết thúc chương trình.',
+    banner: 'Hoàn thành! Màn hình xuất ra <b>15</b>.',
+    frames: [
+      {title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[
+        {name:'kq', val:15, type:'int', ok:true}
+      ]}
+    ],
+    note: 'Luồng điều khiển quay lại chính xác câu lệnh ngay sau lời gọi hàm.'
+  });
+  return S;
+}
+
+function buildCallFlowSign(xVal){
+  var lines = [
+    'int sign_val(int x) {',
+    '  if (x > 0) return 1;',
+    '  if (x < 0) return -1;',
+    '  return 0;',
+    '}',
+    'int main() {',
+    '  int s = sign_val(' + xVal + ');',
+    '  cout << s << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+  var res = xVal > 0 ? 1 : (xVal < 0 ? -1 : 0);
+  var S = [];
+
+  S.push({
+    lines: lines, ln: 6, con: [],
+    t: 'main() chuẩn bị gọi sign_val(' + xVal + ')',
+    desc: 'Đối số ' + xVal + ' được truyền vào lời gọi hàm sign_val(' + xVal + ') để xác định dấu của số nguyên.',
+    banner: 'Chuẩn bị gọi <code>sign_val(' + xVal + ')</code>',
+    frames: [{title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[{name:'s', val:'?', type:'int'}]}],
+    note: 'Chọn nhanh <code>x = 7</code>, <code>0</code> hoặc <code>-4</code> ở thanh trên để thử từng nhánh thoát sớm.'
+  });
+
+  S.push({
+    lines: lines, ln: 0, con: [],
+    t: 'Đẩy khung sign_val với tham số x = ' + xVal,
+    desc: 'Khung hàm sign_val được tạo trên ngăn xếp, tham số cục bộ x nhận giá trị bản sao ' + xVal + '.',
+    banner: 'Khởi tạo khung <code>sign_val(x = ' + xVal + ')</code>',
+    frames: [
+      {title:'Khung sign_val(' + xVal + ')', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x', val:xVal, type:'int', hl:true}]},
+      {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+    ],
+    note: 'Mọi nhánh điều khiển trong hàm kiểu <code>int</code> đều phải có câu lệnh <code>return</code>.'
+  });
+
+  if (xVal > 0) {
+    S.push({
+      lines: lines, ln: 1, con: [], st: 'ok', bannerCls: 'ret', codeOpts: {dimAfter: 1},
+      t: 'x > 0 đúng → return 1; thoát hàm sớm!',
+      desc: 'Điều kiện (7 > 0) đúng nên return 1; chạy ngay lập tức! Hai dòng 3 và 4 bên dưới bị bỏ qua hoàn toàn.',
+      banner: 'Thoát hàm sớm tại dòng 2: <code>return 1;</code> (bỏ qua dòng 3–4!)',
+      frames: [
+        {title:'Khung sign_val(' + xVal + ')', kind:'sub-frame', tag:'Thoát sớm', vars:[{name:'x', val:xVal, type:'int', ok:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Chờ kết quả', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+      ],
+      note: 'Gặp <code>return</code> là hàm dừng ngay tại chỗ, không chạy tiếp các lệnh phía dưới.'
+    });
+  } else {
+    S.push({
+      lines: lines, ln: 1, con: [],
+      t: 'Kiểm tra nhánh 1: if (x > 0) → Sai',
+      desc: 'Với x = ' + xVal + ', điều kiện (x > 0) là sai nên câu lệnh return 1; không thực thi, luồng chạy đi tiếp xuống dòng 3.',
+      banner: '<code>' + xVal + ' > 0</code> là <b>Sai</b> &rarr; đi tiếp xuống dòng 3',
+      frames: [
+        {title:'Khung sign_val(' + xVal + ')', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x', val:xVal, type:'int', hl:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+      ],
+      note: 'Chỉ khi điều kiện đúng thì <code>return</code> ở nhánh đó mới cắt ngang hàm.'
+    });
+
+    if (xVal < 0) {
+      S.push({
+        lines: lines, ln: 2, con: [], st: 'ok', bannerCls: 'ret', codeOpts: {dimAfter: 2},
+        t: 'x < 0 đúng → return -1; thoát hàm sớm!',
+        desc: 'Điều kiện (-4 < 0) đúng nên return -1; chạy ngay lập tức! Dòng 4 (return 0;) bên dưới bị bỏ qua.',
+        banner: 'Thoát hàm sớm tại dòng 3: <code>return -1;</code> (bỏ qua dòng 4!)',
+        frames: [
+          {title:'Khung sign_val(' + xVal + ')', kind:'sub-frame', tag:'Thoát sớm', vars:[{name:'x', val:xVal, type:'int', ok:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Chờ kết quả', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+        ],
+        note: 'Không cần viết <code>else</code> rườm rà vì nhánh trước đã thoát nếu đúng.'
+      });
+    } else {
+      S.push({
+        lines: lines, ln: 2, con: [],
+        t: 'Kiểm tra nhánh 2: if (x < 0) → Sai',
+        desc: 'Với x = 0, điều kiện (0 < 0) cũng sai nên luồng chạy rơi xuống dòng cuối cùng của hàm.',
+        banner: '<code>0 < 0</code> là <b>Sai</b> &rarr; xuống dòng 4 mặc định',
+        frames: [
+          {title:'Khung sign_val(0)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x', val:0, type:'int', hl:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+        ],
+        note: 'Nhánh cuối cùng bảo đảm hàm luôn có giá trị trả về khi các <code>if</code> trên đều sai.'
+      });
+      S.push({
+        lines: lines, ln: 3, con: [], st: 'ok', bannerCls: 'ret',
+        t: 'Chạy nhánh mặc định: return 0;',
+        desc: 'Hàm thực thi return 0; và gửi kết quả 0 về cho lệnh gọi trong main().',
+        banner: 'Trả về giá trị mặc định: <code>return 0;</code>',
+        frames: [
+          {title:'Khung sign_val(0)', kind:'sub-frame', tag:'Trả về', vars:[{name:'x', val:0, type:'int', ok:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Chờ kết quả', paused:true, vars:[{name:'s', val:'?', type:'int'}]}
+        ],
+        note: 'Nếu quên dòng <code>return 0;</code> này, gọi <code>sign_val(0)</code> sẽ gây hành vi không xác định.'
+      });
+    }
+  }
+
+  S.push({
+    lines: lines, ln: 7, con: [String(res)], st: 'ok', bannerCls: 'ret',
+    t: 'Gán s = ' + res + ' và in ra màn hình',
+    desc: 'Khung sign_val đã bị thu hồi. Biến s trong main() nhận giá trị ' + res + ' và câu lệnh cout in ra ' + res + '.',
+    banner: 'Biến <code>s = ' + res + '</code> · Console xuất: <b>' + res + '</b>',
+    frames: [
+      {title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[{name:'s', val:res, type:'int', ok:true}]}
+    ],
+    note: 'Câu lệnh <code>return</code> vừa trả giá trị vừa chấm dứt ngay lời gọi hàm.'
+  });
+  return S;
+}
+
+function buildPassByVal(sub){
+  if (sub === 'inc') {
+    var lines = [
+      'void increment(int x) {',
+      '  x++;',
+      '  cout << "Trong ham: " << x << "\\n";',
+      '}',
+      'int main() {',
+      '  int x = 5;',
+      '  increment(x);',
+      '  cout << "Trong main: " << x << "\\n";',
+      '  return 0;',
+      '}'
+    ];
+    return [
+      {
+        lines: lines, ln: 5, con: [],
+        t: 'Khởi tạo biến cục bộ x = 5 trong main()',
+        desc: 'Hàm main() tạo biến cục bộ x mang giá trị 5 trong vùng nhớ riêng của main().',
+        banner: 'Trong khung <code>main()</code>: ô nhớ <code>x</code> = <b>5</b>',
+        frames: [{title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[{name:'x', val:5, type:'int', chg:true}]}],
+        note: 'Biến <code>x</code> này sống trong suốt thời gian chạy <code>main()</code>.'
+      },
+      {
+        lines: lines, ln: 0, con: [],
+        t: 'Gọi increment(x) → Sao chép giá trị sang bản sao',
+        desc: 'Truyền tham trị sao chép số 5 từ main::x vào một ô nhớ hoàn toàn mới mang tên x bên trong khung increment.',
+        banner: 'Sao chép giá trị <b>5</b> &rarr; tạo ô nhớ riêng <code>increment::x = 5</code>',
+        frames: [
+          {title:'Khung increment(int x)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x (bản sao)', val:5, type:'int', hl:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+        ],
+        note: 'Hai biến cùng tên <code>x</code> nằm ở hai khung khác nhau nên hoàn toàn tách biệt.'
+      },
+      {
+        lines: lines, ln: 1, con: [], st: 'warn', bannerCls: 'warn',
+        t: 'x++; chỉ thay đổi bản sao trong increment',
+        desc: 'Lệnh x++; tăng bản sao trong increment từ 5 lên 6. Hãy quan sát: biến x gốc ở khung main() vẫn giữ nguyên 5!',
+        banner: '<code>increment::x</code> đổi thành <b>6</b> · <code>main::x</code> vẫn là <b>5</b>!',
+        frames: [
+          {title:'Khung increment(int x)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x (bản sao)', val:6, type:'int', chg:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Không bị ảnh hưởng', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+        ],
+        note: 'Mọi phép gán lên tham số truyền trị chỉ tác động vào ô nhớ bản sao.'
+      },
+      {
+        lines: lines, ln: 2, con: ['Trong ham: 6'],
+        t: 'In giá trị bản sao trong increment',
+        desc: 'Câu lệnh cout bên trong hàm increment đọc biến cục bộ của chính nó nên in ra "Trong ham: 6".',
+        banner: 'Console in dòng đầu: <code>Trong ham: 6</code>',
+        frames: [
+          {title:'Khung increment(int x)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x (bản sao)', val:6, type:'int', hl:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+        ],
+        note: 'Chuẩn bị chạm dấu <code>}</code> kết thúc hàm <code>increment</code>.'
+      },
+      {
+        lines: lines, ln: 3, con: ['Trong ham: 6'], st: 'warn', bannerCls: 'warn',
+        t: 'Thoát increment → bản sao x = 6 bị thu hồi',
+        desc: 'Khi hàm increment kết thúc, toàn bộ khung nhớ của nó (kể cả bản sao x = 6) bị huỷ hoàn toàn.',
+        banner: 'Khung <code>increment</code> bị thu hồi — giá trị <b>6</b> biến mất!',
+        frames: [
+          {title:'Khung increment(int x)', kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[{name:'x (bản sao)', val:6, type:'int', dim:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tiếp tục chạy', vars:[{name:'x (gốc)', val:5, type:'int', hl:true}]}
+        ],
+        note: 'Điều khiển quay lại <code>main()</code> ngay sau lệnh <code>increment(x);</code>.'
+      },
+      {
+        lines: lines, ln: 7, con: ['Trong ham: 6', 'Trong main: 5'], st: 'ok',
+        t: 'main() vẫn giữ nguyên x = 5',
+        desc: 'Câu lệnh cout trong main() đọc biến x gốc và in "Trong main: 5". Truyền tham trị bảo vệ biến gốc khỏi bị sửa nhầm.',
+        banner: 'Kết quả: <code>Trong main: 5</code> — biến gốc không hề thay đổi.',
+        frames: [{title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[{name:'x (gốc)', val:5, type:'int', ok:true}]}],
+        note: 'Muốn sửa biến gốc, hãy trả giá trị về hoặc dùng tham chiếu (Module 2).'
+      }
+    ];
+  }
+
+  if (sub === 'swap') {
+    var lines = [
+      'void try_swap(int a, int b) {',
+      '  int tmp = a;',
+      '  a = b;',
+      '  b = tmp;',
+      '}',
+      'int main() {',
+      '  int x = 3, y = 8;',
+      '  try_swap(x, y);',
+      '  cout << x << " " << y << "\\n";',
+      '  return 0;',
+      '}'
+    ];
+    return [
+      {
+        lines: lines, ln: 6, con: [],
+        t: 'Khởi tạo x = 3 và y = 8 trong main()',
+        desc: 'Hàm main() tạo hai ô nhớ gốc x = 3 và y = 8.',
+        banner: 'Trong <code>main()</code>: <code>x = 3</code>, <code>y = 8</code>',
+        frames: [{title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[{name:'x', val:3, type:'int', chg:true},{name:'y', val:8, type:'int', chg:true}]}],
+        note: 'Mục tiêu đặt ra là thử hoán đổi giá trị của <code>x</code> và <code>y</code>.'
+      },
+      {
+        lines: lines, ln: 0, con: [],
+        t: 'Gọi try_swap(x, y) → tạo hai bản sao a, b',
+        desc: 'Khung try_swap tạo hai bản sao cục bộ độc lập: a nhận 3 (chép từ x) và b nhận 8 (chép từ y).',
+        banner: 'Sao chép: <code>a = 3</code> (từ x), <code>b = 8</code> (từ y)',
+        frames: [
+          {title:'Khung try_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'a', val:3, type:'int', hl:true},{name:'b', val:8, type:'int', hl:true},{name:'tmp', val:'?', type:'int'}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'x', val:3, type:'int'},{name:'y', val:8, type:'int'}]}
+        ],
+        note: '<code>a</code> và <code>b</code> là hai ô nhớ riêng của <code>try_swap</code>.'
+      },
+      {
+        lines: lines, ln: 1, con: [],
+        t: 'Lưu tạm tmp = a (3)',
+        desc: 'Biến cục bộ tmp lưu giữ giá trị 3 của a để chuẩn bị hoán đổi hai bản sao.',
+        banner: '<code>tmp = 3</code>',
+        frames: [
+          {title:'Khung try_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'a', val:3, type:'int'},{name:'b', val:8, type:'int'},{name:'tmp', val:3, type:'int', chg:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'x', val:3, type:'int'},{name:'y', val:8, type:'int'}]}
+        ],
+        note: 'Chưa có thay đổi nào ở <code>main()</code>.'
+      },
+      {
+        lines: lines, ln: 3, con: [], st: 'warn', bannerCls: 'warn',
+        t: 'Đổi chỗ xong trên bản sao: a = 8, b = 3',
+        desc: 'Sau a = b; và b = tmp;, hai bản sao trong try_swap đã đổi thành a = 8, b = 3. Nhưng x = 3 và y = 8 trong main() vẫn nguyên vẹn!',
+        banner: 'Trong hàm: <code>a = 8, b = 3</code> · Nhưng <code>main()</code> vẫn là <b>3 và 8</b>!',
+        frames: [
+          {title:'Khung try_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'a', val:8, type:'int', chg:true},{name:'b', val:3, type:'int', chg:true},{name:'tmp', val:3, type:'int'}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Không đổi', paused:true, vars:[{name:'x', val:3, type:'int'},{name:'y', val:8, type:'int'}]}
+        ],
+        note: 'Đây là lý do kinh điển khiến <code>try_swap</code> dùng tham trị không đổi được biến gốc.'
+      },
+      {
+        lines: lines, ln: 8, con: ['3 8'], st: 'bad', bannerCls: 'bad',
+        t: 'Thoát try_swap → main() in ra 3 8 (không đổi!)',
+        desc: 'Khung try_swap cùng hai bản sao a = 8, b = 3 bị thu hồi sạch sẽ. main() in ra "3 8" như chưa từng có cuộc đổi chỗ nào!',
+        banner: 'Hoán đổi thất bại! Console in: <b>3 8</b>',
+        frames: [
+          {title:'Khung try_swap(int a, int b)', kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[{name:'a', val:8, type:'int', dim:true},{name:'b', val:3, type:'int', dim:true}]},
+          {title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[{name:'x', val:3, type:'int', hl:true},{name:'y', val:8, type:'int', hl:true}]}
+        ],
+        note: 'Để sửa trực tiếp hai biến trong <code>swap</code>, C++ dùng tham chiếu <code>int&</code>.'
+      }
+    ];
+  }
+
+  // boost: x = boost(x);
+  var lines = [
+    'int boost(int x) {',
+    '  x += 10;',
+    '  return x;',
+    '}',
+    'int main() {',
+    '  int x = 5;',
+    '  x = boost(x);',
+    '  cout << "Trong main: " << x << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+  return [
+    {
+      lines: lines, ln: 5, con: [],
+      t: 'Khởi tạo x = 5 trong main()',
+      desc: 'Biến x trong main() được gán giá trị ban đầu là 5.',
+      banner: '<code>main::x = 5</code>',
+      frames: [{title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[{name:'x', val:5, type:'int', chg:true}]}],
+      note: 'Với truyền tham trị, muốn cập nhật <code>x</code> ta dùng phép gán <code>x = boost(x);</code>.'
+    },
+    {
+      lines: lines, ln: 0, con: [],
+      t: 'Gọi boost(x) → sao chép 5 sang bản sao',
+      desc: 'Khung boost nhận bản sao x = 5 hoàn toàn độc lập với main::x.',
+      banner: 'Sao chép giá trị <b>5</b> sang <code>boost::x</code>',
+      frames: [
+        {title:'Khung boost(int x)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x (bản sao)', val:5, type:'int', hl:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng chờ gán', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+      ],
+      note: 'Hàm <code>boost</code> trả về kiểu <code>int</code> thay vì <code>void</code>.'
+    },
+    {
+      lines: lines, ln: 1, con: [],
+      t: 'Cộng 10 trên bản sao: boost::x = 15',
+      desc: 'Lệnh x += 10; tăng bản sao của boost lên 15; trong khi main::x hiện vẫn đang là 5.',
+      banner: '<code>boost::x</code> thành <b>15</b> (<code>main::x</code> tạm thời vẫn là 5)',
+      frames: [
+        {title:'Khung boost(int x)', kind:'sub-frame', tag:'Đang chạy', vars:[{name:'x (bản sao)', val:15, type:'int', chg:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+      ],
+      note: 'Bước tiếp theo sẽ gửi con số <code>15</code> này ra ngoài qua <code>return</code>.'
+    },
+    {
+      lines: lines, ln: 2, con: [], st: 'ok', bannerCls: 'ret',
+      t: 'return x; gửi giá trị 15 về main()',
+      desc: 'Câu lệnh return x; gửi kết quả 15 về thay thế cho biểu thức boost(x) ở bên phải dấu = trong main().',
+      banner: '<code>return 15;</code> &rarr; gửi giá trị <b>15</b> về cho <code>x = ...</code>',
+      frames: [
+        {title:'Khung boost(int x)', kind:'sub-frame', tag:'Trả về 15', vars:[{name:'x (bản sao)', val:15, type:'int', ok:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Chờ gán kết quả', paused:true, vars:[{name:'x (gốc)', val:5, type:'int'}]}
+      ],
+      note: 'Nếu quên gán <code>x = boost(x);</code> mà chỉ viết <code>boost(x);</code>, kết quả <code>15</code> sẽ bị bỏ phí!'
+    },
+    {
+      lines: lines, ln: 6, con: [], st: 'ok', bannerCls: 'ret',
+      t: 'Gán kết quả trả về: main::x = 15',
+      desc: 'Khung boost bị thu hồi. Phép gán x = 15; ghi đè giá trị mới 15 vào biến gốc main::x!',
+      banner: 'Cập nhật thành công: <code>main::x</code> đổi từ 5 &rarr; <b>15</b>',
+      frames: [
+        {title:'Khung boost(int x)', kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[{name:'x (bản sao)', val:15, type:'int', dim:true}]},
+        {title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[{name:'x (gốc)', val:15, type:'int', chg:true}]}
+      ],
+      note: 'Mô hình nhận đầu vào → trả về giá trị mới rất an toàn và rõ ràng.'
+    },
+    {
+      lines: lines, ln: 7, con: ['Trong main: 15'], st: 'ok',
+      t: 'In kết quả cập nhật: Trong main: 15',
+      desc: 'Hàm main() in ra "Trong main: 15" rồi kết thúc chương trình.',
+      banner: 'Hoàn tất! Console xuất: <b>Trong main: 15</b>',
+      frames: [{title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[{name:'x (gốc)', val:15, type:'int', ok:true}]}],
+      note: 'Bạn vừa xem 3 kịch bản cốt lõi của truyền tham trị.'
+    }
+  ];
+}
+
+function buildStorageLife(){
+  var lines = [
+    'void track_step() {',
+    '  int temp = 0;',
+    '  static int total = 0;',
+    '  temp += 5;',
+    '  total += 5;',
+    '  cout << temp << " " << total << "\\n";',
+    '}',
+    'int main() {',
+    '  track_step(); // Lan 1',
+    '  track_step(); // Lan 2',
+    '  track_step(); // Lan 3',
+    '  track_step(); // Lan 4',
+    '  return 0;',
+    '}'
+  ];
+  var S = [];
+  var con = [];
+  var staticVal = null;
+
+  for (var call = 1; call <= 4; call++) {
+    var mainLine = 7 + call; // 8,9,10,11
+    var isFirst = call === 1;
+
+    // 1. Call from main
+    S.push({
+      lines: lines, ln: mainLine, con: con.slice(), callNo: call,
+      t: 'Lần gọi ' + call + ': main() gọi track_step()',
+      desc: 'Từ dòng ' + (mainLine + 1) + ', chương trình nhảy vào hàm track_step() lần thứ ' + call + '.',
+      banner: 'Bắt đầu <b>Lần gọi #' + call + '</b> của <code>track_step()</code>',
+      frames: [
+        {title:'Khung main()', kind:'main-frame', tag:'Đang gọi hàm', vars:[]},
+        {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+          {name:'total', cls:'stat-n', val: staticVal === null ? '(chưa gán)' : staticVal, type:'static int'}
+        ]}
+      ],
+      note: 'Chú ý sự khác biệt giữa <code>temp</code> trên Ngăn xếp Tạm thời và <code>total</code> ở Vùng Tĩnh.'
+    });
+
+    // 2. int temp = 0;
+    S.push({
+      lines: lines, ln: 1, con: con.slice(), callNo: call,
+      t: 'Lần ' + call + ': Tạo mới biến cục bộ int temp = 0;',
+      desc: 'Khung ngăn xếp mới của track_step() cấp phát ô nhớ mới cho temp và khởi tạo lại từ đầu bằng 0.',
+      banner: 'Tạo khung tạm & cấp phát mới <code>temp = 0</code>',
+      frames: [
+        {title:'Khung tạm track_step() — Lần ' + call, kind:'sub-frame', tag:'Ngăn xếp Tạm thời', vars:[
+          {name:'temp', val:0, type:'automatic int', chg:true}
+        ]},
+        {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+          {name:'total', cls:'stat-n', val: staticVal === null ? '(chưa gán)' : staticVal, type:'static int'}
+        ]}
+      ],
+      note: 'Biến cục bộ thường luôn bị huỷ khi thoát hàm và tạo lại mỗi lần gọi.'
+    });
+
+    // 3. static int total = 0;
+    if (isFirst) {
+      staticVal = 0;
+      S.push({
+        lines: lines, ln: 2, con: con.slice(), callNo: call, st: 'ok', bannerCls: 'ret',
+        t: 'Lần 1: Khởi tạo static int total = 0; (DUY NHẤT 1 LẦN)',
+        desc: 'Ở lần gọi đầu tiên, biến static total được khởi tạo bằng 0 trong Vùng Dữ liệu Tĩnh — tồn tại suốt chương trình!',
+        banner: '⚡ Chỉ khởi tạo đúng 1 lần! <code>total = 0</code> nằm trong Vùng Tĩnh',
+        frames: [
+          {title:'Khung tạm track_step() — Lần 1', kind:'sub-frame', tag:'Ngăn xếp Tạm thời', vars:[
+            {name:'temp', val:0, type:'automatic int'}
+          ]},
+          {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+            {name:'total', cls:'stat-n', val:0, type:'static int', chg:true}
+          ]}
+        ],
+        note: 'Từ lần gọi thứ 2 trở đi, dòng <code>static int total = 0;</code> sẽ được bỏ qua hoàn toàn.'
+      });
+    } else {
+      S.push({
+        lines: lines, ln: 2, con: con.slice(), callNo: call, codeOpts: {skipLine: 2}, st: 'warn', bannerCls: 'warn',
+        t: 'Lần ' + call + ': Bỏ qua khởi tạo static int total = 0;',
+        desc: 'Biến static total đã tồn tại sẵn trong Vùng Dữ liệu Tĩnh từ lần gọi đầu! Máy tính bỏ qua lệnh = 0 và giữ nguyên giá trị cũ là ' + staticVal + '.',
+        banner: 'Bỏ qua khởi tạo <code>= 0</code> — <code>total</code> vẫn giữ nguyên <b>' + staticVal + '</b>!',
+        frames: [
+          {title:'Khung tạm track_step() — Lần ' + call, kind:'sub-frame', tag:'Ngăn xếp Tạm thời', vars:[
+            {name:'temp', val:0, type:'automatic int'}
+          ]},
+          {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+            {name:'total', cls:'stat-n', val:staticVal, type:'static int', ok:true}
+          ]}
+        ],
+        note: '<code>static</code> trong hàm kết hợp: phạm vi hẹp an toàn + vòng đời bền vững suốt chương trình.'
+      });
+    }
+
+    // 4. temp += 5; total += 5; cout
+    staticVal += 5;
+    con.push('5 ' + staticVal);
+    S.push({
+      lines: lines, ln: 5, con: con.slice(), callNo: call, st: 'ok',
+      t: 'Lần ' + call + ': Cộng thêm 5 và in "' + '5 ' + staticVal + '"',
+      desc: 'Cả temp và total cùng tăng 5. temp đạt 5, còn total tích luỹ thành ' + staticVal + '. Màn hình in ra "' + '5 ' + staticVal + '".',
+      banner: '<code>temp</code> = <b>5</b>, <code>total</code> = <b>' + staticVal + '</b> &rarr; In ra <b>5 ' + staticVal + '</b>',
+      frames: [
+        {title:'Khung tạm track_step() — Lần ' + call, kind:'sub-frame', tag:'Ngăn xếp Tạm thời', vars:[
+          {name:'temp', val:5, type:'automatic int', chg:true}
+        ]},
+        {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+          {name:'total', cls:'stat-n', val:staticVal, type:'static int', chg:true}
+        ]}
+      ],
+      note: 'Chuẩn bị chạm dấu <code>}</code> kết thúc lần gọi ' + call + '.'
+    });
+
+    // 5. Exit frame
+    S.push({
+      lines: lines, ln: 6, con: con.slice(), callNo: call,
+      t: 'Thoát lần ' + call + ': temp bị huỷ, total = ' + staticVal + ' sống tiếp',
+      desc: 'Khung tạm track_step() biến mất nên temp = 5 bị thu hồi. Riêng total = ' + staticVal + ' ở Vùng Tĩnh vẫn sáng nguyên vẹn!',
+      banner: '<code>temp</code> đã bị huỷ · <code>total = ' + staticVal + '</code> vẫn còn nguyên trong Vùng Tĩnh',
+      frames: [
+        {title:'Khung tạm track_step() — Lần ' + call, kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[
+          {name:'temp', val:5, type:'đã giải phóng', dim:true}
+        ]},
+        {title:'Vùng Dữ liệu Tĩnh (Static Data)', kind:'static-zone', tag:'🔒 Chỉ track_step() truy cập được', vars:[
+          {name:'total', cls:'stat-n', val:staticVal, type:'static int', ok:true}
+        ]}
+      ],
+      note: call < 4 ? 'Bấm <b>Bước tiếp</b> hoặc <b>Gọi hàm lần nữa</b> để xem lần gọi ' + (call + 1) + '.' : 'Hoàn thành 4 lần gọi: <code>temp</code> luôn là 5, còn <code>total</code> tăng 5 → 10 → 15 → 20.'
+    });
+  }
+  return S;
+}
+
+function buildValVsRef(sub, x0, y0){
+  var isRef = sub === 'ref';
+  var lines = isRef ? [
+    'void swap_int(int& a, int& b) {',
+    '  int tmp = a;',
+    '  a = b;',
+    '  b = tmp;',
+    '}',
+    'int main() {',
+    '  int x = ' + x0 + ', y = ' + y0 + ';',
+    '  swap_int(x, y);',
+    '  cout << x << " " << y << "\\n";',
+    '  return 0;',
+    '}'
+  ] : [
+    'void bad_swap(int a, int b) {',
+    '  int tmp = a;',
+    '  a = b;',
+    '  b = tmp;',
+    '}',
+    'int main() {',
+    '  int x = ' + x0 + ', y = ' + y0 + ';',
+    '  bad_swap(x, y);',
+    '  cout << x << " " << y << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+
+  var S = [];
+
+  if (!isRef) {
+    // bad_swap (Pass by value)
+    S.push({
+      lines: lines, ln: 6, con: [],
+      t: 'Khởi tạo x = ' + x0 + ', y = ' + y0 + ' trong main()',
+      desc: 'Hai ô nhớ độc lập x và y được cấp phát trong khung hàm main().',
+      banner: 'Trong <code>main()</code>: <code>x = ' + x0 + '</code>, <code>y = ' + y0 + '</code>',
+      frames: [
+        {title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[
+          {name:'x', val:x0, type:'int', chg:true},
+          {name:'y', val:y0, type:'int', chg:true}
+        ]}
+      ],
+      note: 'Hàm <code>bad_swap(int a, int b)</code> không có dấu <code>&</code> nên truyền tham trị.'
+    });
+    S.push({
+      lines: lines, ln: 0, con: [],
+      t: 'Gọi bad_swap: tạo hai hộp ô nhớ bản sao a và b',
+      desc: 'Khung bad_swap tạo ra 2 hộp ô nhớ mới hoàn toàn cho a và b, rồi sao chép giá trị ' + x0 + ' và ' + y0 + ' vào đó.',
+      banner: 'Tạo hộp mới <code>a = ' + x0 + '</code>, <code>b = ' + y0 + '</code> (tách rời khỏi x, y!)',
+      frames: [
+        {title:'Khung bad_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[
+          {name:'a (bản sao)', val:x0, type:'int', hl:true},
+          {name:'b (bản sao)', val:y0, type:'int', hl:true},
+          {name:'tmp', val:'?', type:'int'}
+        ]},
+        {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[
+          {name:'x', val:x0, type:'int'},
+          {name:'y', val:y0, type:'int'}
+        ]}
+      ],
+      note: 'Hiện có tới 4 hộp biến số nguyên tồn tại tách biệt trên ngăn xếp.'
+    });
+    S.push({
+      lines: lines, ln: 1, con: [],
+      t: 'int tmp = a; lưu tạm giá trị a (' + x0 + ')',
+      desc: 'Biến cục bộ tmp nhận giá trị ' + x0 + ' từ bản sao a.',
+      banner: '<code>tmp = ' + x0 + '</code>',
+      frames: [
+        {title:'Khung bad_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[
+          {name:'a (bản sao)', val:x0, type:'int'},
+          {name:'b (bản sao)', val:y0, type:'int'},
+          {name:'tmp', val:x0, type:'int', chg:true}
+        ]},
+        {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng', paused:true, vars:[
+          {name:'x', val:x0, type:'int'},
+          {name:'y', val:y0, type:'int'}
+        ]}
+      ],
+      note: 'Các thao tác tiếp theo chỉ diễn ra bên trong khung <code>bad_swap</code>.'
+    });
+    S.push({
+      lines: lines, ln: 2, con: [], st: 'warn', bannerCls: 'warn',
+      t: 'a = b; gán ' + y0 + ' vào bản sao a',
+      desc: 'Bản sao a đổi thành ' + y0 + ', nhưng ô nhớ x ở main() không hề nhúc nhích!',
+      banner: '<code>a</code> thành <b>' + y0 + '</b> · Ô <code>x</code> ở main vẫn là <b>' + x0 + '</b>',
+      frames: [
+        {title:'Khung bad_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[
+          {name:'a (bản sao)', val:y0, type:'int', chg:true},
+          {name:'b (bản sao)', val:y0, type:'int'},
+          {name:'tmp', val:x0, type:'int'}
+        ]},
+        {title:'Khung main()', kind:'main-frame', tag:'Không đổi', paused:true, vars:[
+          {name:'x', val:x0, type:'int'},
+          {name:'y', val:y0, type:'int'}
+        ]}
+      ],
+      note: 'Phép gán chỉ sửa bản sao cục bộ của <code>bad_swap</code>.'
+    });
+    S.push({
+      lines: lines, ln: 3, con: [], st: 'warn', bannerCls: 'warn',
+      t: 'b = tmp; gán ' + x0 + ' vào bản sao b',
+      desc: 'Bản sao a, b đã đổi chỗ (' + y0 + ', ' + x0 + '), còn x và y trong main() vẫn giữ nguyên (' + x0 + ', ' + y0 + ').',
+      banner: 'Trong hàm: <code>a=' + y0 + ', b=' + x0 + '</code> · Ở main: vẫn là <b>' + x0 + ', ' + y0 + '</b>',
+      frames: [
+        {title:'Khung bad_swap(int a, int b)', kind:'sub-frame', tag:'Đang chạy', vars:[
+          {name:'a (bản sao)', val:y0, type:'int'},
+          {name:'b (bản sao)', val:x0, type:'int', chg:true},
+          {name:'tmp', val:x0, type:'int'}
+        ]},
+        {title:'Khung main()', kind:'main-frame', tag:'Không đổi', paused:true, vars:[
+          {name:'x', val:x0, type:'int'},
+          {name:'y', val:y0, type:'int'}
+        ]}
+      ],
+      note: 'Khi hàm kết thúc ở dòng 5, hai bản sao này sẽ biến mất.'
+    });
+    S.push({
+      lines: lines, ln: 8, con: [x0 + ' ' + y0], st: 'bad', bannerCls: 'bad',
+      t: 'Thoát bad_swap → main() in ra ' + x0 + ' ' + y0,
+      desc: 'Khung bad_swap bị thu hồi sạch. Hai biến gốc x, y không thay đổi nên kết quả là "' + x0 + ' ' + y0 + '".',
+      banner: 'Hoán đổi thất bại! Console in: <b>' + x0 + ' ' + y0 + '</b>',
+      frames: [
+        {title:'Khung bad_swap(int a, int b)', kind:'sub-frame', popped:true, tag:'Đã thu hồi', vars:[
+          {name:'a', val:y0, type:'int', dim:true},
+          {name:'b', val:x0, type:'int', dim:true}
+        ]},
+        {title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[
+          {name:'x', val:x0, type:'int', hl:true},
+          {name:'y', val:y0, type:'int', hl:true}
+        ]}
+      ],
+      note: 'Chuyển sang tab <b>swap_int(int&amp; a, int&amp; b)</b> để xem bí danh tham chiếu giải quyết ra sao.'
+    });
+    return S;
+  }
+
+  // swap_int(int& a, int& b) -> Alias sticker model!
+  S.push({
+    lines: lines, ln: 6, con: [],
+    t: 'Khởi tạo x = ' + x0 + ', y = ' + y0 + ' trong main()',
+    desc: 'Hàm main() tạo hai hộp ô nhớ x = ' + x0 + ' và y = ' + y0 + '. Hiện mỗi hộp chỉ có 1 nhãn tên.',
+    banner: 'Trong <code>main()</code>: hộp <code>x = ' + x0 + '</code>, hộp <code>y = ' + y0 + '</code>',
+    frames: [
+      {title:'Khung main()', kind:'main-frame', tag:'Đang chạy', vars:[
+        {id:'box-x', name:'x', val:x0, type:'int', chg:true},
+        {id:'box-y', name:'y', val:y0, type:'int', chg:true}
+      ]}
+    ],
+    note: 'Chú ý: <code>swap_int</code> khai báo <code>int&amp; a, int&amp; b</code> (truyền tham chiếu).'
+  });
+
+  S.push({
+    lines: lines, ln: 0, con: [],
+    t: 'Gọi swap_int: gắn nhãn bí danh a lên x, b lên y',
+    desc: 'Không tạo hộp ô nhớ mới cho a và b! Nhãn bí danh a dán trực tiếp vào hộp x, còn nhãn b dán trực tiếp vào hộp y trong main().',
+    banner: 'Bí danh <code>a</code> gắn thẳng vào hộp <code>x</code> · Bí danh <code>b</code> gắn thẳng vào hộp <code>y</code>!',
+    links: [{from:'tag-a', to:'al-x', color:'a'}, {from:'tag-b', to:'al-y', color:'b'}],
+    frames: [
+      {title:'Khung swap_int(int& a, int& b)', kind:'sub-frame', tag:'Đang chạy', aliases:[
+        {id:'tag-a', name:'a (int&)', dest:'bí danh của x', col:'a'},
+        {id:'tag-b', name:'b (int&)', dest:'bí danh của y', col:'b'}
+      ], vars:[
+        {name:'tmp', val:'?', type:'int (cục bộ)'}
+      ]},
+      {title:'Khung main()', kind:'main-frame', tag:'Tạm dừng (chia sẻ hộp)', paused:false, vars:[
+        {id:'box-x', name:'x', aliases:[{id:'al-x', txt:'bí danh a', cls:'alias-a'}], val:x0, type:'chung 1 hộp!', hl:true},
+        {id:'box-y', name:'y', aliases:[{id:'al-y', txt:'bí danh b', cls:'alias-b'}], val:y0, type:'chung 1 hộp!', hl:true}
+      ]}
+    ],
+    note: 'Chỉ có <code>tmp</code> được cấp hộp mới; <code>a</code> và <code>b</code> chia sẻ chung hộp với <code>x</code> và <code>y</code>.'
+  });
+
+  S.push({
+    lines: lines, ln: 1, con: [],
+    t: 'int tmp = a; đọc hộp x/a (' + x0 + ') lưu vào tmp',
+    desc: 'Đọc giá trị qua nhãn bí danh a chính là đọc trực tiếp từ hộp x (' + x0 + ') rồi lưu tạm vào biến cục bộ tmp.',
+    banner: '<code>tmp</code> nhận <b>' + x0 + '</b> từ hộp chung <code>(x, a)</code>',
+    links: [{from:'tag-a', to:'al-x', color:'a'}, {from:'tag-b', to:'al-y', color:'b'}],
+    frames: [
+      {title:'Khung swap_int(int& a, int& b)', kind:'sub-frame', tag:'Đang chạy', aliases:[
+        {id:'tag-a', name:'a (int&)', dest:'bí danh của x', col:'a'},
+        {id:'tag-b', name:'b (int&)', dest:'bí danh của y', col:'b'}
+      ], vars:[
+        {name:'tmp', val:x0, type:'int (cục bộ)', chg:true}
+      ]},
+      {title:'Khung main()', kind:'main-frame', tag:'Đang giữ dữ liệu', vars:[
+        {id:'box-x', name:'x', aliases:[{id:'al-x', txt:'bí danh a', cls:'alias-a'}], val:x0, type:'int'},
+        {id:'box-y', name:'y', aliases:[{id:'al-y', txt:'bí danh b', cls:'alias-b'}], val:y0, type:'int'}
+      ]}
+    ],
+    note: 'Hộp <code>(x, a)</code> vẫn giữ ' + x0 + ' trong khi <code>tmp</code> sao lưu một bản.'
+  });
+
+  S.push({
+    lines: lines, ln: 2, con: [], st: 'ok', bannerCls: 'ret',
+    t: 'a = b; sửa trực tiếp hộp x trong main() thành ' + y0,
+    desc: 'Gán qua bí danh a = b; ghi thẳng giá trị ' + y0 + ' (từ hộp y/b) vào chính hộp x của main()!',
+    banner: 'Sửa qua bí danh <code>a</code> &rarr; Hộp <code>x</code> ở main() đổi thẳng thành <b>' + y0 + '</b>!',
+    links: [{from:'tag-a', to:'al-x', color:'a'}, {from:'tag-b', to:'al-y', color:'b'}],
+    frames: [
+      {title:'Khung swap_int(int& a, int& b)', kind:'sub-frame', tag:'Đang chạy', aliases:[
+        {id:'tag-a', name:'a (int&)', dest:'bí danh của x', col:'a'},
+        {id:'tag-b', name:'b (int&)', dest:'bí danh của y', col:'b'}
+      ], vars:[
+        {name:'tmp', val:x0, type:'int (cục bộ)'}
+      ]},
+      {title:'Khung main()', kind:'main-frame', tag:'Đang được cập nhật!', vars:[
+        {id:'box-x', name:'x', aliases:[{id:'al-x', txt:'bí danh a', cls:'alias-a'}], val:y0, type:'đã đổi thành ' + y0, chg:true},
+        {id:'box-y', name:'y', aliases:[{id:'al-y', txt:'bí danh b', cls:'alias-b'}], val:y0, type:'int'}
+      ]}
+    ],
+    note: 'Nhờ hai nhãn tên dán chung một hộp, thay đổi <code>a</code> làm <code>x</code> đổi ngay lập tức.'
+  });
+
+  S.push({
+    lines: lines, ln: 3, con: [], st: 'ok', bannerCls: 'ret',
+    t: 'b = tmp; sửa trực tiếp hộp y trong main() thành ' + x0,
+    desc: 'Gán qua bí danh b = tmp; ghi thẳng giá trị ' + x0 + ' vào chính hộp y của main()!',
+    banner: 'Sửa qua bí danh <code>b</code> &rarr; Hộp <code>y</code> ở main() đổi thẳng thành <b>' + x0 + '</b>!',
+    links: [{from:'tag-a', to:'al-x', color:'a'}, {from:'tag-b', to:'al-y', color:'b'}],
+    frames: [
+      {title:'Khung swap_int(int& a, int& b)', kind:'sub-frame', tag:'Đang chạy', aliases:[
+        {id:'tag-a', name:'a (int&)', dest:'bí danh của x', col:'a'},
+        {id:'tag-b', name:'b (int&)', dest:'bí danh của y', col:'b'}
+      ], vars:[
+        {name:'tmp', val:x0, type:'int (cục bộ)'}
+      ]},
+      {title:'Khung main()', kind:'main-frame', tag:'Đã hoán đổi trực tiếp!', vars:[
+        {id:'box-x', name:'x', aliases:[{id:'al-x', txt:'bí danh a', cls:'alias-a'}], val:y0, type:'int', ok:true},
+        {id:'box-y', name:'y', aliases:[{id:'al-y', txt:'bí danh b', cls:'alias-b'}], val:x0, type:'đã đổi thành ' + x0, chg:true}
+      ]}
+    ],
+    note: (x0 === y0) ? 'Khi x và y bằng nhau (' + x0 + '), kết quả sau hoán đổi vẫn giữ đúng giá trị ' + x0 + '.' : 'Cả hai hộp trong <code>main()</code> đã hoàn tất đổi giá trị cho nhau!'
+  });
+
+  S.push({
+    lines: lines, ln: 8, con: [y0 + ' ' + x0], st: 'ok', bannerCls: 'ret',
+    t: 'Thoát swap_int → main() giữ nguyên x = ' + y0 + ', y = ' + x0,
+    desc: 'Khung swap_int cùng các nhãn bí danh a, b và tmp được gỡ bỏ. Giá trị đã đổi (' + y0 + ', ' + x0 + ') được bảo toàn nguyên vẹn trong main()!',
+    banner: 'Hoán đổi thành công! Console in: <b>' + y0 + ' ' + x0 + '</b>',
+    frames: [
+      {title:'Khung main()', kind:'main-frame', tag:'Hoàn tất', vars:[
+        {id:'box-x', name:'x', val:y0, type:'int', ok:true},
+        {id:'box-y', name:'y', val:x0, type:'int', ok:true}
+      ]}
+    ],
+    note: 'Nhãn bí danh mất đi khi thoát hàm, nhưng hộp ô nhớ <code>x</code> và <code>y</code> đã giữ giá trị mới.'
+  });
+  return S;
+}
+
+/* ==================== RENDERING ==================== */
+
+function renderVarBox(v){
+  var cls = 'var-box';
+  if (v.hl) cls += ' hl';
+  if (v.chg) cls += ' chg';
+  if (v.ok) cls += ' ok';
+  if (v.dim) cls += ' dim';
+  var labels = '<span class="var-name' + (v.cls ? ' ' + v.cls : '') + '">' + esc(v.name) + '</span>';
+  if (v.aliases) {
+    v.aliases.forEach(function(al){
+      labels += '<span class="var-name ' + esc(al.cls) + '"' + (al.id ? ' id="' + al.id + '"' : '') + '>' + esc(al.txt) + '</span>';
+    });
+  }
+  var valStr = String(v.val);
+  var isUninit = valStr === '?' || valStr.indexOf('chưa') >= 0;
+  return '<div class="' + cls + '"' + (v.id ? ' id="' + v.id + '"' : '') + '>' +
+    '<div class="var-labels">' + labels + '</div>' +
+    '<div class="var-val' + (isUninit ? ' uninit' : '') + '">' + esc(valStr) + '</div>' +
+    '<div class="var-sub">' + esc(v.type || '') + '</div>' +
+  '</div>';
+}
+
+function renderFrame(f){
+  var cls = 'frame ' + (f.kind || '');
+  if (f.popped) cls += ' popped';
+  if (f.paused) cls += ' paused';
+  var body = '';
+  if (f.aliases && f.aliases.length) {
+    body += '<div class="vars-row" style="margin-bottom:6px">';
+    f.aliases.forEach(function(al){
+      body += '<div class="alias-tag-box' + (al.col === 'b' ? ' b-col' : '') + '" id="' + al.id + '">' +
+        '<div class="alias-title">' + esc(al.name) + '</div>' +
+        '<div class="alias-dest">&darr; ' + esc(al.dest) + '</div>' +
+      '</div>';
+    });
+    if (f.vars && f.vars.length) {
+      f.vars.forEach(function(v){ body += renderVarBox(v); });
+    }
+    body += '</div>';
+  } else if (f.vars && f.vars.length) {
+    body += '<div class="vars-row">' + f.vars.map(renderVarBox).join('') + '</div>';
+  } else {
+    body += '<div class="var-sub" style="padding:2px 0;text-align:center">(đang gọi hàm con theo trình tự từ trên xuống)</div>';
+  }
+  return '<div class="' + cls + '">' +
+    '<div class="frame-head"><span class="frame-title">' + esc(f.title) + '</span><span class="frame-tag">' + esc(f.tag) + '</span></div>' +
+    body +
+  '</div>';
+}
+
+function drawLinks(links){
+  var svg = $('svg-lines');
+  svg.innerHTML = '';
+  if (!links || !links.length) return;
+  var stage = $('stage');
+  var sr = stage.getBoundingClientRect();
+  if (!sr.width || !sr.height) return;
+
+  var defs = '<defs>' +
+    '<marker id="arr-a" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1 L8 5 L0 9 z" fill="var(--alias-a)"/></marker>' +
+    '<marker id="arr-b" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1 L8 5 L0 9 z" fill="var(--alias-b)"/></marker>' +
+  '</defs>';
+  var paths = '';
+  links.forEach(function(l){
+    var el1 = $(l.from), el2 = $(l.to);
+    if (!el1 || !el2) return;
+    var r1 = el1.getBoundingClientRect();
+    var r2 = el2.getBoundingClientRect();
+    var x1 = r1.left + r1.width / 2 - sr.left;
+    var y1 = r1.bottom - sr.top;
+    var x2 = r2.left + r2.width / 2 - sr.left;
+    var y2 = r2.top - sr.top;
+    var midY = (y1 + y2) / 2;
+    var col = l.color === 'b' ? 'var(--alias-b)' : 'var(--alias-a)';
+    var mk = l.color === 'b' ? 'url(#arr-b)' : 'url(#arr-a)';
+    paths += '<path d="M ' + x1.toFixed(1) + ' ' + y1.toFixed(1) +
+      ' C ' + x1.toFixed(1) + ' ' + midY.toFixed(1) + ', ' + x2.toFixed(1) + ' ' + midY.toFixed(1) + ', ' + x2.toFixed(1) + ' ' + (y2 - 2).toFixed(1) +
+      '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-dasharray="4 3" marker-end="' + mk + '"/>';
+  });
+  svg.innerHTML = defs + paths;
+}
+
+var currentSnap = null;
+function render(s, k, n){
+  currentSnap = s;
+  $('code-view').innerHTML = renderCode(s.lines, s.ln, s.codeOpts);
+  $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+  if (s.con && s.con.length) {
+    $('con-lines').innerHTML = s.con.map(function(line){
+      return '<div class="con-line">' + esc(line) + '</div>';
+    }).join('');
+  } else {
+    $('con-lines').innerHTML = '<span class="con-empty">(chưa có dữ liệu in ra)</span>';
+  }
+
+  $('flow-banner').className = 'flow-banner' + (s.bannerCls ? ' ' + s.bannerCls : '');
+  $('flow-banner').innerHTML = s.banner || '';
+  $('stack-area').innerHTML = s.frames.map(renderFrame).join('');
+  $('zone-note').innerHTML = s.note || '';
+
+  if (mode === 'storage-life') {
+    $('extra-btn').disabled = k >= n - 1;
+  }
+
+  requestAnimationFrame(function(){ drawLinks(s.links); });
+}
+
+/* ==================== CONTROLS & SETUP ==================== */
+
+function setupModeUI(){
+  var leadEl = $('lead-text');
+  var tabsEl = $('sub-tabs');
+  var pickEl = $('arg-picker');
+  var extraBtn = $('extra-btn');
+  var rTitle = $('right-title');
+  var rBadge = $('right-badge');
+
+  tabsEl.innerHTML = '';
+  pickEl.innerHTML = '';
+  extraBtn.style.display = 'none';
+
+  if (mode === 'call-flow') {
+    leadEl.innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím &rarr;) để theo dõi luồng điều khiển, truyền đối số và giá trị <code>return</code> giữa <code>main()</code> và hàm con.';
+    rTitle.textContent = 'Ngăn xếp lời gọi hàm';
+    rBadge.textContent = 'Call Stack';
+    tabsEl.innerHTML =
+      '<button class="tab" data-sub="sum" aria-selected="' + (state.sub === 'sum') + '">sum_range(1, 3 + 2)</button>' +
+      '<button class="tab" data-sub="sign" aria-selected="' + (state.sub === 'sign') + '">sign_val(x) — return sớm</button>';
+    if (state.sub === 'sign') {
+      pickEl.innerHTML = '<span class="chip-lbl">x =</span>' +
+        [7, 0, -4].map(function(v){
+          return '<button class="chip' + (state.signX === v ? ' active' : '') + '" data-x="' + v + '">' + v + '</button>';
+        }).join('');
+    }
+  } else if (mode === 'pass-by-val') {
+    leadEl.innerHTML = 'Bấm <b>Bước tiếp</b> để quan sát truyền tham trị tạo bản sao cục bộ tách biệt trong hàm phụ và cách cập nhật lại biến qua <code>return</code>.';
+    rTitle.textContent = 'Vùng nhớ ngăn xếp tách biệt';
+    rBadge.textContent = 'Pass by Value';
+    tabsEl.innerHTML =
+      '<button class="tab" data-sub="inc" aria-selected="' + (state.sub === 'inc') + '">increment(x)</button>' +
+      '<button class="tab" data-sub="swap" aria-selected="' + (state.sub === 'swap') + '">try_swap(a, b)</button>' +
+      '<button class="tab" data-sub="boost" aria-selected="' + (state.sub === 'boost') + '">x = boost(x)</button>';
+  } else if (mode === 'storage-life') {
+    leadEl.innerHTML = 'Theo dõi vòng đời biến cục bộ thường <code>temp</code> (tạo mới mỗi lần gọi) và biến <code>static total</code> (sống suốt chương trình).';
+    rTitle.textContent = 'Ngăn xếp tạm vs Vùng dữ liệu tĩnh';
+    rBadge.textContent = 'Automatic vs Static';
+    rBadge.className = 'badge stat';
+    extraBtn.style.display = 'inline-flex';
+  } else if (mode === 'val-vs-ref') {
+    leadEl.innerHTML = 'Đối chiếu truyền tham trị (tạo hộp bản sao) với truyền tham chiếu (<code>T&amp;</code> — gắn nhãn bí danh chung lên hộp ô nhớ gốc).';
+    rTitle.textContent = 'Mô hình hộp ô nhớ & Nhãn bí danh';
+    rBadge.textContent = state.sub === 'ref' ? 'Tham chiếu (T&)' : 'Tham trị (T)';
+    tabsEl.innerHTML =
+      '<button class="tab" data-sub="val" aria-selected="' + (state.sub === 'val') + '">bad_swap(int a, int b)</button>' +
+      '<button class="tab" data-sub="ref" aria-selected="' + (state.sub === 'ref') + '">swap_int(int&amp; a, int&amp; b)</button>';
+    pickEl.innerHTML = '<span class="chip-lbl">x, y:</span>' +
+      '<button class="chip' + (state.pairX === 3 && state.pairY === 8 ? ' active' : '') + '" data-px="3" data-py="8">(3,8)</button>' +
+      '<button class="chip' + (state.pairX === 12 && state.pairY === -5 ? ' active' : '') + '" data-px="12" data-py="-5">(12,-5)</button>' +
+      '<button class="chip' + (state.pairX === 7 && state.pairY === 7 ? ' active' : '') + '" data-px="7" data-py="7">(7,7)</button>' +
+      '<input class="num-in" id="in-x" type="number" min="-999" max="999" value="' + state.pairX + '" aria-label="Giá trị x">' +
+      '<input class="num-in" id="in-y" type="number" min="-999" max="999" value="' + state.pairY + '" aria-label="Giá trị y">';
+  }
+
+  tabsEl.querySelectorAll('.tab').forEach(function(btn){
+    btn.onclick = function(){
+      state.sub = btn.getAttribute('data-sub');
+      setupModeUI();
+      sim.rebuild();
+    };
+  });
+  pickEl.querySelectorAll('.chip[data-x]').forEach(function(btn){
+    btn.onclick = function(){
+      state.signX = Number(btn.getAttribute('data-x'));
+      setupModeUI();
+      sim.rebuild();
+    };
+  });
+  pickEl.querySelectorAll('.chip[data-px]').forEach(function(btn){
+    btn.onclick = function(){
+      state.pairX = Number(btn.getAttribute('data-px'));
+      state.pairY = Number(btn.getAttribute('data-py'));
+      setupModeUI();
+      sim.rebuild();
+    };
+  });
+  var inX = $('in-x'), inY = $('in-y');
+  if (inX && inY) {
+    var applyInputs = function(){
+      var vx = parseInt(inX.value, 10), vy = parseInt(inY.value, 10);
+      if (isNaN(vx)) vx = 3;
+      if (isNaN(vy)) vy = 8;
+      state.pairX = Math.max(-999, Math.min(999, vx));
+      state.pairY = Math.max(-999, Math.min(999, vy));
+      inX.value = state.pairX;
+      inY.value = state.pairY;
+      pickEl.querySelectorAll('.chip').forEach(function(c){
+        c.classList.toggle('active', Number(c.getAttribute('data-px')) === state.pairX && Number(c.getAttribute('data-py')) === state.pairY);
+      });
+      sim.rebuild();
+    };
+    inX.onchange = applyInputs;
+    inY.onchange = applyInputs;
+  }
+}
+
+function buildActiveSteps(){
+  if (mode === 'call-flow') {
+    return state.sub === 'sign' ? buildCallFlowSign(state.signX) : buildCallFlowSum();
+  }
+  if (mode === 'pass-by-val') return buildPassByVal(state.sub);
+  if (mode === 'storage-life') return buildStorageLife();
+  return buildValVsRef(state.sub, state.pairX, state.pairY);
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  S.jumpNextCall = function(){
+    stop();
+    var curCall = S.snaps[S.i].callNo || 1;
+    for (var j = S.i + 1; j < S.snaps.length; j++) {
+      if (S.snaps[j].callNo > curCall) { S.i = j; upd(); return; }
+    }
+    S.i = S.snaps.length - 1;
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('extra-btn').onclick = function(){ S.jumpNextCall(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, 750);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+window.addEventListener('resize', function(){
+  if (currentSnap) drawLinks(currentSnap.links);
+});
+
+var sim = Sim({build: buildActiveSteps, render: render});
+setupModeUI();
+sim.rebuild();
+})();
+</script>
+</body>
+</html>

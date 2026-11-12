@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Bộ đệm Luồng nhập std::cin và getline</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  code{font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:54px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+
+  /* Buffer Tape */
+  .tape-card{margin-bottom:7px}
+  .tape-wrap{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;display:flex;flex-wrap:wrap;gap:4px}
+  .b-col{display:flex;flex-direction:column;align-items:center;gap:2px;width:34px}
+  .b-idx{font:700 9.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .b-cell{width:100%;height:30px;display:flex;align-items:center;justify-content:center;
+    background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;
+    font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;transition:all .16s}
+  .b-cell.nl{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-size:11.5px}
+  .b-cell.sp{color:var(--muted)}
+  .b-cell.eof{border-style:dashed;color:var(--muted);font-size:10.5px;background:var(--bg)}
+  .b-cell.consumed{background:var(--true-soft);border-color:var(--true);color:var(--true);opacity:.65}
+  .b-cell.skipped{background:var(--code-bg);border-color:var(--line);border-style:dashed;color:var(--muted);opacity:.48;text-decoration:line-through}
+  .b-cell.cursor{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent);transform:translateY(-1px)}
+  .b-cell.cursor-trap{box-shadow:0 0 0 2px var(--false);border-color:var(--false);background:var(--false-soft);color:var(--false)}
+  .b-cur{min-height:14px;font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);line-height:14px}
+  .b-cur.trap{color:var(--false)}
+
+  .tape-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--muted);margin-top:5px}
+  .lg-dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:middle}
+
+  /* Lower 2-col grid */
+  .grid{display:grid;grid-template-columns:1.08fr 0.92fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:7px 0;overflow-x:auto;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .tip-note{margin-top:7px;background:var(--code-bg);border:1px dashed var(--line);border-radius:6px;padding:6px 8px;
+    font-size:12px;color:var(--muted);line-height:1.38}
+
+  .var-list{display:flex;flex-direction:column;gap:6px;margin-bottom:7px}
+  .var-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+  .var-box.chg{border-color:var(--accent);background:var(--accent-soft)}
+  .var-box.ok{border-color:var(--true);background:var(--true-soft)}
+  .var-box.bad{border-color:var(--false);background:var(--false-soft)}
+  .var-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-bottom:2px}
+  .var-name{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .var-val{font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;word-break:break-word}
+
+  .console{background:var(--con-bg);color:var(--con-text);border-radius:6px;padding:7px 9px;
+    font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;min-height:60px}
+  .con-head{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:3px;display:flex;justify-content:space-between}
+  .con-line{white-space:pre-wrap;word-break:break-word}
+  .con-empty{color:#6b7280;font-style:italic}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .lead{font-size:12.5px}
+    .b-col{width:31px}
+    .b-cell{height:28px;font-size:12px}
+    .code{font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Chọn kịch bản và bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi con trỏ đọc trên bộ đệm <code>std::cin</code> và ký tự <code>'\n'</code>.</p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="card tape-card">
+    <div class="panel-head">
+      <p class="panel-title">Băng bộ đệm đầu vào (Input Buffer Tape)</p>
+      <span class="badge" id="step-badge"></span>
+    </div>
+    <div class="tape-wrap" id="tape-wrap"></div>
+    <div class="tape-legend">
+      <span><i class="lg-dot" style="background:var(--warn-soft);border:1px solid var(--warn)"></i><code>\n</code> xuống dòng</span>
+      <span><i class="lg-dot" style="background:var(--true-soft);border:1px solid var(--true)"></i>Đã đọc vào biến</span>
+      <span><i class="lg-dot" style="background:var(--code-bg);border:1px dashed var(--muted)"></i>Đã bỏ qua / nuốt</span>
+      <span><i class="lg-dot" style="background:var(--accent-soft);border:1px solid var(--accent)"></i>Vị trí đầu đọc hiện tại</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Mã nguồn C++</p>
+        <span class="badge" id="mode-badge"></span>
+      </div>
+      <div class="code" id="code-view"></div>
+      <div class="tip-note">Lưu ý: Hàm <code>cin.getline(buf, size)</code> của C-string cũng gặp đúng cơ chế sót ký tự <code>'\n'</code> sau <code>cin &gt;&gt;</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="panel-head">
+        <p class="panel-title">Trạng thái biến &amp; Đầu ra</p>
+        <span class="badge" id="buf-rem-badge"></span>
+      </div>
+      <div class="var-list" id="var-list"></div>
+      <div class="console">
+        <div class="con-head"><span>Console Output</span><span id="con-tag"></span></div>
+        <div id="con-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(int|string|cin|getline|ws|ignore|cout)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function renderCode(lines, cur, errLn){
+    return lines.map(function(l, i){
+      var cls = 'ln';
+      if (errLn === i) cls += ' err-line';
+      else if (cur === i) cls += ' cur';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+
+  function tokenizeBuffer(raw){
+    var arr = [];
+    for (var i = 0; i < raw.length; i++) {
+      var ch = raw[i];
+      if (ch === '\n') arr.push({ ch: '\n', disp: '\\n', kind: 'nl' });
+      else if (ch === ' ') arr.push({ ch: ' ', disp: '␣', kind: 'sp' });
+      else arr.push({ ch: ch, disp: ch, kind: 'ch' });
+    }
+    arr.push({ ch: '', disp: 'EOF', kind: 'eof' });
+    return arr;
+  }
+
+  /* =========================================================
+     PURE CIN BUFFER MODELS (Verified with g++ -std=c++20)
+     ========================================================= */
+
+  var BUF_MAIN = '25\n   Nguyen An\n';
+  var BUF_CMP  = '  Lap trinh\n';
+
+  function buildCinSteps(scKey){
+    var tokensMain = tokenizeBuffer(BUF_MAIN);
+    var tokensCmp  = tokenizeBuffer(BUF_CMP);
+
+    if (scKey === 'trap') {
+      var lines1 = [
+        'int n;',
+        'string name;',
+        'cin >> n;',
+        'getline(cin, name);',
+        'cout << n << " | [" << name << "]";'
+      ];
+      return [
+        {
+          tokens: tokensMain, cursor: 0, states: [], trapCursor: false,
+          lines: lines1, ln: 0, errLn: null, badge: 'Lỗi phổ biến', st: '',
+          vars: [
+            { name: 'int n', val: '?', note: 'chưa gán', cls: '' },
+            { name: 'string name', val: '""', note: 'size = 0', cls: '' }
+          ],
+          console: '',
+          t: 'Bộ đệm ban đầu: "25\\n   Nguyen An\\n"',
+          desc: 'Người dùng nhập 25, nhấn Enter (sinh ra \'\\n\'), rồi gõ "   Nguyen An" và nhấn Enter.'
+        },
+        {
+          tokens: tokensMain, cursor: 2, states: ['consumed', 'consumed'], trapCursor: false,
+          lines: lines1, ln: 2, errLn: null, badge: 'cin >> n', st: 'warn',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc số nguyên', cls: 'chg' },
+            { name: 'string name', val: '""', note: 'chưa đọc', cls: '' }
+          ],
+          console: '',
+          t: 'cin >> n; đọc "25" và DỪNG TRƯỚC \'\\n\'',
+          desc: 'Toán tử >> dừng ngay khi gặp khoảng trắng/xuống dòng: ký tự \'\\n\' tại ô [2] vẫn còn nguyên trong bộ đệm!'
+        },
+        {
+          tokens: tokensMain, cursor: 3, states: ['consumed', 'consumed', 'skipped'], trapCursor: true,
+          lines: lines1, ln: 3, errLn: 3, badge: 'Bẫy nuốt \\n', st: 'bad',
+          vars: [
+            { name: 'int n', val: '25', note: 'size: 4 bytes', cls: '' },
+            { name: 'string name', val: '"" (chuỗi rỗng!)', note: 'size = 0', cls: 'bad' }
+          ],
+          console: '',
+          t: 'getline(cin, name); chạm ngay \'\\n\' và dừng tức thì!',
+          desc: 'Vừa bắt đầu đọc tại ô [2], getline gặp \'\\n\' nên coi là hết dòng: nó nuốt \'\\n\' (đẩy đầu đọc sang [3]) và gán chuỗi rỗng "" vào name!'
+        },
+        {
+          tokens: tokensMain, cursor: 3, states: ['consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines1, ln: 4, errLn: 4, badge: 'Bị bỏ qua dòng 2', st: 'bad',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '"" (chuỗi rỗng!)', note: 'size = 0', cls: 'bad' }
+          ],
+          console: '25 | []',
+          t: 'Kết quả sai: name bị rỗng, "   Nguyen An" bị bỏ kẹt lại!',
+          desc: 'Dòng "   Nguyen An" vẫn nằm kẹt trong bộ đệm (từ ô [3] trở đi) và chưa hề được đọc.'
+        }
+      ];
+    }
+
+    if (scKey === 'ws') {
+      var lines2 = [
+        'int n;',
+        'string name;',
+        'cin >> n;',
+        'getline(cin >> ws, name);',
+        'cout << n << " | [" << name << "]";'
+      ];
+      return [
+        {
+          tokens: tokensMain, cursor: 0, states: [], trapCursor: false,
+          lines: lines2, ln: 0, errLn: null, badge: 'Khắc phục >> ws', st: '',
+          vars: [
+            { name: 'int n', val: '?', note: 'chưa gán', cls: '' },
+            { name: 'string name', val: '""', note: 'size = 0', cls: '' }
+          ],
+          console: '',
+          t: 'Bộ đệm ban đầu: "25\\n   Nguyen An\\n"',
+          desc: 'Chuẩn bị đọc số n và họ tên trên dòng kế tiếp (có 3 dấu cách đầu dòng).'
+        },
+        {
+          tokens: tokensMain, cursor: 2, states: ['consumed', 'consumed'], trapCursor: false,
+          lines: lines2, ln: 2, errLn: null, badge: 'cin >> n', st: '',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: 'chg' },
+            { name: 'string name', val: '""', note: 'chưa đọc', cls: '' }
+          ],
+          console: '',
+          t: 'cin >> n; đọc "25" và để lại \'\\n\' tại ô [2]',
+          desc: 'Đầu đọc dừng ngay trước \'\\n\' ở chỉ số 2.'
+        },
+        {
+          tokens: tokensMain, cursor: 6, states: ['consumed', 'consumed', 'skipped', 'skipped', 'skipped', 'skipped'], trapCursor: false,
+          lines: lines2, ln: 3, errLn: null, badge: '>> ws quét sạch', st: 'warn',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '(đang chuẩn bị đọc...)', note: 'sau khi bỏ ws', cls: 'chg' }
+          ],
+          console: '',
+          t: 'Bước 1 của getline(cin >> ws, ...): >> ws bỏ mọi khoảng trắng!',
+          desc: 'Bộ thao tác std::ws quét bỏ CẢ \'\\n\' tại [2] LẪN 3 dấu cách tại [3..5], đưa đầu đọc tới đúng chữ \'N\' (ô [6]).'
+        },
+        {
+          tokens: tokensMain, cursor: 16, states: ['consumed', 'consumed', 'skipped', 'skipped', 'skipped', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines2, ln: 3, errLn: null, badge: 'Đọc trọn họ tên', st: 'ok',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '"Nguyen An"', note: 'size = 9 (đã cắt 3 cách đầu)', cls: 'ok' }
+          ],
+          console: '',
+          t: 'Bước 2: getline đọc "Nguyen An" và loại bỏ \'\\n\' cuối',
+          desc: 'Đọc các ký tự từ [6..14] vào name, gặp \'\\n\' tại [15] thì dừng và bỏ \'\\n\' khỏi bộ đệm.'
+        },
+        {
+          tokens: tokensMain, cursor: 16, states: ['consumed', 'consumed', 'skipped', 'skipped', 'skipped', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines2, ln: 4, errLn: null, badge: 'Hoàn tất sạch sẽ', st: 'ok',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '"Nguyen An"', note: 'size = 9', cls: 'ok' }
+          ],
+          console: '25 | [Nguyen An]',
+          t: 'Kết quả: name = "Nguyen An" (đã dọn khoảng trắng đầu dòng)',
+          desc: 'Lưu ý: >> ws sẽ nuốt cả dấu cách đầu dòng và dòng trống. Nếu muốn giữ nguyên dấu cách đầu dòng, xem cách cin.ignore bên tab 3.'
+        }
+      ];
+    }
+
+    if (scKey === 'ignore') {
+      var lines3 = [
+        'int n;',
+        'string name;',
+        'cin >> n;',
+        'cin.ignore(1000, \'\\n\');',
+        'getline(cin, name);',
+        'cout << n << " | [" << name << "]";'
+      ];
+      return [
+        {
+          tokens: tokensMain, cursor: 0, states: [], trapCursor: false,
+          lines: lines3, ln: 0, errLn: null, badge: 'cin.ignore', st: '',
+          vars: [
+            { name: 'int n', val: '?', note: 'chưa gán', cls: '' },
+            { name: 'string name', val: '""', note: 'size = 0', cls: '' }
+          ],
+          console: '',
+          t: 'Bộ đệm ban đầu: "25\\n   Nguyen An\\n"',
+          desc: 'Chú ý dòng thứ hai có 3 dấu cách đứng đầu trước chữ "Nguyen An".'
+        },
+        {
+          tokens: tokensMain, cursor: 2, states: ['consumed', 'consumed'], trapCursor: false,
+          lines: lines3, ln: 2, errLn: null, badge: 'cin >> n', st: '',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: 'chg' },
+            { name: 'string name', val: '""', note: 'chưa đọc', cls: '' }
+          ],
+          console: '',
+          t: 'cin >> n; đọc "25" và dừng trước \'\\n\'',
+          desc: 'Đầu đọc nằm ở [2] (\'\\n\').'
+        },
+        {
+          tokens: tokensMain, cursor: 3, states: ['consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines3, ln: 3, errLn: null, badge: 'Xả đúng hết \\n', st: 'warn',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '""', note: 'chờ getline', cls: '' }
+          ],
+          console: '',
+          t: 'cin.ignore(1000, \'\\n\'); chỉ bỏ đến hết \'\\n\' đầu tiên!',
+          desc: 'Hàm ignore xoá \'\\n\' tại [2] rồi DỪNG NGAY tại [3] — hoàn toàn giữ nguyên 3 dấu cách \'   \' ở đầu dòng kế tiếp.'
+        },
+        {
+          tokens: tokensMain, cursor: 16, states: ['consumed', 'consumed', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines3, ln: 4, errLn: null, badge: 'Giữ dấu cách đầu', st: 'ok',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '"   Nguyen An"', note: 'size = 12 (giữ 3 cách đầu!)', cls: 'ok' }
+          ],
+          console: '',
+          t: 'getline(cin, name); đọc trọn từ ô [3] tới \'\\n\'',
+          desc: 'Nhờ không dùng >> ws, getline giữ nguyên 3 khoảng trắng đầu dòng nên name = "   Nguyen An" (độ dài 12).'
+        },
+        {
+          tokens: tokensMain, cursor: 16, states: ['consumed', 'consumed', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+          lines: lines3, ln: 5, errLn: null, badge: 'Khớp chính xác', st: 'ok',
+          vars: [
+            { name: 'int n', val: '25', note: 'đã đọc', cls: '' },
+            { name: 'string name', val: '"   Nguyen An"', note: 'size = 12', cls: 'ok' }
+          ],
+          console: '25 | [   Nguyen An]',
+          t: 'So sánh với >> ws: giữ khoảng trắng đầu dòng & dòng trống!',
+          desc: 'Dùng >> ws khi muốn bỏ mọi khoảng trắng thừa; dùng cin.ignore(1000, \'\\n\') khi cần giữ nguyên định dạng đầu dòng.'
+        }
+      ];
+    }
+
+    // Scenario 4: compare cin >> word vs getline(cin, line)
+    var lines4 = [
+      '// Bo dem: "  Lap trinh\\n"',
+      'string word, line;',
+      'cin >> word;',
+      'getline(cin, line);',
+      'cout << "[" << word << "] + [" << line << "]";'
+    ];
+    return [
+      {
+        tokens: tokensCmp, cursor: 0, states: [], trapCursor: false,
+        lines: lines4, ln: 0, errLn: null, badge: '>> vs getline', st: '',
+        vars: [
+          { name: 'string word', val: '""', note: 'size = 0', cls: '' },
+          { name: 'string line', val: '""', note: 'size = 0', cls: '' }
+        ],
+        console: '',
+        t: 'Bộ đệm ban đầu: "  Lap trinh\\n" (có 2 dấu cách ở đầu)',
+        desc: 'Theo dõi cách cin >> word và getline(cin, line) xử lý khoảng trắng hoàn toàn khác nhau.'
+      },
+      {
+        tokens: tokensCmp, cursor: 5, states: ['skipped', 'skipped', 'consumed', 'consumed', 'consumed'], trapCursor: false,
+        lines: lines4, ln: 2, errLn: null, badge: 'cin >> word', st: 'warn',
+        vars: [
+          { name: 'string word', val: '"Lap"', note: 'size = 3 (chỉ 1 từ)', cls: 'chg' },
+          { name: 'string line', val: '""', note: 'chưa đọc', cls: '' }
+        ],
+        console: '',
+        t: 'cin >> word; bỏ 2 cách đầu, đọc "Lap", dừng trước dấu cách [5]',
+        desc: 'Toán tử >> tự động bỏ khoảng trắng đầu, đọc tới khi gặp khoảng trắng tiếp theo (ô [5]) và dừng lại.'
+      },
+      {
+        tokens: tokensCmp, cursor: 12, states: ['skipped', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+        lines: lines4, ln: 3, errLn: null, badge: 'getline phần còn lại', st: 'ok',
+        vars: [
+          { name: 'string word', val: '"Lap"', note: 'size = 3', cls: '' },
+          { name: 'string line', val: '" trinh"', note: 'size = 6 (giữ dấu cách!)', cls: 'ok' }
+        ],
+        console: '',
+        t: 'getline(cin, line); KHÔNG bỏ dấu cách tại [5], đọc đến \'\\n\'',
+        desc: 'Khác với >>, getline lấy luôn dấu cách đầu tiên ở [5], đọc trọn " trinh", rồi nuốt \'\\n\' tại [11].'
+      },
+      {
+        tokens: tokensCmp, cursor: 12, states: ['skipped', 'skipped', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'consumed', 'skipped'], trapCursor: false,
+        lines: lines4, ln: 4, errLn: null, badge: 'Hoàn tất', st: 'ok',
+        vars: [
+          { name: 'string word', val: '"Lap"', note: 'size = 3', cls: '' },
+          { name: 'string line', val: '" trinh"', note: 'size = 6', cls: 'ok' }
+        ],
+        console: '[Lap] + [ trinh]',
+        t: 'Kết luận: >> tách theo từ (bỏ khoảng trắng), getline lấy cả dòng đến \'\\n\'',
+        desc: 'Vì thế muốn đọc một từ thì dùng cin >>, còn muốn đọc cả dòng có dấu cách thì dùng getline.'
+      }
+    ];
+  }
+
+  window.CinBufferModel = {
+    BUF_MAIN: BUF_MAIN,
+    BUF_CMP: BUF_CMP,
+    buildCinSteps: buildCinSteps
+  };
+
+  /* =========================================================
+     UI CONTROLLER
+     ========================================================= */
+
+  var SC = qparam('sc');
+  var state = {
+    sc: (['trap', 'ws', 'ignore', 'compare'].indexOf(SC) !== -1) ? SC : 'trap',
+    stepIdx: 0,
+    timer: null,
+    snaps: []
+  };
+  var BUOC = Number(qparam('buoc'));
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function renderTabs(){
+    var items = [
+      { id: 'trap', label: '1. Lỗi nuốt dòng trống' },
+      { id: 'ws', label: '2. Sửa bằng >> ws' },
+      { id: 'ignore', label: '3. Sửa bằng cin.ignore' },
+      { id: 'compare', label: '4. >> vs getline' }
+    ];
+    $('tabs').innerHTML = items.map(function(it){
+      var on = it.id === state.sc;
+      return '<button class="tab" role="tab" aria-selected="' + on + '" data-id="' + it.id + '">' + esc(it.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(btn){
+      btn.onclick = function(){
+        state.sc = btn.getAttribute('data-id');
+        stopTimer();
+        state.snaps = buildCinSteps(state.sc);
+        state.stepIdx = 0;
+        renderTabs();
+        renderCurrent();
+      };
+    });
+  }
+
+  function renderButtons(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateButtons(); return; }
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); }
+      }, 750);
+      updateButtons();
+    };
+  }
+
+  function updateButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var total = state.snaps.length;
+
+    $('step-badge').textContent = 'Bước ' + (state.stepIdx + 1) + '/' + total;
+    $('mode-badge').textContent = s.badge;
+    $('mode-badge').className = 'badge' + (s.st ? ' ' + s.st : '');
+
+    var statusEl = $('status');
+    statusEl.className = 'status' + (s.st ? ' ' + s.st : '');
+    statusEl.innerHTML = '<b>Bước ' + (state.stepIdx + 1) + '/' + total + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+
+    var rem = Math.max(0, (s.tokens.length - 1) - s.cursor);
+    $('buf-rem-badge').textContent = rem === 0 ? 'Bộ đệm đã hết (EOF)' : ('Còn ' + rem + ' ký tự chưa đọc');
+    $('buf-rem-badge').className = 'badge' + (rem === 0 ? ' ok' : '');
+
+    $('tape-wrap').innerHTML = s.tokens.map(function(tok, idx){
+      var cls = 'b-cell';
+      if (tok.kind === 'nl') cls += ' nl';
+      else if (tok.kind === 'sp') cls += ' sp';
+      else if (tok.kind === 'eof') cls += ' eof';
+
+      var st = s.states[idx];
+      if (st === 'consumed') cls += ' consumed';
+      else if (st === 'skipped') cls += ' skipped';
+
+      var curMark = '';
+      if (idx === s.cursor) {
+        cls += s.trapCursor ? ' cursor-trap' : ' cursor';
+        curMark = '<span class="b-cur' + (s.trapCursor ? ' trap' : '') + '">▲ đọc</span>';
+      } else {
+        curMark = '<span class="b-cur"></span>';
+      }
+
+      return '<div class="b-col"><div class="b-idx">' + idx + '</div><div class="' + cls + '">' + esc(tok.disp) + '</div>' + curMark + '</div>';
+    }).join('');
+
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    $('var-list').innerHTML = s.vars.map(function(v){
+      return '<div class="var-box ' + v.cls + '">' +
+        '<div class="var-top"><span class="var-name">' + esc(v.name) + '</span><span style="color:var(--muted)">' + esc(v.note) + '</span></div>' +
+        '<div class="var-val">' + esc(v.val) + '</div>' +
+      '</div>';
+    }).join('');
+
+    $('con-tag').textContent = s.console ? 'stdout' : 'chờ cout';
+    $('con-body').innerHTML = s.console
+      ? '<div class="con-line">' + esc(s.console) + '</div>'
+      : '<div class="con-empty">(Chưa có dữ liệu in ra màn hình)</div>';
+
+    updateButtons();
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+
+  state.snaps = buildCinSteps(state.sc);
+  if (BUOC > 0) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+  renderTabs();
+  renderButtons();
+  renderCurrent();
+})();
+</script>
+</body>
+</html>

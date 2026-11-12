@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Phòng thí nghiệm Thao tác Chuỗi std::string C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --violet:#7c3aed; --violet-soft:#f3e8ff;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --violet:#c084fc; --violet-soft:#2e1065;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  code{font-size:12.5px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn.sm{padding:2px 7px;font-size:12px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:54px;font-size:13px;line-height:1.38}
+  .status b{display:block;font-size:12.5px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge-group{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .badge{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;
+    padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+  .badge.violet{background:var(--violet-soft);color:var(--violet)}
+
+  .sub-bar{display:flex;flex-wrap:wrap;gap:5px 10px;align-items:center;margin-bottom:6px;
+    background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3px 8px;border-radius:5px;
+    cursor:pointer;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .chip.bad-active{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+
+  .param-group{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
+  .param-val{font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-width:20px;text-align:center;color:var(--text)}
+
+  /* String Ruler Strip */
+  .tape-card{margin-bottom:6px;padding:7px 10px}
+  .str-strip{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:6px 7px;
+    display:flex;flex-wrap:wrap;gap:3px;align-items:flex-start}
+  .c-col{display:flex;flex-direction:column;align-items:center;gap:1px;width:28px}
+  .c-idx{font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);line-height:1.1}
+  .c-box{width:100%;height:28px;display:flex;align-items:center;justify-content:center;
+    background:var(--cell-bg);border:2px solid var(--cell-border);border-radius:6px;
+    font:700 13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;transition:all .15s}
+  .c-box.sp{color:var(--muted)}
+  .c-box.win{border-color:var(--accent);background:var(--accent-soft)}
+  .c-box.match{border-color:var(--true);background:var(--true-soft);color:var(--true)}
+  .c-box.ins{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
+  .c-box.del{border-color:var(--false);background:var(--false-soft);color:var(--false);text-decoration:line-through}
+  .c-box.miss{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+  .c-box.dim{opacity:.42}
+  .c-box.gap{border-style:dashed;border-color:var(--violet);background:transparent;color:var(--violet);font-size:11px;width:42px}
+  .c-col.gap-col{width:44px}
+  .c-mark{min-height:13px;font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);line-height:13px;white-space:nowrap}
+  .c-mark.ok{color:var(--true)} .c-mark.bad{color:var(--false)} .c-mark.warn{color:var(--warn)}
+
+  /* Lower Grid */
+  .grid{display:grid;grid-template-columns:1.12fr 0.88fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:12.5px/1.52 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .res-stack{display:flex;flex-direction:column;gap:6px}
+  .info-box{background:var(--code-bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+  .info-box.ok{border-color:var(--true);background:var(--true-soft)}
+  .info-box.bad{border-color:var(--false);background:var(--false-soft)}
+  .info-box.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .info-k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  .info-v{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;word-break:break-word}
+
+  .set-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+  .set-ch{padding:1px 6px;border-radius:4px;background:var(--card);border:1px solid var(--line);
+    font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .set-ch.hit{background:var(--true-soft);border-color:var(--true);color:var(--true)}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .lead{font-size:12.5px}
+    .c-col{width:28px}
+    .c-box{height:27px;font-size:13px}
+    .code{font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div id="workspace"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(size_t|string|if|while|else|cout|npos|find|rfind|find_first_of|find_first_not_of|substr|insert|erase|replace)\b|(\b\d+\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function renderCode(lines, cur, errLn){
+    return lines.map(function(l, i){
+      var cls = 'ln';
+      if (errLn === i) cls += ' err-line';
+      else if (cur === i) cls += ' cur';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+
+  /* =========================================================
+     PURE STRING OPERATIONS MODELS (Verified with g++ -std=c++20)
+     ========================================================= */
+
+  var FIND_STR_MAIN = 'ababa_2025_aba'; // len 14
+  var FIND_STR_DIG  = 'hoc_c++_101';    // len 11
+  var FIND_STR_LOOP = 'ababa';          // len 5
+
+  var FIND_SCENARIOS = {
+    find_2025: { tab: 'find', label: 'find("2025", 0)', s: FIND_STR_MAIN, sub: '2025', startPos: 0 },
+    find_aba2: { tab: 'find', label: 'find("aba", 2)',  s: FIND_STR_MAIN, sub: 'aba',  startPos: 2 },
+    find_xyz:  { tab: 'find', label: 'find("xyz", 0)',  s: FIND_STR_MAIN, sub: 'xyz',  startPos: 0 },
+
+    rfind_aba: { tab: 'rfind', label: 'rfind("aba")', s: FIND_STR_MAIN, sub: 'aba' },
+    rfind_202: { tab: 'rfind', label: 'rfind("202")', s: FIND_STR_MAIN, sub: '202' },
+    rfind_xyz: { tab: 'rfind', label: 'rfind("xyz")', s: FIND_STR_MAIN, sub: 'xyz' },
+
+    first_in:  { tab: 'first_of', label: 'find_first_of("0..9")',        s: FIND_STR_DIG,  chars: '0123456789', startPos: 0, notOf: false },
+    first_not: { tab: 'first_of', label: 'find_first_not_of("0..9", 6)', s: FIND_STR_MAIN, chars: '0123456789', startPos: 6, notOf: true },
+
+    loop_non:  { tab: 'loop', label: 'pos += sub.size() (an toàn)', mode: 'non', s: FIND_STR_LOOP, sub: 'aba' },
+    loop_ovl:  { tab: 'loop', label: 'pos += 1 (chồng lấn)',        mode: 'ovl', s: FIND_STR_LOOP, sub: 'aba' },
+    loop_bug:  { tab: 'loop', label: 'Quên tăng pos (LỖI!)',        mode: 'bug', s: FIND_STR_LOOP, sub: 'aba' }
+  };
+
+  function buildFindSteps(scKey){
+    var sc = FIND_SCENARIOS[scKey] || FIND_SCENARIOS.find_2025;
+    var s = sc.s;
+    var snaps = [];
+
+    if (sc.tab === 'find') {
+      var sub = sc.sub, pos0 = sc.startPos;
+      var lines = [
+        'string s = "' + s + '";',
+        'size_t pos = s.find("' + sub + '", ' + pos0 + ');',
+        'if (pos != string::npos) {',
+        '  cout << "Tai: " << pos;',
+        '} else {',
+        '  cout << "Khong thay (npos)";',
+        '}'
+      ];
+      snaps.push({
+        s: s, winStart: null, winLen: 0, cursor: pos0, kind: 'init',
+        posVal: String(pos0) + ' (bắt đầu)', foundList: [], setChars: null,
+        lines: lines, ln: 0, errLn: null, st: '',
+        t: 'Khởi tạo tìm "' + sub + '" từ pos = ' + pos0,
+        desc: 'Hàm s.find("' + sub + '", ' + pos0 + ') quét cửa sổ độ dài ' + sub.length + ' từ trái sang phải, bắt đầu ở chỉ số ' + pos0 + '.'
+      });
+
+      var found = -1;
+      for (var i = pos0; i <= s.length - sub.length; i++) {
+        var seg = s.slice(i, i + sub.length);
+        var ok = seg === sub;
+        if (ok) {
+          found = i;
+          snaps.push({
+            s: s, winStart: i, winLen: sub.length, cursor: i, kind: 'match',
+            posVal: String(i), foundList: [i], setChars: null,
+            lines: lines, ln: 2, errLn: null, st: 'ok',
+            t: 'Khớp tại chỉ số ' + i + '! (pos != string::npos)',
+            desc: 'Đoạn s[' + i + '..' + (i + sub.length - 1) + '] là "' + seg + '" khớp "' + sub + '". Trả về ' + i + ' (kiểu size_t).'
+          });
+          break;
+        } else {
+          snaps.push({
+            s: s, winStart: i, winLen: sub.length, cursor: i, kind: 'miss',
+            posVal: 'đang thử i=' + i, foundList: [], setChars: null,
+            lines: lines, ln: 1, errLn: null, st: '',
+            t: 'Kiểm tra cửa sổ tại i = ' + i + ': "' + seg + '" != "' + sub + '"',
+            desc: 'Không khớp ở vị trí ' + i + ', dịch cửa sổ sang i = ' + (i + 1) + '.'
+          });
+        }
+      }
+      if (found === -1) {
+        snaps.push({
+          s: s, winStart: null, winLen: 0, cursor: null, kind: 'npos',
+          posVal: 'string::npos', foundList: [], setChars: null,
+          lines: lines, ln: 5, errLn: 5, st: 'bad',
+          t: 'Không tìm thấy: trả về string::npos',
+          desc: 'Đã kiểm tra tới cuối chuỗi không có "' + sub + '". Biểu thức pos != string::npos là false -> đi vào nhánh else.'
+        });
+      }
+      return snaps;
+    }
+
+    if (sc.tab === 'rfind') {
+      var rsub = sc.sub;
+      var linesR = [
+        'string s = "' + s + '";',
+        'size_t pos = s.rfind("' + rsub + '");',
+        'if (pos != string::npos) {',
+        '  cout << "Cuoi tai: " << pos;',
+        '} else { cout << "string::npos"; }'
+      ];
+      var startR = s.length - rsub.length;
+      snaps.push({
+        s: s, winStart: null, winLen: 0, cursor: startR, kind: 'init',
+        posVal: 'bắt đầu từ phải (' + startR + ')', foundList: [], setChars: null,
+        lines: linesR, ln: 0, errLn: null, st: '',
+        t: 'Khởi tạo rfind("' + rsub + '"): quét từ phải sang trái',
+        desc: 'rfind tìm lần xuất hiện cuối cùng, bắt đầu thử từ chỉ số lớn nhất hợp lệ i = ' + startR + ' lùi về 0.'
+      });
+
+      var rFound = -1;
+      for (var ri = startR; ri >= 0; ri--) {
+        var rSeg = s.slice(ri, ri + rsub.length);
+        if (rSeg === rsub) {
+          rFound = ri;
+          snaps.push({
+            s: s, winStart: ri, winLen: rsub.length, cursor: ri, kind: 'match',
+            posVal: String(ri), foundList: [ri], setChars: null,
+            lines: linesR, ln: 2, errLn: null, st: 'ok',
+            t: 'Khớp từ phải tại chỉ số ' + ri + '!',
+            desc: 'Cửa sổ s[' + ri + '..' + (ri + rsub.length - 1) + '] = "' + rSeg + '" khớp "' + rsub + '". Trả về ' + ri + '.'
+          });
+          break;
+        } else {
+          snaps.push({
+            s: s, winStart: ri, winLen: rsub.length, cursor: ri, kind: 'miss',
+            posVal: 'đang lùi i=' + ri, foundList: [], setChars: null,
+            lines: linesR, ln: 1, errLn: null, st: '',
+            t: 'Thử i = ' + ri + ': "' + rSeg + '" != "' + rsub + '"',
+            desc: 'Chưa khớp tại ' + ri + ', lùi sang trái tới i = ' + (ri - 1) + '.'
+          });
+        }
+      }
+      if (rFound === -1) {
+        snaps.push({
+          s: s, winStart: null, winLen: 0, cursor: null, kind: 'npos',
+          posVal: 'string::npos', foundList: [], setChars: null,
+          lines: linesR, ln: 4, errLn: 4, st: 'bad',
+          t: 'Không tìm thấy: trả về string::npos',
+          desc: 'Đã lùi qua hết về chỉ số 0 nhưng không gặp "' + rsub + '". Hàm trả về string::npos.'
+        });
+      }
+      return snaps;
+    }
+
+    if (sc.tab === 'first_of') {
+      var fnName = sc.notOf ? 'find_first_not_of' : 'find_first_of';
+      var p0 = sc.startPos;
+      var linesF = [
+        'string s = "' + s + '";',
+        'string digits = "' + sc.chars + '";',
+        'size_t pos = s.' + fnName + '(',
+        '    digits, ' + p0 + ');',
+        'if (pos != string::npos) cout << pos;'
+      ];
+      snaps.push({
+        s: s, winStart: null, winLen: 0, cursor: p0, kind: 'init',
+        posVal: 'pos bắt đầu = ' + p0, foundList: [], setChars: sc.chars, hitChar: null,
+        lines: linesF, ln: 1, errLn: null, st: '',
+        t: 'Khởi tạo ' + fnName + '(digits, ' + p0 + ')',
+        desc: sc.notOf
+          ? 'Tìm ký tự đầu tiên KHÔNG thuộc tập chữ số "0..9" tính từ chỉ số ' + p0 + '.'
+          : 'Tìm ký tự đầu tiên CÓ MẶT trong tập chữ số "0..9" tính từ chỉ số ' + p0 + '.'
+      });
+
+      var fFound = -1;
+      for (var fi = p0; fi < s.length; fi++) {
+        var ch = s[fi];
+        var inSet = sc.chars.indexOf(ch) !== -1;
+        var okF = sc.notOf ? !inSet : inSet;
+        if (okF) {
+          fFound = fi;
+          snaps.push({
+            s: s, winStart: fi, winLen: 1, cursor: fi, kind: 'match',
+            posVal: String(fi), foundList: [fi], setChars: sc.chars, hitChar: ch,
+            lines: linesF, ln: 4, errLn: null, st: 'ok',
+            t: 'Dừng tại s[' + fi + '] = \'' + ch + '\' -> pos = ' + fi,
+            desc: sc.notOf
+              ? '\'' + ch + '\' KHÔNG nằm trong "0123456789" -> thoả find_first_not_of, trả về ' + fi + '.'
+              : '\'' + ch + '\' CÓ trong "0123456789" -> thoả find_first_of, trả về ' + fi + '.'
+          });
+          break;
+        } else {
+          snaps.push({
+            s: s, winStart: fi, winLen: 1, cursor: fi, kind: 'miss',
+            posVal: 'kiểm tra i=' + fi, foundList: [], setChars: sc.chars, hitChar: null,
+            lines: linesF, ln: 2, errLn: null, st: '',
+            t: 'Xét s[' + fi + '] = \'' + ch + '\': ' + (sc.notOf ? 'vẫn là chữ số -> đi tiếp' : 'không thuộc "0..9" -> bỏ qua'),
+            desc: sc.notOf
+              ? '\'' + ch + '\' thuộc tập chữ số nên find_first_not_of bỏ qua và xét chỉ số ' + (fi + 1) + '.'
+              : '\'' + ch + '\' không phải chữ số, tiếp tục quét sang chỉ số ' + (fi + 1) + '.'
+          });
+        }
+      }
+      return snaps;
+    }
+
+    // Tab 4: loop find all on "ababa" with sub "aba"
+    var ls = sc.s, lsub = sc.sub, mode = sc.mode;
+    var stepLine = mode === 'non' ? '  pos += sub.size(); // +3 an toan'
+                 : mode === 'ovl' ? '  pos += 1;          // +1 chong lan'
+                 :                  '  /* QUEN TANG pos! */';
+    var linesL = [
+      'string s = "' + ls + '", sub = "' + lsub + '";',
+      'size_t pos = 0;',
+      'while ((pos = s.find(sub, pos))',
+      '       != string::npos) {',
+      '  cout << pos << " ";',
+      stepLine,
+      '}'
+    ];
+    snaps.push({
+      s: ls, winStart: null, winLen: 0, cursor: 0, kind: 'init',
+      posVal: '0', foundList: [], setChars: null,
+      lines: linesL, ln: 1, errLn: null, st: '',
+      t: 'Vòng lặp tìm "' + lsub + '" trong "' + ls + '" (' + sc.label + ')',
+      desc: 'Khởi tạo pos = 0. Ở mỗi lượt while, s.find("aba", pos) bắt đầu quét từ chính giá trị pos hiện tại.'
+    });
+
+    var pos = 0, collected = [];
+    if (mode === 'bug') {
+      for (var c = 1; c <= 3; c++) {
+        collected.push(0);
+        snaps.push({
+          s: ls, winStart: 0, winLen: 3, cursor: 0, kind: 'match',
+          posVal: '0 (lần lặp #' + c + ')', foundList: collected.slice(), setChars: null,
+          lines: linesL, ln: 4, errLn: null, st: 'warn',
+          t: 'Lần #' + c + ': find("aba", 0) lại khớp ngay tại pos = 0!',
+          desc: 'In ra 0, nhưng cuối vòng lặp KHÔNG có lệnh tăng pos -> pos giữ nguyên là 0.'
+        });
+        snaps.push({
+          s: ls, winStart: 0, winLen: 3, cursor: 0, kind: 'miss',
+          posVal: '0 (kẹt vô tận!)', foundList: collected.slice(), setChars: null,
+          lines: linesL, ln: 5, errLn: 5, st: 'bad',
+          t: c === 3 ? 'Cảnh báo: Vòng lặp vô tận tại pos = 0!' : 'Quay lại đầu while vẫn với pos = 0!',
+          desc: 'Do pos không đổi, lần gọi s.find("aba", 0) kế tiếp sẽ lại khớp đúng vị trí 0 mãi mãi!'
+        });
+      }
+      return snaps;
+    }
+
+    while (pos <= ls.length) {
+      var idx = ls.indexOf(lsub, pos);
+      if (idx === -1) {
+        snaps.push({
+          s: ls, winStart: null, winLen: 0, cursor: pos < ls.length ? pos : null, kind: 'npos',
+          posVal: 'string::npos', foundList: collected.slice(), setChars: null,
+          lines: linesL, ln: 6, errLn: null, st: 'ok',
+          t: 's.find("aba", ' + pos + ') trả về string::npos -> Thoát vòng lặp',
+          desc: 'Kết thúc an toàn! Các vị trí tìm được: [' + collected.join(', ') + '].'
+        });
+        break;
+      }
+      collected.push(idx);
+      snaps.push({
+        s: ls, winStart: idx, winLen: lsub.length, cursor: idx, kind: 'match',
+        posVal: String(idx), foundList: collected.slice(), setChars: null,
+        lines: linesL, ln: 4, errLn: null, st: 'ok',
+        t: 'Tìm thấy tại pos = ' + idx + ' -> in ' + idx,
+        desc: 'Đoạn [' + idx + '..' + (idx + lsub.length - 1) + '] khớp "aba". Ghi nhận chỉ số ' + idx + '.'
+      });
+      pos = idx + (mode === 'non' ? lsub.length : 1);
+      snaps.push({
+        s: ls, winStart: null, winLen: 0, cursor: pos < ls.length ? pos : null, kind: 'init',
+        posVal: String(pos), foundList: collected.slice(), setChars: null,
+        lines: linesL, ln: 5, errLn: null, st: '',
+        t: 'Cập nhật pos = ' + idx + ' + ' + (mode === 'non' ? lsub.length : 1) + ' = ' + pos,
+        desc: mode === 'non'
+          ? 'Nhảy qua cả cụm vừa khớp (pos += 3) để tìm không chồng lấn ở lần lặp sau.'
+          : 'Nhích pos += 1 để cho phép tìm chuỗi con chồng lấn (ví dụ "aba" ở chỉ số 2).'
+      });
+    }
+    return snaps;
+  }
+
+  var EDIT_BASE = 'Lap trinh C++ 17'; // size 16
+
+  function buildEditSteps(op, pos, len, strVal, repMode){
+    var s = EDIT_BASE;
+    var n = s.length;
+    var snaps = [];
+
+    if (op === 'replace_all') {
+      var orig = 'ha_ha', oldV = 'ha', newV = 'haha';
+      var isSafe = repMode !== 'bug';
+      var updLine = isSafe ? '  pos += newVal.size(); // +4 an toan'
+                           : '  pos += oldVal.size(); // +2 SAP BAY!';
+      var linesRA = [
+        'string s = "ha_ha";',
+        'string oldVal = "ha", newVal = "haha";',
+        'size_t pos = 0;',
+        'while ((pos = s.find(oldVal, pos))',
+        '       != string::npos) {',
+        '  s.replace(pos, oldVal.size(),',
+        '            newVal);',
+        updLine,
+        '}'
+      ];
+      snaps.push({
+        op: 'replace_all', chars: orig.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: null, sizeVal: orig.length, posDisplay: '0', lines: linesRA, ln: 2, errLn: null, st: '',
+        t: 'Khởi tạo replace_all: thay "ha" -> "haha" trên "ha_ha"',
+        desc: isSafe
+          ? 'Cập nhật chuẩn pos += newVal.size() (+4) để nhảy hẳn qua cụm "haha" vừa thay.'
+          : 'Thử nghiệm lỗi: dùng pos += oldVal.size() (+2) khi newVal ("haha") lại chứa oldVal ("ha")!'
+      });
+
+      var cur = orig;
+      var p = 0;
+      if (!isSafe) {
+        for (var k = 1; k <= 3; k++) {
+          var foundIdx = cur.indexOf(oldV, p);
+          snaps.push({
+            op: 'replace_all', chars: cur.split(''), hlRange: [foundIdx, foundIdx + 2], hlKind: 'del', gapAt: null,
+            resStr: cur, sizeVal: cur.length, posDisplay: String(foundIdx), lines: linesRA, ln: 3, errLn: null, st: 'warn',
+            t: 'Lần #' + k + ': s.find("ha", ' + p + ') khớp tại pos = ' + foundIdx,
+            desc: 'Chuỗi hiện tại "' + cur + '" vẫn chứa "ha" ở chỉ số ' + foundIdx + '.'
+          });
+          cur = cur.slice(0, foundIdx) + newV + cur.slice(foundIdx + 2);
+          p = foundIdx + 2;
+          snaps.push({
+            op: 'replace_all', chars: cur.split(''), hlRange: [foundIdx, foundIdx + 4], hlKind: 'ins', gapAt: null,
+            resStr: cur, sizeVal: cur.length, posDisplay: String(p) + ' (trỏ vào "ha" mới!)', lines: linesRA, ln: 7, errLn: 7, st: 'bad',
+            t: k === 3 ? 'Bẫy lặp vô tận! Chuỗi phình to không dừng!' : 'Thay thành "haha", cộng +2 -> nhảy đúng vào nửa sau của "haha"!',
+            desc: 'Sau khi thay, s = "' + cur + '". Vì chỉ tăng pos += 2 (thành ' + p + '), ngay tại chỉ số ' + p + ' lại là "ha" vừa sinh ra!'
+          });
+        }
+        return snaps;
+      }
+
+      while (true) {
+        var idx = cur.indexOf(oldV, p);
+        if (idx === -1) {
+          snaps.push({
+            op: 'replace_all', chars: cur.split(''), hlRange: null, hlKind: '', gapAt: null,
+            resStr: cur, sizeVal: cur.length, posDisplay: 'string::npos', lines: linesRA, ln: 8, errLn: null, st: 'ok',
+            t: 'find("ha", ' + p + ') = string::npos -> Hoàn tất!',
+            desc: 'Thay thế thành công thành "' + cur + '" (độ dài ' + cur.length + ') và thoát vòng lặp sạch sẽ.'
+          });
+          break;
+        }
+        snaps.push({
+          op: 'replace_all', chars: cur.split(''), hlRange: [idx, idx + 2], hlKind: 'del', gapAt: null,
+          resStr: cur, sizeVal: cur.length, posDisplay: String(idx), lines: linesRA, ln: 3, errLn: null, st: '',
+          t: 'Tìm thấy "ha" tại pos = ' + idx,
+          desc: 'Đánh dấu đoạn [' + idx + '..' + (idx + 1) + '] chuẩn bị thay bằng "haha".'
+        });
+        cur = cur.slice(0, idx) + newV + cur.slice(idx + 2);
+        p = idx + newV.length;
+        snaps.push({
+          op: 'replace_all', chars: cur.split(''), hlRange: [idx, idx + 4], hlKind: 'ins', gapAt: null,
+          resStr: cur, sizeVal: cur.length, posDisplay: String(p), lines: linesRA, ln: 7, errLn: null, st: 'ok',
+          t: 'Thay xong, nhảy pos += 4 -> pos = ' + p,
+          desc: 'Chuỗi thành "' + cur + '". Bước nhảy +4 bỏ qua toàn bộ "haha" vừa chèn, tránh kẹt vô tận.'
+        });
+      }
+      return snaps;
+    }
+
+    if (op === 'substr') {
+      var linesSub = [
+        'string s = "' + s + '";',
+        'string sub = s.substr(' + pos + ', ' + len + ');',
+        '// Chuoi goc s van giu nguyen'
+      ];
+      snaps.push({
+        op: 'substr', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: null, sizeVal: n, posDisplay: 'pos=' + pos + ', len=' + len, lines: linesSub, ln: 0, errLn: null, st: '',
+        t: 'Chuẩn bị gọi s.substr(' + pos + ', ' + len + ')',
+        desc: 'Tham số 1 là vị trí bắt đầu pos = ' + pos + ', tham số 2 là ĐỘ DÀI len = ' + len + ' (không phải chỉ số cuối!).'
+      });
+
+      if (pos > n) {
+        snaps.push({
+          op: 'substr', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+          resStr: 'LỖI: out_of_range!', sizeVal: n, posDisplay: 'pos=' + pos + ' > size=' + n, lines: linesSub, ln: 1, errLn: 1, st: 'bad',
+          t: 'Lỗi vượt biên! pos = ' + pos + ' > s.size() = ' + n,
+          desc: 'Trong C++, gọi substr với pos > s.size() ném ngoại lệ std::out_of_range. Luôn kiểm tra pos <= s.size() trước khi cắt!'
+        });
+        return snaps;
+      }
+
+      var actualLen = Math.min(len, n - pos);
+      var clamped = pos + len > n;
+      var subOut = s.slice(pos, pos + actualLen);
+      snaps.push({
+        op: 'substr', chars: s.split(''), hlRange: [pos, pos + actualLen], hlKind: 'win', gapAt: null,
+        resStr: null, sizeVal: n, posDisplay: '[' + pos + '..' + (actualLen > 0 ? pos + actualLen - 1 : pos) + ']', lines: linesSub, ln: 1, errLn: null, st: clamped ? 'warn' : '',
+        t: clamped
+          ? 'pos + len = ' + (pos + len) + ' > 16 -> Tự động cắt đến hết chuỗi (' + actualLen + ' ký tự)'
+          : 'Đánh dấu ' + actualLen + ' ký tự từ chỉ số ' + pos + ' đến ' + (actualLen > 0 ? pos + actualLen - 1 : pos),
+        desc: clamped
+          ? 'Khi pos + len vượt s.size(), substr không lỗi mà tự dừng an toàn ở cuối chuỗi.'
+          : 'Khoảng lấy là nửa khoảng [' + pos + ', ' + (pos + actualLen) + ') gồm đúng ' + actualLen + ' ký tự.'
+      });
+      snaps.push({
+        op: 'substr', chars: s.split(''), hlRange: [pos, pos + actualLen], hlKind: 'match', gapAt: null,
+        resStr: '"' + subOut + '" (size = ' + subOut.length + ')', sizeVal: n, posDisplay: 'Bản sao mới', lines: linesSub, ln: 2, errLn: null, st: 'ok',
+        t: 'Trả về bản sao sub = "' + subOut + '", chuỗi s giữ nguyên!',
+        desc: 'substr KHÔNG làm thay đổi chuỗi s (s.size() vẫn là 16); nó tạo ra một chuỗi bản sao độc lập "' + subOut + '".'
+      });
+      return snaps;
+    }
+
+    if (op === 'insert') {
+      var linesIns = [
+        'string s = "' + s + '";',
+        's.insert(' + pos + ', "' + strVal + '");'
+      ];
+      snaps.push({
+        op: 'insert', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: null, sizeVal: n, posDisplay: 'pos=' + pos, lines: linesIns, ln: 0, errLn: null, st: '',
+        t: 'Chuẩn bị gọi s.insert(' + pos + ', "' + strVal + '")',
+        desc: 'insert chèn chuỗi mới vào NGAY TRƯỚC chỉ số pos = ' + pos + ' (nếu pos == 16 sẽ nối vào cuối).'
+      });
+      if (pos > n) {
+        snaps.push({
+          op: 'insert', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+          resStr: 'LỖI: out_of_range!', sizeVal: n, posDisplay: 'pos=' + pos + ' > size=' + n, lines: linesIns, ln: 1, errLn: 1, st: 'bad',
+          t: 'Lỗi vượt biên! pos = ' + pos + ' > s.size() = ' + n,
+          desc: 'Chỉ được chèn tại pos từ 0 đến s.size() (16).'
+        });
+        return snaps;
+      }
+      snaps.push({
+        op: 'insert', chars: s.split(''), hlRange: null, hlKind: '', gapAt: pos,
+        resStr: null, sizeVal: n, posDisplay: 'Mở khe trước [' + pos + ']', lines: linesIns, ln: 1, errLn: null, st: 'warn',
+        t: 'Mở khe chèn trước vị trí ' + pos + ', đẩy phần đuôi sang phải ' + strVal.length + ' ô',
+        desc: 'Tất cả ký tự từ chỉ số ' + pos + ' trở đi sẽ được dời sang phải thêm ' + strVal.length + ' chỉ số.'
+      });
+      var outIns = s.slice(0, pos) + strVal + s.slice(pos);
+      snaps.push({
+        op: 'insert', chars: outIns.split(''), hlRange: [pos, pos + strVal.length], hlKind: 'ins', gapAt: null,
+        resStr: '"' + outIns + '" (size = ' + outIns.length + ')', sizeVal: outIns.length, posDisplay: 'Đã chèn tại ' + pos, lines: linesIns, ln: 1, errLn: null, st: 'ok',
+        t: 'Hoàn tất insert: s = "' + outIns + '" (size: 16 -> ' + outIns.length + ')',
+        desc: 'Chuỗi s bị thay đổi trực tiếp tại chỗ; các ký tự phía sau đã được cập nhật chỉ số mới.'
+      });
+      return snaps;
+    }
+
+    if (op === 'erase') {
+      var linesEr = [
+        'string s = "' + s + '";',
+        's.erase(' + pos + ', ' + len + ');'
+      ];
+      snaps.push({
+        op: 'erase', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: null, sizeVal: n, posDisplay: 'pos=' + pos + ', len=' + len, lines: linesEr, ln: 0, errLn: null, st: '',
+        t: 'Chuẩn bị gọi s.erase(' + pos + ', ' + len + ')',
+        desc: 'Xoá tối đa len = ' + len + ' ký tự bắt đầu từ chỉ số pos = ' + pos + '.'
+      });
+      if (pos > n) {
+        snaps.push({
+          op: 'erase', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+          resStr: 'LỖI: out_of_range!', sizeVal: n, posDisplay: 'pos=' + pos + ' > size=' + n, lines: linesEr, ln: 1, errLn: 1, st: 'bad',
+          t: 'Lỗi vượt biên! pos = ' + pos + ' > s.size() = ' + n,
+          desc: 'pos vượt quá độ dài chuỗi sẽ gây lỗi thực thi.'
+        });
+        return snaps;
+      }
+      var erLen = Math.min(len, n - pos);
+      snaps.push({
+        op: 'erase', chars: s.split(''), hlRange: [pos, pos + erLen], hlKind: 'del', gapAt: null,
+        resStr: null, sizeVal: n, posDisplay: 'Xoá ' + erLen + ' ký tự', lines: linesEr, ln: 1, errLn: null, st: 'warn',
+        t: 'Đánh dấu xoá ' + erLen + ' ký tự tại [' + pos + '..' + (erLen > 0 ? pos + erLen - 1 : pos) + ']',
+        desc: (pos + len > n)
+          ? 'pos + len vượt 16 nên erase tự cắt gọn xoá đến hết chuỗi (' + erLen + ' ký tự).'
+          : 'Các ký tự gạch đỏ sẽ bị loại bỏ và phần đuôi phía sau được kéo lùi sang trái.'
+      });
+      var outEr = s.slice(0, pos) + s.slice(pos + erLen);
+      snaps.push({
+        op: 'erase', chars: outEr.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: '"' + outEr + '" (size = ' + outEr.length + ')', sizeVal: outEr.length, posDisplay: 'Kéo đuôi lùi ' + erLen + ' ô', lines: linesEr, ln: 1, errLn: null, st: 'ok',
+        t: 'Hoàn tất erase: s = "' + outEr + '" (size: 16 -> ' + outEr.length + ')',
+        desc: 'Phần đuôi từ chỉ số ' + (pos + erLen) + ' cũ đã kéo sát về vị trí ' + pos + '.'
+      });
+      return snaps;
+    }
+
+    // replace(pos, len, strVal) in 2 clear beats
+    var linesRep = [
+      'string s = "' + s + '";',
+      's.replace(' + pos + ', ' + len + ', "' + strVal + '");'
+    ];
+    snaps.push({
+      op: 'replace', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+      resStr: null, sizeVal: n, posDisplay: 'pos=' + pos + ', len=' + len, lines: linesRep, ln: 0, errLn: null, st: '',
+      t: 'Chuẩn bị gọi s.replace(' + pos + ', ' + len + ', "' + strVal + '")',
+      desc: 'replace = Nhịp 1 (xoá len ký tự từ pos) + Nhịp 2 (chèn "' + strVal + '" vào đúng chỗ đó).'
+    });
+    if (pos > n) {
+      snaps.push({
+        op: 'replace', chars: s.split(''), hlRange: null, hlKind: '', gapAt: null,
+        resStr: 'LỖI: out_of_range!', sizeVal: n, posDisplay: 'pos=' + pos + ' > size=' + n, lines: linesRep, ln: 1, errLn: 1, st: 'bad',
+        t: 'Lỗi vượt biên! pos = ' + pos + ' > s.size() = ' + n,
+        desc: 'pos không được vượt quá s.size() (16).'
+      });
+      return snaps;
+    }
+    var rLen = Math.min(len, n - pos);
+    snaps.push({
+      op: 'replace', chars: s.split(''), hlRange: [pos, pos + rLen], hlKind: 'del', gapAt: null,
+      resStr: null, sizeVal: n, posDisplay: 'Nhịp 1: xoá ' + rLen + ' ô', lines: linesRep, ln: 1, errLn: null, st: 'warn',
+      t: 'Nhịp 1: Đánh dấu xoá ' + rLen + ' ký tự cũ tại [' + pos + '..' + (rLen > 0 ? pos + rLen - 1 : pos) + ']',
+      desc: 'Loại bỏ "' + s.slice(pos, pos + rLen) + '" trước khi đưa chuỗi mới "' + strVal + '" (' + strVal.length + ' ký tự) vào.'
+    });
+    var midRep = s.slice(0, pos) + s.slice(pos + rLen);
+    snaps.push({
+      op: 'replace', chars: midRep.split(''), hlRange: null, hlKind: '', gapAt: pos,
+      resStr: '"' + midRep + '" (trung gian)', sizeVal: midRep.length, posDisplay: 'Chỗ trống tại ' + pos, lines: linesRep, ln: 1, errLn: null, st: 'warn',
+      t: 'Sau nhịp 1: Đã xoá ' + rLen + ' ký tự, còn "' + midRep + '"',
+      desc: 'Độ dài tạm thời giảm còn ' + midRep.length + '. Bước tiếp sẽ chèn "' + strVal + '" vào khe [' + pos + '].'
+    });
+    var outRep = s.slice(0, pos) + strVal + s.slice(pos + rLen);
+    snaps.push({
+      op: 'replace', chars: outRep.split(''), hlRange: [pos, pos + strVal.length], hlKind: 'ins', gapAt: null,
+      resStr: '"' + outRep + '" (size = ' + outRep.length + ')', sizeVal: outRep.length, posDisplay: 'Chèn ' + strVal.length + ' ô mới', lines: linesRep, ln: 1, errLn: null, st: 'ok',
+      t: 'Nhịp 2: Chèn "' + strVal + '" -> s = "' + outRep + '" (size: 16 -> ' + outRep.length + ')',
+      desc: 'Độ dài chuỗi thay thế (' + strVal.length + ') có thể khác len (' + rLen + '); các chỉ số phía sau tự động dịch tương ứng.'
+    });
+    return snaps;
+  }
+
+  window.StringOpsModel = {
+    FIND_SCENARIOS: FIND_SCENARIOS,
+    EDIT_BASE: EDIT_BASE,
+    buildFindSteps: buildFindSteps,
+    buildEditSteps: buildEditSteps
+  };
+
+  /* =========================================================
+     UI CONTROLLERS
+     ========================================================= */
+
+  var VD = qparam('vd') || 'find';
+  if (['find', 'edit'].indexOf(VD) === -1) VD = 'find';
+  var BUOC = Number(qparam('buoc'));
+  var SC = qparam('sc');
+
+  var state = {
+    stepIdx: 0,
+    timer: null,
+    snaps: [],
+    findTab: 'find',
+    findSc: (SC && FIND_SCENARIOS[SC]) ? SC : 'find_2025',
+    editOp: (['substr', 'insert', 'erase', 'replace', 'replace_all'].indexOf(SC) !== -1) ? SC : 'substr',
+    pos: 4,
+    len: 5,
+    strVal: 'rat ',
+    repMode: 'safe'
+  };
+  if (FIND_SCENARIOS[state.findSc]) state.findTab = FIND_SCENARIOS[state.findSc].tab;
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function setStatus(st, title, desc){
+    var el = $('status');
+    el.className = 'status' + (st ? ' ' + st : '');
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  }
+
+  function renderTabs(items, activeId, onPick){
+    $('tabs').innerHTML = items.map(function(it){
+      var on = it.id === activeId;
+      return '<button class="tab" role="tab" aria-selected="' + on + '" data-id="' + esc(it.id) + '">' + esc(it.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(btn){
+      btn.onclick = function(){ onPick(btn.getAttribute('data-id')); };
+    });
+  }
+
+  function renderStepperChrome(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateButtons(); return; }
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateButtons(); }
+      }, 650);
+      updateButtons();
+    };
+  }
+
+  function updateButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  /* --- MODE 1: FIND --- */
+  function initFind(){
+    $('lead').innerHTML = 'Chọn phương thức tìm kiếm và bấm <b>Bước tiếp</b> (hoặc phím →) để quan sát cửa sổ quét, giá trị trả về và <code>string::npos</code>.';
+    renderTabs([
+      { id: 'find', label: '1. find(sub, pos)' },
+      { id: 'rfind', label: '2. rfind(sub)' },
+      { id: 'first_of', label: '3. find_first_of / not_of' },
+      { id: 'loop', label: '4. Vòng lặp tìm tất cả' }
+    ], state.findTab, function(tabId){
+      state.findTab = tabId;
+      var firstKey = Object.keys(FIND_SCENARIOS).find(function(k){ return FIND_SCENARIOS[k].tab === tabId; });
+      state.findSc = firstKey;
+      stopTimer();
+      state.snaps = buildFindSteps(state.findSc);
+      state.stepIdx = 0;
+      initFind();
+    });
+    renderStepperChrome();
+
+    var chips = Object.keys(FIND_SCENARIOS).filter(function(k){
+      return FIND_SCENARIOS[k].tab === state.findTab;
+    });
+
+    $('workspace').innerHTML =
+      '<div class="sub-bar" id="find-chips">' +
+        '<span style="font-size:12px;font-weight:700;color:var(--muted)">Kịch bản:</span>' +
+        chips.map(function(k){
+          var isBug = k === 'loop_bug';
+          var on = k === state.findSc;
+          var cls = 'chip' + (on ? (isBug ? ' bad-active' : ' active') : '');
+          return '<button class="' + cls + '" data-sc="' + k + '">' + esc(FIND_SCENARIOS[k].label) + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="card tape-card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">Thước chỉ số ký tự chuỗi s</p>' +
+          '<div class="badge-group"><span class="badge" id="f-len-badge"></span><span class="badge" id="step-badge"></span></div>' +
+        '</div>' +
+        '<div class="str-strip" id="f-strip"></div>' +
+      '</div>' +
+      '<div class="grid">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="f-mode-badge"></span></div>' +
+          '<div class="code" id="code-view"></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Biến &amp; Kết quả tìm kiếm</p><span class="badge">size_t</span></div>' +
+          '<div class="res-stack">' +
+            '<div class="info-box" id="f-pos-box"><div class="info-k">Giá trị pos hiện tại</div><div class="info-v" id="f-pos-val"></div></div>' +
+            '<div class="info-box" id="f-found-box"><div class="info-k" id="f-found-lbl">Kết quả</div><div class="info-v" id="f-found-val"></div><div class="set-pills" id="f-set-pills"></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    Array.prototype.forEach.call($('find-chips').querySelectorAll('.chip'), function(btn){
+      btn.onclick = function(){
+        state.findSc = btn.getAttribute('data-sc');
+        stopTimer();
+        state.snaps = buildFindSteps(state.findSc);
+        state.stepIdx = 0;
+        initFind();
+      };
+    });
+
+    state.snaps = buildFindSteps(state.findSc);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderFind(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    $('f-len-badge').textContent = 's.size() = ' + s.s.length;
+    $('f-mode-badge').textContent = FIND_SCENARIOS[state.findSc].tab;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    var chars = s.s.split('');
+    $('f-strip').innerHTML = chars.map(function(ch, idx){
+      var cls = 'c-box' + (ch === ' ' ? ' sp' : '');
+      var inWin = s.winStart !== null && idx >= s.winStart && idx < s.winStart + s.winLen;
+      if (inWin) {
+        cls += s.kind === 'match' ? ' match' : (s.kind === 'miss' ? ' miss' : ' win');
+      } else if (s.kind === 'npos') {
+        cls += ' dim';
+      }
+      var mark = '';
+      if (idx === s.cursor) {
+        var mCls = s.kind === 'match' ? ' ok' : (s.kind === 'miss' ? ' warn' : '');
+        mark = '<span class="c-mark' + mCls + '">▲</span>';
+      }
+      return '<div class="c-col"><div class="c-idx">' + idx + '</div><div class="' + cls + '">' + esc(ch === ' ' ? '␣' : ch) + '</div><div class="c-mark">' + mark + '</div></div>';
+    }).join('');
+
+    var posBox = $('f-pos-box');
+    posBox.className = 'info-box' + (s.kind === 'match' ? ' ok' : (s.kind === 'npos' || s.st === 'bad' ? ' bad' : ''));
+    $('f-pos-val').textContent = s.posVal;
+
+    var fBox = $('f-found-box');
+    if (s.setChars) {
+      $('f-found-lbl').textContent = 'Tập ký tự kiểm tra (digits)';
+      $('f-found-val').textContent = s.foundList.length ? ('Dừng tại chỉ số ' + s.foundList[0]) : 'Đang quét từng ký tự...';
+      fBox.className = 'info-box' + (s.foundList.length ? ' ok' : '');
+      $('f-set-pills').innerHTML = s.setChars.split('').map(function(c){
+        return '<span class="set-ch' + (s.hitChar === c ? ' hit' : '') + '">' + c + '</span>';
+      }).join('');
+    } else {
+      $('f-found-lbl').textContent = FIND_SCENARIOS[state.findSc].tab === 'loop' ? 'Danh sách chỉ số thu thập' : 'Kiểm tra pos != string::npos';
+      $('f-set-pills').innerHTML = '';
+      if (s.kind === 'npos') {
+        fBox.className = 'info-box ' + (FIND_SCENARIOS[state.findSc].tab === 'loop' ? 'ok' : 'bad');
+        $('f-found-val').textContent = FIND_SCENARIOS[state.findSc].tab === 'loop'
+          ? ('[' + s.foundList.join(', ') + '] (đã kết thúc)')
+          : 'false (trả về string::npos)';
+      } else {
+        fBox.className = 'info-box' + (s.foundList.length && s.st === 'ok' ? ' ok' : (s.st === 'bad' ? ' bad' : ''));
+        $('f-found-val').textContent = s.foundList.length
+          ? (FIND_SCENARIOS[state.findSc].tab === 'loop' ? '[' + s.foundList.join(', ') + ']' : 'true -> chỉ số ' + s.foundList[0])
+          : 'Chưa tìm thấy';
+      }
+    }
+    updateButtons();
+  }
+
+  /* --- MODE 2: EDIT --- */
+  function defaultParamsForOp(op){
+    if (op === 'substr') { state.pos = 4; state.len = 5; }
+    else if (op === 'insert') { state.pos = 10; state.strVal = 'rat '; }
+    else if (op === 'erase') { state.pos = 4; state.len = 6; }
+    else if (op === 'replace') { state.pos = 10; state.len = 3; state.strVal = 'C++20'; }
+  }
+
+  function initEdit(){
+    $('lead').innerHTML = 'Chỉnh tham số <code>(pos, len, str)</code> và bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi cắt chuỗi, dịch ký tự và cập nhật độ dài.';
+    renderTabs([
+      { id: 'substr', label: 'substr(pos, len)' },
+      { id: 'insert', label: 'insert(pos, str)' },
+      { id: 'erase', label: 'erase(pos, len)' },
+      { id: 'replace', label: 'replace(pos, len, str)' },
+      { id: 'replace_all', label: 'replace_all ("ha"→"haha")' }
+    ], state.editOp, function(op){
+      state.editOp = op;
+      defaultParamsForOp(op);
+      stopTimer();
+      state.snaps = buildEditSteps(state.editOp, state.pos, state.len, state.strVal, state.repMode);
+      state.stepIdx = 0;
+      initEdit();
+    });
+    renderStepperChrome();
+
+    var paramBarHtml = '';
+    if (state.editOp === 'replace_all') {
+      paramBarHtml =
+        '<div class="sub-bar" id="edit-bar">' +
+          '<span style="font-size:12px;font-weight:700;color:var(--muted)">Cập nhật pos:</span>' +
+          '<button class="chip ' + (state.repMode === 'safe' ? 'active' : '') + '" data-rep="safe">Chuẩn: pos += newVal.size() (+4)</button>' +
+          '<button class="chip ' + (state.repMode === 'bug' ? 'bad-active' : '') + '" data-rep="bug">Lỗi: pos += oldVal.size() (+2)</button>' +
+        '</div>';
+    } else {
+      var showLen = state.editOp !== 'insert';
+      var showStr = state.editOp === 'insert' || state.editOp === 'replace';
+      var strOpts = state.editOp === 'insert' ? ['rat ', 'hay ', 'moi '] : ['C++20', 'JS', 'Python'];
+      paramBarHtml =
+        '<div class="sub-bar" id="edit-bar">' +
+          '<div class="param-group">pos: ' +
+            '<button class="btn ghost sm" id="p-dec">-</button>' +
+            '<span class="param-val" id="p-val">' + state.pos + '</span>' +
+            '<button class="btn ghost sm" id="p-inc">+</button>' +
+          '</div>' +
+          (showLen ? ('<div class="param-group">len: ' +
+            '<button class="btn ghost sm" id="l-dec">-</button>' +
+            '<span class="param-val" id="l-val">' + state.len + '</span>' +
+            '<button class="btn ghost sm" id="l-inc">+</button>' +
+          '</div>') : '') +
+          (showStr ? ('<div class="param-group">str: ' +
+            strOpts.map(function(sv){
+              return '<button class="chip ' + (state.strVal === sv ? 'active' : '') + '" data-str="' + esc(sv) + '">"' + esc(sv) + '"</button>';
+            }).join('') +
+          '</div>') : '') +
+          '<div class="param-group" style="margin-left:auto">' +
+            '<button class="chip" id="preset-def">Mặc định</button>' +
+            (showLen ? '<button class="chip" id="preset-clamp">Tràn len</button>' : '') +
+            '<button class="chip" id="preset-oob">pos &gt; size</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    $('workspace').innerHTML =
+      paramBarHtml +
+      '<div class="card tape-card">' +
+        '<div class="panel-head">' +
+          '<p class="panel-title">' + (state.editOp === 'replace_all' ? 'Băng ký tự chuỗi s ("ha_ha" ban đầu dài 5)' : 'Băng ký tự chuỗi s ("Lap trinh C++ 17" ban đầu dài 16)') + '</p>' +
+          '<div class="badge-group"><span class="badge" id="e-size-badge"></span><span class="badge" id="step-badge"></span></div>' +
+        '</div>' +
+        '<div class="str-strip" id="e-strip"></div>' +
+      '</div>' +
+      '<div class="grid">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="e-op-badge"></span></div>' +
+          '<div class="code" id="code-view"></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Trạng thái &amp; Chuỗi kết quả</p><span class="badge" id="e-pos-badge"></span></div>' +
+          '<div class="res-stack">' +
+            '<div class="info-box" id="e-res-box"><div class="info-k" id="e-res-lbl">Kết quả</div><div class="info-v" id="e-res-val"></div></div>' +
+            '<div class="info-box"><div class="info-k">Lưu ý ranh giới</div><div class="info-v" id="e-note" style="font-weight:600;font-size:12px"></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (state.editOp === 'replace_all') {
+      Array.prototype.forEach.call($('edit-bar').querySelectorAll('[data-rep]'), function(btn){
+        btn.onclick = function(){
+          state.repMode = btn.getAttribute('data-rep');
+          stopTimer();
+          state.snaps = buildEditSteps(state.editOp, state.pos, state.len, state.strVal, state.repMode);
+          state.stepIdx = 0;
+          initEdit();
+        };
+      });
+    } else {
+      function rebuildFromControl(jumpToEnd){
+        stopTimer();
+        state.snaps = buildEditSteps(state.editOp, state.pos, state.len, state.strVal, state.repMode);
+        state.stepIdx = jumpToEnd ? state.snaps.length - 1 : Math.min(1, state.snaps.length - 1);
+        initEdit();
+      }
+      $('p-dec').onclick = function(){ if (state.pos > 0) { state.pos--; rebuildFromControl(true); } };
+      $('p-inc').onclick = function(){ if (state.pos < 17) { state.pos++; rebuildFromControl(true); } };
+      if ($('l-dec')) $('l-dec').onclick = function(){ if (state.len > 0) { state.len--; rebuildFromControl(true); } };
+      if ($('l-inc')) $('l-inc').onclick = function(){ if (state.len < 12) { state.len++; rebuildFromControl(true); } };
+      Array.prototype.forEach.call($('edit-bar').querySelectorAll('[data-str]'), function(btn){
+        btn.onclick = function(){ state.strVal = btn.getAttribute('data-str'); rebuildFromControl(true); };
+      });
+      $('preset-def').onclick = function(){ defaultParamsForOp(state.editOp); rebuildFromControl(false); };
+      if ($('preset-clamp')) $('preset-clamp').onclick = function(){ state.pos = 12; state.len = 10; rebuildFromControl(false); };
+      $('preset-oob').onclick = function(){ state.pos = 17; rebuildFromControl(true); };
+    }
+
+    state.snaps = buildEditSteps(state.editOp, state.pos, state.len, state.strVal, state.repMode);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderEdit(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    $('e-size-badge').textContent = 'size() = ' + s.sizeVal;
+    $('e-op-badge').textContent = s.op;
+    $('e-pos-badge').textContent = s.posDisplay;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    var html = [];
+    for (var i = 0; i < s.chars.length; i++) {
+      if (s.gapAt === i) {
+        html.push('<div class="c-col gap-col"><div class="c-idx">[' + i + ']</div><div class="c-box gap">chèn</div><div class="c-mark">▼</div></div>');
+      }
+      var ch = s.chars[i];
+      var cls = 'c-box' + (ch === ' ' ? ' sp' : '');
+      if (s.hlRange && i >= s.hlRange[0] && i < s.hlRange[1]) cls += ' ' + s.hlKind;
+      var mark = '';
+      if (s.hlRange && i === s.hlRange[0]) mark = '<span class="c-mark">pos</span>';
+      html.push('<div class="c-col"><div class="c-idx">' + i + '</div><div class="' + cls + '">' + esc(ch === ' ' ? '␣' : ch) + '</div><div class="c-mark">' + mark + '</div></div>');
+    }
+    if (s.gapAt === s.chars.length) {
+      html.push('<div class="c-col gap-col"><div class="c-idx">[' + s.chars.length + ']</div><div class="c-box gap">cuối</div><div class="c-mark">▼</div></div>');
+    }
+    $('e-strip').innerHTML = html.join('');
+
+    var resBox = $('e-res-box');
+    resBox.className = 'info-box' + (s.st === 'ok' ? ' ok' : (s.st === 'bad' ? ' bad' : (s.st === 'warn' ? ' warn' : '')));
+    $('e-res-lbl').textContent = s.op === 'substr' ? 'Chuỗi bản sao trả về (s giữ nguyên)' : 'Chuỗi s sau thao tác';
+    $('e-res-val').textContent = s.resStr || 'Đang thực thi...';
+
+    $('e-note').textContent = s.op === 'substr'
+      ? 'len là ĐỘ DÀI cần cắt, không phải chỉ số kết thúc. Khi pos + len > size(), tự cắt đến cuối.'
+      : s.op === 'replace_all'
+        ? 'Khi newVal chứa oldVal ("ha" -> "haha"), phải tăng pos += newVal.size() để tránh lặp vô tận.'
+        : 'insert, erase, replace sửa trực tiếp trên s và tự cập nhật lại toàn bộ chỉ số phía sau.';
+    updateButtons();
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var n = state.snaps.length;
+    if (VD === 'find') renderFind(s, state.stepIdx, n);
+    else renderEdit(s, state.stepIdx, n);
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); if ($('next')) $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if ($('prev')) $('prev').click(); }
+  });
+
+  var initDone = false;
+  if (VD === 'edit') {
+    defaultParamsForOp(state.editOp);
+    initEdit();
+  } else {
+    initFind();
+  }
+  initDone = true;
+})();
+</script>
+</body>
+</html>

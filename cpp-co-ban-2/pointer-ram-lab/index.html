@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Phòng thí nghiệm Con trỏ &amp; Bộ nhớ RAM C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --cell-border:#cbd5e1; --cell-bg:#ffffff;
+    --ptr-a:#7c3aed; --ptr-a-soft:#f3e8ff; --ptr-fill:#7c3aed;
+    --ptr-b:#d97706; --ptr-b-soft:#fef3c7;
+    --cell-x:#2563eb; --cell-x-soft:#eff6ff;
+    --cell-y:#059669; --cell-y-soft:#ecfdf5;
+    --freed-bg:#f1f5f9; --freed-text:#64748b; --stack-badge:#e2e8f0; --stack-badge-text:#334155;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --cell-border:#334155; --cell-bg:#1e293b;
+      --ptr-a:#c084fc; --ptr-a-soft:#2e1065; --ptr-fill:#7c3aed;
+      --ptr-b:#fbbf24; --ptr-b-soft:#3a2e10;
+      --cell-x:#60a5fa; --cell-x-soft:#172554;
+      --cell-y:#34d399; --cell-y-soft:#064e3b;
+      --freed-bg:#161b22; --freed-text:#94a3b8; --stack-badge:#252d3a; --stack-badge-text:#cbd5e1;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:8px 10px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:13px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;margin-bottom:7px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:4px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .btns{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 10px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn.sm{padding:3px 8px;font-size:12px}
+  .btn.active-chip{background:var(--ptr-fill);border-color:var(--ptr-fill);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:7px 10px;margin-bottom:8px;min-height:56px;font-size:12.5px;line-height:1.4}
+  .status b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok b{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn b{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad b{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:8px;align-items:stretch}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.stack{background:var(--stack-badge);color:var(--stack-badge-text)}
+  .badge.heap{background:var(--ptr-b-soft);color:var(--warn)}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+
+  /* Code box */
+  .code{background:var(--code-bg);border-radius:6px;padding:7px 0;overflow-x:auto;
+    font:11.6px/1.62 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 8px 0 0;border-left:3px solid transparent}
+  .ln .no{width:22px;flex:none;text-align:right;padding-right:7px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+  .ln.err-line{background:var(--false-soft);border-left-color:var(--false)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  /* Left-bottom console / diagnosis / legend */
+  .sub-box{margin-top:8px;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12px}
+  .sub-box.bad{background:var(--false-soft);border-color:var(--false)}
+  .sub-box.warn{background:var(--warn-soft);border-color:var(--warn)}
+  .sub-box.ok{background:var(--true-soft);border-color:var(--true)}
+  .sub-title{font-weight:700;font-size:11.5px;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between}
+  .sub-box.bad .sub-title{color:var(--false)}
+  .sub-box.warn .sub-title{color:var(--warn)}
+  .sub-box.ok .sub-title{color:var(--true)}
+  .log-list{max-height:112px;overflow-y:auto;font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .log-item{color:var(--muted);padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .log-item.cur{color:var(--text);font-weight:700}
+
+  /* Basics RAM Stage */
+  .basics-stage{position:relative;display:grid;grid-template-columns:1fr 52px 1fr;gap:0;align-items:center;padding:12px 8px;
+    background:var(--code-bg);border:1px solid var(--line);border-radius:8px;min-height:208px}
+  .basics-targets{display:flex;flex-direction:column;gap:12px}
+  .svg-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
+
+  .mem-box{background:var(--card);border:2px solid var(--cell-border);border-radius:8px;padding:7px 8px;position:relative;z-index:2;transition:all .2s}
+  .mem-box.dim{opacity:.42;border-style:dashed}
+  .mem-box.hl-x{border-color:var(--cell-x);box-shadow:0 0 0 2px var(--cell-x-soft)}
+  .mem-box.hl-y{border-color:var(--cell-y);box-shadow:0 0 0 2px var(--cell-y-soft)}
+  .mem-box.hl-p{border-color:var(--ptr-a);box-shadow:0 0 0 2px var(--ptr-a-soft)}
+  .mem-box.hl-err{border-color:var(--false);background:var(--false-soft)}
+  .mem-top{display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:11px;margin-bottom:3px}
+  .var-tag{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:0 5px;border-radius:4px}
+  .tag-x{color:var(--cell-x);background:var(--cell-x-soft)}
+  .tag-y{color:var(--cell-y);background:var(--cell-y-soft)}
+  .tag-p{color:var(--ptr-a);background:var(--ptr-a-soft)}
+  .tag-q{color:var(--ptr-b);background:var(--ptr-b-soft)}
+  .addr{font:600 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .mem-val{font:700 21px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-align:center;padding:2px 0;color:var(--text)}
+  .mem-val.sm{font-size:14px;padding:5px 0}
+  .mem-val.chg{color:var(--warn)}
+  .mem-val.nullv{color:var(--muted);font-size:13px}
+  .mem-foot{font-size:10.5px;color:var(--muted);text-align:center}
+
+  .expr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+  .expr-cell{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:6px 7px;text-align:center}
+  .expr-k{font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .expr-v{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);margin-top:2px;word-break:break-word}
+  .expr-v.bad{color:var(--false);font-size:11px}
+
+  /* Arithmetic Mode */
+  .arith-card{margin-bottom:8px;padding:10px 12px}
+  .arith-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:10px}
+  .arith-decl{font:600 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .arr-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .arr-col{display:flex;flex-direction:column;align-items:stretch;gap:5px;min-width:0}
+  .arr-cell{background:var(--card);border:2px solid var(--cell-border);border-radius:7px;padding:7px 4px;text-align:center;transition:all .18s}
+  .arr-cell.is-p{border-color:var(--accent);background:var(--accent-soft)}
+  .arr-cell.is-q{border-color:var(--ptr-b)}
+  .arr-cell.is-target{box-shadow:0 0 0 2px var(--ptr-a);border-color:var(--ptr-a)}
+  .arr-idx{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .arr-val{font:700 17px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);margin:3px 0}
+  .arr-addr{font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+  .ptr-track{min-height:42px;display:flex;flex-direction:column;gap:2px;align-items:center}
+  .ptr-pill{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 6px;border-radius:4px;white-space:nowrap}
+  .pill-p{background:var(--accent-fill);color:#fff}
+  .pill-k{background:var(--ptr-a-soft);color:var(--ptr-a);border:1px dashed var(--ptr-a)}
+  .pill-q{background:var(--ptr-b-soft);color:var(--warn);border:1px solid var(--ptr-b)}
+
+  .arith-bar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .ctrl-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  .ctrl-lbl{font-size:11.5px;font-weight:700;color:var(--muted);margin-right:2px}
+  .mono-pill{font:700 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:4px;background:var(--code-bg);border:1px solid var(--line)}
+
+  .arith-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){.arith-bottom{grid-template-columns:1fr}}
+  .math-line{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);padding:6px 8px;border-radius:6px;margin:4px 0 6px;word-break:break-word}
+  .math-note{font-size:12px;color:var(--muted);line-height:1.45}
+  .equiv-code{font:600 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);padding:2px 5px;border-radius:4px;color:var(--text);display:inline-block;margin-top:2px}
+
+  /* Stack & Heap Stage (Resize + Heap Bugs) */
+  .sh-stage{position:relative;display:flex;flex-direction:column;gap:9px;padding:8px 20px;
+    background:var(--code-bg);border:1px solid var(--line);border-radius:8px;min-height:268px}
+  .zone-lbl{font:700 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between}
+  .stack-row{display:grid;gap:6px;position:relative;z-index:2}
+  .stack-row.c3{grid-template-columns:1.15fr 0.7fr 1.15fr}
+  .stack-row.c2{grid-template-columns:1fr 1fr}
+  .stack-row.c1{grid-template-columns:1fr}
+  .st-var{background:var(--card);border:2px solid var(--cell-border);border-radius:7px;padding:5px 7px;position:relative;z-index:2}
+  .st-var.dim{opacity:.42;border-style:dashed}
+  .st-var.dangling{border-color:var(--false);background:var(--false-soft)}
+  .st-var.ok{border-color:var(--true)}
+  .st-var.hl{border-color:var(--accent)}
+  .st-vhead{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;gap:4px}
+  .st-vval{font:700 13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:2px;color:var(--text)}
+  .st-vsub{font-size:10px;color:var(--muted);margin-top:1px}
+
+  .heap-list{display:flex;flex-direction:column;gap:8px;position:relative;z-index:2}
+  .heap-blk{background:var(--card);border:2px solid var(--cell-border);border-radius:8px;padding:6px 8px;transition:all .2s;position:relative;z-index:2}
+  .heap-blk.live{border-color:var(--true)}
+  .heap-blk.leak{border-color:var(--warn);background:var(--warn-soft)}
+  .heap-blk.freed{border-style:dashed;border-color:var(--cell-border);background:var(--freed-bg);color:var(--freed-text)}
+  .heap-blk.freed .h-cell{opacity:.55;text-decoration:line-through}
+  .heap-blk.err{border-color:var(--false);background:var(--false-soft);box-shadow:0 0 0 2px rgba(180,35,24,.18)}
+  .heap-blk.pending{opacity:.35;border-style:dashed}
+  .h-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px;margin-bottom:5px}
+  .h-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .h-cells{display:grid;gap:4px}
+  .h-cells.n1{grid-template-columns:1fr}
+  .h-cells.n3{grid-template-columns:repeat(3,1fr)}
+  .h-cells.n4{grid-template-columns:repeat(4,1fr)}
+  .h-cells.n6{grid-template-columns:repeat(6,1fr)}
+  .h-cell{border:1px solid var(--cell-border);background:var(--bg);border-radius:5px;padding:3px 2px;text-align:center;
+    font:700 12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-width:0}
+  .h-cell.copied{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .h-cell.upd{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+  .h-cell small{display:block;font-size:9px;font-weight:600;color:var(--muted)}
+  .copy-strip{text-align:center;font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);
+    background:var(--accent-soft);border-radius:5px;padding:3px 6px;position:relative;z-index:2}
+
+  .legend-row{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:11px;color:var(--muted)}
+  .lg-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;vertical-align:middle}
+
+  @media (max-width:640px){
+    .wrap{padding:6px 8px}
+    .lead{font-size:12.5px}
+    .arr-strip{gap:4px}
+    .arr-cell{padding:4px 2px}
+    .arr-val{font-size:13.5px}
+    .arr-addr{font-size:9px}
+    .sh-stage{padding:6px 16px;min-height:230px}
+    .basics-stage{grid-template-columns:1fr 38px 1fr;padding:6px 4px;min-height:178px}
+    .mem-val{font-size:17px}
+    .expr-grid{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead"></p>
+
+  <div class="controls" id="controls">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="btns" id="btns"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div id="workspace"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function qparam(k){
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function hex(n){ return '0x' + n.toString(16).toUpperCase(); }
+
+  function hl(src){
+    var re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\/\/.*$)|\b(int|char|double|nullptr|new|delete|for|if|return)\b|(\b\d+(?:\.\d+)?\b)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+      else out += '<span class="num">' + m[4] + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  function renderCode(lines, cur, errLn){
+    var isCur = function(i){ return Array.isArray(cur) ? cur.indexOf(i) !== -1 : cur === i; };
+    return lines.map(function(l, i){
+      var cls = 'ln';
+      if (errLn === i) cls += ' err-line';
+      else if (isCur(i)) cls += ' cur';
+      return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+    }).join('');
+  }
+
+  /* =========================================================
+     PURE DATA MODELS (tested on Node.js & verified via g++)
+     ========================================================= */
+
+  function buildBasicsSteps(preset){
+    var p = preset === 'alt'
+      ? { x0: 8, y0: 40, x1: 19, y1: 75 }
+      : { x0: 12, y0: 25, x1: 20, y1: 35 };
+    var lines = [
+      'int x = ' + p.x0 + ';',
+      'int y = ' + p.y0 + ';',
+      'int* p = nullptr;',
+      'p = &x;',
+      '*p = ' + p.x1 + ';',
+      'p = &y;',
+      '*p = ' + p.y1 + ';'
+    ];
+    var ax = '0x1000', ay = '0x1004', ap = '0x1008';
+    return [
+      {
+        ln: 0, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x0, y: null, pDeclared: false, pVal: null, pTarget: null,
+        hl: 'x', chg: 'x', st: '',
+        t: 'int x = ' + p.x0 + '; (Khởi tạo biến x)',
+        desc: 'Hệ thống cấp phát ô nhớ 4 byte cho x tại địa chỉ ' + ax + ' và ghi giá trị ' + p.x0 + '.',
+        logs: ['[1] Cấp ô x (' + ax + ') = ' + p.x0]
+      },
+      {
+        ln: 1, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x0, y: p.y0, pDeclared: false, pVal: null, pTarget: null,
+        hl: 'y', chg: 'y', st: '',
+        t: 'int y = ' + p.y0 + '; (Khởi tạo biến y)',
+        desc: 'Cấp thêm ô nhớ 4 byte cho y tại địa chỉ kế tiếp ' + ay + ' và lưu giá trị ' + p.y0 + '.',
+        logs: ['[1] Cấp ô x (' + ax + ') = ' + p.x0, '[2] Cấp ô y (' + ay + ') = ' + p.y0]
+      },
+      {
+        ln: 2, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x0, y: p.y0, pDeclared: true, pVal: '0x0 (nullptr)', pTarget: null,
+        hl: 'p', chg: 'p', st: 'warn',
+        t: 'int* p = nullptr; (Con trỏ rỗng an toàn)',
+        desc: 'Biến con trỏ p (8 byte tại ' + ap + ') được khởi tạo bằng nullptr (0x0). Hiện p chưa trỏ tới biến nào nên không thể giải tham chiếu *p.',
+        logs: ['[1] Cấp ô x (' + ax + ') = ' + p.x0, '[2] Cấp ô y (' + ay + ') = ' + p.y0, '[3] p (' + ap + ') = nullptr (0x0)']
+      },
+      {
+        ln: 3, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x0, y: p.y0, pDeclared: true, pVal: ax, pTarget: 'x',
+        hl: 'p', chg: 'p', st: '',
+        t: 'p = &x; (Lấy địa chỉ biến x)',
+        desc: 'Toán tử &x trả về địa chỉ ' + ax + ' rồi nạp vào ô p. Mũi tên từ p lúc này nối thẳng tới ô x.',
+        logs: ['[2] y = ' + p.y0, '[3] p = nullptr', '[4] p = &x -> giữ địa chỉ ' + ax]
+      },
+      {
+        ln: 4, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x1, y: p.y0, pDeclared: true, pVal: ax, pTarget: 'x',
+        hl: 'x', chg: 'x', derefTarget: 'x', st: 'ok',
+        t: '*p = ' + p.x1 + '; (Giải tham chiếu để sửa x)',
+        desc: 'Toán tử *p đi theo mũi tên tại ' + ax + ' để ghi đè giá trị ' + p.x1 + ' vào ô x. Địa chỉ trong p vẫn giữ nguyên ' + ax + '.',
+        logs: ['[3] p = nullptr', '[4] p = ' + ax, '[5] *p = ' + p.x1 + ' -> ô x đổi thành ' + p.x1]
+      },
+      {
+        ln: 5, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x1, y: p.y0, pDeclared: true, pVal: ay, pTarget: 'y',
+        hl: 'p', chg: 'p', st: '',
+        t: 'p = &y; (Đổi đích trỏ sang y)',
+        desc: 'Ô p nhận địa chỉ mới ' + ay + ' của y. Mũi tên chuyển hướng từ x sang y; giá trị ' + p.x1 + ' trong ô x hoàn toàn giữ nguyên.',
+        logs: ['[4] p = ' + ax, '[5] x = ' + p.x1, '[6] p = &y -> đổi hướng sang ' + ay]
+      },
+      {
+        ln: 6, lines: lines, ax: ax, ay: ay, ap: ap,
+        x: p.x1, y: p.y1, pDeclared: true, pVal: ay, pTarget: 'y',
+        hl: 'y', chg: 'y', derefTarget: 'y', st: 'ok',
+        t: '*p = ' + p.y1 + '; (Giải tham chiếu để sửa y)',
+        desc: 'Theo mũi tên mới tới ' + ay + ', lệnh *p = ' + p.y1 + ' cập nhật ô y thành ' + p.y1 + ', còn ô x vẫn giữ ' + p.x1 + '.',
+        logs: ['[5] x = ' + p.x1, '[6] p = ' + ay, '[7] *p = ' + p.y1 + ' -> ô y đổi thành ' + p.y1]
+      }
+    ];
+  }
+
+  var ARITH_TYPES = {
+    'char':   { typeName: 'char',   ptrType: 'char*',   arrName: 'c', sizeofT: 1, base: 0x2000, vals: ["'A'", "'B'", "'C'", "'D'", "'E'"], decl: "char c[5] = {'A', 'B', 'C', 'D', 'E'};" },
+    'int':    { typeName: 'int',    ptrType: 'int*',    arrName: 'a', sizeofT: 4, base: 0x2000, vals: [14, 28, 35, 49, 63], decl: 'int a[5] = {14, 28, 35, 49, 63};' },
+    'double': { typeName: 'double', ptrType: 'double*', arrName: 'd', sizeofT: 8, base: 0x2000, vals: ['1.5', '2.5', '3.5', '4.5', '5.5'], decl: 'double d[5] = {1.5, 2.5, 3.5, 4.5, 5.5};' }
+  };
+
+  function computeArithmeticState(typeKey, pIdx, k, qIdx){
+    var cfg = ARITH_TYPES[typeKey] || ARITH_TYPES['int'];
+    var addrs = [];
+    for (var i = 0; i < 5; i++) addrs.push(cfg.base + i * cfg.sizeofT);
+    var pAddr = addrs[pIdx];
+    var qAddr = addrs[qIdx];
+    var targetIdx = pIdx + k;
+    var targetAddr = cfg.base + targetIdx * cfg.sizeofT;
+    var offsetBytes = k * cfg.sizeofT;
+    var byteDiff = (qIdx - pIdx) * cfg.sizeofT;
+    var elemDiff = qIdx - pIdx;
+    var inBounds = targetIdx >= 0 && targetIdx <= 4;
+    var isOnePastEnd = targetIdx === 5;
+
+    var kSign = k >= 0 ? ('+ ' + k) : ('- ' + Math.abs(k));
+    var bSign = offsetBytes >= 0 ? ('+' + offsetBytes) : String(offsetBytes);
+    var qSign = byteDiff >= 0 ? ('+' + byteDiff) : String(byteDiff);
+
+    var st = inBounds ? 'ok' : 'warn';
+    var title = cfg.ptrType + ' p = ' + cfg.arrName + (pIdx ? ' + ' + pIdx : '') +
+      ';  ' + (inBounds ? ('*(' + 'p ' + kSign + ') = ' + cfg.vals[targetIdx]) : 'p ' + kSign + ' ngoài biên [0..4]') +
+      ';  q - p = ' + elemDiff;
+    var desc;
+    if (inBounds) {
+      desc = 'Bước nhảy p ' + kSign + ' dịch ' + k + ' × ' + cfg.sizeofT + ' = ' + bSign +
+        ' byte (từ ' + hex(pAddr) + ' tới ' + hex(targetAddr) + '). Hiệu q - p = ' + elemDiff +
+        ' phần tử (tương ứng ' + qSign + ' byte chia cho sizeof(' + cfg.typeName + ') = ' + cfg.sizeofT + ').';
+    } else if (isOnePastEnd) {
+      desc = 'p ' + kSign + ' trỏ tới vị trí one-past-the-end (&' + cfg.arrName + '[5] tại ' + hex(targetAddr) +
+        '): lấy địa chỉ hợp lệ để so sánh kết thúc vòng lặp, nhưng CẤM giải tham chiếu *(p + k)!';
+    } else {
+      desc = 'Chỉ số mục tiêu ' + targetIdx + ' nằm ngoài phạm vi mảng [0..4] (hành vi không xác định UB). Hãy chỉnh p hoặc độ dời k quay lại trong mảng.';
+    }
+
+    return {
+      typeKey: typeKey in ARITH_TYPES ? typeKey : 'int',
+      typeName: cfg.typeName,
+      ptrType: cfg.ptrType,
+      arrName: cfg.arrName,
+      decl: cfg.decl,
+      sizeofT: cfg.sizeofT,
+      arrSizeBytes: 5 * cfg.sizeofT,
+      vals: cfg.vals,
+      addrs: addrs,
+      pIdx: pIdx,
+      qIdx: qIdx,
+      k: k,
+      kSign: kSign,
+      bSign: bSign,
+      qSign: qSign,
+      targetIdx: targetIdx,
+      pAddr: pAddr,
+      qAddr: qAddr,
+      targetAddr: targetAddr,
+      offsetBytes: offsetBytes,
+      byteDiff: byteDiff,
+      elemDiff: elemDiff,
+      inBounds: inBounds,
+      isOnePastEnd: isOnePastEnd,
+      derefVal: inBounds ? cfg.vals[targetIdx] : null,
+      equivExpr: inBounds
+        ? (cfg.arrName + '[' + targetIdx + '] == *(' + cfg.arrName + ' + ' + targetIdx + ') == *(p ' + kSign + ') == ' + cfg.vals[targetIdx])
+        : ('Ngoài phạm vi [0..4] — không giải tham chiếu'),
+      st: st,
+      title: title,
+      desc: desc
+    };
+  }
+
+  function buildResizeSteps(sc){
+    if (sc === 'trap') {
+      var trapLines = [
+        'int cap = 3;',
+        'int* arr = new int[3]{5, 12, 8};',
+        'int* tmp = new int[6]{};',
+        'for (int i = 0; i < cap; ++i)',
+        '  tmp[i] = arr[i];',
+        'arr = tmp;      // BẪY: gán trước!',
+        'delete[] arr;   // THẢM HOẠ!'
+      ];
+      return [
+        {
+          ln: 1, errLn: null, lines: trapLines, cap: 3,
+          arr: { val: '0x3000', target: 'b1', state: 'ok' },
+          tmp: { visible: false, val: '—', target: null, state: 'dim' },
+          blocks: [
+            { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] }
+          ],
+          st: '', t: 'Khởi tạo mảng động ban đầu (cap = 3)',
+          desc: 'arr (trên Stack) giữ địa chỉ 0x3000 trỏ tới khối Heap 3 phần tử {5, 12, 8}.'
+        },
+        {
+          ln: 2, errLn: null, lines: trapLines, cap: 3,
+          arr: { val: '0x3000', target: 'b1', state: 'ok' },
+          tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+          blocks: [
+            { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] },
+            { id: 'b2', addr: '0x5000', cap: 6, vals: [0, 0, 0, 0, 0, 0], status: 'live', badge: 'Mới cấp phát', owners: ['tmp'] }
+          ],
+          st: '', t: 'Bước 1: Cấp phát mảng mới tmp (cap = 6)',
+          desc: 'tmp giữ địa chỉ khối Heap mới 0x5000 gồm 6 ô khởi tạo sạch bằng 0.'
+        },
+        {
+          ln: [3, 4], errLn: null, lines: trapLines, cap: 3,
+          arr: { val: '0x3000', target: 'b1', state: 'ok' },
+          tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+          copyStrip: 'Chép 5, 12, 8 từ 0x3000 sang 3 ô đầu của 0x5000',
+          blocks: [
+            { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] },
+            { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], copiedCount: 3, status: 'live', badge: 'Đã chép dữ liệu', owners: ['tmp'] }
+          ],
+          st: '', t: 'Bước 2: Sao chép dữ liệu từ arr sang tmp',
+          desc: 'Vòng lặp chép 3 phần tử 5, 12, 8 từ khối 0x3000 sang đầu khối 0x5000.'
+        },
+        {
+          ln: 5, errLn: 5, lines: trapLines, cap: 3,
+          arr: { val: '0x5000', target: 'b2', state: 'hl' },
+          tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+          blocks: [
+            { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'leak', badge: 'Rò rỉ (Memory Leak)!', owners: [] },
+            { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], status: 'live', badge: 'Cả arr & tmp cùng trỏ', owners: ['arr', 'tmp'] }
+          ],
+          st: 'warn', t: 'BẪY! Viết nhầm arr = tmp; trước khi delete[] arr;',
+          desc: 'arr bị ghi đè sang 0x5000. Không còn con trỏ nào giữ địa chỉ 0x3000 nữa — khối cũ bị RÒ RỈ VĨNH VIỄN (mồ côi) trên Heap!'
+        },
+        {
+          ln: 6, errLn: 6, lines: trapLines, cap: 3,
+          arr: { val: '0x5000', target: 'b2', state: 'dangling' },
+          tmp: { visible: true, val: '0x5000', target: 'b2', state: 'dangling' },
+          blocks: [
+            { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'leak', badge: 'Rò rỉ vĩnh viễn!', owners: [] },
+            { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], status: 'err', badge: 'Đã thu hồi NHẦM khối mới!', owners: [] }
+          ],
+          st: 'bad', t: 'THẢM HOẠ! delete[] arr; xoá mất chính mảng mới 0x5000',
+          desc: 'Vì arr đang trỏ tới 0x5000, lệnh delete[] arr; giải phóng ngay khối mới vừa chép! Khối cũ 0x3000 bị leak, còn arr & tmp thành Dangling Pointer!'
+        }
+      ];
+    }
+
+    var safeLines = [
+      'int cap = 3;',
+      'int* arr = new int[3]{5, 12, 8};',
+      'int* tmp = new int[6]{}; // 1. Cấp',
+      'for (int i = 0; i < cap; ++i)',
+      '  tmp[i] = arr[i];       // 2. Chép',
+      'delete[] arr;            // 3. Huỷ',
+      'arr = tmp;               // 4. Đổi',
+      'cap = 6;'
+    ];
+    return [
+      {
+        ln: 1, errLn: null, lines: safeLines, cap: 3,
+        arr: { val: '0x3000', target: 'b1', state: 'ok' },
+        tmp: { visible: false, val: '—', target: null, state: 'dim' },
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] }
+        ],
+        st: '', t: 'Khởi đầu: Mảng arr (cap = 3) tại 0x3000',
+        desc: 'Biến con trỏ arr trên Stack giữ địa chỉ 0x3000 trỏ tới khối Heap 3 phần tử {5, 12, 8}.'
+      },
+      {
+        ln: 2, errLn: null, lines: safeLines, cap: 3,
+        arr: { val: '0x3000', target: 'b1', state: 'ok' },
+        tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] },
+          { id: 'b2', addr: '0x5000', cap: 6, vals: [0, 0, 0, 0, 0, 0], status: 'live', badge: 'Mới cấp phát (rỗng)', owners: ['tmp'] }
+        ],
+        st: '', t: 'Bước 1/4: Cấp phát khối mới tmp (cap = 6)',
+        desc: 'Vì khối 0x3000 không thể tự phình to, ta cấp phát khối mới 6 ô sạch bằng 0 tại 0x5000 qua con trỏ tạm tmp.'
+      },
+      {
+        ln: [3, 4], errLn: null, lines: safeLines, cap: 3,
+        arr: { val: '0x3000', target: 'b1', state: 'ok' },
+        tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+        copyStrip: 'Deep Copy: 5, 12, 8 từ 0x3000 ➔ 3 ô đầu của 0x5000',
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'live', badge: 'Đang sống', owners: ['arr'] },
+          { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], copiedCount: 3, status: 'live', badge: 'Đã chép 3 phần tử', owners: ['tmp'] }
+        ],
+        st: '', t: 'Bước 2/4: Sao chép dữ liệu sang khối mới',
+        desc: 'Vòng lặp chạy với cap = 3 để chép {5, 12, 8} từ arr sang tmp; 3 ô dự phòng cuối vẫn giữ 0.'
+      },
+      {
+        ln: 5, errLn: null, lines: safeLines, cap: 3,
+        arr: { val: '0x3000', target: 'b1', state: 'dangling' },
+        tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'freed', badge: 'Đã thu hồi sạch', owners: [] },
+          { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], status: 'live', badge: 'Đang sống', owners: ['tmp'] }
+        ],
+        st: 'warn', t: 'Bước 3/4: Giải phóng khối cũ bằng delete[] arr;',
+        desc: 'Khối 0x3000 được trả về Heap trước khi mất dấu. Trong tích tắc này, arr tạm thời trỏ vùng đã thu hồi (chờ gán lại ở dòng kế tiếp).'
+      },
+      {
+        ln: 6, errLn: null, lines: safeLines, cap: 3,
+        arr: { val: '0x5000', target: 'b2', state: 'ok' },
+        tmp: { visible: true, val: '0x5000', target: 'b2', state: 'hl' },
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'freed', badge: 'Đã thu hồi sạch', owners: [] },
+          { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], status: 'live', badge: 'arr đã nhận quyền sở hữu', owners: ['arr', 'tmp'] }
+        ],
+        st: '', t: 'Bước 4/4: Cập nhật arr = tmp;',
+        desc: 'arr chuyển sang trỏ vào khối mới 0x5000. Không rò rỉ bộ nhớ, không dữ liệu nào bị thất thoát!'
+      },
+      {
+        ln: 7, errLn: null, lines: safeLines, cap: 6,
+        arr: { val: '0x5000', target: 'b2', state: 'ok' },
+        tmp: { visible: true, val: '(hết scope)', target: null, state: 'dim' },
+        blocks: [
+          { id: 'b1', addr: '0x3000', cap: 3, vals: [5, 12, 8], status: 'freed', badge: 'Đã thu hồi sạch', owners: [] },
+          { id: 'b2', addr: '0x5000', cap: 6, vals: [5, 12, 8, 0, 0, 0], status: 'live', badge: 'Đang sống (cap = 6)', owners: ['arr'] }
+        ],
+        st: 'ok', t: 'Hoàn tất Resize: cap = 6, arr trỏ khối mới an toàn',
+        desc: 'Biến cap thành 6; biến cục bộ tmp kết thúc vòng đời (chú ý không delete[] tmp vì arr đang sở hữu 0x5000!).'
+      }
+    ];
+  }
+
+  function buildHeapBugSteps(bug){
+    if (bug === 'dangling') {
+      var l2 = [
+        'int* p = new int{42};',
+        'delete p;',
+        '// Quên p = nullptr;',
+        '*p = 99;  // Lỗi Use-After-Free!'
+      ];
+      return [
+        {
+          ln: 0, errLn: null, lines: l2,
+          stack: [{ name: 'p', val: '0x2000', target: 'h1', state: 'ok', sub: 'int* (hợp lệ)' }],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [42], status: 'live', badge: 'Đang sống' }],
+          diagSt: '', diagTitle: 'Theo dõi vòng đời con trỏ p', diagText: 'p vừa nhận quyền sở hữu khối Single int tại 0x2000.',
+          st: '', t: 'Cấp phát int* p = new int{42};',
+          desc: 'Heap cấp một ô int tại 0x2000 chứa 42; p trên Stack trỏ hợp lệ tới 0x2000.'
+        },
+        {
+          ln: 1, errLn: null, lines: l2,
+          stack: [{ name: 'p', val: '0x2000', target: 'h1', state: 'dangling', sub: '⚠ Dangling Pointer!' }],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [42], status: 'freed', badge: 'Đã giải phóng' }],
+          diagSt: 'warn', diagTitle: 'Cảnh báo: p bị lơ lửng (Dangling)', diagText: 'delete p chỉ trả khối 0x2000 về Heap chứ KHÔNG tự xoá địa chỉ 0x2000 bên trong biến p!',
+          st: 'warn', t: 'delete p; nhưng chưa đặt p = nullptr;',
+          desc: 'Khối 0x2000 đã bị thu hồi, nhưng p vẫn lưu địa chỉ cũ 0x2000 và biến thành Con trỏ lơ lửng.'
+        },
+        {
+          ln: 3, errLn: 3, lines: l2,
+          stack: [{ name: 'p', val: '0x2000', target: 'h1', state: 'dangling', sub: '✖ Use-After-Free!' }],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [42], status: 'err', badge: '✖ LỖI: Ghi vào vùng đã huỷ!' }],
+          diagSt: 'bad', diagTitle: 'Lỗi Use-After-Free (Undefined Behavior)', diagText: 'Ghi *p = 99 vào vùng đã giải phóng có thể ghi đè dữ liệu biến khác hoặc làm sập chương trình. Cách sửa: đặt p = nullptr; ngay sau delete p; và kiểm tra if (p != nullptr).',
+          st: 'bad', t: '*p = 99; — Truy cập vùng nhớ đã thu hồi!',
+          desc: 'Giải tham chiếu qua con trỏ lơ lửng p gây lỗi Use-After-Free nghiêm trọng.'
+        }
+      ];
+    }
+
+    if (bug === 'double') {
+      var l3 = [
+        'int* p = new int{7};',
+        'int* q = p;   // Shallow copy',
+        'delete p;',
+        'delete q;     // Double Free!'
+      ];
+      return [
+        {
+          ln: 0, errLn: null, lines: l3,
+          stack: [{ name: 'p', val: '0x2000', target: 'h1', state: 'ok', sub: 'int* (chủ sở hữu)' }],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [7], status: 'live', badge: 'Đang sống' }],
+          diagSt: '', diagTitle: 'Khởi tạo khối đơn lẻ', diagText: 'p sở hữu duy nhất khối 0x2000 chứa giá trị 7.',
+          st: '', t: 'int* p = new int{7};',
+          desc: 'Heap cấp ô Single int tại 0x2000 chứa 7; p giữ địa chỉ 0x2000.'
+        },
+        {
+          ln: 1, errLn: null, lines: l3,
+          stack: [
+            { name: 'p', val: '0x2000', target: 'h1', state: 'ok', sub: 'int* (alias 1)' },
+            { name: 'q', val: '0x2000', target: 'h1', state: 'hl', sub: 'int* (alias 2)' }
+          ],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [7], status: 'live', badge: '2 con trỏ cùng trỏ!' }],
+          diagSt: 'warn', diagTitle: 'Shallow Copy tạo 2 con trỏ alias', diagText: 'Cả p và q đều chứa 0x2000. Không rõ ai chịu trách nhiệm gọi delete.',
+          st: 'warn', t: 'int* q = p; (Hai con trỏ cùng trỏ 0x2000)',
+          desc: 'Phép gán chỉ sao chép địa chỉ 0x2000 sang q, không tạo bản sao trên Heap.'
+        },
+        {
+          ln: 2, errLn: null, lines: l3,
+          stack: [
+            { name: 'p', val: '0x2000', target: 'h1', state: 'dangling', sub: '⚠ Dangling' },
+            { name: 'q', val: '0x2000', target: 'h1', state: 'dangling', sub: '⚠ Dangling (bị treo theo!)' }
+          ],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [7], status: 'freed', badge: 'Đã giải phóng (lần 1)' }],
+          diagSt: 'warn', diagTitle: 'q không hề biết 0x2000 đã bị xoá', diagText: 'Khi delete p; chạy, khối 0x2000 đã trả về hệ thống nhưng q vẫn giữ nguyên địa chỉ 0x2000.',
+          st: 'warn', t: 'delete p; — Thu hồi 0x2000 qua p',
+          desc: 'Khối 0x2000 đã giải phóng lần 1; cả p và q đều biến thành con trỏ lơ lửng.'
+        },
+        {
+          ln: 3, errLn: 3, lines: l3,
+          stack: [
+            { name: 'p', val: '0x2000', target: 'h1', state: 'dangling', sub: '⚠ Dangling' },
+            { name: 'q', val: '0x2000', target: 'h1', state: 'dangling', sub: '✖ Double Free!' }
+          ],
+          heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [7], status: 'err', badge: '✖ LỖI: Giải phóng 2 lần!' }],
+          diagSt: 'bad', diagTitle: 'Lỗi Double Free (Crash / Hỏng Heap)', diagText: 'Gọi delete lên cùng địa chỉ 0x2000 lần thứ hai làm hỏng cấu trúc quản lý bộ nhớ của allocator. Chỉ giữ 1 owner duy nhất giải phóng!',
+          st: 'bad', t: 'delete q; — Giải phóng kép (Double Free)!',
+          desc: 'delete q; cố thu hồi lại khối 0x2000 đã giải phóng trước đó qua p, gây crash.'
+        }
+      ];
+    }
+
+    if (bug === 'mismatched') {
+      var l4 = [
+        'int* v = new int[4]{1, 2, 3, 4};',
+        'delete v;   // Sai! Thiếu []'
+      ];
+      return [
+        {
+          ln: 0, errLn: null, lines: l4,
+          stack: [{ name: 'v', val: '0x3000', target: 'h1', state: 'ok', sub: 'int* -> mảng 4 ô' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[4] (new int[4])', vals: [1, 2, 3, 4], status: 'live', badge: 'Đang sống · 16 B' }],
+          diagSt: '', diagTitle: 'Siêu dữ liệu khối cấp phát', diagText: 'Allocator ghi nhận khối 0x3000 được cấp bằng new[] (kiểu Array[4]), bắt buộc phải thu hồi bằng delete[] v;.',
+          st: '', t: 'int* v = new int[4]{1, 2, 3, 4};',
+          desc: 'Heap cấp mảng 4 số nguyên tại 0x3000 và lưu metadata đây là mảng động Array[4].'
+        },
+        {
+          ln: 1, errLn: 1, lines: l4,
+          stack: [{ name: 'v', val: '0x3000', target: 'h1', state: 'dangling', sub: '✖ Sai cặp delete!' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[4] (new int[4])', vals: [1, 2, 3, 4], status: 'err', badge: '✖ LỖI: delete thay vì delete[]!' }],
+          diagSt: 'bad', diagTitle: 'Lỗi Mismatched delete / delete[] (UB)', diagText: 'delete (không []) kỳ vọng khối Single (new T), không khớp với khối Array[4] (new T[n]). Cách sửa: dùng đúng delete[] v; rồi v = nullptr;.',
+          st: 'bad', t: 'delete v; — Sai cặp với new int[4]!',
+          desc: 'Dùng delete đơn lẻ để thu hồi mảng tạo bởi new[] gây hỏng thông tin kích thước mảng (Undefined Behavior).'
+        }
+      ];
+    }
+
+    if (bug === 'safe') {
+      var l5 = [
+        'int* v = new int[3]{5, 8, 13};',
+        'v[1] = 21;',
+        'delete[] v;',
+        'v = nullptr;',
+        'delete[] v; // Vô hại (null)'
+      ];
+      return [
+        {
+          ln: 0, errLn: null, lines: l5,
+          stack: [{ name: 'v', val: '0x3000', target: 'h1', state: 'ok', sub: 'int* (owner)' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[3] (new int[3])', vals: [5, 8, 13], status: 'live', badge: 'Đang sống' }],
+          diagSt: '', diagTitle: 'Cấp phát mảng chuẩn', diagText: 'v giữ địa chỉ 0x3000 của mảng Array[3] khởi tạo tường minh.',
+          st: '', t: 'int* v = new int[3]{5, 8, 13};',
+          desc: 'Khối Array[3] tại 0x3000 được tạo sạch với {5, 8, 13}.'
+        },
+        {
+          ln: 1, errLn: null, lines: l5,
+          stack: [{ name: 'v', val: '0x3000', target: 'h1', state: 'ok', sub: 'int* (owner)' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[3] (new int[3])', vals: [5, 21, 13], updIdx: 1, status: 'live', badge: 'Đang sống' }],
+          diagSt: '', diagTitle: 'Truy cập hợp lệ', diagText: 'v != nullptr và chỉ số 1 hợp lệ trong [0..2], cập nhật v[1] = 21 an toàn.',
+          st: '', t: 'v[1] = 21; (Cập nhật phần tử mảng Heap)',
+          desc: 'Phần tử thứ 2 tại 0x3004 đổi từ 8 thành 21.'
+        },
+        {
+          ln: 2, errLn: null, lines: l5,
+          stack: [{ name: 'v', val: '0x3000', target: 'h1', state: 'dangling', sub: 'Chờ đặt nullptr...' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[3] (new int[3])', vals: [5, 21, 13], status: 'freed', badge: 'Đã thu hồi đúng cặp' }],
+          diagSt: 'warn', diagTitle: 'Khớp đúng cặp new[] ↔ delete[]', diagText: 'Khối Array[3] đã được giải phóng sạch sẽ. Bước bắt buộc ngay sau đó là v = nullptr;.',
+          st: 'warn', t: 'delete[] v; (Giải phóng đúng cặp mảng)',
+          desc: 'delete[] v; trả đủ 12 byte của Array[3] về Heap.'
+        },
+        {
+          ln: 3, errLn: null, lines: l5,
+          stack: [{ name: 'v', val: '0x0 (nullptr)', target: null, state: 'ok', sub: 'An toàn (rỗng)' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[3] (new int[3])', vals: [5, 21, 13], status: 'freed', badge: 'Đã thu hồi sạch' }],
+          diagSt: 'ok', diagTitle: 'Đã ngắt con trỏ lơ lửng', diagText: 'v chuyển về nullptr (0x0), không còn giữ địa chỉ 0x3000 đã giải phóng.',
+          st: 'ok', t: 'v = nullptr; (Xoá dấu vết địa chỉ cũ)',
+          desc: 'Biến v trên Stack trở về trạng thái rỗng an toàn.'
+        },
+        {
+          ln: 4, errLn: null, lines: l5,
+          stack: [{ name: 'v', val: '0x0 (nullptr)', target: null, state: 'ok', sub: 'An toàn (no-op)' }],
+          heap: [{ id: 'h1', addr: '0x3000', meta: 'Array[3] (new int[3])', vals: [5, 21, 13], status: 'freed', badge: 'Đã thu hồi sạch' }],
+          diagSt: 'ok', diagTitle: 'Sạch lỗi bộ nhớ (100% An toàn)', diagText: 'Trong C++, delete nullptr và delete[] nullptr đều là thao tác rỗng vô hại — hoàn toàn tránh được Double Free!',
+          st: 'ok', t: 'delete[] v; khi v == nullptr là vô hại (no-op)',
+          desc: 'Chuẩn C++ đảm bảo xoá con trỏ nullptr không làm gì cả: 0 leak, 0 dangling, 0 double free!'
+        }
+      ];
+    }
+
+    // Default tab 1: 'leak'
+    var l1 = [
+      'int* p = new int{10};',
+      'p = new int{20}; // Quên delete!',
+      'delete p;',
+      'p = nullptr;'
+    ];
+    return [
+      {
+        ln: 0, errLn: null, lines: l1,
+        stack: [{ name: 'p', val: '0x2000', target: 'h1', state: 'ok', sub: 'int* (chủ sở hữu)' }],
+        heap: [{ id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [10], status: 'live', badge: 'Đang sống' }],
+        diagSt: '', diagTitle: 'Cấp phát khối thứ nhất', diagText: 'p đang là con trỏ duy nhất giữ địa chỉ khối 0x2000.',
+        st: '', t: 'int* p = new int{10};',
+        desc: 'Heap cấp khối Single int tại 0x2000 chứa giá trị 10; p trỏ tới 0x2000.'
+      },
+      {
+        ln: 1, errLn: 1, lines: l1,
+        stack: [{ name: 'p', val: '0x2010', target: 'h2', state: 'hl', sub: 'int* -> khối mới' }],
+        heap: [
+          { id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [10], status: 'leak', badge: '⚠ Rò rỉ — Mồ côi!' },
+          { id: 'h2', addr: '0x2010', meta: 'Single (new int)', vals: [20], status: 'live', badge: 'Đang sống' }
+        ],
+        diagSt: 'bad', diagTitle: 'Lỗi Rò rỉ bộ nhớ (Memory Leak)!', diagText: 'Gán đè p = new int{20} trước khi delete p làm mất hoàn toàn địa chỉ 0x2000. Không còn cách nào giải phóng 0x2000 nữa!',
+        st: 'bad', t: 'p = new int{20}; — Mất địa chỉ khối 0x2000!',
+        desc: 'p chuyển sang giữ 0x2010; khối 0x2000 trở thành vùng nhớ mồ côi rò rỉ vĩnh viễn trên Heap.'
+      },
+      {
+        ln: 2, errLn: null, lines: l1,
+        stack: [{ name: 'p', val: '0x2010', target: 'h2', state: 'dangling', sub: 'Chờ nullptr...' }],
+        heap: [
+          { id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [10], status: 'leak', badge: '⚠ Vẫn rò rỉ (4 B)' },
+          { id: 'h2', addr: '0x2010', meta: 'Single (new int)', vals: [20], status: 'freed', badge: 'Đã giải phóng' }
+        ],
+        diagSt: 'warn', diagTitle: 'Chỉ thu hồi được khối sau (0x2010)', diagText: 'delete p chỉ giải phóng khối 0x2010; khối 0x2000 bị bỏ quên vẫn nằm kẹt trên Heap.',
+        st: 'warn', t: 'delete p; chỉ giải phóng được 0x2010',
+        desc: 'Khối 0x2010 đã thu hồi, nhưng khối 0x2000 đã mất địa chỉ nên vẫn bị rò rỉ.'
+      },
+      {
+        ln: 3, errLn: null, lines: l1,
+        stack: [{ name: 'p', val: '0x0 (nullptr)', target: null, state: 'ok', sub: 'An toàn (rỗng)' }],
+        heap: [
+          { id: 'h1', addr: '0x2000', meta: 'Single (new int)', vals: [10], status: 'leak', badge: '⚠ Rò rỉ tới hết ct!' },
+          { id: 'h2', addr: '0x2010', meta: 'Single (new int)', vals: [20], status: 'freed', badge: 'Đã giải phóng' }
+        ],
+        diagSt: 'warn', diagTitle: 'Kết thúc với 4 byte rò rỉ', diagText: 'Luôn gọi delete p; TRƯỚC khi gán p sang một vùng cấp phát mới.',
+        st: 'warn', t: 'p = nullptr; — Nhưng khối 0x2000 vẫn bị Leak',
+        desc: 'Dù đặt p = nullptr ở cuối, khối 0x2000 đã thất lạc từ dòng 2 không thể thu hồi lại.'
+      }
+    ];
+  }
+
+  /* Expose pure models for verification if needed */
+  window.PointerLabModel = {
+    buildBasicsSteps: buildBasicsSteps,
+    computeArithmeticState: computeArithmeticState,
+    buildResizeSteps: buildResizeSteps,
+    buildHeapBugSteps: buildHeapBugSteps
+  };
+
+  /* =========================================================
+     SVG ARROW HELPERS (responsive on desktop 720 & mobile 380)
+     ========================================================= */
+
+  function svgArrowDef(id, color){
+    return '<marker id="' + id + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">' +
+      '<path d="M 1 1 L 9 5 L 1 9 z" fill="' + color + '"/></marker>';
+  }
+
+  function drawBasicsArrow(target, isDeref){
+    var stage = $('basics-stage');
+    var svg = $('basics-svg');
+    var boxP = $('b-box-p');
+    if (!stage || !svg || !boxP) return;
+    var sr = stage.getBoundingClientRect();
+    if (!sr.width || !sr.height) return;
+    svg.setAttribute('viewBox', '0 0 ' + sr.width + ' ' + sr.height);
+
+    var pr = boxP.getBoundingClientRect();
+    var x1 = pr.right - sr.left;
+    var y1 = pr.top - sr.top + pr.height / 2;
+
+    if (!target) {
+      if (boxP.classList.contains('dim')) { svg.innerHTML = ''; return; }
+      var bx = x1 + 14;
+      svg.innerHTML =
+        '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + bx + '" y2="' + y1 + '" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>' +
+        '<line x1="' + bx + '" y1="' + (y1 - 10) + '" x2="' + bx + '" y2="' + (y1 + 10) + '" stroke="var(--false)" stroke-width="3" stroke-linecap="round"/>';
+      return;
+    }
+
+    var boxT = $('b-box-' + target);
+    if (!boxT) return;
+    var tr = boxT.getBoundingClientRect();
+    var x2 = tr.left - sr.left - 3;
+    var y2 = tr.top - sr.top + tr.height / 2;
+    var cx = (x1 + x2) / 2;
+    var col = target === 'x' ? 'var(--cell-x)' : 'var(--cell-y)';
+    var strokeW = isDeref ? '3' : '2.2';
+    var dash = isDeref ? ' stroke-dasharray="5 3"' : '';
+    svg.innerHTML = '<defs>' + svgArrowDef('arr-b', col) + '</defs>' +
+      '<path d="M ' + x1 + ' ' + y1 + ' C ' + cx + ' ' + y1 + ', ' + cx + ' ' + y2 + ', ' + x2 + ' ' + y2 + '"' +
+      ' fill="none" stroke="' + col + '" stroke-width="' + strokeW + '"' + dash + ' marker-end="url(#arr-b)"/>';
+  }
+
+  function drawStageConnectors(stageId, svgId, links){
+    var stage = $(stageId);
+    var svg = $(svgId);
+    if (!stage || !svg) return;
+    var sr = stage.getBoundingClientRect();
+    if (!sr.width || !sr.height) return;
+    svg.setAttribute('viewBox', '0 0 ' + sr.width + ' ' + sr.height);
+
+    var defs = [];
+    var paths = [];
+    links.forEach(function(lk, idx){
+      var src = $(lk.fromId);
+      var dst = $(lk.toId);
+      if (!src || !dst) return;
+      var a = src.getBoundingClientRect();
+      var b = dst.getBoundingClientRect();
+      var col = lk.dangling ? 'var(--false)' : (lk.side === 'right' ? 'var(--ptr-b)' : 'var(--ptr-a)');
+      var mid = 'arr-sh-' + idx;
+      defs.push(svgArrowDef(mid, col));
+
+      var y1 = a.top - sr.top + a.height / 2;
+      var y2 = b.top - sr.top + b.height / 2;
+      var x1, x2, railX;
+      if (lk.side === 'right') {
+        x1 = a.right - sr.left;
+        x2 = b.right - sr.left + 3;
+        railX = sr.width - 9;
+      } else {
+        x1 = a.left - sr.left;
+        x2 = b.left - sr.left - 3;
+        railX = 9;
+      }
+      var dash = lk.dangling ? ' stroke-dasharray="4 3"' : '';
+      paths.push(
+        '<path d="M ' + x1 + ' ' + y1 + ' L ' + railX + ' ' + y1 + ' L ' + railX + ' ' + y2 + ' L ' + x2 + ' ' + y2 + '"' +
+        ' fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round"' + dash + ' marker-end="url(#' + mid + ')"/>'
+      );
+    });
+    svg.innerHTML = defs.length ? ('<defs>' + defs.join('') + '</defs>' + paths.join('')) : '';
+  }
+
+  /* =========================================================
+     MODE RENDERERS & CONTROLLERS
+     ========================================================= */
+
+  var VD = qparam('vd') || 'basics';
+  if (['basics', 'arithmetic', 'resize', 'heap-bugs'].indexOf(VD) === -1) VD = 'basics';
+  var BUOC = Number(qparam('buoc'));
+  var SC = qparam('sc');
+
+  var state = {
+    stepIdx: 0,
+    timer: null,
+    snaps: [],
+    basicsPreset: SC === 'alt' ? 'alt' : 'def',
+    arithType: 'int',
+    arithP: 1,
+    arithK: 1,
+    arithQ: 3,
+    resizeSc: SC === 'trap' ? 'trap' : 'safe',
+    bugKey: (['leak','dangling','double','mismatched','safe'].indexOf(SC) !== -1) ? SC : 'leak'
+  };
+
+  function stopTimer(){
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function setStatus(st, title, desc){
+    var el = $('status');
+    el.className = 'status' + (st ? ' ' + st : '');
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc);
+  }
+
+  function bindStepperButtons(){
+    $('next').onclick = function(){ if (state.stepIdx < state.snaps.length - 1) { state.stepIdx++; renderCurrent(); } };
+    $('prev').onclick = function(){ if (state.stepIdx > 0) { state.stepIdx--; renderCurrent(); } };
+    $('reset').onclick = function(){ stopTimer(); state.stepIdx = 0; renderCurrent(); };
+    $('all').onclick = function(){
+      if (state.timer) { stopTimer(); updateStepperButtons(); return; }
+      state.timer = setInterval(function(){
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); return; }
+        state.stepIdx++; renderCurrent();
+        if (state.stepIdx >= state.snaps.length - 1) { stopTimer(); updateStepperButtons(); }
+      }, 750);
+      updateStepperButtons();
+    };
+  }
+
+  function updateStepperButtons(){
+    var run = state.timer !== null;
+    $('next').disabled = state.stepIdx >= state.snaps.length - 1 || run;
+    $('prev').disabled = state.stepIdx <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && state.stepIdx >= state.snaps.length - 1;
+  }
+
+  function renderTabs(items, activeId, onPick){
+    $('tabs').innerHTML = items.map(function(it){
+      var on = it.id === activeId;
+      return '<button class="tab" role="tab" aria-selected="' + on + '" data-id="' + esc(it.id) + '">' + esc(it.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(btn){
+      btn.onclick = function(){ onPick(btn.getAttribute('data-id')); };
+    });
+  }
+
+  function renderStepperChrome(){
+    $('btns').innerHTML =
+      '<button class="btn" id="next">Bước tiếp</button>' +
+      '<button class="btn ghost" id="prev">Lùi lại</button>' +
+      '<button class="btn ghost" id="all">Chạy hết</button>' +
+      '<button class="btn ghost" id="reset">Làm lại</button>';
+    bindStepperButtons();
+  }
+
+  var pendingLinks = null;
+  var pendingBasics = null;
+
+  function scheduleArrows(){
+    requestAnimationFrame(function(){
+      if (pendingBasics) drawBasicsArrow(pendingBasics.target, pendingBasics.isDeref);
+      if (pendingLinks) drawStageConnectors(pendingLinks.stageId, pendingLinks.svgId, pendingLinks.links);
+    });
+  }
+
+  window.addEventListener('resize', scheduleArrows);
+
+  /* --- 1. BASICS --- */
+  function initBasics(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi địa chỉ Hex, toán tử <code>&amp;</code>, giải tham chiếu <code>*p</code> và đổi đích trỏ trong RAM.';
+    renderTabs([
+      { id: 'def', label: 'Ví dụ chuẩn (12, 25)' },
+      { id: 'alt', label: 'Thử cặp khác (8, 40)' }
+    ], state.basicsPreset, function(id){
+      state.basicsPreset = id;
+      stopTimer();
+      state.snaps = buildBasicsSteps(id);
+      state.stepIdx = 0;
+      initBasics();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+          '<div class="code" id="code-view"></div>' +
+          '<div class="sub-box"><div class="sub-title"><span>Nhật ký thực thi</span><span style="color:var(--muted);font-weight:500">Stack 64-bit</span></div>' +
+            '<div class="log-list" id="b-logs"></div></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Bản đồ Ô nhớ RAM</p><span class="badge stack">Địa chỉ Hex</span></div>' +
+          '<div class="basics-stage" id="basics-stage">' +
+            '<svg class="svg-overlay" id="basics-svg"></svg>' +
+            '<div class="mem-box" id="b-box-p">' +
+              '<div class="mem-top"><span class="var-tag tag-p">int* p</span><span class="addr" id="b-addr-p"></span></div>' +
+              '<div class="mem-val sm" id="b-val-p"></div>' +
+              '<div class="mem-foot">8 bytes · Con trỏ</div>' +
+            '</div>' +
+            '<div></div>' +
+            '<div class="basics-targets">' +
+              '<div class="mem-box" id="b-box-x">' +
+                '<div class="mem-top"><span class="var-tag tag-x">int x</span><span class="addr" id="b-addr-x"></span></div>' +
+                '<div class="mem-val" id="b-val-x"></div>' +
+                '<div class="mem-foot">4 bytes · Số nguyên</div>' +
+              '</div>' +
+              '<div class="mem-box" id="b-box-y">' +
+                '<div class="mem-top"><span class="var-tag tag-y">int y</span><span class="addr" id="b-addr-y"></span></div>' +
+                '<div class="mem-val" id="b-val-y"></div>' +
+                '<div class="mem-foot">4 bytes · Số nguyên</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="expr-grid" id="b-expr"></div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildBasicsSteps(state.basicsPreset);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderBasics(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, null);
+    $('b-logs').innerHTML = s.logs.map(function(lg, idx){
+      return '<div class="log-item' + (idx === s.logs.length - 1 ? ' cur' : '') + '">' + esc(lg) + '</div>';
+    }).join('');
+
+    $('b-addr-x').textContent = s.ax;
+    $('b-addr-y').textContent = s.ay;
+    $('b-addr-p').textContent = s.ap;
+    $('b-val-x').textContent = s.x;
+    $('b-val-y').textContent = s.y === null ? '?' : s.y;
+    $('b-val-p').textContent = s.pDeclared ? s.pVal : 'Chưa tạo';
+
+    $('b-box-x').className = 'mem-box' + (s.hl === 'x' ? ' hl-x' : '');
+    $('b-box-y').className = 'mem-box' + (s.y === null ? ' dim' : '') + (s.hl === 'y' ? ' hl-y' : '');
+    $('b-box-p').className = 'mem-box' + (!s.pDeclared ? ' dim' : '') + (s.hl === 'p' ? ' hl-p' : '');
+
+    $('b-val-x').className = 'mem-val' + (s.chg === 'x' ? ' chg' : '');
+    $('b-val-y').className = 'mem-val' + (s.y === null ? ' nullv' : '') + (s.chg === 'y' ? ' chg' : '');
+    $('b-val-p').className = 'mem-val sm' + (!s.pDeclared || s.pTarget === null ? ' nullv' : '') + (s.chg === 'p' ? ' chg' : '');
+
+    var derefText, derefBad = false;
+    if (!s.pDeclared) derefText = 'Chưa khai báo';
+    else if (s.pTarget === null) { derefText = 'Không thể giải tham chiếu!'; derefBad = true; }
+    else derefText = s.pTarget === 'x' ? String(s.x) : String(s.y);
+
+    var cells = [
+      { k: 'x', v: String(s.x) },
+      { k: '&x', v: s.ax },
+      { k: 'y', v: s.y === null ? 'Chưa tạo' : String(s.y) },
+      { k: '&y', v: s.y === null ? '—' : s.ay },
+      { k: 'p', v: s.pDeclared ? s.pVal : 'Chưa tạo' },
+      { k: '*p', v: derefText, bad: derefBad }
+    ];
+    $('b-expr').innerHTML = cells.map(function(c){
+      return '<div class="expr-cell"><div class="expr-k">' + esc(c.k) + '</div><div class="expr-v' + (c.bad ? ' bad' : '') + '">' + esc(c.v) + '</div></div>';
+    }).join('');
+
+    pendingLinks = null;
+    pendingBasics = { target: s.pTarget, isDeref: !!s.derefTarget };
+    scheduleArrows();
+    updateStepperButtons();
+  }
+
+  /* --- 2. ARITHMETIC --- */
+  function initArithmetic(){
+    if (BUOC > 0 && !initDone) {
+      if (BUOC === 2) { state.arithType = 'int'; state.arithP = 1; state.arithK = 2; state.arithQ = 4; }
+      else if (BUOC === 3) { state.arithType = 'double'; state.arithP = 1; state.arithK = 1; state.arithQ = 3; }
+      else if (BUOC === 4) { state.arithType = 'char'; state.arithP = 0; state.arithK = 3; state.arithQ = 4; }
+    }
+    $('lead').innerHTML = 'Chọn kiểu con trỏ, dịch chuyển <code>p</code>, <code>q</code> hoặc độ dời <code>k</code> để quan sát bước nhảy <code>k × sizeof(T)</code> byte và hiệu <code>q - p</code>.';
+    renderTabs([
+      { id: 'char', label: 'char* (1 byte)' },
+      { id: 'int', label: 'int* (4 bytes)' },
+      { id: 'double', label: 'double* (8 bytes)' }
+    ], state.arithType, function(id){
+      state.arithType = id;
+      initArithmetic();
+    });
+    $('btns').innerHTML = '<button class="btn ghost" id="arith-reset">Đặt lại</button>';
+    $('arith-reset').onclick = function(){
+      state.arithType = 'int'; state.arithP = 1; state.arithK = 1; state.arithQ = 3;
+      initArithmetic();
+    };
+    $('workspace').innerHTML =
+      '<div class="card arith-card">' +
+        '<div class="arith-head">' +
+          '<span class="arith-decl" id="ar-decl"></span>' +
+          '<span class="badge" id="ar-size-badge"></span>' +
+        '</div>' +
+        '<div class="arr-strip" id="ar-strip"></div>' +
+        '<div class="arith-bar">' +
+          '<div class="ctrl-group">' +
+            '<span class="ctrl-lbl">Con trỏ p:</span>' +
+            '<button class="btn ghost sm" id="p-dec">p--</button>' +
+            '<span class="mono-pill" id="p-pos"></span>' +
+            '<button class="btn ghost sm" id="p-inc">p++</button>' +
+          '</div>' +
+          '<div class="ctrl-group" id="k-group">' +
+            '<span class="ctrl-lbl">Độ dời k:</span>' +
+          '</div>' +
+          '<div class="ctrl-group">' +
+            '<span class="ctrl-lbl">Con trỏ q:</span>' +
+            '<button class="btn ghost sm" id="q-dec">q--</button>' +
+            '<span class="mono-pill" id="q-pos"></span>' +
+            '<button class="btn ghost sm" id="q-inc">q++</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="arith-bottom">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Phép cộng con trỏ p + k</p><span class="badge" id="ar-step-badge"></span></div>' +
+          '<div class="math-line" id="ar-plus-math"></div>' +
+          '<div class="math-note" id="ar-equiv"></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Hiệu hai con trỏ q - p</p><span class="badge heap">ptrdiff_t · phần tử</span></div>' +
+          '<div class="math-line" id="ar-diff-math"></div>' +
+          '<div class="math-note" id="ar-diff-note"></div>' +
+        '</div>' +
+      '</div>';
+
+    var kHtml = '<span class="ctrl-lbl">Độ dời k:</span>';
+    [-2, -1, 0, 1, 2, 3].forEach(function(kv){
+      kHtml += '<button class="btn ghost sm k-btn" data-k="' + kv + '">' + (kv > 0 ? '+' + kv : kv) + '</button>';
+    });
+    $('k-group').innerHTML = kHtml;
+
+    $('p-dec').onclick = function(){ if (state.arithP > 0) { state.arithP--; renderArithmetic(); } };
+    $('p-inc').onclick = function(){ if (state.arithP < 4) { state.arithP++; renderArithmetic(); } };
+    $('q-dec').onclick = function(){ if (state.arithQ > 0) { state.arithQ--; renderArithmetic(); } };
+    $('q-inc').onclick = function(){ if (state.arithQ < 4) { state.arithQ++; renderArithmetic(); } };
+    Array.prototype.forEach.call($('k-group').querySelectorAll('.k-btn'), function(btn){
+      btn.onclick = function(){
+        state.arithK = Number(btn.getAttribute('data-k'));
+        renderArithmetic();
+      };
+    });
+    renderArithmetic();
+  }
+
+  function renderArithmetic(){
+    var s = computeArithmeticState(state.arithType, state.arithP, state.arithK, state.arithQ);
+    setStatus(s.st, s.title, s.desc);
+    $('ar-decl').textContent = s.decl;
+    $('ar-size-badge').textContent = 'sizeof(' + s.typeName + ') = ' + s.sizeofT + ' B · sizeof(' + s.arrName + ') = ' + s.arrSizeBytes + ' B';
+
+    var stripHtml = '';
+    for (var i = 0; i < 5; i++) {
+      var isP = i === s.pIdx;
+      var isQ = i === s.qIdx;
+      var isT = s.inBounds && i === s.targetIdx;
+      var cls = 'arr-cell' + (isP ? ' is-p' : '') + (isQ ? ' is-q' : '') + (isT ? ' is-target' : '');
+      var tags = '';
+      if (isP) tags += '<span class="ptr-pill pill-p">▲ p</span>';
+      if (isT) tags += '<span class="ptr-pill pill-k">▲ p' + (s.k >= 0 ? '+' + s.k : s.k) + '</span>';
+      if (isQ) tags += '<span class="ptr-pill pill-q">▲ q</span>';
+      stripHtml +=
+        '<div class="arr-col">' +
+          '<div class="' + cls + '">' +
+            '<div class="arr-idx">' + s.arrName + '[' + i + ']</div>' +
+            '<div class="arr-val">' + esc(s.vals[i]) + '</div>' +
+            '<div class="arr-addr">' + hex(s.addrs[i]) + '</div>' +
+          '</div>' +
+          '<div class="ptr-track">' + tags + '</div>' +
+        '</div>';
+    }
+    $('ar-strip').innerHTML = stripHtml;
+
+    $('p-pos').textContent = s.arrName + ' + ' + s.pIdx;
+    $('q-pos').textContent = s.arrName + ' + ' + s.qIdx;
+    $('p-dec').disabled = s.pIdx <= 0;
+    $('p-inc').disabled = s.pIdx >= 4;
+    $('q-dec').disabled = s.qIdx <= 0;
+    $('q-inc').disabled = s.qIdx >= 4;
+    Array.prototype.forEach.call($('k-group').querySelectorAll('.k-btn'), function(btn){
+      var kv = Number(btn.getAttribute('data-k'));
+      btn.className = 'btn sm k-btn ' + (kv === s.k ? 'active-chip' : 'ghost');
+    });
+
+    $('ar-step-badge').textContent = s.k + ' × ' + s.sizeofT + ' = ' + s.bSign + ' byte';
+    $('ar-plus-math').textContent = 'addr(p ' + s.kSign + ') = ' + hex(s.pAddr) + ' + (' + s.bSign + ') = ' + hex(s.targetAddr);
+    $('ar-equiv').innerHTML = s.inBounds
+      ? ('<b>Đồng đẳng:</b> <span class="equiv-code">' + esc(s.equivExpr) + '</span>')
+      : ('<span style="color:var(--false);font-weight:700">' + esc(s.equivExpr) + '</span>');
+
+    $('ar-diff-math').textContent = 'q - p = (' + hex(s.qAddr) + ' - ' + hex(s.pAddr) + ') / ' + s.sizeofT + ' = ' + s.elemDiff;
+    $('ar-diff-note').innerHTML = 'Chênh lệch byte: <b>' + esc(s.qSign) + ' byte</b> &rarr; chia cho <code>sizeof(' + esc(s.typeName) + ') = ' + s.sizeofT + '</code> = <b>' + s.elemDiff + ' phần tử</b>.';
+    pendingLinks = null;
+    pendingBasics = null;
+  }
+
+  /* --- 3. RESIZE --- */
+  function initResize(){
+    $('lead').innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím →) để theo dõi quy trình <i>Dynamic Resize</i> 4 bước trên Stack &amp; Heap và bẫy sai thứ tự.';
+    renderTabs([
+      { id: 'safe', label: '1. Chuẩn 4 bước an toàn (3 → 6)' },
+      { id: 'trap', label: '2. Bẫy sai thứ tự (arr = tmp trước)' }
+    ], state.resizeSc, function(id){
+      state.resizeSc = id;
+      stopTimer();
+      state.snaps = buildResizeSteps(id);
+      state.stepIdx = 0;
+      initResize();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+          '<div class="code" id="code-view"></div>' +
+          '<div class="sub-box">' +
+            '<div class="sub-title"><span>Chú giải trạng thái khối Heap</span></div>' +
+            '<div class="legend-row">' +
+              '<span><i class="lg-dot" style="background:var(--true)"></i>Đang sống</span>' +
+              '<span><i class="lg-dot" style="background:var(--warn)"></i>Rò rỉ (Leak)</span>' +
+              '<span><i class="lg-dot" style="background:var(--muted)"></i>Đã thu hồi</span>' +
+              '<span><i class="lg-dot" style="background:var(--false)"></i>Lỗi / Dangling</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Stack &amp; Heap trực quan</p><span class="badge heap" id="r-cap-badge"></span></div>' +
+          '<div class="sh-stage" id="resize-stage">' +
+            '<svg class="svg-overlay" id="resize-svg"></svg>' +
+            '<div><div class="zone-lbl"><span>Stack Frame</span><span>Con trỏ &amp; kích thước</span></div><div class="stack-row c3" id="r-stack"></div></div>' +
+            '<div id="r-copy-wrap"></div>' +
+            '<div><div class="zone-lbl"><span>Free Store (Heap)</span><span>Các khối mảng động</span></div><div class="heap-list" id="r-heap"></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildResizeSteps(state.resizeSc);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderResize(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    $('r-cap-badge').textContent = 'cap = ' + s.cap;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    var arrCls = 'st-var ' + (s.arr.state || '');
+    var tmpCls = 'st-var ' + (s.tmp.visible ? (s.tmp.state || '') : 'dim');
+    $('r-stack').innerHTML =
+      '<div class="' + arrCls + '" id="r-st-arr">' +
+        '<div class="st-vhead"><span class="var-tag tag-p">int* arr</span></div>' +
+        '<div class="st-vval">' + esc(s.arr.val) + '</div>' +
+        '<div class="st-vsub">' + (s.arr.state === 'dangling' ? '⚠ Dangling' : 'chủ sở hữu') + '</div>' +
+      '</div>' +
+      '<div class="st-var">' +
+        '<div class="st-vhead"><span class="var-tag">int cap</span></div>' +
+        '<div class="st-vval">' + s.cap + '</div>' +
+        '<div class="st-vsub">dung lượng</div>' +
+      '</div>' +
+      '<div class="' + tmpCls + '" id="r-st-tmp">' +
+        '<div class="st-vhead"><span class="var-tag tag-q">int* tmp</span></div>' +
+        '<div class="st-vval">' + esc(s.tmp.val) + '</div>' +
+        '<div class="st-vsub">' + (s.tmp.visible ? (s.tmp.state === 'dim' ? 'hết scope' : (s.tmp.state === 'dangling' ? '⚠ Dangling' : 'biến tạm')) : 'chưa tạo') + '</div>' +
+      '</div>';
+
+    $('r-copy-wrap').innerHTML = s.copyStrip ? ('<div class="copy-strip">' + esc(s.copyStrip) + '</div>') : '';
+
+    $('r-heap').innerHTML = s.blocks.map(function(blk){
+      var bBadge = blk.status === 'live' ? 'ok' : (blk.status === 'leak' ? 'warn' : (blk.status === 'err' ? 'bad' : 'stack'));
+      var ownersHtml = blk.owners.map(function(o){
+        return '<span class="var-tag ' + (o === 'arr' ? 'tag-p' : 'tag-q') + '">&larr; ' + o + '</span>';
+      }).join(' ');
+      var cellsHtml = blk.vals.map(function(v, idx){
+        var cCls = 'h-cell' + (blk.copiedCount && idx < blk.copiedCount ? ' copied' : '');
+        return '<div class="' + cCls + '"><small>[' + idx + ']</small>' + esc(v) + '</div>';
+      }).join('');
+      return '<div class="heap-blk ' + blk.status + '" id="r-hb-' + blk.id + '">' +
+        '<div class="h-head">' +
+          '<div class="h-meta"><span class="addr">' + esc(blk.addr) + '</span><span class="badge stack">int[' + blk.cap + ']</span>' + ownersHtml + '</div>' +
+          '<span class="badge ' + bBadge + '">' + esc(blk.badge) + '</span>' +
+        '</div>' +
+        '<div class="h-cells n' + blk.cap + '">' + cellsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    var links = [];
+    if (s.arr.target) links.push({ fromId: 'r-st-arr', toId: 'r-hb-' + s.arr.target, side: 'left', dangling: s.arr.state === 'dangling' });
+    if (s.tmp.visible && s.tmp.target) links.push({ fromId: 'r-st-tmp', toId: 'r-hb-' + s.tmp.target, side: 'right', dangling: s.tmp.state === 'dangling' });
+    pendingBasics = null;
+    pendingLinks = { stageId: 'resize-stage', svgId: 'resize-svg', links: links };
+    scheduleArrows();
+    updateStepperButtons();
+  }
+
+  /* --- 4. HEAP BUGS --- */
+  function initHeapBugs(){
+    $('lead').innerHTML = 'Chọn từng kịch bản lỗi bộ nhớ và bấm <b>Bước tiếp</b> để quan sát Stack, siêu dữ liệu Heap và điểm phát sinh lỗi.';
+    renderTabs([
+      { id: 'leak', label: '1. Memory Leak' },
+      { id: 'dangling', label: '2. Dangling' },
+      { id: 'double', label: '3. Double Free' },
+      { id: 'mismatched', label: '4. Sai delete/[]' },
+      { id: 'safe', label: '5. Chuẩn an toàn' }
+    ], state.bugKey, function(id){
+      state.bugKey = id;
+      stopTimer();
+      state.snaps = buildHeapBugSteps(id);
+      state.stepIdx = 0;
+      initHeapBugs();
+    });
+    renderStepperChrome();
+    $('workspace').innerHTML =
+      '<div class="grid">' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Mã nguồn C++</p><span class="badge" id="step-badge"></span></div>' +
+          '<div class="code" id="code-view"></div>' +
+          '<div class="sub-box" id="hb-diag">' +
+            '<div class="sub-title"><span id="hb-diag-title"></span></div>' +
+            '<div id="hb-diag-text" style="line-height:1.4"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="panel-head"><p class="panel-title">Stack &amp; Heap Simulator</p><span class="badge heap">Metadata &amp; Ownership</span></div>' +
+          '<div class="sh-stage" id="bugs-stage">' +
+            '<svg class="svg-overlay" id="bugs-svg"></svg>' +
+            '<div><div class="zone-lbl"><span>Stack Frame</span><span>Biến con trỏ</span></div><div class="stack-row" id="hb-stack"></div></div>' +
+            '<div><div class="zone-lbl"><span>Free Store (Heap)</span><span>Loại cấp phát &amp; trạng thái</span></div><div class="heap-list" id="hb-heap"></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    state.snaps = buildHeapBugSteps(state.bugKey);
+    if (BUOC > 0 && !initDone) state.stepIdx = Math.min(state.snaps.length - 1, BUOC - 1);
+    renderCurrent();
+  }
+
+  function renderHeapBugs(s, k, n){
+    $('step-badge').textContent = 'Bước ' + (k + 1) + '/' + n;
+    setStatus(s.st, 'Bước ' + (k + 1) + '/' + n + ' · ' + s.t, s.desc);
+    $('code-view').innerHTML = renderCode(s.lines, s.ln, s.errLn);
+
+    $('hb-diag').className = 'sub-box' + (s.diagSt ? ' ' + s.diagSt : '');
+    $('hb-diag-title').textContent = s.diagTitle;
+    $('hb-diag-text').textContent = s.diagText;
+
+    var stackEl = $('hb-stack');
+    stackEl.className = 'stack-row c' + s.stack.length;
+    stackEl.innerHTML = s.stack.map(function(v, idx){
+      var tagCls = idx === 1 ? 'tag-q' : 'tag-p';
+      return '<div class="st-var ' + (v.state || '') + '" id="hb-st-' + v.name + '">' +
+        '<div class="st-vhead"><span class="var-tag ' + tagCls + '">int* ' + esc(v.name) + '</span><span class="st-vsub">' + esc(v.sub) + '</span></div>' +
+        '<div class="st-vval">' + esc(v.val) + '</div>' +
+      '</div>';
+    }).join('');
+
+    $('hb-heap').innerHTML = s.heap.map(function(blk){
+      var bBadge = blk.status === 'live' ? 'ok' : (blk.status === 'leak' ? 'warn' : (blk.status === 'err' ? 'bad' : 'stack'));
+      var nCls = 'n' + blk.vals.length;
+      var cellsHtml = blk.vals.map(function(val, idx){
+        var cCls = 'h-cell' + (blk.updIdx === idx ? ' upd' : '');
+        var prefix = blk.vals.length > 1 ? '<small>[' + idx + ']</small>' : '<small>int</small>';
+        return '<div class="' + cCls + '">' + prefix + esc(val) + '</div>';
+      }).join('');
+      return '<div class="heap-blk ' + blk.status + '" id="hb-blk-' + blk.id + '">' +
+        '<div class="h-head">' +
+          '<div class="h-meta"><span class="addr">' + esc(blk.addr) + '</span><span class="badge stack">' + esc(blk.meta) + '</span></div>' +
+          '<span class="badge ' + bBadge + '">' + esc(blk.badge) + '</span>' +
+        '</div>' +
+        '<div class="h-cells ' + nCls + '">' + cellsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    var links = [];
+    s.stack.forEach(function(v, idx){
+      if (v.target) {
+        links.push({
+          fromId: 'hb-st-' + v.name,
+          toId: 'hb-blk-' + v.target,
+          side: idx === 1 ? 'right' : 'left',
+          dangling: v.state === 'dangling'
+        });
+      }
+    });
+    pendingBasics = null;
+    pendingLinks = { stageId: 'bugs-stage', svgId: 'bugs-svg', links: links };
+    scheduleArrows();
+    updateStepperButtons();
+  }
+
+  function renderCurrent(){
+    var s = state.snaps[state.stepIdx];
+    var n = state.snaps.length;
+    if (VD === 'basics') renderBasics(s, state.stepIdx, n);
+    else if (VD === 'resize') renderResize(s, state.stepIdx, n);
+    else if (VD === 'heap-bugs') renderHeapBugs(s, state.stepIdx, n);
+  }
+
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (VD === 'arithmetic') {
+      if (e.key === 'ArrowRight') { e.preventDefault(); if (state.arithP < 4) { state.arithP++; renderArithmetic(); } }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); if (state.arithP > 0) { state.arithP--; renderArithmetic(); } }
+      return;
+    }
+    if (e.key === 'ArrowRight') { e.preventDefault(); if ($('next')) $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if ($('prev')) $('prev').click(); }
+  });
+
+  var initDone = false;
+  if (VD === 'basics') initBasics();
+  else if (VD === 'arithmetic') initArithmetic();
+  else if (VD === 'resize') initResize();
+  else if (VD === 'heap-bugs') initHeapBugs();
+  initDone = true;
+})();
+</script>
+</body>
+</html>

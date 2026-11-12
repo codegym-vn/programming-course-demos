@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="560">
+<title>Mô phỏng Ngăn xếp Đệ quy và Cây Lời gọi C++</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --accent-fill:#2563eb;
+    --true:#15803d; --true-soft:#e3f4e8; --false:#b42318; --false-soft:#fbe9e7;
+    --warn:#b45309; --warn-soft:#fef3c7;
+    --code-bg:#f3f5f8;
+    --push-bg:#dbeafe; --push-bar:#2563eb;
+    --base-bg:#dcfce7; --base-bar:#15803d;
+    --unwind-bg:#fef3c7; --unwind-bar:#d97706;
+    --con-bg:#111827; --con-text:#e5e7eb;
+    --kw:#7c3aed; --str:#047857; --num:#c2410c;
+    --node-fill:#ffffff; --node-stroke:#cbd5e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --accent-fill:#2563eb;
+      --true:#4ade80; --true-soft:#13301f; --false:#f87171; --false-soft:#3a1717;
+      --warn:#fcd34d; --warn-soft:#3a2e10;
+      --code-bg:#11151c;
+      --push-bg:#1e3a8a; --push-bar:#60a5fa;
+      --base-bg:#14532d; --base-bar:#4ade80;
+      --unwind-bg:#451a03; --unwind-bar:#fbbf24;
+      --con-bg:#05070b; --con-text:#e5e7eb;
+      --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+      --node-fill:#1e293b; --node-stroke:#475569;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:13.5px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--code-bg);padding:1px 4px;border-radius:4px}
+  .wrap{max-width:960px;margin:0 auto;padding:7px 10px 8px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:12.8px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .sub-ctrl{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:3.5px 8px;
+    border-radius:6px;cursor:pointer;font:inherit;font-size:12px;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab[aria-selected="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff;font-weight:600}
+
+  .chips{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+  .chip-lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-right:2px}
+  .chip{border:1px solid var(--line);background:var(--code-bg);color:var(--text);padding:2.5px 7px;
+    border-radius:5px;cursor:pointer;font:600 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .chip.warn-active{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+
+  .btns{display:flex;gap:4px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent-fill);background:var(--accent-fill);color:#fff;padding:4px 9px;border-radius:6px;
+    cursor:pointer;font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+  .btn.ghost{background:transparent;border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:6px 10px;margin-bottom:7px;min-height:48px;font-size:12.5px;line-height:1.38}
+  .status>b:first-child{display:block;font-size:11.8px;color:var(--accent);margin-bottom:1px}
+  .status.ok{border-left-color:var(--true);background:var(--true-soft)}
+  .status.ok>b:first-child{color:var(--true)}
+  .status.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .status.warn>b:first-child{color:var(--warn)}
+  .status.bad{border-left-color:var(--false);background:var(--false-soft)}
+  .status.bad>b:first-child{color:var(--false)}
+
+  .grid{display:grid;grid-template-columns:1.02fr 1.26fr;gap:8px;align-items:stretch}
+  .grid.tree-grid{grid-template-columns:0.95fr 1.35fr}
+  .grid>*{min-width:0}
+  @media (max-width:640px){.grid,.grid.tree-grid{grid-template-columns:1fr}}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .badge{font:700 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .badge.ok{background:var(--true-soft);color:var(--true)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--false-soft);color:var(--false)}
+
+  .left-col,.right-col{display:flex;flex-direction:column;justify-content:space-between;gap:6px}
+
+  .code{background:var(--code-bg);border-radius:6px;padding:6px 0;overflow-x:auto;
+    font:10.7px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ln{display:flex;white-space:pre;padding:0 6px 0 0;border-left:3px solid transparent;transition:background .15s}
+  .ln .no{width:20px;flex:none;text-align:right;padding-right:5px;color:var(--muted);opacity:.7;user-select:none}
+  .ln.cur-push{background:var(--push-bg);border-left-color:var(--push-bar)}
+  .ln.cur-base{background:var(--base-bg);border-left-color:var(--base-bar)}
+  .ln.cur-unwind{background:var(--unwind-bg);border-left-color:var(--unwind-bar)}
+  .kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--muted);font-style:italic}
+
+  .phase-legend{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:4px}
+  .dot-tag{display:inline-flex;align-items:center;gap:4px}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .dot.p{background:var(--push-bar)}.dot.b{background:var(--base-bar)}.dot.u{background:var(--unwind-bar)}
+
+  .summary-box{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px}
+  .summary-row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:1px dashed var(--line)}
+  .summary-row:last-child{border-bottom:none}
+  .summary-k{color:var(--muted);font-weight:600}
+  .summary-v{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);text-align:right}
+
+  /* Call Stack Tower */
+  .stack-tower{display:flex;flex-direction:column;gap:5px;min-height:260px;justify-content:flex-end}
+  .stack-tower.compact{gap:3.5px}
+  .s-frame{border:2px solid var(--line);border-radius:7px;padding:5px 8px;background:var(--card);transition:all .18s}
+  .stack-tower.compact .s-frame{padding:3.5px 7px}
+  .s-frame.top-push{border-color:var(--push-bar);background:var(--accent-soft)}
+  .s-frame.top-base{border-color:var(--base-bar);background:var(--true-soft)}
+  .s-frame.top-unwind{border-color:var(--unwind-bar);background:var(--warn-soft)}
+  .s-frame.paused{opacity:.82;background:var(--code-bg)}
+  .s-frame.main-base{border-color:var(--muted);border-style:dashed;background:var(--code-bg)}
+  .s-frame.popped{opacity:.42;border-style:dashed;border-color:var(--base-bar)}
+  .sf-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .sf-sig{font:700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+  .sf-pill{font:700 10.5px system-ui,sans-serif;padding:1px 6px;border-radius:4px;background:var(--code-bg);color:var(--muted);border:1px solid var(--line)}
+  .sf-pill.push{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+  .sf-pill.base{background:var(--true-soft);color:var(--true);border-color:var(--true)}
+  .sf-pill.unwind{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+  .sf-expr{font:600 11.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);margin-top:2px;
+    display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+  .sf-expr b{color:var(--text)}
+
+  /* Call Tree SVG */
+  .tree-wrap{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:4px;position:relative;overflow:hidden}
+  .tree-svg{display:block;width:100%;height:auto;max-height:278px}
+  .tree-legend{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:4px;align-items:center}
+  .sw{display:inline-flex;align-items:center;gap:3px}
+  .sw i{width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid}
+
+  .freq-strip{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .freq-pill{font:600 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1.5px 6px;border-radius:4px;
+    border:1px solid var(--line);background:var(--card)}
+  .freq-pill.dup{background:var(--false-soft);border-color:var(--false);color:var(--false)}
+  .cmp-box{background:var(--warn-soft);border:1px solid var(--warn);border-radius:6px;padding:5px 7px;font-size:11.5px;line-height:1.38}
+  .cmp-box.ok{background:var(--true-soft);border-color:var(--true)}
+  .cmp-box>b:first-child{display:block;font-size:11.5px;margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead-text"></p>
+
+  <div class="controls">
+    <div class="sub-ctrl">
+      <div class="tabs" id="sub-tabs" role="tablist"></div>
+      <div class="chips" id="param-chips"></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="next">Bước tiếp</button>
+      <button class="btn ghost" id="prev">Lùi lại</button>
+      <button class="btn ghost" id="all">Chạy hết</button>
+      <button class="btn ghost" id="reset">Làm lại</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="grid" id="main-grid">
+    <div class="card left-col" id="left-col"></div>
+    <div class="card right-col" id="right-col"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qparam(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
+
+function hl(src){
+  var re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|\b(long|int|void|if|return|cout)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="str">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="cm">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="kw">' + m[3] + '</span>';
+    else out += '<span class="num">' + m[4] + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function renderCode(lines, cur, phase){
+  return lines.map(function(l, i){
+    var cls = 'ln';
+    if (cur === i) {
+      if (phase === 'base') cls += ' cur-base';
+      else if (phase === 'unwind') cls += ' cur-unwind';
+      else cls += ' cur-push';
+    }
+    return '<div class="' + cls + '"><span class="no">' + (i + 1) + '</span><span>' + hl(l) + '</span></div>';
+  }).join('');
+}
+
+var rawVd = qparam('vd');
+var mode = rawVd === 'call-tree' ? 'call-tree' : 'call-stack';
+
+var state = {
+  stackSub: qparam('sc') === 'digits' ? 'digits' : 'fact',
+  factN: 4,
+  digitsN: 492,
+  treeSub: (function(){ var s = qparam('sc'); return (s === 'pow' || s === 'gcd') ? s : 'fib'; })(),
+  fibN: 5,
+  powSaveHalf: qparam('half') === '0' ? false : true,
+  powPreset: 0, // 0:(2,10), 1:(3,5), 2:(5,0)
+  gcdPreset: 0  // 0:(48,18), 1:(17,5), 2:(0,9)
+};
+
+var POW_PRESETS = [{a:2, n:10}, {a:3, n:5}, {a:5, n:0}];
+var GCD_PRESETS = [{a:48, b:18}, {a:17, b:5}, {a:0, b:9}];
+
+/* ==================== MODE 1: CALL STACK (A14410) ==================== */
+
+function buildFactStack(N){
+  var lines = [
+    'long long fact(int n) {',
+    '  if (n <= 1) return 1;',
+    '  return n * fact(n - 1);',
+    '}',
+    'int main() {',
+    '  long long kq = fact(' + N + ');',
+    '  cout << kq << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+  var S = [];
+  function cloneFrames(arr){ return arr.map(function(f){ return Object.assign({}, f); }); }
+
+  S.push({
+    lines: lines, ln: 5, phase: 'push', depth: 1, res: '?',
+    t: 'main() gọi fact(' + N + ')',
+    desc: 'Từ hàm main(), lời gọi fact(' + N + ') bắt đầu đẩy khung kích hoạt đầu tiên lên đỉnh Call Stack.',
+    frames: [{sig: 'main()', param: 'kq = ?', expr: 'Đang chờ fact(' + N + ')', state: 'main'}]
+  });
+
+  var stack = [{sig: 'main()', param: 'kq = ?', expr: 'Đang chờ fact(' + N + ')', state: 'main'}];
+
+  // Push phase
+  for (var k = N; k >= 1; k--) {
+    var topIdx = 0;
+    stack.forEach(function(f){ if (f.state === 'push') f.state = 'paused'; });
+    if (k === 1) {
+      stack.unshift({
+        sig: 'fact(1)', param: 'n = 1',
+        expr: 'n <= 1 đúng → trả về 1',
+        state: 'base'
+      });
+      S.push({
+        lines: lines, ln: 1, phase: 'base', depth: stack.length - 1, res: '?', st: 'ok',
+        t: 'Chạm trường hợp cơ sở: fact(1) → return 1',
+        desc: 'Khung fact(1) thoả điều kiện dừng (n <= 1) nên không gọi tiếp nữa mà trả về 1 ngay lập tức.',
+        frames: cloneFrames(stack)
+      });
+    } else {
+      stack.unshift({
+        sig: 'fact(' + k + ')', param: 'n = ' + k,
+        expr: k + ' * [chờ fact(' + (k - 1) + ')]',
+        state: 'push'
+      });
+      S.push({
+        lines: lines, ln: 2, phase: 'push', depth: stack.length - 1, res: '?',
+        t: 'Đẩy khung fact(' + k + ') lên đỉnh Call Stack',
+        desc: 'Khung fact(' + k + ') có biến n = ' + k + ' riêng biệt. Để tính ' + k + ' * fact(' + (k - 1) + '), nó tạm treo và gọi tiếp fact(' + (k - 1) + ').',
+        frames: cloneFrames(stack)
+      });
+    }
+  }
+
+  // Unwind phase
+  var childRet = 1;
+  if (N === 1) {
+    // Pop fact(1) straight into main
+    var fPop = stack.shift();
+    stack[0].expr = 'kq = 1';
+    stack[0].state = 'unwind';
+    S.push({
+      lines: lines, ln: 6, phase: 'unwind', depth: 0, res: '1', st: 'ok',
+      t: 'Tháo fact(1) → main() nhận kq = 1',
+      desc: 'fact(1) trả kết quả 1 về main(), khung fact(1) được gỡ khỏi stack. Kết quả cuối cùng: 1.',
+      frames: cloneFrames(stack),
+      poppedLabel: fPop.sig + ' đã trả về 1 và được tháo'
+    });
+    return S;
+  }
+
+  for (var m = 2; m <= N; m++) {
+    var popped = stack.shift();
+    var prod = m * childRet;
+    stack[0].state = 'unwind';
+    stack[0].expr = m + ' * ' + childRet + ' = ' + prod + ' → trả về ' + prod;
+    S.push({
+      lines: lines, ln: 2, phase: 'unwind', depth: stack.length - 1, res: m === N ? String(prod) : '?', st: 'warn',
+      t: 'Rút ' + popped.sig + ' (' + childRet + ') → ' + stack[0].sig + ' tính ' + m + ' * ' + childRet + ' = ' + prod,
+      desc: popped.sig + ' hoàn tất và gửi giá trị ' + childRet + ' xuống khung ngay bên dưới theo quy tắc LIFO. Khung ' + stack[0].sig + ' hoàn thành phép nhân ra ' + prod + '.',
+      frames: cloneFrames(stack),
+      poppedLabel: popped.sig + ' trả ' + childRet + ' rồi tháo khỏi đỉnh'
+    });
+    childRet = prod;
+  }
+
+  // Final return to main
+  var lastPop = stack.shift();
+  stack[0].state = 'unwind';
+  stack[0].expr = 'kq = ' + childRet + ' (in ra ' + childRet + ')';
+  S.push({
+    lines: lines, ln: 6, phase: 'unwind', depth: 0, res: String(childRet), st: 'ok',
+    t: 'Tháo ' + lastPop.sig + ' → main() nhận kết quả cuối ' + childRet,
+    desc: 'Khung đệ quy cuối cùng được tháo bỏ. Biến kq trong main() nhận ' + childRet + ' và in ra màn hình.',
+    frames: cloneFrames(stack),
+    poppedLabel: lastPop.sig + ' trả ' + childRet + ' về main()'
+  });
+
+  return S;
+}
+
+function buildDigitsStack(N){
+  var lines = [
+    'int sum_digits(int n) {',
+    '  if (n == 0) return 0;',
+    '  return (n % 10) + sum_digits(n / 10);',
+    '}',
+    'int main() {',
+    '  int s = sum_digits(' + N + ');',
+    '  cout << s << "\\n";',
+    '  return 0;',
+    '}'
+  ];
+  var S = [];
+  function cloneFrames(arr){ return arr.map(function(f){ return Object.assign({}, f); }); }
+
+  S.push({
+    lines: lines, ln: 5, phase: 'push', depth: 1, res: '?',
+    t: 'main() gọi sum_digits(' + N + ')',
+    desc: 'Hàm main() gọi sum_digits(' + N + ') để tính tổng từng chữ số bằng cách tách chữ số cuối (n % 10).',
+    frames: [{sig: 'main()', param: 's = ?', expr: 'Đang chờ sum_digits(' + N + ')', state: 'main'}]
+  });
+
+  var vals = [];
+  var cur = N;
+  while (cur > 0) {
+    vals.push(cur);
+    cur = Math.floor(cur / 10);
+  }
+  vals.push(0);
+
+  var stack = [{sig: 'main()', param: 's = ?', expr: 'Đang chờ sum_digits(' + N + ')', state: 'main'}];
+  for (var i = 0; i < vals.length; i++) {
+    var v = vals[i];
+    stack.forEach(function(f){ if (f.state === 'push') f.state = 'paused'; });
+    if (v === 0) {
+      stack.unshift({
+        sig: 'sum_digits(0)', param: 'n = 0',
+        expr: 'n == 0 đúng → trả về 0',
+        state: 'base'
+      });
+      S.push({
+        lines: lines, ln: 1, phase: 'base', depth: stack.length - 1, res: '?', st: 'ok',
+        t: 'Chạm trường hợp cơ sở: sum_digits(0) → return 0',
+        desc: 'Khi n giảm về 0, điều kiện cơ sở (n == 0) kích hoạt và trả về 0, kết thúc pha đi xuống.',
+        frames: cloneFrames(stack)
+      });
+    } else {
+      var d = v % 10;
+      var nxt = Math.floor(v / 10);
+      stack.unshift({
+        sig: 'sum_digits(' + v + ')', param: 'n = ' + v,
+        expr: d + ' + [chờ sum_digits(' + nxt + ')]',
+        state: 'push'
+      });
+      S.push({
+        lines: lines, ln: 2, phase: 'push', depth: stack.length - 1, res: '?',
+        t: 'Đẩy sum_digits(' + v + '): giữ chữ số ' + d + ', gọi sum_digits(' + nxt + ')',
+        desc: 'Khung sum_digits(' + v + ') giữ lại chữ số hàng đơn vị là ' + d + ' (' + v + ' % 10) và gọi đệ quy cho phần còn lại ' + nxt + '.',
+        frames: cloneFrames(stack)
+      });
+    }
+  }
+
+  var childRet = 0;
+  for (var j = vals.length - 2; j >= 0; j--) {
+    var curVal = vals[j];
+    var digit = curVal % 10;
+    var popped = stack.shift();
+    var sum = digit + childRet;
+    stack[0].state = 'unwind';
+    stack[0].expr = digit + ' + ' + childRet + ' = ' + sum + ' → trả về ' + sum;
+    S.push({
+      lines: lines, ln: 2, phase: 'unwind', depth: stack.length - 1, res: j === 0 ? String(sum) : '?', st: 'warn',
+      t: 'Rút ' + popped.sig + ' (' + childRet + ') → ' + stack[0].sig + ' cộng ' + digit + ' + ' + childRet + ' = ' + sum,
+      desc: popped.sig + ' trả về ' + childRet + '. Khung ' + stack[0].sig + ' cộng tiếp chữ số ' + digit + ' đang treo được ' + sum + '.',
+      frames: cloneFrames(stack),
+      poppedLabel: popped.sig + ' trả ' + childRet + ' rồi tháo'
+    });
+    childRet = sum;
+  }
+
+  var lastPop = stack.shift();
+  stack[0].state = 'unwind';
+  stack[0].expr = 's = ' + childRet + ' (in ra ' + childRet + ')';
+  S.push({
+    lines: lines, ln: 6, phase: 'unwind', depth: 0, res: String(childRet), st: 'ok',
+    t: 'Tháo ' + lastPop.sig + ' → main() nhận kết quả ' + childRet,
+    desc: 'Ngăn xếp đệ quy đã giải phóng hoàn toàn. Hàm main() nhận kết quả s = ' + childRet + ' và in ra màn hình.',
+    frames: cloneFrames(stack),
+    poppedLabel: lastPop.sig + ' trả ' + childRet + ' về main()'
+  });
+
+  return S;
+}
+
+/* ==================== MODE 2: CALL TREE (A14412) ==================== */
+
+function buildCallTreeData(sub){
+  var nodes = [];
+  var edges = [];
+  var events = [];
+
+  function addNode(label, shortLbl, key, depth, parentId, edgeLabel){
+    var id = nodes.length;
+    nodes.push({id:id, label:label, shortLbl:shortLbl, key:key, depth:depth, parent:parentId, children:[], x:0, y:0});
+    if (parentId !== null) {
+      nodes[parentId].children.push(id);
+      edges.push({from:parentId, to:id, label:edgeLabel || ''});
+    }
+    return id;
+  }
+
+  if (sub === 'fib') {
+    var N = state.fibN;
+    var lines = [
+      'long long fib(int n) {',
+      '  if (n <= 1) return n;',
+      '  return fib(n - 1) + fib(n - 2);',
+      '}'
+    ];
+    function genFib(n, depth, parentId){
+      var nid = addNode('fib(' + n + ')', 'f(' + n + ')', String(n), depth, parentId);
+      if (n <= 1) {
+        events.push({type:'base', nid:nid, ln:1, val:n,
+          t: 'Cơ sở: fib(' + n + ') = ' + n,
+          desc: 'Đạt trường hợp cơ sở n <= 1 nên fib(' + n + ') trả về ngay ' + n + '.'});
+        return n;
+      }
+      events.push({type:'enter', nid:nid, ln:2,
+        t: 'Gọi fib(' + n + ') → rẽ hai nhánh fib(' + (n - 1) + ') và fib(' + (n - 2) + ')',
+        desc: 'fib(' + n + ') phải tách ra tính cả fib(' + (n - 1) + ') bên trái lẫn fib(' + (n - 2) + ') bên phải.'});
+      var v1 = genFib(n - 1, depth + 1, nid);
+      var v2 = genFib(n - 2, depth + 1, nid);
+      var tot = v1 + v2;
+      events.push({type:'ret', nid:nid, ln:2, val:tot,
+        t: 'fib(' + n + ') = ' + v1 + ' + ' + v2 + ' = ' + tot,
+        desc: 'Sau khi hai nhánh con hoàn tất, fib(' + n + ') cộng ' + v1 + ' + ' + v2 + ' trả về ' + tot + '.'});
+      return tot;
+    }
+    genFib(N, 0, null);
+    return {sub:'fib', N:N, lines:lines, nodes:nodes, edges:edges, events:events};
+  }
+
+  if (sub === 'pow') {
+    var p = POW_PRESETS[state.powPreset];
+    var a = p.a, n0 = p.n;
+    var saveHalf = state.powSaveHalf;
+    var lines = saveHalf ? [
+      'long long fast_pow(long long a,',
+      '                   long long n) {',
+      '  if (n == 0) return 1;',
+      '  long long half =',
+      '    fast_pow(a, n / 2);',
+      '  if (n % 2 == 0) return half * half;',
+      '  return a * half * half;',
+      '}'
+    ] : [
+      'long long slow_pow(long long a,',
+      '                   long long n) {',
+      '  if (n == 0) return 1;',
+      '  if (n % 2 == 0)',
+      '    return slow_pow(a, n/2)',
+      '         * slow_pow(a, n/2);',
+      '  return a * slow_pow(a, n/2)',
+      '           * slow_pow(a, n/2);',
+      '}'
+    ];
+
+    function genPow(n, depth, parentId){
+      var lbl = saveHalf ? ('fp(' + a + ',' + n + ')') : ('p(' + n + ')');
+      var shrt = saveHalf ? ('n=' + n) : String(n);
+      var nid = addNode(lbl, shrt, String(n), depth, parentId, parentId !== null ? ('/2') : '');
+      if (n === 0) {
+        events.push({type:'base', nid:nid, ln:2, val:1,
+          t: 'Cơ sở: a^0 = 1',
+          desc: 'Số mũ n = 0 chạm trường hợp cơ sở và trả về 1.'});
+        return 1;
+      }
+      if (saveHalf) {
+        events.push({type:'enter', nid:nid, ln:3,
+          t: 'Gọi fast_pow(' + a + ', ' + n + ') → chỉ gọi 1 lần n/2 = ' + Math.floor(n / 2),
+          desc: 'Tính một nửa số mũ rồi lưu kết quả vào biến cục bộ half để dùng lại 2 lần.'});
+        var h = genPow(Math.floor(n / 2), depth + 1, nid);
+        var res = (n % 2 === 0) ? (h * h) : (a * h * h);
+        var expr = (n % 2 === 0) ? (h + ' * ' + h + ' = ' + res) : (a + ' * ' + h + ' * ' + h + ' = ' + res);
+        events.push({type:'ret', nid:nid, ln: n % 2 === 0 ? 5 : 6, val:res,
+          t: 'n=' + n + ' (' + (n % 2 === 0 ? 'chẵn' : 'lẻ') + '): trả về ' + expr,
+          desc: 'Dùng biến half = ' + h + ' để tính ' + expr + ' mà không phải gọi lại cây con.'});
+        return res;
+      } else {
+        events.push({type:'enter', nid:nid, ln: n % 2 === 0 ? 4 : 6,
+          t: 'Quên lưu half tại n=' + n + ' → gọi ĐÔI slow_pow(' + a + ', ' + Math.floor(n / 2) + ')!',
+          desc: 'Vì không lưu biến half, chương trình phải tự tính lại toàn bộ nhánh n=' + Math.floor(n / 2) + ' hai lần y hệt nhau!'});
+        var h1 = genPow(Math.floor(n / 2), depth + 1, nid);
+        var h2 = genPow(Math.floor(n / 2), depth + 1, nid);
+        var res = (n % 2 === 0) ? (h1 * h2) : (a * h1 * h2);
+        events.push({type:'ret', nid:nid, ln: n % 2 === 0 ? 4 : 6, val:res,
+          t: 'n=' + n + ': hợp nhất hai nhánh lặp trả về ' + res,
+          desc: 'Tổng số lời gọi phình lên thành 2^(tầng) thay vì chỉ log2(n) bước thẳng!'});
+        return res;
+      }
+    }
+    genPow(n0, 0, null);
+    return {sub:'pow', a:a, n:n0, saveHalf:saveHalf, lines:lines, nodes:nodes, edges:edges, events:events};
+  }
+
+  // gcd
+  var g = GCD_PRESETS[state.gcdPreset];
+  var lines = [
+    'long long gcd(long long a,',
+    '              long long b) {',
+    '  if (b == 0) return a;',
+    '  return gcd(b, a % b);',
+    '}'
+  ];
+  function genGcd(a, b, depth, parentId, modNote){
+    var nid = addNode('gcd(' + a + ',' + b + ')', a + ',' + b, a + ',' + b, depth, parentId, modNote);
+    if (b === 0) {
+      events.push({type:'base', nid:nid, ln:2, val:a,
+        t: 'Cơ sở b == 0 → trả về a = ' + a,
+        desc: 'Vì b = 0, ước chung lớn nhất chính là a = ' + a + '. Kết quả sẽ truyền thẳng ngược lên đỉnh.'});
+      return a;
+    }
+    var rem = a % b;
+    events.push({type:'enter', nid:nid, ln:3,
+      t: 'gcd(' + a + ', ' + b + ') → gọi tiếp gcd(' + b + ', ' + a + ' % ' + b + ' = ' + rem + ')',
+      desc: 'Áp dụng Euclid: giữ b = ' + b + ' làm tham số thứ nhất, phần dư ' + a + ' % ' + b + ' = ' + rem + ' làm tham số thứ hai.'});
+    var r = genGcd(b, rem, depth + 1, nid, a + '%' + b + '=' + rem);
+    events.push({type:'ret', nid:nid, ln:3, val:r,
+      t: 'gcd(' + a + ', ' + b + ') truyền tiếp kết quả ' + r,
+      desc: 'Đệ quy tuyến tính không cộng thêm gì ở bước quay lui — trả thẳng ' + r + ' lên hàm gọi.'});
+    return r;
+  }
+  genGcd(g.a, g.b, 0, null, '');
+  return {sub:'gcd', a:g.a, b:g.b, lines:lines, nodes:nodes, edges:edges, events:events};
+}
+
+function layoutTree(data){
+  var nodes = data.nodes;
+  var maxDepth = 0;
+  nodes.forEach(function(n){ if (n.depth > maxDepth) maxDepth = n.depth; });
+
+  // For linear chains (saveHalf pow or gcd), place diagonally/horizontally or vertically crisp!
+  var isLinear = nodes.every(function(n){ return n.children.length <= 1; });
+  var W = 440, H = 266;
+
+  if (isLinear) {
+    var count = nodes.length;
+    var topY = 26;
+    var stepY = count > 1 ? Math.min(54, (H - 48) / (count - 1)) : 0;
+    nodes.forEach(function(n, idx){
+      n.x = W / 2;
+      n.y = topY + idx * stepY;
+    });
+    return {W: W, H: Math.max(190, topY + (count - 1) * stepY + 30), r: 17, isLinear: true, compact: false};
+  }
+
+  // Reingold-Tilford style leaf-order layout for binary trees
+  var leafIdx = 0;
+  function countLeaves(id){
+    var nd = nodes[id];
+    if (!nd.children.length) return 1;
+    var sum = 0;
+    nd.children.forEach(function(c){ sum += countLeaves(c); });
+    return sum;
+  }
+  var totalLeaves = countLeaves(0);
+  var padX = totalLeaves >= 12 ? 18 : 26;
+  var spanX = W - padX * 2;
+  function assignX(id){
+    var nd = nodes[id];
+    if (!nd.children.length) {
+      nd.x = totalLeaves === 1 ? W / 2 : padX + (leafIdx / (totalLeaves - 1)) * spanX;
+      leafIdx++;
+    } else {
+      nd.children.forEach(assignX);
+      var first = nodes[nd.children[0]].x;
+      var last = nodes[nd.children[nd.children.length - 1]].x;
+      nd.x = (first + last) / 2;
+    }
+  }
+  assignX(0);
+
+  var padY = 24;
+  var stepY = maxDepth > 0 ? Math.min(54, (H - padY * 2) / maxDepth) : 0;
+  nodes.forEach(function(n){ n.y = padY + n.depth * stepY; });
+
+  var compact = nodes.length >= 20;
+  var r = compact ? 10.5 : (nodes.length >= 12 ? 14 : 16);
+  return {W: W, H: H, r: r, isLinear: false, compact: compact};
+}
+
+function buildCallTreeSteps(sub){
+  var data = buildCallTreeData(sub);
+  var lay = layoutTree(data);
+  var S = [];
+
+  // Step 0: initial empty state before first call enters (or step 0 = root entered)
+  var statusMap = {}; // id -> 'active' | 'base' | 'done' | 'wait'
+  var retMap = {};    // id -> val
+  var freq = {};      // key -> count
+  var dupIds = {};    // id -> true if 2nd+ occurrence
+  var totalCalls = 0;
+
+  data.events.forEach(function(ev){
+    totalCalls += (ev.type === 'enter' || ev.type === 'base') ? 1 : 0;
+    if (ev.type === 'enter' || ev.type === 'base') {
+      var k = data.nodes[ev.nid].key;
+      freq[k] = (freq[k] || 0) + 1;
+      if (freq[k] > 1) dupIds[ev.nid] = true;
+    }
+
+    // Update previous 'active' to 'wait'
+    Object.keys(statusMap).forEach(function(id){
+      if (statusMap[id] === 'active') statusMap[id] = 'wait';
+    });
+
+    if (ev.type === 'enter') {
+      statusMap[ev.nid] = 'active';
+    } else if (ev.type === 'base') {
+      statusMap[ev.nid] = 'base';
+      retMap[ev.nid] = ev.val;
+    } else if (ev.type === 'ret') {
+      statusMap[ev.nid] = 'done';
+      retMap[ev.nid] = ev.val;
+    }
+
+    S.push({
+      data: data,
+      lay: lay,
+      ln: ev.ln,
+      phase: ev.type === 'base' ? 'base' : (ev.type === 'ret' ? 'unwind' : 'push'),
+      curId: ev.nid,
+      statusMap: Object.assign({}, statusMap),
+      retMap: Object.assign({}, retMap),
+      freq: Object.assign({}, freq),
+      dupIds: Object.assign({}, dupIds),
+      totalCalls: totalCalls,
+      st: ev.type === 'base' ? 'ok' : (dupIds[ev.nid] && data.sub !== 'pow' ? 'warn' : (ev.type === 'ret' && ev.nid === 0 ? 'ok' : '')),
+      t: ev.t,
+      desc: ev.desc
+    });
+  });
+
+  return S;
+}
+
+/* ==================== RENDERING ==================== */
+
+function renderCallStack(s, k, n){
+  var grid = $('main-grid');
+  grid.className = 'grid';
+
+  var leftHtml = '<div>' +
+    '<div class="panel-head"><p class="panel-title">Mã nguồn đệ quy</p><span class="badge">Bước ' + (k + 1) + '/' + n + '</span></div>' +
+    '<div class="code">' + renderCode(s.lines, s.ln, s.phase) + '</div>' +
+    '<div class="phase-legend">' +
+      '<span class="dot-tag"><i class="dot p"></i>Đẩy khung (Push)</span>' +
+      '<span class="dot-tag"><i class="dot b"></i>Cơ sở (Base)</span>' +
+      '<span class="dot-tag"><i class="dot u"></i>Quay lui (Unwind)</span>' +
+    '</div>' +
+  '</div>' +
+  '<div class="summary-box">' +
+    '<div class="summary-row"><span class="summary-k">Độ sâu Call Stack</span><span class="summary-v">' + s.depth + ' khung đệ quy</span></div>' +
+    '<div class="summary-row"><span class="summary-k">Trạng thái gần nhất</span><span class="summary-v">' + esc(s.poppedLabel || (s.phase === 'base' ? 'Đạt điều kiện dừng' : 'Đang tạo khung mới')) + '</span></div>' +
+    '<div class="summary-row"><span class="summary-k">Kết quả trả về main()</span><span class="summary-v">' + esc(s.res) + '</span></div>' +
+  '</div>';
+
+  $('left-col').innerHTML = leftHtml;
+
+  var isCompact = s.frames.length >= 5;
+  var framesHtml = s.frames.map(function(f, idx){
+    var cls = 's-frame';
+    var pill = '';
+    if (f.state === 'main') {
+      cls += ' main-base';
+      pill = '<span class="sf-pill">Đáy Stack</span>';
+    } else if (f.state === 'base') {
+      cls += ' top-base';
+      pill = '<span class="sf-pill base">Cơ sở!</span>';
+    } else if (f.state === 'unwind') {
+      cls += ' top-unwind';
+      pill = '<span class="sf-pill unwind">Quay lui (Đỉnh)</span>';
+    } else if (f.state === 'push' && idx === 0) {
+      cls += ' top-push';
+      pill = '<span class="sf-pill push">Đỉnh Stack</span>';
+    } else {
+      cls += ' paused';
+      pill = '<span class="sf-pill">Tạm dừng</span>';
+    }
+    return '<div class="' + cls + '">' +
+      '<div class="sf-top"><span class="sf-sig">' + esc(f.sig) + ' <span style="font-weight:500;color:var(--muted)">(' + esc(f.param) + ')</span></span>' + pill + '</div>' +
+      '<div class="sf-expr"><span>Biểu thức: <b>' + esc(f.expr) + '</b></span></div>' +
+    '</div>';
+  }).join('');
+
+  var rightHtml = '<div>' +
+    '<div class="panel-head"><p class="panel-title">Tháp Call Stack (LIFO — Vào sau ra trước)</p><span class="badge">' + s.depth + ' tầng</span></div>' +
+    '<div class="stack-tower' + (isCompact ? ' compact' : '') + '">' + framesHtml + '</div>' +
+  '</div>';
+
+  $('right-col').innerHTML = rightHtml;
+}
+
+function renderCallTree(s, k, n){
+  var grid = $('main-grid');
+  grid.className = 'grid tree-grid';
+  var d = s.data, lay = s.lay;
+
+  // Left: code + comparison / duplicate table
+  var leftExtra = '';
+  if (d.sub === 'fib') {
+    var keys = Object.keys(s.freq).sort(function(a,b){ return Number(b) - Number(a); });
+    var pills = keys.map(function(key){
+      var c = s.freq[key];
+      return '<span class="freq-pill' + (c > 1 ? ' dup' : '') + '">f(' + key + '): &times;' + c + '</span>';
+    }).join('');
+    leftExtra = '<div class="cmp-box">' +
+      '<b>So sánh với Vòng lặp:</b>' +
+      'Đệ quy <code>fib(' + d.N + ')</code>: đang gọi <b>' + s.totalCalls + '</b> lần' +
+      ' · Vòng lặp <code>for</code>: chỉ <b>' + d.N + '</b> bước cộng, 0 khung Stack phụ!' +
+      '<div class="freq-strip">' + pills + '</div>' +
+    '</div>';
+  } else if (d.sub === 'pow') {
+    var maxExpect = d.n === 0 ? 1 : (Math.floor(Math.log2(d.n)) + 2);
+    leftExtra = '<div class="cmp-box' + (d.saveHalf ? ' ok' : '') + '">' +
+      '<b>' + (d.saveHalf ? '✓ Chia đôi O(log n) với biến half:' : '⚠ Quên lưu biến half (bùng nổ 2 nhánh):') + '</b>' +
+      (d.saveHalf
+        ? ('Số lời gọi hiện tại: <b>' + s.totalCalls + '</b> (tối đa chỉ ' + maxExpect + ' nút thẳng đứng!)')
+        : ('Số lời gọi hiện tại: <b>' + s.totalCalls + '</b> — tính lặp lại y hệt mỗi tầng!')) +
+    '</div>';
+  } else {
+    leftExtra = '<div class="cmp-box ok">' +
+      '<b>✓ Đệ quy đơn tuyến tính Euclid:</b>' +
+      'Mỗi bước giảm kích thước rất nhanh qua phép chia dư <code>a % b</code> · Đã gọi <b>' + s.totalCalls + '</b> lần.' +
+    '</div>';
+  }
+
+  $('left-col').innerHTML = '<div>' +
+    '<div class="panel-head"><p class="panel-title">Thuật toán C++</p><span class="badge">Bước ' + (k + 1) + '/' + n + '</span></div>' +
+    '<div class="code">' + renderCode(d.lines, s.ln, s.phase) + '</div>' +
+  '</div>' + leftExtra;
+
+  // Right: SVG Tree
+  var svgEdges = d.edges.map(function(e){
+    var vis = !!s.statusMap[e.to];
+    var p1 = d.nodes[e.from], p2 = d.nodes[e.to];
+    var activeEdge = s.curId === e.to || (s.curId === e.from && s.phase === 'unwind');
+    var stroke = !vis ? 'var(--line)' : (activeEdge ? 'var(--accent)' : 'var(--muted)');
+    var sw = activeEdge ? '2.2' : '1.4';
+    var dash = vis ? '' : ' stroke-dasharray="3 3"';
+    var out = '<line x1="' + p1.x.toFixed(1) + '" y1="' + p1.y.toFixed(1) + '" x2="' + p2.x.toFixed(1) + '" y2="' + p2.y.toFixed(1) + '" stroke="' + stroke + '" stroke-width="' + sw + '"' + dash + ' opacity="' + (vis ? '0.9' : '0.35') + '"/>';
+    if (lay.isLinear && e.label && vis) {
+      var mx = (p1.x + p2.x) / 2 + 12;
+      var my = (p1.y + p2.y) / 2 + 4;
+      out += '<text x="' + mx.toFixed(1) + '" y="' + my.toFixed(1) + '" font-size="11" font-family="ui-monospace,monospace" fill="var(--muted)">' + esc(e.label) + '</text>';
+    }
+    return out;
+  }).join('');
+
+  var svgNodes = d.nodes.map(function(nd){
+    var st = s.statusMap[nd.id];
+    var isCur = s.curId === nd.id;
+    var isDup = !!s.dupIds[nd.id] && d.sub !== 'pow';
+    var hasRet = s.retMap[nd.id] !== undefined;
+    var fill = 'var(--node-fill)';
+    var stroke = 'var(--node-stroke)';
+    var textCol = 'var(--muted)';
+    var op = st ? '1' : '0.28';
+
+    if (st === 'active') { fill = 'var(--accent-soft)'; stroke = 'var(--accent)'; textCol = 'var(--text)'; }
+    else if (st === 'wait') { fill = 'var(--card)'; stroke = 'var(--accent)'; textCol = 'var(--text)'; }
+    else if (st === 'base') { fill = 'var(--true-soft)'; stroke = 'var(--true)'; textCol = 'var(--true)'; }
+    else if (st === 'done') { fill = 'var(--true-soft)'; stroke = 'var(--true)'; textCol = 'var(--text)'; }
+
+    if (isDup && (st === 'active' || st === 'wait' || st === 'base')) {
+      stroke = 'var(--false)';
+    }
+    if (!d.saveHalf && d.sub === 'pow' && st && s.dupIds[nd.id]) {
+      stroke = 'var(--warn)';
+    }
+
+    var sw = isCur ? '2.8' : '1.7';
+    var out = '<g opacity="' + op + '">';
+    if (lay.isLinear) {
+      var rw = 104, rh = 28;
+      out += '<rect x="' + (nd.x - rw / 2).toFixed(1) + '" y="' + (nd.y - rh / 2).toFixed(1) + '" width="' + rw + '" height="' + rh + '" rx="7" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+      out += '<text x="' + nd.x.toFixed(1) + '" y="' + (nd.y + 4).toFixed(1) + '" text-anchor="middle" font-size="11.5" font-weight="700" font-family="ui-monospace,monospace" fill="' + textCol + '">' + esc(nd.label) + '</text>';
+      if (hasRet) {
+        out += '<rect x="' + (nd.x + rw / 2 + 8).toFixed(1) + '" y="' + (nd.y - 10).toFixed(1) + '" width="58" height="20" rx="4" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1"/>';
+        out += '<text x="' + (nd.x + rw / 2 + 37).toFixed(1) + '" y="' + (nd.y + 4).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" font-family="ui-monospace,monospace" fill="var(--warn)">&rarr; ' + esc(s.retMap[nd.id]) + '</text>';
+      }
+    } else {
+      var r = lay.r;
+      var txt = lay.compact ? nd.shortLbl : nd.shortLbl;
+      var fs = lay.compact ? 9.5 : 10.5;
+      out += '<circle cx="' + nd.x.toFixed(1) + '" cy="' + nd.y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+      out += '<text x="' + nd.x.toFixed(1) + '" y="' + (nd.y + 3.5).toFixed(1) + '" text-anchor="middle" font-size="' + fs + '" font-weight="700" font-family="ui-monospace,monospace" fill="' + textCol + '">' + esc(txt) + '</text>';
+      if (hasRet && !lay.compact) {
+        out += '<text x="' + (nd.x + r + 3).toFixed(1) + '" y="' + (nd.y + 3).toFixed(1) + '" font-size="9.5" font-weight="700" font-family="ui-monospace,monospace" fill="var(--true)">=' + esc(s.retMap[nd.id]) + '</text>';
+      }
+    }
+    out += '</g>';
+    return out;
+  }).join('');
+
+  var legend = '<div class="tree-legend">' +
+    '<span class="sw"><i style="border-color:var(--accent);background:var(--accent-soft)"></i>Đang chạy</span>' +
+    '<span class="sw"><i style="border-color:var(--true);background:var(--true-soft)"></i>Đã có kết quả</span>' +
+    (d.sub === 'fib' ? '<span class="sw"><i style="border-color:var(--false);background:var(--node-fill)"></i>Viền đỏ: gọi trùng lặp!</span>' : '') +
+  '</div>';
+
+  $('right-col').innerHTML = '<div>' +
+    '<div class="panel-head"><p class="panel-title">Cây lời gọi đệ quy (Call Tree)</p><span class="badge' + (s.totalCalls > 15 ? ' bad' : '') + '">Tổng lời gọi: ' + s.totalCalls + '</span></div>' +
+    '<div class="tree-wrap"><svg class="tree-svg" viewBox="0 0 ' + lay.W + ' ' + lay.H + '">' + svgEdges + svgNodes + '</svg></div>' +
+    legend +
+  '</div>';
+}
+
+function render(s, k, n){
+  $('status').className = 'status' + (s.st ? ' ' + s.st : '');
+  $('status').innerHTML = '<b>Bước ' + (k + 1) + '/' + n + ' · ' + esc(s.t) + '</b>' + esc(s.desc);
+  if (mode === 'call-stack') renderCallStack(s, k, n);
+  else renderCallTree(s, k, n);
+}
+
+/* ==================== UI SETUP ==================== */
+
+function setupUI(){
+  var leadEl = $('lead-text');
+  var tabsEl = $('sub-tabs');
+  var chipsEl = $('param-chips');
+  tabsEl.innerHTML = '';
+  chipsEl.innerHTML = '';
+
+  if (mode === 'call-stack') {
+    leadEl.innerHTML = 'Bấm <b>Bước tiếp</b> (hoặc phím &rarr;) để theo dõi pha đẩy khung (Push) xuống đáy và pha rút ngược LIFO (Unwind) trên Call Stack.';
+    tabsEl.innerHTML =
+      '<button class="tab" data-sub="fact" aria-selected="' + (state.stackSub === 'fact') + '">fact(n) — Giai thừa</button>' +
+      '<button class="tab" data-sub="digits" aria-selected="' + (state.stackSub === 'digits') + '">sum_digits(n) — Tổng chữ số</button>';
+    if (state.stackSub === 'fact') {
+      chipsEl.innerHTML = '<span class="chip-lbl">n =</span>' +
+        [1, 2, 3, 4, 5].map(function(v){
+          return '<button class="chip' + (state.factN === v ? ' active' : '') + '" data-fn="' + v + '">' + v + '</button>';
+        }).join('');
+    } else {
+      chipsEl.innerHTML = '<span class="chip-lbl">n =</span>' +
+        [492, 1058, 73, 0].map(function(v){
+          return '<button class="chip' + (state.digitsN === v ? ' active' : '') + '" data-dn="' + v + '">' + v + '</button>';
+        }).join('');
+    }
+    tabsEl.querySelectorAll('.tab').forEach(function(b){
+      b.onclick = function(){ state.stackSub = b.getAttribute('data-sub'); setupUI(); sim.rebuild(); };
+    });
+    chipsEl.querySelectorAll('.chip[data-fn]').forEach(function(b){
+      b.onclick = function(){ state.factN = Number(b.getAttribute('data-fn')); setupUI(); sim.rebuild(); };
+    });
+    chipsEl.querySelectorAll('.chip[data-dn]').forEach(function(b){
+      b.onclick = function(){ state.digitsN = Number(b.getAttribute('data-dn')); setupUI(); sim.rebuild(); };
+    });
+  } else {
+    leadEl.innerHTML = 'Chọn thuật toán và bấm <b>Bước tiếp</b> để so sánh cây phân nhánh mũ <code>fib</code> với cây chia đôi <code>O(log n)</code> của <code>fast_pow</code> và <code>gcd</code>.';
+    tabsEl.innerHTML =
+      '<button class="tab" data-sub="fib" aria-selected="' + (state.treeSub === 'fib') + '">fib(n) ngây thơ</button>' +
+      '<button class="tab" data-sub="pow" aria-selected="' + (state.treeSub === 'pow') + '">fast_pow(a, n)</button>' +
+      '<button class="tab" data-sub="gcd" aria-selected="' + (state.treeSub === 'gcd') + '">gcd(a, b)</button>';
+    if (state.treeSub === 'fib') {
+      chipsEl.innerHTML = '<span class="chip-lbl">n =</span>' +
+        [3, 4, 5, 6].map(function(v){
+          return '<button class="chip' + (state.fibN === v ? ' active' : '') + '" data-fib="' + v + '">' + v + '</button>';
+        }).join('');
+      chipsEl.querySelectorAll('.chip[data-fib]').forEach(function(b){
+        b.onclick = function(){ state.fibN = Number(b.getAttribute('data-fib')); setupUI(); sim.rebuild(); };
+      });
+    } else if (state.treeSub === 'pow') {
+      chipsEl.innerHTML =
+        '<button class="chip' + (state.powSaveHalf ? ' active' : '') + '" data-half="1">Có biến half</button>' +
+        '<button class="chip' + (!state.powSaveHalf ? ' warn-active' : '') + '" data-half="0">Quên lưu half (gọi 2 lần)</button>' +
+        POW_PRESETS.map(function(p, idx){
+          return '<button class="chip' + (state.powPreset === idx ? ' active' : '') + '" data-pp="' + idx + '">' + p.a + '^' + p.n + '</button>';
+        }).join('');
+      chipsEl.querySelectorAll('.chip[data-half]').forEach(function(b){
+        b.onclick = function(){ state.powSaveHalf = b.getAttribute('data-half') === '1'; setupUI(); sim.rebuild(); };
+      });
+      chipsEl.querySelectorAll('.chip[data-pp]').forEach(function(b){
+        b.onclick = function(){ state.powPreset = Number(b.getAttribute('data-pp')); setupUI(); sim.rebuild(); };
+      });
+    } else {
+      chipsEl.innerHTML = '<span class="chip-lbl">Cặp số:</span>' +
+        GCD_PRESETS.map(function(g, idx){
+          return '<button class="chip' + (state.gcdPreset === idx ? ' active' : '') + '" data-gp="' + idx + '">(' + g.a + ', ' + g.b + ')</button>';
+        }).join('');
+      chipsEl.querySelectorAll('.chip[data-gp]').forEach(function(b){
+        b.onclick = function(){ state.gcdPreset = Number(b.getAttribute('data-gp')); setupUI(); sim.rebuild(); };
+      });
+    }
+    tabsEl.querySelectorAll('.tab').forEach(function(b){
+      b.onclick = function(){ state.treeSub = b.getAttribute('data-sub'); setupUI(); sim.rebuild(); };
+    });
+  }
+}
+
+function buildSteps(){
+  if (mode === 'call-stack') {
+    return state.stackSub === 'digits' ? buildDigitsStack(state.digitsN) : buildFactStack(state.factN);
+  }
+  return buildCallTreeSteps(state.treeSub);
+}
+
+function Sim(o){
+  var S = {snaps: [], i: 0, timer: null};
+  function upd(){
+    o.render(S.snaps[S.i], S.i, S.snaps.length);
+    var run = S.timer !== null;
+    $('next').disabled = S.i >= S.snaps.length - 1 || run;
+    $('prev').disabled = S.i <= 0 || run;
+    $('all').textContent = run ? 'Dừng' : 'Chạy hết';
+    $('all').disabled = !run && S.i >= S.snaps.length - 1;
+  }
+  function stop(){ if (S.timer) { clearInterval(S.timer); S.timer = null; } }
+  var first = true;
+  S.rebuild = function(){
+    stop();
+    S.snaps = o.build();
+    S.i = 0;
+    if (first) {
+      first = false;
+      var b = Number(qparam('buoc'));
+      if (b > 0) S.i = Math.min(S.snaps.length - 1, b - 1);
+    }
+    upd();
+  };
+  $('next').onclick = function(){ if (S.i < S.snaps.length - 1) { S.i++; upd(); } };
+  $('prev').onclick = function(){ if (S.i > 0) { S.i--; upd(); } };
+  $('reset').onclick = function(){ stop(); S.i = 0; upd(); };
+  $('all').onclick = function(){
+    if (S.timer) { stop(); upd(); return; }
+    var delay = mode === 'call-tree' ? 360 : 680;
+    S.timer = setInterval(function(){
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); return; }
+      S.i++; upd();
+      if (S.i >= S.snaps.length - 1) { stop(); upd(); }
+    }, delay);
+    upd();
+  };
+  document.addEventListener('keydown', function(e){
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+  return S;
+}
+
+var sim = Sim({build: buildSteps, render: render});
+setupUI();
+sim.rebuild();
+})();
+</script>
+</body>
+</html>
