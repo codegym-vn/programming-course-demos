@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="830">
+<title>merge như VLOOKUP, từng dòng</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc; --green:#15803d; --green-soft:#e3f4e8;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c;
+  --red:#b91c1c; --red-soft:#fde8e8; --xl:#1f7a4d; --xl-soft:#e6f4ec;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44; --green:#4ade80; --green-soft:#13301f;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74;
+    --red:#fca5a5; --red-soft:#3b1717; --xl:#5fd39a; --xl-soft:#12291d;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.hint{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 12px;margin-bottom:8px;min-height:58px;font-size:14px;overflow-wrap:anywhere}
+.status b.h{display:block;font-size:12.5px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.grid.g1{margin-top:8px;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.grid.g2{margin-top:8px;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr)}
+.stack{min-width:0}
+.stack>*+*{margin-top:8px}
+.scroll{overflow-x:auto}
+.panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.panel-title .mono{text-transform:none;letter-spacing:0;color:var(--text)}
+.code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow-x:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+td,th{border:1px solid var(--line);padding:1px 6px;text-align:left;white-space:nowrap}
+th{background:var(--code-bg);font-weight:600;font-size:11.5px;color:var(--muted)}
+th.key,td.key{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+th.key{color:var(--accent)}
+td.r,th.r{text-align:right}
+td.ix{color:var(--muted);font-size:11.5px}
+tr.cur td{background:var(--cur)}
+tr.cur td.key{box-shadow:inset 0 0 0 2px var(--cur-bar);font-weight:700}
+tr.hit td{background:var(--green-soft)}
+tr.hit td.key{box-shadow:inset 0 0 0 2px var(--green);font-weight:700}
+tr.done td{color:var(--muted)}
+tr.drop td{color:var(--muted);text-decoration:line-through;background:var(--red-soft)}
+tr.new td{animation:flash 1.1s ease-out}
+th.add{background:var(--xl-soft);color:var(--xl)}
+td.nan{color:var(--red);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;background:var(--red-soft)}
+tr.more td{color:var(--muted);font-style:italic;text-align:center}
+.miss{color:var(--red);font-size:12.5px;margin-top:5px;min-height:19px}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 8px;min-height:32px;white-space:pre;overflow-x:auto;font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif;white-space:normal}
+.console .new{background:rgba(251,191,36,.18);border-radius:3px}
+.vars{font-size:12.5px;color:var(--muted);margin-top:5px;min-height:19px}
+.vars b{color:var(--text)}
+@keyframes flash{0%{box-shadow:inset 0 0 0 2px var(--cur-bar)}100%{}}
+.st-in{display:inline;font-weight:700;color:inherit}
+@media (max-width:620px){.grid,.grid.g2{grid-template-columns:1fr}.btns{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="hint">Bấm <b>Bước tiếp</b> (hoặc phím →): mỗi dòng lấy <span class="mono">ma_sp</span> đi tìm trong danh mục, như VLOOKUP.</p>
+<div class="controls">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="btns">
+    <button class="btn ghost" id="back">◀ Lùi lại</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+</div>
+<div class="status" id="status"></div>
+<div class="card"><p class="panel-title">Chương trình</p><div class="code" id="code"></div></div>
+<div class="grid g1">
+  <div class="card"><p class="panel-title">Bảng phải: <span class="mono">sp</span> (san_pham.xlsx)</p><div class="scroll"><table id="sp"></table></div><div class="miss" id="miss"></div></div>
+  <div class="card"><p class="panel-title">Output</p><div class="console" id="out"></div></div>
+</div>
+<div class="grid g2">
+  <div class="card"><p class="panel-title">Bảng trái: <span class="mono">df</span> (8 / 36 dòng)</p><div class="scroll"><table id="df"></table></div></div>
+  <div class="card"><p class="panel-title">Kết quả: <span class="mono">kq</span> (ẩn bớt cột của df)</p><div class="scroll"><table id="kq"></table></div><div class="vars" id="vars"></div></div>
+</div>
+</div>
+<script>
+const B = s => `<b class="st-in">${s}</b>`, M = s => `<span class="mono">${s}</span>`;
+// 8 dòng đầu của doanh_so_q1.xlsx (df) và toàn bộ san_pham.xlsx (sp), đúng dữ liệu của bài
+const DF = [["DH001","SP02",4800000],["DH002","SP06",1980000],["DH003","SP06",880000],["DH004","SP01",2100000],
+            ["DH005","SP04",1850000],["DH006","SP01",2100000],["DH007","SP03",720000],["DH008","SP03",420000]];
+const SP = [["SP01","Giấy A4 (thùng 5 ram)","Văn phòng phẩm"],["SP02","Mực in laser 85A","Văn phòng phẩm"],["SP03","Bút bi (hộp 20 cây)","Văn phòng phẩm"],
+            ["SP04","Ghế xoay văn phòng","Thiết bị"],["SP05","Máy tính cầm tay","Thiết bị"]];
+// Output thật của pandas với đủ 36 dòng
+const OUT = {
+  left: ["(36, 8) (36, 10)","  ma_don ma_sp                 ten_sp\n0  DH001  SP02       Mực in laser 85A\n1  DH002  SP06                    NaN\n2  DH003  SP06                    NaN\n3  DH004  SP01  Giấy A4 (thùng 5 ram)"],
+  inner: ["(36, 8) (27, 10)","  ma_don ma_sp                 ten_sp\n0  DH001  SP02       Mực in laser 85A\n1  DH004  SP01  Giấy A4 (thùng 5 ram)\n2  DH005  SP04     Ghế xoay văn phòng\n3  DH006  SP01  Giấy A4 (thùng 5 ram)"]
+};
+const TOTAL = {left: 36, inner: 27};
+const EX = {
+  left: { label: 'how="left" (giữ mọi dòng)', how: "left",
+    code: ['sp = pd.read_excel("san_pham.xlsx")','kq = df.merge(sp, on="ma_sp", how="left")','print(df.shape, kq.shape)','print(kq[["ma_don", "ma_sp", "ten_sp"]].head(4))'] },
+  inner: { label: 'Bỏ how: mặc định "inner"', how: "inner",
+    code: ['sp = pd.read_excel("san_pham.xlsx")','kq = df.merge(sp, on="ma_sp")','print(df.shape, kq.shape)','print(kq[["ma_don", "ma_sp", "ten_sp"]].head(4))'] }
+};
+function build(){
+  const ex = EX[cur], left = ex.how === "left", S = [], kq = [], drop = [];
+  let out = [];
+  const snap = o => S.push(Object.assign({kq: kq.map(r => [...r]), drop: [...drop], row: -1, hit: -1, newRow: false, out: [...out], newOut: 0, more: false, spOn: true, vars: ""}, o));
+  snap({line: 0, spOn: true, msg: `Đọc danh mục vào ${M("sp")}: 5 sản phẩm SP01 đến SP05. ${B("Không có SP06")}. Bảng ${M("df")} (36 đơn) đã đọc từ trước; ở đây hiện 8 dòng đầu.` +
+    (left ? "" : ` Dòng 2 không ghi ${M("how")}, nên pandas dùng mặc định ${M('how="inner"')}.`)});
+  DF.forEach((r, i) => {
+    const j = SP.findIndex(s => s[0] === r[1]);
+    snap({line: 1, row: i, hit: j, vars: `Đang xét dòng ${i} của <b>df</b>`,
+      msg: `Dòng ${i} của ${M("df")} (${r[0]}) có ${M(`ma_sp = "${r[1]}"`)}. Tìm "${r[1]}" trong cột ${M("ma_sp")} của ${M("sp")}: ` +
+        (j >= 0 ? `${B("thấy")} ở dòng ${j} (tô xanh).` : `${B("không thấy")}, giống VLOOKUP gặp ${M("#N/A")}.`)});
+    if (j >= 0) {
+      kq.push([r[0], r[1], r[2], SP[j][1], SP[j][2]]);
+      snap({line: 1, row: i, hit: j, newRow: true, msg: `Ghép: dòng mới của ${M("kq")} = các cột của ${M("df")} + ${M("ten_sp")} "${SP[j][1]}", ${M("nhom_hang")} "${SP[j][2]}" lấy từ ${M("sp")}.`});
+    } else if (left) {
+      kq.push([r[0], r[1], r[2], null, null]);
+      snap({line: 1, row: i, newRow: true, msg: `${M('how="left"')} giữ ${B("mọi")} dòng bên trái: dòng ${r[0]} vẫn vào ${M("kq")}, nhưng ${M("ten_sp")} và ${M("nhom_hang")} là ${M("NaN")} (ô trống).`});
+    } else {
+      drop.push(i);
+      snap({line: 1, row: i, msg: `${M('how="inner"')} chỉ giữ dòng khớp ở ${B("cả hai")} bảng: dòng ${r[0]} ${B("bị bỏ")}, không có lỗi hay cảnh báo nào.`});
+    }
+  });
+  const conLai = TOTAL[ex.how] - kq.length;
+  snap({line: 1, more: true, msg: `28 dòng còn lại của ${M("df")} được ghép y như vậy. ` +
+    (left ? `Cuối cùng ${M("kq")} có ${B("36")} dòng, đúng bằng ${M("df")}; 9 dòng mã SP06 mang ${M("NaN")}.` : `Cả 9 dòng SP06 đều bị bỏ, ${M("kq")} chỉ còn ${B("27")} dòng.`)});
+  out = [OUT[ex.how][0]];
+  snap({line: 2, more: true, newOut: 1, msg: `${M("shape")} cho (số dòng, số cột). ` +
+    (left ? `Số dòng giữ nguyên 36; số cột từ 8 lên 10 vì thêm ${M("ten_sp")}, ${M("nhom_hang")} (cột ${M("ma_sp")} chung không lặp lại).` : `36 dòng vào, 27 dòng ra: ${B("mất 9 đơn")}. So số dòng trước và sau là cách phát hiện nhanh nhất.`)});
+  out = [...OUT[ex.how]];
+  snap({line: 3, more: true, newOut: 1, msg: left
+    ? `In 4 dòng đầu: DH002, DH003 (mã SP06) hiện ${M("NaN")} ở cột ${M("ten_sp")}. Khớp output trong bài.`
+    : `4 dòng đầu giờ là DH001, DH004, DH005, DH006: DH002, DH003 đã biến mất, và chỉ số dòng được đánh lại từ 0.`});
+  return S;
+}
+const q = new URLSearchParams(location.search);
+let cur = EX[q.get("vd")] ? q.get("vd") : "left";
+let steps = [], k = 0;
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function hl(s){
+  return s.replace(/("[^"]*")|([A-Za-z_]\w*)|(\d+)|([^"\w]+)/g, (m, str, w, num, o) =>
+    str ? `<span class="str">${esc(str)}</span>`
+    : w ? (/^(print)$/.test(w) ? `<span class="kw">${w}</span>` : w)
+    : num ? `<span class="num">${num}</span>` : esc(o));
+}
+function render(){
+  const ex = EX[cur], s = steps[k], left = ex.how === "left";
+  document.getElementById("status").innerHTML = `<b class="h">Bước ${k+1}/${steps.length}</b>${s.msg}`;
+  document.getElementById("code").innerHTML = ex.code.map((c,i)=>`<div class="ln${i===s.line?" cur":""}"><span class="no">${i+1}</span><span>${hl(c)}</span></div>`).join("");
+  document.getElementById("sp").innerHTML = `<tr><th></th><th class="key">ma_sp</th><th>ten_sp</th><th>nhom_hang</th></tr>` +
+    SP.map((r,j)=>`<tr class="${j===s.hit?"hit":""}"><td class="ix">${j}</td><td class="key">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+  const curMa = s.row >= 0 ? DF[s.row][1] : null;
+  document.getElementById("miss").innerHTML = curMa && s.hit < 0 ? `Không có dòng nào mang mã "${curMa}" trong danh mục.` : "&nbsp;";
+  document.getElementById("df").innerHTML = `<tr><th></th><th>ma_don</th><th class="key">ma_sp</th><th class="r">thanh_tien</th></tr>` +
+    DF.map((r,i)=>{ const c = s.drop.includes(i) ? "drop" : i===s.row ? "cur" : (i<s.row || s.more ? "done" : "");
+      return `<tr class="${c}"><td class="ix">${i}</td><td>${r[0]}</td><td class="key">${r[1]}</td><td class="r mono">${r[2]}</td></tr>`; }).join("") +
+    (s.more ? `<tr class="more"><td colspan="4">… 28 dòng nữa</td></tr>` : "");
+  const cell = v => v === null ? `<td class="nan">NaN</td>` : `<td>${v}</td>`;
+  document.getElementById("kq").innerHTML = `<tr><th></th><th>ma_don</th><th class="key">ma_sp</th><th class="add">ten_sp</th><th class="add">nhom_hang</th></tr>` +
+    (s.kq.length ? s.kq.map((r,i)=>`<tr class="${s.newRow && i===s.kq.length-1?"new cur":""}"><td class="ix">${i}</td><td>${r[0]}</td><td class="key">${r[1]}</td>${cell(r[3])}${cell(r[4])}</tr>`).join("")
+      : `<tr><td colspan="5" style="color:var(--muted)">(chưa có dòng nào)</td></tr>`) +
+    (s.more ? `<tr class="more"><td colspan="5">… ${TOTAL[cur] - s.kq.length} dòng nữa, tổng ${TOTAL[cur]} dòng</td></tr>` : "");
+  const nNan = s.kq.filter(r => r[3] === null).length;
+  document.getElementById("vars").innerHTML = s.more
+    ? (left ? `<b>36</b> dòng vào, <b>36</b> dòng ra; 9 dòng có NaN.` : `<b>36</b> dòng vào, <b>27</b> dòng ra; 9 dòng SP06 bị rơi.`)
+    : `Đã xét ${s.row < 0 ? 0 : s.row + 1}/8 dòng: kq có <b>${s.kq.length}</b> dòng` + (left ? (nNan ? `, ${nNan} dòng NaN.` : ".") : (s.drop.length ? `, ${s.drop.length} dòng bị bỏ.` : "."));
+  const first = s.out.length - s.newOut;
+  document.getElementById("out").innerHTML = s.out.length
+    ? s.out.map((x,i)=>`<span class="${i>=first?"new":""}">${esc(x)}</span>`).join("\n")
+    : '<span class="ph">Kết quả print hiện ở đây</span>';
+  document.getElementById("back").disabled = k===0;
+  document.getElementById("next").disabled = document.getElementById("all").disabled = k===steps.length-1;
+}
+function select(name){
+  cur = name; steps = build(); k = 0;
+  document.getElementById("tabs").innerHTML = Object.keys(EX).map(x=>`<button class="tab" role="tab" aria-selected="${x===cur}" data-x="${x}">${EX[x].label}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>select(b.dataset.x));
+  const b = parseInt(q.get("buoc")); if (b>0 && b<=steps.length && name===(EX[q.get("vd")]?q.get("vd"):"left")) k = b-1;
+  render();
+}
+document.getElementById("next").onclick=()=>{if(k<steps.length-1){k++;render();}};
+document.getElementById("back").onclick=()=>{if(k>0){k--;render();}};
+document.getElementById("all").onclick=()=>{k=steps.length-1;render();};
+document.getElementById("reset").onclick=()=>{k=0;render();};
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")document.getElementById("next").click();if(e.key==="ArrowLeft")document.getElementById("back").click();});
+select(cur);
+</script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="810">
+<title>Bảng hai chiều khu vực × tháng, từng bước</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+  --accent:#2563eb; --accent-soft:#e7eefc; --green:#15803d; --green-soft:#e3f4e8;
+  --code-bg:#f3f5f8; --cur:#fff1b8; --cur-bar:#e0a800;
+  --con-bg:#111827; --con-text:#e5e7eb;
+  --kw:#7c3aed; --str:#047857; --num:#c2410c; --cm:#6b7280; --xl:#1f7a4d; --xl-soft:#e6f4ec;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+    --accent:#6ea0ff; --accent-soft:#1e2a44; --green:#4ade80; --green-soft:#13301f;
+    --code-bg:#11151c; --cur:#3d3412; --cur-bar:#e0b400;
+    --con-bg:#05070b; --con-text:#e5e7eb;
+    --kw:#c4a1ff; --str:#6ee7b7; --num:#fdba74; --cm:#8b93a1; --xl:#5fd39a; --xl-soft:#12291d;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+.hint{color:var(--muted);margin:0 0 8px;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px 10px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 12px;margin-bottom:8px;min-height:58px;font-size:14px;overflow-wrap:anywhere}
+.status b.h{display:block;font-size:12.5px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.stack{min-width:0}
+.g2{margin-top:8px;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
+.g2.one{grid-template-columns:minmax(0,1fr)}
+.scroll{overflow-x:auto}
+.panel-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.code{background:var(--code-bg);border-radius:8px;padding:5px 0;overflow-x:auto;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ln{display:flex;white-space:pre;padding:0 10px 0 0;border-left:3px solid transparent}
+.ln .no{width:22px;flex:none;text-align:right;padding-right:8px;color:var(--muted);opacity:.7;user-select:none}
+.ln.cur{background:var(--cur);border-left-color:var(--cur-bar)}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{border:1px solid var(--line);padding:1px 7px;text-align:left;white-space:nowrap}
+th{background:var(--code-bg);font-weight:600;font-size:12px;color:var(--muted)}
+td.r,th.r{text-align:right}
+tr.cur td{background:var(--cur)}
+tr.done td{color:var(--muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.pivot th{background:var(--xl-soft);color:var(--xl)}
+.pivot td{font-variant-numeric:tabular-nums}
+.pivot td,.pivot th{padding:1px 5px;font-size:12.5px}
+#data td,#data th{font-size:12px;line-height:1.4;padding:1px 6px}
+.pivot td.hit{background:var(--cur);font-weight:700;animation:flash 1.1s ease-out}
+.pivot td.rd{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.pivot td.tot,.pivot th.tot{font-weight:700}
+.pivot td.tot{background:var(--xl-soft)}
+.pivot td.empty{color:var(--muted)}
+.dict{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);border-radius:8px;padding:5px 10px;min-height:34px}
+.dict .kvl{padding-left:4ch;text-indent:-3ch}
+.dict .p{white-space:nowrap}
+.dict .fl{background:var(--cur);border-radius:3px;box-shadow:0 0 0 1px var(--cur-bar)}
+.dict .ph{color:var(--muted);font-family:system-ui,sans-serif}
+.vars{font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);margin-top:6px;min-height:20px;overflow-wrap:anywhere}
+.vars span{color:var(--text)}
+.vars i{font-style:normal;color:var(--muted);opacity:.65}
+.console{background:var(--con-bg);color:var(--con-text);border-radius:8px;padding:6px 10px;min-height:32px;white-space:pre;overflow-x:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:8px}
+.console .ph{color:#7b8494;font-family:system-ui,sans-serif}
+.console .new{background:rgba(251,191,36,.18);border-radius:3px}
+@keyframes flash{0%{box-shadow:inset 0 0 0 2px var(--cur-bar)}100%{}}
+.stack>*+*{margin-top:8px}
+.st-in{display:inline;font-weight:700;color:inherit}
+@media (max-width:620px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="hint">Bấm <b>Bước tiếp</b> (hoặc phím →): mỗi đơn hàng được cộng vào đúng ô (khu vực, tháng).</p>
+<div class="controls">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="btns">
+    <button class="btn ghost" id="back">◀ Lùi lại</button>
+    <button class="btn" id="next">Bước tiếp ▶</button>
+    <button class="btn ghost" id="all">Chạy hết</button>
+    <button class="btn ghost" id="reset">Làm lại</button>
+  </div>
+</div>
+<div class="status" id="status"></div>
+<div class="grid">
+  <div class="stack" id="c1"><div class="card" id="codecard"><p class="panel-title">Chương trình (main.py)</p><div class="code" id="code"></div></div></div>
+  <div class="stack" id="c2"><div class="card" id="datacard"><p class="panel-title">don_hang.csv (ẩn cột ma_don, nhan_vien)</p><table id="data"></table></div></div>
+</div>
+<div class="grid g2" id="row2">
+  <div class="stack" id="c3"><div class="card" id="pcard"><p class="panel-title">Lưới hai chiều: khu vực × tháng</p><div class="scroll"><table class="pivot" id="pivot"></table></div><div class="vars" id="vars"></div></div></div>
+  <div class="stack" id="c4"><div class="card" id="dictcard"><p class="panel-title">Từ điển lồng bang[kv][th]</p><div class="dict" id="dict"></div>
+      <div class="console" id="out"></div></div></div>
+</div>
+</div>
+<script>
+const B = s => `<b class="st-in">${s}</b>`, M = s => `<span class="mono">${s}</span>`;
+// Đúng dữ liệu don_hang.csv của bài (cột: ngay, ma_don, nhan_vien, khu_vuc, so_tien)
+const ROWS = [
+  ["02/09/2025","DH001","Nguyễn Văn An","Hà Nội",1250000],
+  ["05/09/2025","DH002","Trần Thị Bình","Đà Nẵng",800000],
+  ["12/09/2025","DH003","Lê Văn Cường","TP.HCM",2100000],
+  ["20/09/2025","DH004","Nguyễn Văn An","Hà Nội",650000],
+  ["03/10/2025","DH005","Phạm Thị Dung","TP.HCM",1800000],
+  ["08/10/2025","DH006","Trần Thị Bình","Đà Nẵng",1400000],
+  ["15/10/2025","DH007","Nguyễn Văn An","Hà Nội",2300000],
+  ["27/10/2025","DH008","Lê Văn Cường","TP.HCM",950000],
+  ["01/11/2025","DH009","Hoàng Văn Em","Hà Nội",1700000],
+  ["06/11/2025","DH010","Trần Thị Bình","Đà Nẵng",500000],
+  ["10/11/2025","DH011","Phạm Thị Dung","TP.HCM",2600000],
+  ["14/11/2025","DH012","Nguyễn Văn An","Hà Nội",900000],
+  ["18/11/2025","DH013","Lê Văn Cường","TP.HCM",1200000],
+  ["25/11/2025","DH014","Hoàng Văn Em","Hà Nội",3100000]
+];
+const tien = so => String(so).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const ljust = (s, w) => s.length >= w ? s : s + " ".repeat(w - s.length);
+const rjust = (s, w) => s.length >= w ? s : " ".repeat(w - s.length) + s;
+const cloneBang = b => { const o = {}; for (const k in b) o[k] = {...b[k]}; return o; };
+
+// Gom dữ liệu đầy đủ (dùng chung cho tab in bảng)
+function gom(){
+  const bang = {}, set = new Set();
+  ROWS.forEach(r => { const kv = r[3], n = r[0], th = n.slice(6,10) + "-" + n.slice(3,5);
+    set.add(th); if (!(kv in bang)) bang[kv] = {}; bang[kv][th] = (bang[kv][th] || 0) + r[4]; });
+  return {bang, cot: [...set].sort()};
+}
+
+const EX = {
+  gom: { label: "Gom từng đơn vào bang", dict: "bang",
+    code: ['bang = {}','cac_thang = set()','with open("don_hang.csv",','          encoding="utf-8") as f:','    for d in csv.DictReader(f):','        kv = d["khu_vuc"]','        n = d["ngay"]','        th = n[6:10] + "-" + n[3:5]','        cac_thang.add(th)','        if kv not in bang:','            bang[kv] = {}','        hang = bang[kv]','        so = int(d["so_tien"])','        hang[th] = hang.get(th, 0) + so','','cot = sorted(cac_thang)'],
+    build(){
+      const S = [], bang = {}, set = [];
+      const snap = o => S.push(Object.assign({bang: cloneBang(bang), cols: [...set].sort(), set: [...set], row: -1, hit: null, rd: null, vars: "", out: [], tot: false, sorted: false}, o));
+      snap({lines: [0,1,2,3], msg: `Tạo từ điển rỗng ${M("bang = {}")} và tập hợp rỗng ${M("cac_thang = set()")}, rồi mở tệp CSV. Lưới bên phải chưa có hàng, chưa có cột.`});
+      ROWS.forEach((r, i) => {
+        const kv = r[3], n = r[0], th = n.slice(6,10) + "-" + n.slice(3,5), so = r[4];
+        const moiTh = !set.includes(th); if (moiTh) set.push(th);
+        snap({lines: [4,5,6,7,8], row: i, vars: `kv=<span>'${kv}'</span>  n=<span>'${n}'</span>  th=<span>'${th}'</span>`,
+          msg: `Đơn ${i+1} (${r[1]}): ${M(`kv = '${kv}'`)}. Từ ngày "${n}", ${M("n[6:10]")} lấy "${n.slice(6,10)}", ${M("n[3:5]")} lấy "${n.slice(3,5)}", nên ${M(`th = '${th}'`)}. ` +
+            (moiTh ? `Tháng này lần đầu xuất hiện: ${M("cac_thang")} có thêm phần tử, lưới có thêm cột.` : `${M("cac_thang")} đã có '${th}', set không thêm trùng.`)});
+        const moiKv = !(kv in bang); if (moiKv) bang[kv] = {};
+        const cu = bang[kv][th] || 0; bang[kv][th] = cu + so;
+        snap({lines: moiKv ? [9,10,11,12,13] : [9,11,12,13], row: i, hit: [kv, th], flash: [kv, th],
+          vars: `kv=<span>'${kv}'</span>  th=<span>'${th}'</span>  so=<span>${so}</span>`,
+          msg: (moiKv ? `'${kv}' chưa có trong ${M("bang")}: tạo hàng mới ${M(`bang['${kv}'] = {}`)}. ` : `'${kv}' đã có hàng trong ${M("bang")}. `) +
+            `${M("hang")} trỏ tới hàng đó. ` + (cu === 0 ? `Ô (${kv}, ${th}) chưa có số nên ${M(`get('${th}', 0)`)} trả 0: ` : `Ô (${kv}, ${th}) đang có ${tien(cu)}: `) +
+            `${M(`hang['${th}'] = ${cu} + ${so}`)} = ${B(tien(cu + so))}.`});
+      });
+      snap({lines: [15], sorted: true, vars: `cot=<span>[${[...set].sort().map(x => `'${x}'`).join(", ")}]</span>`,
+        msg: `Hết 14 đơn. ${M("sorted(cac_thang)")} biến set thành danh sách tháng xếp tăng dần: đó là thứ tự các cột. Mỗi ô của lưới là một ${M("bang[kv][th]")}.`});
+      snap({lines: [], sorted: true, tot: true, vars: `cot=<span>[${[...set].sort().map(x => `'${x}'`).join(", ")}]</span>`,
+        msg: `So với PivotTable trong Excel: Excel còn tự thêm ${B("hàng Tổng")} (cộng theo cột) và ${B("cột Tổng")} (cộng theo hàng). Chương trình trên chưa tính hai phần này; các ô tô xanh chỉ để đối chiếu.`});
+      return S;
+    } },
+  in: { label: "In bảng thẳng cột (f-string)", dict: "bang",
+    code: ['cot = sorted(cac_thang)','dau = f"{\'Khu vực\':<8}"','for th in cot:','    dau += f"{th:>10}"','print(dau)','for kv in bang:','    dong = f"{kv:<8}"','    for th in cot:','        so = bang[kv].get(th, 0)','        dong += f"{tien(so):>10}"','    print(dong)'],
+    build(){
+      const {bang, cot} = gom(), S = [], out = [];
+      const show = s => `'${s.replace(/ /g, "<i>·</i>")}'`;
+      const snap = o => S.push(Object.assign({bang, cols: cot, set: cot, row: -1, hit: null, rd: null, vars: "", out: [...out], tot: false, sorted: true, flash: null}, o));
+      snap({lines: [0], vars: `cot=<span>[${cot.map(x => `'${x}'`).join(", ")}]</span>`,
+        msg: `Bắt đầu từ ${M("bang")} đã gom đủ 14 đơn (tab bên trái). ${M("cot")} là 3 tháng đã xếp. Dấu ${M("·")} trong ô biến là một dấu cách, để bạn đếm được.`});
+      let dau = ljust("Khu vực", 8);
+      snap({lines: [1], vars: `dau=<span>${show(dau)}</span>`,
+        msg: `${M(`f"{'Khu vực':<8}"`)}: chữ "Khu vực" có 7 ký tự, căn ${B("trái")} trong 8 ô nên thêm 1 dấu cách bên phải.`});
+      cot.forEach(th => { dau += rjust(th, 10);
+        snap({lines: [2,3], vars: `th=<span>'${th}'</span>  dau=<span>${show(dau)}</span>`,
+          msg: `${M(`f"{th:>10}"`)}: "${th}" có 7 ký tự, căn ${B("phải")} trong 10 ô nên thêm 3 dấu cách bên trái, rồi nối vào ${M("dau")}.`}); });
+      out.push(dau);
+      snap({lines: [4], vars: `dau=<span>${show(dau)}</span>`, newOut: 1, msg: `In dòng tiêu đề, dài ${dau.length} ký tự (8 + 3 × 10).`});
+      Object.keys(bang).forEach(kv => {
+        let dong = ljust(kv, 8);
+        snap({lines: [5,6], vars: `kv=<span>'${kv}'</span>  dong=<span>${show(dong)}</span>`,
+          msg: `Hàng '${kv}' (${kv.length} ký tự): ${M(`f"{kv:<8}"`)} thêm ${8 - kv.length} dấu cách bên phải cho đủ 8, khớp với cột "Khu vực" ở trên.`});
+        cot.forEach(th => { const so = bang[kv][th] !== undefined ? bang[kv][th] : 0, s = tien(so); dong += rjust(s, 10);
+          snap({lines: [7,8,9], rd: [kv, th], vars: `th=<span>'${th}'</span>  so=<span>${so}</span>  dong=<span>${show(dong)}</span>`,
+            msg: `Đọc ô (${kv}, ${th}): ${M(`so = ${so}`)}. ${M("tien(so)")} = "${s}" (${s.length} ký tự), căn phải trong 10 ô nên thêm ${10 - s.length} dấu cách bên trái.`}); });
+        out.push(dong);
+        snap({lines: [10], vars: `dong=<span>${show(dong)}</span>`, newOut: 1,
+          msg: `In hàng '${kv}'. Hàng đơn vị của mọi số đều rơi vào cùng một cột, nên các số thẳng hàng như trong Excel.`});
+      });
+      S[S.length-1].msg += ` Kết quả đúng như output của bài.`;
+      return S;
+    } }
+};
+const q = new URLSearchParams(location.search);
+let cur = EX[q.get("vd")] ? q.get("vd") : "gom";
+let steps = [], k = 0;
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function hl(s){
+  return s.replace(/(f?"[^"]*"|'[^']*')|([A-Za-z_]\w*)|(\d+)|([^"'\w]+)/g, (m, str, w, num, o) =>
+    str ? `<span class="str">${esc(str)}</span>`
+    : w ? (/^(for|in|if|not|with|as|open|print|int|set|sorted)$/.test(w) ? `<span class="kw">${w}</span>` : w)
+    : num ? `<span class="num">${num}</span>` : esc(o));
+}
+function pyBang(b, fl){
+  const kvs = Object.keys(b);
+  if (!kvs.length) return '<span class="ph">{ } (rỗng)</span>';
+  return "{" + kvs.map((kv, j) => {
+    const inner = Object.keys(b[kv]).map((th, i, a) => { const t = `'${th}': ${b[kv][th]}${i < a.length-1 ? "," : ""}`;
+      return `<span class="p${fl && fl[0] === kv && fl[1] === th ? " fl" : ""}">${t}</span>`; }).join(" ");
+    return `<div class="kvl">'${esc(kv)}': {${inner}}${j < kvs.length-1 ? "," : ""}</div>`;
+  }).join("") + "}";
+}
+function render(){
+  const ex = EX[cur], s = steps[k];
+  document.getElementById("status").innerHTML = `<b class="h">Bước ${k+1}/${steps.length}</b>${s.msg}`;
+  document.getElementById("code").innerHTML = ex.code.map((c,i)=>`<div class="ln${s.lines.includes(i)?" cur":""}"><span class="no">${i+1}</span><span>${hl(c)||" "}</span></div>`).join("");
+  document.getElementById("data").innerHTML = `<tr><th>#</th><th>ngay</th><th>khu_vuc</th><th class="r">so_tien</th></tr>` +
+    ROWS.map((r,i)=>`<tr class="${i===s.row?"cur":((s.row>i||(s.row===-1&&k>0))?"done":"")}"><td>${i+1}</td><td class="mono">${r[0]}</td><td>${r[3]}</td><td class="r mono">${r[4]}</td></tr>`).join("");
+  const kvs = Object.keys(s.bang), cols = s.cols;
+  let h = `<tr><th>Khu vực</th>${cols.map(c=>`<th class="r mono">${c}</th>`).join("")}${s.tot?'<th class="r tot">Tổng</th>':""}</tr>`;
+  if (!kvs.length) h += `<tr><td style="color:var(--muted)">(chưa có hàng)</td>${cols.map(()=>"<td></td>").join("")}</tr>`;
+  kvs.forEach(kv => {
+    let rt = 0;
+    h += `<tr><td>${kv}</td>` + cols.map(c => { const v = s.bang[kv][c]; rt += v || 0;
+      const cls = ["r"]; if (s.hit && s.hit[0]===kv && s.hit[1]===c) cls.push("hit"); if (s.rd && s.rd[0]===kv && s.rd[1]===c) cls.push("rd"); if (v===undefined) cls.push("empty");
+      return `<td class="${cls.join(" ")}">${v===undefined?(cur==="in"?"0":"·"):tien(v)}</td>`; }).join("") +
+      (s.tot ? `<td class="r tot">${tien(rt)}</td>` : "") + `</tr>`;
+  });
+  if (s.tot) { let g = 0;
+    h += `<tr><td class="tot">Tổng</td>` + cols.map(c => { const t = kvs.reduce((a,kv)=>a+(s.bang[kv][c]||0),0); g += t; return `<td class="r tot">${tien(t)}</td>`; }).join("") + `<td class="r tot">${tien(g)}</td></tr>`; }
+  document.getElementById("pivot").innerHTML = h;
+  const setTxt = s.set.length ? `{${s.set.map(x=>`'${x}'`).join(", ")}}` : "set()";
+  document.getElementById("dict").innerHTML = pyBang(s.bang, s.flash);
+  document.getElementById("vars").innerHTML = (cur==="gom" ? `cac_thang=<span>${setTxt}</span><br>` : "") + (s.vars || "&nbsp;");
+  const first = s.out.length - (s.newOut || 0);
+  document.getElementById("out").style.display = cur==="gom" ? "none" : "";
+  document.getElementById("out").innerHTML = s.out.length
+    ? s.out.map((x,i)=>`<span class="${i>=first?"new":""}">${esc(x)}</span>`).join("\n")
+    : '<span class="ph">Kết quả print hiện ở đây</span>';
+  document.getElementById("back").disabled = k===0;
+  document.getElementById("next").disabled = document.getElementById("all").disabled = k===steps.length-1;
+}
+function place(){
+  const $ = id => document.getElementById(id), g = cur === "gom";
+  $("datacard").style.display = g ? "" : "none";
+  $("c2").appendChild(g ? $("datacard") : $("dictcard"));
+  if (!g) $("c2").insertBefore($("dictcard"), $("datacard"));
+  $("c4").style.display = g ? "" : "none";
+  if (g) $("c4").appendChild($("dictcard"));
+  $("row2").classList.toggle("one", !g);
+}
+function select(name){
+  cur = name; place(); steps = EX[cur].build(); k = 0;
+  document.getElementById("tabs").innerHTML = Object.keys(EX).map(x=>`<button class="tab" role="tab" aria-selected="${x===cur}" data-x="${x}">${EX[x].label}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>select(b.dataset.x));
+  const b = parseInt(q.get("buoc")); if (b>0 && b<=steps.length && name===(EX[q.get("vd")]?q.get("vd"):"gom")) k = b-1;
+  render();
+}
+document.getElementById("next").onclick=()=>{if(k<steps.length-1){k++;render();}};
+document.getElementById("back").onclick=()=>{if(k>0){k--;render();}};
+document.getElementById("all").onclick=()=>{k=steps.length-1;render();};
+document.getElementById("reset").onclick=()=>{k=0;render();};
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")document.getElementById("next").click();if(e.key==="ArrowLeft")document.getElementById("back").click();});
+select(cur);
+</script>
+</body>
+</html>
