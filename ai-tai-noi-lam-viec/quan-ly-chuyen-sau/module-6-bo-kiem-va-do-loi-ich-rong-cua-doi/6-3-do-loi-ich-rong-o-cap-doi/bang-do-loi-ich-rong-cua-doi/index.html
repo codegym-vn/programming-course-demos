@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="820">
+<title>Bảng đo lợi ích ròng của đội</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:10px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .grp{border:1px solid var(--line);border-radius:9px;padding:6px 8px;margin-bottom:8px}
+  .grp .nm{font-weight:700;font-size:14px;margin-bottom:4px}
+  .fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px 6px}
+  @media (max-width:460px){.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .fields label{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);min-width:0;line-height:1.25}
+  input[type=number]{font:inherit;font-size:15px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 6px;min-height:36px;width:100%;min-width:0;text-align:right;margin-top:2px}
+  .sw{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer;margin:2px 0 6px}
+  .sw input{width:20px;height:20px;accent-color:var(--accent)}
+  .common{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px 6px}
+  @media (max-width:460px){.common{grid-template-columns:1fr 1fr}}
+  .common label{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);min-width:0;line-height:1.25}
+  .common.dis{opacity:.5}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  td.r,th.r{text-align:right;white-space:nowrap}
+  @media (max-width:460px){td.r,th.r{white-space:normal}}
+  tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+  .neg{color:var(--bad);font-weight:700}
+  .big{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:14px;margin-top:8px}
+  .big b{font-variant-numeric:tabular-nums;text-align:right}
+  .big .hl{font-size:16px}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .remind{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bảng đo theo <b>nhóm việc</b> trong một đợt 4 tuần, không có cột tên người. Số mặc định là ví dụ giả lập của tổ Kho và giao nhận; thay bằng số của đội bạn để xem lợi ích gộp, ròng, khoảng thấp-cao và chi phí cho mỗi việc làm đúng.</p>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <p class="panel-title">Nhóm việc (phút cho một lần)</p>
+        <div id="groups"></div>
+      </div>
+      <div class="card">
+        <label class="sw"><input type="checkbox" id="common" checked> Trừ công chung của đợt</label>
+        <div class="common" id="commonBox">
+          <label>Dựng bảng kiểm, mẫu câu lệnh (phút)<input type="number" id="c_build" min="0" max="5000" step="10"></label>
+          <label>Buổi học cho đội (phút công)<input type="number" id="c_learn" min="0" max="5000" step="10"></label>
+          <label>Xử lý mỗi lỗi lọt (phút)<input type="number" id="c_leak" min="0" max="600" step="5"></label>
+        </div>
+        <div class="btns" style="margin-top:8px"><button class="btn" id="reset">Về số ví dụ</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Kết quả của đội trong đợt (phút công)</p>
+      <div id="tbl"></div>
+      <div class="big" id="big"></div>
+      <div id="msgs" aria-live="polite"></div>
+      <p class="remind"><b>Ròng mỗi lần</b> = phút cũ − phút làm có AI − phút kiểm và sửa. <b>Khoảng</b>: tính lại với phút kiểm cao nhất (thấp) và thấp nhất (cao). <b>Chi phí cho mỗi việc đúng</b> = (số lần × (làm có AI + kiểm) + lỗi lọt × phút xử lý) ÷ (số lần − lỗi lọt). Phí tài khoản ghi riêng bằng tiền.</p>
+    </div>
+  </div>
+</div>
+<script>
+// Số ví dụ giả lập (tổ Kho và giao nhận, khác bảng đo trong bài). Đã kiểm bằng Python:
+// gộp 900 + 960 + 360 = 2.220; ròng 540 + 320 + 180 = 1.040; công chung 320 + 180 + 3 × 45 = 635; ròng của đội 405.
+// Khoảng ròng 260 đến 1.600, sau công chung −375 đến 965. Chi phí mỗi việc đúng: 810/178 ≈ 4,55 (mốc 7);
+// 1.005/319 ≈ 3,15 (mốc 4); 300/4 = 75 (mốc 120). Gộp gấp khoảng 5 lần ròng của đội.
+const DEF = {
+  g:[
+    {nm:"Email báo đại lý lịch giao hàng", n:180, old:7, ai:2, chk:2, lo:1, hi:4, leak:2},
+    {nm:"Phiếu xuất kho từ đơn đại lý", n:320, old:4, ai:1, chk:2, lo:1, hi:3, leak:1},
+    {nm:"Báo cáo tồn kho tuần", n:4, old:120, ai:30, chk:45, lo:30, hi:70, leak:0}
+  ],
+  c:{build:320, learn:180, leak:45}
+};
+const F = [["n","Số lần (4 tuần)"],["old","Phút cũ (mốc)"],["ai","Phút làm có AI"],["chk","Phút kiểm, sửa (thường)"],["lo","Kiểm thấp nhất"],["hi","Kiểm cao nhất"],["leak","Lỗi lọt tới khách"]];
+const $ = id => document.getElementById(id);
+let S = JSON.parse(JSON.stringify(DEF));
+const fmt = x => { const r = Math.round(x*100)/100; return (r<0?"−":"") + Math.abs(r).toLocaleString("vi-VN"); };
+const cls = x => x<0 ? ' class="r neg"' : ' class="r"';
+function buildForm(){
+  $("groups").innerHTML = S.g.map((g,i)=>'<div class="grp"><div class="nm">'+g.nm+'</div><div class="fields">'+
+    F.map(([k,l])=>'<label>'+l+'<input type="number" min="0" max="'+(k==="n"?100000:1000)+'" step="1" data-i="'+i+'" data-k="'+k+'" value="'+g[k]+'"></label>').join("")+
+    '</div></div>').join("");
+  $("groups").querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{
+    const x = parseFloat(String(el.value).replace(",","."));
+    if(!isNaN(x) && x>=0){ S.g[+el.dataset.i][el.dataset.k] = x; render(); }
+  }));
+  ["build","learn","leak"].forEach(k=>{ $("c_"+k).value = S.c[k]; });
+}
+["build","learn","leak"].forEach(k=>$("c_"+k).addEventListener("input",e=>{
+  const x = parseFloat(String(e.target.value).replace(",","."));
+  if(!isNaN(x) && x>=0){ S.c[k] = x; render(); }
+}));
+$("common").addEventListener("change", render);
+function render(){
+  const on = $("common").checked;
+  $("commonBox").classList.toggle("dis", !on);
+  const leaks = S.g.reduce((s,g)=>s+g.leak,0);
+  const common = on ? S.c.build + S.c.learn + leaks*S.c.leak : 0;
+  let G=0, N=0, NL=0, NH=0;
+  let h = '<table><tr><th>Nhóm việc</th><th class="r">Gộp</th><th class="r">Ròng</th><th class="r">Khoảng ròng</th><th class="r">Phút/việc đúng</th></tr>';
+  const cost = [];
+  S.g.forEach(g=>{
+    const gross = g.n*(g.old-g.ai), net = g.n*(g.old-g.ai-g.chk);
+    const lo = g.n*(g.old-g.ai-Math.max(g.lo,g.hi)), hi = g.n*(g.old-g.ai-Math.min(g.lo,g.hi));
+    const good = g.n - g.leak;
+    const c = good>0 ? (g.n*(g.ai+g.chk) + g.leak*S.c.leak)/good : NaN;
+    cost.push({g, c});
+    G+=gross; N+=net; NL+=lo; NH+=hi;
+    h += '<tr><td>'+g.nm+'</td><td'+cls(gross)+'>'+fmt(gross)+'</td><td'+cls(net)+'>'+fmt(net)+'</td><td class="r">'+fmt(lo)+' đến '+fmt(hi)+'</td><td class="r">'+(isNaN(c)?'–':fmt(c)+' <span style="color:var(--muted)">(mốc '+fmt(g.old)+')</span>')+'</td></tr>';
+  });
+  h += '<tr class="tot"><td>Cộng</td><td'+cls(G)+'>'+fmt(G)+'</td><td'+cls(N)+'>'+fmt(N)+'</td><td class="r">'+fmt(NL)+' đến '+fmt(NH)+'</td><td></td></tr>';
+  if(on) h += '<tr><td colspan="2">Trừ công chung '+fmt(common)+'</td><td'+cls(N-common)+'><b>'+fmt(N-common)+'</b></td><td class="r"><b>'+fmt(NL-common)+' đến '+fmt(NH-common)+'</b></td><td></td></tr>';
+  $("tbl").innerHTML = h + '</table>';
+  const team = N - common, tLo = NL - common, tHi = NH - common;
+  $("big").innerHTML =
+    '<span>Lợi ích gộp (quên trừ kiểm tra)</span><b>'+fmt(G)+' phút</b>'+
+    '<span>Lợi ích ròng của đội'+(on?'':' (chưa trừ công chung)')+'</span><b class="hl'+(team<0?' neg':'')+'">'+fmt(team)+' phút</b>'+
+    '<span>Khoảng thấp đến cao</span><b>'+fmt(tLo)+' đến '+fmt(tHi)+' phút</b>'+
+    '<span>Lỗi lọt tới khách</span><b>'+leaks+'</b>';
+  const M = [];
+  if(team < 0) M.push(["bad","<b>Lợi ích ròng âm:</b> sau khi trừ kiểm tra"+(on?" và công chung":"")+", đội đang tốn thêm "+fmt(-team)+" phút so với cách cũ."]);
+  else if(tLo < 0) M.push(["warn","<b>Khoảng thấp âm:</b> nếu phút kiểm ở mức cao, đợt này có thể chưa hoà vốn. Báo cả khoảng, đừng chỉ báo một con số."]);
+  if(leaks > 0) M.push(["bad","<b>Có "+leaks+" lỗi lọt tới khách.</b> Thời gian tiết kiệm kèm lỗi lọt chưa phải lợi ích: xem các lỗi cùng kiểu nào và sửa bước kiểm trước khi mở rộng."]);
+  cost.forEach(({g,c})=>{ if(!isNaN(c) && c > g.old) M.push(["warn","Nhóm “"+g.nm+"”: mỗi việc đúng tốn "+fmt(c)+" phút, đắt hơn mốc "+fmt(g.old)+" phút theo cách cũ."]); });
+  if(!on) M.push(["warn","Đang chưa trừ công chung (dựng, buổi học, xử lý lỗi lọt): con số này cao hơn lợi ích thật của đội."]);
+  if(G > 0 && team > 0 && G/team >= 3) M.push(["","Nếu chỉ cộng cột Gộp, bạn sẽ báo "+fmt(G)+" phút, gấp khoảng "+Math.round(G/team)+" lần lợi ích ròng."]);
+  if(!M.some(x=>x[0]==="bad"||x[0]==="warn")) M.push(["ok","Lợi ích ròng dương cả ở khoảng thấp và chưa có lỗi lọt. Vẫn ghi rõ số do ai tự báo cáo, đo trong bao lâu."]);
+  M.push(["","Bảng không có cột tên người: nó trả lời nhóm việc nào đáng tiếp tục, không trả lời ai nhanh, ai chậm."]);
+  $("msgs").innerHTML = M.map(x=>'<div class="msg '+x[0]+'">'+x[1]+'</div>').join("");
+}
+$("reset").onclick = ()=>{ S = JSON.parse(JSON.stringify(DEF)); $("common").checked = true; buildForm(); render(); };
+buildForm(); render();
+</script>
+</body>
+</html>
