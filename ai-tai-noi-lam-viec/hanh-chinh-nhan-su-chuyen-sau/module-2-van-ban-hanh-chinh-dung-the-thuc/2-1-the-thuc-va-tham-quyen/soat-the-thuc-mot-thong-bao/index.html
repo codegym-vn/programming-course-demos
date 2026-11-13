@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="860">
+<title>Soát thể thức thông báo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --paper:#fffdf8; --paper-line:#e8e1cf; --hover:#f1f4fa;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --paper:#1c1f26; --paper-line:#343a46; --hover:#232a38;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .count{font-weight:700;color:var(--text);white-space:nowrap}
+  .grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:10px;align-items:start}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .paper{background:var(--paper);border:1px solid var(--paper-line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;min-width:0}
+  .head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px;text-align:center;font-size:12.5px}
+  .head b{display:block}
+  .center{text-align:center}
+  .title{font-weight:800;letter-spacing:.5px;margin:10px 0 0;text-align:center}
+  .body p{margin:6px 0}
+  .sign{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px;font-size:13px}
+  .sign .r{text-align:center}
+  @media (max-width:420px){.head,.sign{grid-template-columns:1fr}.sign .r{text-align:left}}
+  .s{cursor:pointer;border-radius:4px;padding:0 2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;outline:none}
+  .s:hover,.s:focus-visible{background:var(--hover);box-shadow:0 0 0 1px var(--line)}
+  .s:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+  .s.found{background:var(--bad-soft);box-shadow:0 0 0 1px var(--bad)}
+  .s.fine{background:var(--ok-soft)}
+  .s.shown{background:var(--cur);box-shadow:0 0 0 1px var(--cur-bar)}
+  .mock{font-size:12px;color:var(--muted);margin:8px 0 0;border-top:1px dashed var(--paper-line);padding-top:6px}
+  .side{min-width:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:6px}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg b.h{display:block;margin-bottom:2px}
+  ol.found-list{margin:4px 0 0;padding-left:20px;font-size:13.5px}
+  ol.found-list li{margin:3px 0}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bản nháp thông báo dưới đây do AI soạn cho Minh An (giả lập), có cài 6 lỗi thể thức và nội dung. Chạm vào chỗ bạn nghi sai; trang cho biết chỗ đó sai hay đúng và vì sao. Đã tìm: <span class="count" id="cnt">0/6</span></p>
+  <div class="grid">
+    <div class="paper" id="doc">
+      <div class="head">
+        <div><b><span class="s" data-k="ten">CÔNG TY CỔ PHẦN<br>THỰC PHẨM MINH AN</span></b><span class="s" data-k="so">Số: 07/2027/TB-HCNS</span></div>
+        <div><b><span class="s" data-k="qh">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>Độc lập - Tự do - Hạnh phúc</span></b><i><span class="s" data-k="ngay">Hà Nội, ngày 16 tháng 3 năm 2027</span></i></div>
+      </div>
+      <p class="title">THÔNG BÁO</p>
+      <p class="center" style="margin:2px 0 8px"><span class="s" data-k="trich">Về việc thông báo lịch khám sức khoẻ định kỳ năm 2027 và việc bố trí người thay ca, xe đưa đón, ăn sáng cho toàn thể cán bộ công nhân viên Công ty</span></p>
+      <div class="body">
+        <p><span class="s" data-k="mo">Thực hiện kế hoạch khám sức khoẻ định kỳ năm 2027 đã được Tổng giám đốc phê duyệt, Công ty thông báo lịch khám như sau:</span></p>
+        <p>1. Thời gian: <span class="s" data-k="thu1">thứ Tư, ngày 23/03/2027</span>: khối văn phòng, ca 1 và ca 2; <span class="s" data-k="thu2">thứ Tư, ngày 24/03/2027</span>: ca 3 và các tổ chưa khám.</p>
+        <p>2. Địa điểm: <span class="s" data-k="dd">nhà ăn Nhà máy, từ 07 giờ 00 đến 11 giờ 00</span>. Người lao động mang theo thẻ nhân viên.</p>
+        <p>3. <span class="s" data-k="tt">Tổ trưởng lập danh sách tổ theo khung giờ, gửi Phòng Hành chính - Nhân sự trước ngày khám</span>.</p>
+        <p>4. <span class="s" data-k="che">Người không đi khám theo lịch sẽ bị trừ 01 ngày lương.</span></p>
+        <p>Thông tin chi tiết liên hệ <span class="s" data-k="lh">chị Đỗ Thu Hà, Phòng Hành chính - Nhân sự, máy lẻ 105</span>.</p>
+      </div>
+      <div class="sign">
+        <div><span class="s" data-k="nn"><b><i>Nơi nhận:</i></b><br>- Như trên.</span></div>
+        <div class="r"><span class="s" data-k="ky"><b>KT. TỔNG GIÁM ĐỐC<br>PHÓ TỔNG GIÁM ĐỐC</b><br><br>Trần Minh Đức</span></div>
+      </div>
+      <p class="mock">Văn bản giả lập để luyện soát, không phải mẫu của cơ quan nào. Thể thức chỉ nêu ở mức chung; cách trình bày chi tiết lấy từ bộ mẫu đã được công ty duyệt.</p>
+    </div>
+    <div class="side">
+      <div class="card">
+        <p class="panel-title">Dữ liệu để đối chiếu</p>
+        <div style="font-size:13px;color:var(--muted)">Thông báo nội bộ toàn công ty, truyền đạt lịch đã được duyệt. Phân cấp ký của Minh An: loại này do Trưởng phòng Hành chính - Nhân sự Nguyễn Thị Thanh ký thừa lệnh Tổng giám đốc. Ký hiệu thông báo dạng ..../TB-MA, số do văn thư cấp. Lịch đã duyệt: khám ngày 23/03 và 24/03/2027 (tự tra thứ). Kế hoạch không có chế tài nào.</div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Kết quả</p>
+        <div id="fb" aria-live="polite"><div class="msg">Chạm vào một chỗ trong văn bản để kiểm.</div></div>
+        <ol class="found-list" id="list"></ol>
+        <div class="btns"><button class="btn" id="all">Xem hết lỗi</button><button class="btn" id="reset">Làm lại</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Thứ - ngày đã kiểm bằng Python: 16/03/2027 thứ Ba, 23/03/2027 thứ Ba, 24/03/2027 thứ Tư.
+// Văn bản khác thông báo nghỉ Tết (quiz, lab, bài nộp) và quyết định tổ tuyển dụng (code inspection).
+const S = {
+  so:  {err:true,  n:"Số và ký hiệu do AI tự đặt", t:"\"07/2027/TB-HCNS\" không theo sổ đăng ký văn bản của công ty, ký hiệu cũng sai dạng. Số do văn thư cấp khi phát hành: trong bản nháp để \"Số: ..../TB-MA\" có đánh dấu chờ cấp."},
+  trich:{err:true, n:"Trích yếu dài như một đoạn văn", t:"Trích yếu lặp chữ \"thông báo\" với tên loại và kể cả nội dung bên trong. Trích yếu ngắn, nói đúng việc chính, ví dụ: \"Về lịch khám sức khoẻ định kỳ năm 2027\"."},
+  thu1:{err:true,  n:"Ngày tháng sai thứ", t:"Ngày 23/03/2027 là thứ Ba, không phải thứ Tư. Hai ngày khám liền nhau mà cùng ghi \"thứ Tư\" thì người đọc thứ trước ngày sau sẽ nhầm. Tra từng cặp thứ - ngày bằng lịch hoặc hàm bảng tính."},
+  che: {err:true,  n:"Tự thêm chế tài", t:"Kế hoạch đã duyệt không có câu này. Chế tài, trừ lương không phải việc của một thông báo lịch khám và không được thêm khi không có nguồn; câu như vậy còn làm người đọc nghi cả phần đúng."},
+  ky:  {err:true,  n:"Sai thẩm quyền ký", t:"Thông báo nội bộ toàn công ty truyền đạt lịch đã duyệt do Trưởng phòng Hành chính - Nhân sự ký thừa lệnh: \"TL. TỔNG GIÁM ĐỐC / TRƯỞNG PHÒNG HÀNH CHÍNH - NHÂN SỰ / Nguyễn Thị Thanh\". AI chọn người ký theo phỏng đoán."},
+  nn:  {err:true,  n:"Nơi nhận \"Như trên\" mà phía trên không có ai", t:"Văn bản không có dòng \"Kính gửi\", nên \"Như trên\" không chỉ ai. Ghi rõ ai thực hiện, ai để biết, ai lưu, ví dụ: các phòng, Nhà máy, các tổ trưởng; Lưu: VT, HCNS."},
+  ten: {err:false, t:"Tên cơ quan ban hành là tên công ty, đúng: thông báo của công ty, không phải của một phòng."},
+  qh:  {err:false, t:"Quốc hiệu và tiêu ngữ có đủ."},
+  ngay:{err:false, t:"Địa danh và ngày ban hành có đủ; ngày 16/03/2027 (thứ Ba) trước ngày khám một tuần. Khi trình ký, điền theo ngày ký thật."},
+  mo:  {err:false, t:"Câu mở đầu nói rõ căn cứ là kế hoạch đã được duyệt, không tự dẫn văn bản pháp luật."},
+  thu2:{err:false, t:"Ngày 24/03/2027 đúng là thứ Tư."},
+  dd:  {err:false, t:"Địa điểm và giờ khớp kế hoạch."},
+  tt:  {err:false, t:"Việc của tổ trưởng là phần tổ chức, có trong kế hoạch."},
+  lh:  {err:false, t:"Người liên hệ và máy lẻ đúng."}
+};
+const ORDER = ["so","trich","thu1","che","nn","ky"];
+const TOTAL = ORDER.length;
+const $ = id => document.getElementById(id);
+let found = new Set(), wrong = 0;
+const spans = [...document.querySelectorAll(".s")];
+spans.forEach(el=>{
+  el.tabIndex = 0; el.setAttribute("role","button");
+  el.addEventListener("click", ()=>pick(el));
+  el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(el); } });
+});
+function pick(el){
+  const k = el.dataset.k, d = S[k];
+  if(d.err){
+    found.add(k); el.classList.remove("shown"); el.classList.add("found");
+    $("fb").innerHTML = '<div class="msg bad"><b class="h">Đúng là lỗi: '+d.n+'</b>'+d.t+'</div>';
+  } else {
+    if(!el.classList.contains("fine")) wrong++;
+    el.classList.add("fine");
+    $("fb").innerHTML = '<div class="msg ok"><b class="h">Chỗ này không sai</b>'+d.t+'</div>';
+  }
+  render();
+}
+function render(){
+  $("cnt").textContent = found.size+"/"+TOTAL;
+  $("list").innerHTML = ORDER.filter(k=>found.has(k)).map(k=>'<li>'+S[k].n+'</li>').join("");
+  if(found.size===TOTAL){
+    $("fb").insertAdjacentHTML("beforeend",'<div class="msg ok">Đã tìm đủ 6 lỗi'+(wrong?' (bấm '+wrong+' chỗ không sai)':'')+'. Bản sửa: để trống số chờ văn thư, rút trích yếu, sửa thứ, bỏ câu chế tài, ghi nơi nhận cụ thể, đổi khối chữ ký theo phân cấp.</div>');
+  }
+}
+$("all").onclick = ()=>{
+  ORDER.forEach(k=>{ if(!found.has(k)) document.querySelector('.s[data-k="'+k+'"]').classList.add("shown"); });
+  $("fb").innerHTML = '<div class="msg warn"><b class="h">Sáu lỗi (tô vàng là chỗ bạn chưa chạm)</b></div>' +
+    ORDER.map((k,i)=>'<div class="msg '+(found.has(k)?'bad':'warn')+'"><b class="h">'+(i+1)+'. '+S[k].n+'</b>'+S[k].t+'</div>').join("");
+};
+$("reset").onclick = ()=>{
+  found = new Set(); wrong = 0;
+  spans.forEach(el=>el.classList.remove("found","fine","shown"));
+  $("fb").innerHTML = '<div class="msg">Chạm vào một chỗ trong văn bản để kiểm.</div>';
+  render();
+};
+render();
+</script>
+</body>
+</html>

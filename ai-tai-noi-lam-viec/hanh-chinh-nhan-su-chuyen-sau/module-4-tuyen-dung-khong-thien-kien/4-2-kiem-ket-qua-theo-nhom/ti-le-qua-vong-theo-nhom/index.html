@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="920">
+<title>Tỉ lệ qua vòng theo nhóm</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --bar:#2563eb; --track:#e7eaf0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --bar:#6ea0ff; --track:#262c37;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:10px;align-items:start}
+  .grid>div{min-width:0}
+  @media (max-width:800px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:10px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .tw{overflow-x:auto;max-height:430px;overflow-y:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--line);padding:3px 4px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;position:sticky;top:0;background:var(--card)}
+  td.c,th.c{text-align:center}
+  td.r,th.r{text-align:right}
+  td.code{font-weight:700;white-space:nowrap}
+  td.nt{font-size:12px;color:var(--muted);min-width:130px}
+  .no{color:var(--bad);font-weight:600}
+  .off{opacity:.38}
+  .qua{font-weight:700;color:var(--ok)}
+  .khong{color:var(--muted)}
+  .tg{display:flex;flex-direction:column;gap:4px}
+  .tg label{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-height:40px;cursor:pointer;font-size:13.5px}
+  .tg input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+  .tg .tag{font-weight:700;min-width:22px}
+  .rate{display:grid;grid-template-columns:86px minmax(0,1fr) 92px;gap:6px;align-items:center;font-size:13.5px;margin:3px 0}
+  .rate .nm{white-space:nowrap}
+  .rate .v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .track{height:14px;background:var(--track);border-radius:7px;overflow:hidden}
+  .fill{height:100%;background:var(--bar);border-radius:7px;transition:width .25s}
+  .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin:8px 0 2px}
+  .gap{font-size:12.5px;color:var(--muted);margin:2px 0 0}
+  .gap b{color:var(--text)}
+  td.hi{background:var(--cur)}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .note{font-size:12px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Một đợt tuyển khác (giả lập): phần mềm tuyển dụng lọc 25 hồ sơ ẩn danh cho vị trí công nhân kho thành phẩm theo ba tiêu chí cài sẵn, "Qua" khi mọi tiêu chí đang bật đều Đạt. Phiếu yêu cầu của kho chỉ bắt buộc làm được ca xoay. Bật, tắt từng tiêu chí để xem tỉ lệ qua vòng theo giới và nhóm tuổi đổi thế nào.</p>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <p class="panel-title">Tiêu chí đang bật</p>
+        <div class="tg" id="tg"></div>
+      </div>
+      <div class="card">
+        <p class="panel-title">Tỉ lệ qua vòng theo nhóm</p>
+        <div id="rates"></div>
+        <div id="msg" aria-live="polite"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <p class="panel-title">Tỉ lệ Đạt của từng tiêu chí (tính riêng, không phụ thuộc nút bật)</p>
+        <div class="tw" style="max-height:none"><table id="crit"></table></div>
+        <p class="note">Ô tô vàng: nhóm thấp nhất của tiêu chí có chênh lệch lớn nhất theo giới hoặc theo tuổi.</p>
+      </div>
+      <div class="card">
+        <p class="panel-title">25 hồ sơ (đã ẩn danh)</p>
+        <div class="tw"><table id="tbl"></table></div>
+        <p class="note">Cột giới và nhóm tuổi chỉ dùng để kiểm lệch, không dùng để chọn ai. Kiểm trên bảng tính trong máy công ty, không dán hồ sơ vào công cụ AI.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Dữ liệu riêng của trang, khác bảng 40 hồ sơ của bài thực hành. Đã kiểm bằng Python mọi tổ hợp bật/tắt.
+// Bật cả ba: Nam 8/11 ≈ 72,7%; Nữ 8/14 ≈ 57,1%; 18-29 7/9 ≈ 77,8%; 30-39 7/9 ≈ 77,8%; 40 trở lên 2/7 ≈ 28,6%.
+// T1 lệch theo giới (Nam 10/11, Nữ 8/14); T2 lệch theo tuổi (40 trở lên 3/7); T3 chênh ít.
+const C = [
+ {k:"T1", n:"Không có khoảng nghỉ việc quá 12 tháng"},
+ {k:"T2", n:"Tốt nghiệp THPT"},
+ {k:"T3", n:"Xác nhận làm được ca xoay"}
+];
+const R = [
+ ["UV41","Nam","30-39",1,1,1,""],
+ ["UV42","Nam","30-39",1,1,1,""],
+ ["UV43","Nữ","40 trở lên",1,1,1,""],
+ ["UV44","Nữ","40 trở lên",0,0,1,"nghỉ 2023-2025 chăm con nhỏ; học hết lớp 9"],
+ ["UV45","Nam","18-29",1,1,1,""],
+ ["UV46","Nữ","18-29",0,1,1,"nghỉ 14 tháng sinh con"],
+ ["UV47","Nữ","30-39",0,1,1,"nghỉ 2 năm nuôi con, kho cũ 4 năm"],
+ ["UV48","Nữ","18-29",1,1,1,""],
+ ["UV49","Nam","18-29",1,1,1,""],
+ ["UV50","Nữ","18-29",0,1,0,"nghỉ 18 tháng chăm mẹ ốm; chỉ làm ca ngày"],
+ ["UV51","Nữ","40 trở lên",1,1,1,""],
+ ["UV52","Nữ","30-39",1,1,1,""],
+ ["UV53","Nam","30-39",1,1,1,"nộp qua Zalo"],
+ ["UV54","Nữ","18-29",1,1,1,""],
+ ["UV55","Nam","18-29",1,1,1,""],
+ ["UV56","Nam","40 trở lên",1,1,0,"chỉ nhận ca 1, ca 2"],
+ ["UV57","Nam","30-39",1,1,1,""],
+ ["UV58","Nữ","30-39",1,1,1,""],
+ ["UV59","Nữ","30-39",1,1,1,""],
+ ["UV60","Nam","18-29",1,1,1,""],
+ ["UV61","Nữ","30-39",0,1,1,"nghỉ sinh con thứ hai, 16 tháng"],
+ ["UV62","Nữ","18-29",1,1,1,""],
+ ["UV63","Nữ","40 trở lên",0,0,1,"về quê làm ruộng 2024-2025; học hết lớp 7"],
+ ["UV65","Nam","40 trở lên",0,0,0,"làm tự do 2024-2026; học hết lớp 8; chỉ nhận ca 1"],
+ ["UV66","Nam","40 trở lên",1,0,1,"bổ túc lớp 11, bốc xếp 10 năm"]
+];
+const G = [["Giới",1,["Nam","Nữ"]],["Nhóm tuổi",2,["18-29","30-39","40 trở lên"]]];
+const $ = id => document.getElementById(id);
+let on = [true,true,true];
+const pct = (a,b) => b ? (Math.round(a/b*1000)/10).toLocaleString("vi-VN")+"%" : "–";
+const pass = r => C.every((c,k)=>!on[k] || r[3+k]===1);
+function buildToggles(){
+  $("tg").innerHTML = C.map((c,k)=>'<label><input type="checkbox" data-k="'+k+'" checked><span class="tag">'+c.k+'</span><span>'+c.n+'</span></label>').join("");
+  $("tg").querySelectorAll("input").forEach(el=>el.addEventListener("change",()=>{ on[+el.dataset.k] = el.checked; render(); }));
+}
+function buildCrit(){
+  // tỉ lệ Đạt từng tiêu chí theo nhóm; tô ô thấp nhất của chiều có chênh lệch lớn nhất
+  const rows = C.map((c,k)=>{
+    const cells = [];
+    let worst = {gap:-1};
+    G.forEach(([lab,idx,vals])=>{
+      const rs = vals.map(v=>{ const g=R.filter(r=>r[idx]===v); const a=g.filter(r=>r[3+k]===1).length; return {v,a,n:g.length,p:a/g.length}; });
+      const mx = Math.max(...rs.map(x=>x.p)), mn = Math.min(...rs.map(x=>x.p));
+      if(mx-mn > worst.gap) worst = {gap:mx-mn, idx, v:rs.find(x=>x.p===mn).v};
+      rs.forEach(x=>cells.push({idx, ...x}));
+    });
+    return {c, cells, worst};
+  });
+  let h = '<thead><tr><th>Tiêu chí</th><th class="c">Nam</th><th class="c">Nữ</th><th class="c">18-29</th><th class="c">30-39</th><th class="c">40+</th></tr></thead><tbody>';
+  rows.forEach(({c,cells,worst})=>{
+    h += '<tr><td><b>'+c.k+'</b></td>'+cells.map(x=>'<td class="c'+(worst.gap>=0.3 && x.idx===worst.idx && x.v===worst.v?' hi':'')+'">'+x.a+'/'+x.n+'<br><span style="font-size:11.5px;color:var(--muted)">'+pct(x.a,x.n)+'</span></td>').join("")+'</tr>';
+  });
+  $("crit").innerHTML = h+'</tbody>';
+}
+function buildTable(){
+  let h = '<thead><tr><th>Mã</th><th>Giới</th><th>Tuổi</th>'+C.map((c,k)=>'<th class="c" data-h="'+k+'">'+c.k+'</th>').join("")+'<th class="c">Kết quả</th><th>Ghi chú</th></tr></thead><tbody>';
+  R.forEach((r,i)=>{
+    h += '<tr><td class="code">'+r[0]+'</td><td>'+r[1]+'</td><td style="white-space:nowrap">'+r[2]+'</td>'+
+      C.map((c,k)=>'<td class="c" data-k="'+k+'">'+(r[3+k]?'Đạt':'<span class="no">Không</span>')+'</td>').join("")+
+      '<td class="c" id="res'+i+'"></td><td class="nt">'+r[6]+'</td></tr>';
+  });
+  $("tbl").innerHTML = h+'</tbody>';
+}
+function render(){
+  document.querySelectorAll('#tbl [data-k], #tbl [data-h]').forEach(td=>{ const k=+(td.dataset.k ?? td.dataset.h); td.classList.toggle("off", !on[k]); });
+  R.forEach((r,i)=>{ $("res"+i).innerHTML = pass(r) ? '<span class="qua">Qua</span>' : '<span class="khong">Không qua</span>'; });
+  let h = '';
+  const spread = [];
+  G.forEach(([lab,idx,vals])=>{
+    h += '<div class="sub">'+lab+'</div>';
+    const ps = [];
+    vals.forEach(v=>{
+      const g = R.filter(r=>r[idx]===v), a = g.filter(pass).length, p = a/g.length;
+      ps.push({v,p});
+      h += '<div class="rate"><span class="nm">'+v+'</span><span class="track"><span class="fill" style="display:block;width:'+(p*100)+'%"></span></span><span class="v">'+a+'/'+g.length+' · '+pct(a,g.length)+'</span></div>';
+    });
+    const mx = ps.reduce((x,y)=>y.p>x.p?y:x), mn = ps.reduce((x,y)=>y.p<x.p?y:x);
+    const d = Math.round((mx.p-mn.p)*1000)/10;
+    spread.push({lab, d, mn:mn.v, mx:mx.v});
+    h += '<p class="gap">Chênh cao nhất - thấp nhất: <b>'+d.toLocaleString("vi-VN")+' điểm phần trăm</b>'+(d>0?' ('+mx.v+' so với '+mn.v+')':'')+'</p>';
+  });
+  const all = R.filter(pass).length;
+  h += '<div class="sub">Cả 25 hồ sơ</div><div class="rate"><span class="nm">Chung</span><span class="track"><span class="fill" style="display:block;width:'+(all/R.length*100)+'%"></span></span><span class="v">'+all+'/'+R.length+' · '+pct(all,R.length)+'</span></div>';
+  $("rates").innerHTML = h;
+  const nOn = on.filter(Boolean).length;
+  let m;
+  if(nOn===0) m = '<div class="msg">Không bật tiêu chí nào thì ai cũng qua: trang chỉ còn để bạn thấy mỗi tiêu chí kéo tỉ lệ của nhóm nào xuống.</div>';
+  else {
+    const big = spread.filter(s=>s.d>=30);
+    m = '<div class="msg '+(big.length?'warn':'ok')+'">'+(big.length
+      ? 'Đang lệch nhiều theo '+big.map(s=>s.lab.toLowerCase()+' ('+s.mn+' thấp nhất)').join(' và ')+'. Tắt từng tiêu chí để xem tiêu chí nào gây ra, rồi hỏi: tiêu chí đó có trong phiếu yêu cầu không, có gắn với việc ở kho không?'
+      : 'Với các tiêu chí đang bật, tỉ lệ qua giữa các nhóm không chênh nhiều. Số hồ sơ ít: chênh một hai người có thể do ngẫu nhiên, nên vẫn đọc lại hồ sơ bị loại.')+'</div>';
+    if(on[2] && !on[0] && !on[1]) m += '<div class="msg">Chỉ còn tiêu chí của phiếu yêu cầu. Ba người không đạt đều tự ghi chỉ nhận ca ngày; nếu ghi chú chưa rõ thì gọi hỏi lại thay vì loại ngay.</div>';
+  }
+  $("msg").innerHTML = m;
+}
+buildToggles(); buildCrit(); buildTable(); render();
+</script>
+</body>
+</html>
