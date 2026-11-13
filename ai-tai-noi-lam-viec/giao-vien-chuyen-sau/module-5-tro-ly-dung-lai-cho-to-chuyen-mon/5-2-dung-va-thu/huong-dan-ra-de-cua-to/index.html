@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="660">
+<title>Tra hướng dẫn ra đề</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800; --paper:#fffdf8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#4a3d0e; --cur-bar:#e0b400; --paper:#1b1f27;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .search{display:flex;gap:6px;margin-bottom:8px}
+  .search input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:42px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:250px 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  .toc{display:flex;flex-direction:column;gap:3px;max-height:490px;overflow-y:auto}
+  .toc button{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);font:inherit;font-size:14px;padding:4px 8px;min-height:34px;border-radius:8px;cursor:pointer;line-height:1.3}
+  .toc button:hover{background:var(--accent-soft)}
+  .toc button[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+  .toc .lbl{flex:1;min-width:0}
+  .toc .n{font-size:12px;font-weight:700;background:var(--cur);border:1px solid var(--cur-bar);border-radius:10px;padding:0 6px;font-variant-numeric:tabular-nums}
+  .toc button.dim{opacity:.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .doc{height:490px;overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14.5px;line-height:1.55;position:relative}
+  .doc .hd{text-align:center;margin-bottom:12px}
+  .doc .hd p{margin:0 0 2px}
+  .doc .muc{margin:0 0 10px}
+  .doc p{margin:4px 0}
+  .doc p.sub{padding-left:18px}
+  .doc .sign{margin-top:14px;text-align:right}
+  .doc .sign p{margin:0}
+  mark{background:var(--cur);color:inherit;border-radius:3px;box-shadow:0 0 0 1px var(--cur-bar)}
+  .status{margin-top:8px;font-size:13.5px;color:var(--muted);min-height:20px}
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .toc{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:4px}
+    .toc button{width:auto;flex:0 0 auto;white-space:nowrap}
+    .toc .full{display:none}
+    .doc{height:430px;padding:8px 10px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bấm một mục ở mục lục để đọc, hoặc gõ từ khoá (gõ có dấu hay không dấu đều được) để tô sáng chỗ khớp. Trang chỉ để tra hướng dẫn ra đề của tổ, không soát đề và không trả lời hộ câu nào.</p>
+  <div class="search">
+    <input id="q" type="search" placeholder="Tìm, ví dụ: đặc tả, phương án nhiễu" aria-label="Tìm trong hướng dẫn ra đề" autocomplete="off">
+    <button class="btn" id="clr">Xoá</button>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="toc" id="toc" role="tablist"></div></div>
+    <div>
+      <div class="doc" id="doc" aria-live="polite"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+<script>
+// Nguyên văn phần dưới đường kẻ của "Hướng dẫn ra đề kiểm tra định kỳ" (tổ Khoa học tự nhiên, Trường THCS Hoà Bình, giả lập),
+// đúng như đăng trong bài "Thực hành: Dựng trợ lý soát đề kiểm tra". Mỗi chuỗi là một dòng; **...** là chữ đậm.
+// Sinh tự động bằng html-work/gen_hdrd.py; đối chiếu với tệp nguồn và với bài trên nền tảng bằng html-work/verify_hdrd.py.
+const DOC = {
+"head": [
+"**TRƯỜNG THCS HOÀ BÌNH — TỔ KHOA HỌC TỰ NHIÊN**",
+"**HƯỚNG DẪN RA ĐỀ KIỂM TRA ĐỊNH KỲ**",
+"(Áp dụng từ học kỳ I năm học 2026-2027; thực hiện cùng hướng dẫn hiện hành của Bộ Giáo dục và Đào tạo và Sở Giáo dục và Đào tạo)"
+],
+"muc": [
+[
+"**1. Phạm vi.** Áp dụng cho bài kiểm tra giữa kỳ và cuối kỳ các môn Toán, Khoa học tự nhiên, Tin học, Công nghệ khối 6-9 do tổ ra đề. Bài kiểm tra thường xuyên do giáo viên tự quyết, khuyến khích làm theo các mục 4, 5, 6."
+],
+[
+"**2. Thời gian làm bài.** Toán và Khoa học tự nhiên: 60 phút. Tin học, Công nghệ: 45 phút. Bài có phần thực hành trên máy theo kế hoạch riêng của tổ."
+],
+[
+"**3. Cấu trúc đề.**",
+"a) Đề 60 phút: Phần I trắc nghiệm khách quan gồm 12 câu, mỗi câu 0,25 điểm (3,0 điểm); Phần II tự luận 7,0 điểm, gồm 4 đến 5 câu, ghi rõ điểm từng câu và từng ý.",
+"b) Đề 45 phút: Phần I gồm 8 câu, mỗi câu 0,5 điểm (4,0 điểm); Phần II tự luận 6,0 điểm, gồm 3 đến 4 câu.",
+"c) Tổng điểm toàn bài là 10."
+],
+[
+"**4. Mức nhận thức.** Đề bảo đảm tỉ lệ theo điểm: nhận biết 40%, thông hiểu 30%, vận dụng 30%. Mỗi mức được lệch tối đa 5 điểm phần trăm. Câu vận dụng gắn với tình huống thực tế phù hợp lứa tuổi."
+],
+[
+"**5. Bản đặc tả.** Mỗi đề kèm bản đặc tả ghi cho từng câu: nội dung kiến thức, mức nhận thức, số điểm. Tổng điểm trong bản đặc tả phải bằng 10 và khớp đề. Nội dung kiến thức bám chương trình môn học; giáo viên tự đối chiếu yêu cầu cần đạt."
+],
+[
+"**6. Quy tắc viết câu hỏi.**",
+"a) Câu trắc nghiệm có 4 phương án A, B, C, D, chỉ một phương án đúng; phương án nhiễu phải hợp lý (sai do một lỗi thường gặp của học sinh).",
+"b) Không dùng phương án \"Tất cả đều đúng\", \"Tất cả đều sai\", \"Cả A và B\".",
+"c) Đáp án đúng phân bố đều; không quá 4 câu có cùng một chữ cái đáp án.",
+"d) Câu hỏi dùng từ ngữ rõ, một nghĩa; số liệu thực tế phải hợp lý; hình vẽ có chú thích đủ.",
+"e) Không lấy nguyên văn câu hỏi trong sách giáo khoa, sách bài tập hay đề của trường khác."
+],
+[
+"**7. Đáp án và hướng dẫn chấm.** Trắc nghiệm ghi bảng đáp án. Tự luận chia điểm tới 0,25; ghi các bước chính; học sinh có cách giải khác đúng vẫn được điểm tối đa của câu. Người ra đề tự giải lại toàn bộ đề trước khi nộp."
+],
+[
+"**8. Quy trình duyệt và lịch nộp.** Người ra đề nộp đề, đáp án, bản đặc tả cho tổ trưởng chậm nhất 10 ngày trước ngày kiểm tra. Tổ trưởng duyệt trong 03 ngày làm việc, gửi lại góp ý nếu cần. Phó hiệu trưởng phụ trách chuyên môn duyệt lần cuối và quyết định đề chính thức, đề dự phòng."
+],
+[
+"**9. Bảo mật.** Đề chính thức và đề dự phòng không gửi qua nhóm chat, mạng xã hội. Chỉ được đưa đề nháp vào công cụ AI bằng tài khoản do trường cấp (qua thầy Dũng) để soát; không đưa đề chính thức đã duyệt vào bất kỳ công cụ AI nào. Không đưa bài làm hay điểm của học sinh vào công cụ AI khi ra đề."
+],
+[
+"**10. Tổ chức thực hiện.** Tổ trưởng phổ biến hướng dẫn này đầu mỗi học kỳ. Điểm nào chưa rõ, giáo viên hỏi tổ trưởng; điểm nào thuộc quy định của Bộ, Sở thì làm theo văn bản hiện hành."
+]
+],
+"sign": [
+"Hoà Bình, ngày 07 tháng 9 năm 2026",
+"**TỔ TRƯỞNG** · Lê Thu Hằng (đã ký)"
+]
+};
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Bỏ dấu từng ký tự, giữ nguyên độ dài để vị trí khớp trùng với chữ gốc.
+const fold = s => Array.from(s.normalize("NFC")).map(ch=>{
+  if(ch==="đ" || ch==="Đ") return "d";
+  const b = ch.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return (b.length===1 ? b : ch).toLowerCase();
+}).join("");
+let query = "", cur = -1; // -1 = toàn văn; 0-9 = mục 1-10
+function ranges(text){
+  if(!query) return [];
+  const f = fold(text), r = [];
+  let i = f.indexOf(query);
+  while(i>=0){ r.push([i, i+query.length]); i = f.indexOf(query, i+query.length); }
+  return r;
+}
+function hl(text){
+  const chars = Array.from(text.normalize("NFC"));
+  const rs = ranges(text);
+  if(!rs.length) return esc(text);
+  let out = "", p = 0;
+  rs.forEach(([a,b])=>{ out += esc(chars.slice(p,a).join("")) + "<mark>" + esc(chars.slice(a,b).join("")) + "</mark>"; p = b; });
+  return out + esc(chars.slice(p).join(""));
+}
+const rich = s => s.split("**").map((part,i)=> i%2 ? "<b>"+hl(part)+"</b>" : hl(part)).join("");
+const cnt = s => s.split("**").reduce((n,part)=>n+ranges(part).length,0);
+const countIn = m => m.reduce((n,s)=>n+cnt(s),0);
+const isSub = s => /^[a-e]\) /.test(s);
+const mucHtml = m => '<div class="muc">'+m.map(s=>'<p'+(isSub(s)?' class="sub"':'')+'>'+rich(s)+'</p>').join("")+'</div>';
+const title = m => m[0].match(/^\*\*(\d+)\. (.*?)\.\*\*/);
+function renderToc(){
+  const counts = DOC.muc.map(countIn);
+  const headN = countIn(DOC.head) + countIn(DOC.sign);
+  let h = '<button role="tab" data-i="-1" aria-current="'+(cur===-1)+'"><span class="lbl">Toàn văn</span>'+(query?'<span class="n">'+(counts.reduce((a,b)=>a+b,0)+headN)+'</span>':'')+'</button>';
+  DOC.muc.forEach((m,i)=>{
+    const t = title(m);
+    h += '<button role="tab" data-i="'+i+'" aria-current="'+(cur===i)+'"'+(query && !counts[i] ? ' class="dim"' : '')+'><span class="lbl"><b>Mục '+t[1]+'</b><span class="full">. '+esc(t[2])+'</span></span>'+(query && counts[i]?'<span class="n">'+counts[i]+'</span>':'')+'</button>';
+  });
+  $("toc").innerHTML = h;
+  $("toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cur = +b.dataset.i; render(true); });
+  return [counts, headN];
+}
+function render(scrollTop){
+  const [counts, headN] = renderToc();
+  let h;
+  if(cur===-1){
+    h = '<div class="hd">'+DOC.head.map(s=>'<p>'+rich(s)+'</p>').join("")+'</div>';
+    h += DOC.muc.map(mucHtml).join("");
+    h += '<div class="sign">'+DOC.sign.map(s=>'<p>'+rich(s)+'</p>').join("")+'</div>';
+  } else h = mucHtml(DOC.muc[cur]);
+  $("doc").innerHTML = h;
+  const all = counts.reduce((a,b)=>a+b,0) + headN;
+  const name = i => "Mục "+title(DOC.muc[i])[1];
+  if(!query) $("status").textContent = cur===-1 ? "Đang xem toàn văn: 10 mục, ký ngày 07/9/2026." : "Đang xem "+name(cur)+": "+title(DOC.muc[cur])[2]+".";
+  else {
+    const nd = counts.filter(Boolean).length;
+    $("status").textContent = all ? "Khớp “"+$("q").value.trim()+"”: "+all+" chỗ"+(nd?", trong "+nd+" mục có số ở mục lục":"")+". "+(cur===-1 ? "" : name(cur)+" có "+counts[cur]+" chỗ.")
+                                  : "Không có chỗ nào khớp “"+$("q").value.trim()+"”. Thử từ ngắn hơn.";
+  }
+  const first = $("doc").querySelector("mark"), doc = $("doc");
+  if(first){ const y = first.getBoundingClientRect().top - doc.getBoundingClientRect().top + doc.scrollTop; doc.scrollTop = Math.max(0, y-60); }
+  else if(scrollTop) doc.scrollTop = 0;
+}
+let timer = null;
+function setQuery(raw){
+  const v = fold(raw.trim().replace(/\s+/g," "));
+  query = v.length >= 2 ? v : "";
+}
+$("q").addEventListener("input", ()=>{
+  clearTimeout(timer);
+  timer = setTimeout(()=>{
+    setQuery($("q").value);
+    if(query && cur>=0 && !countIn(DOC.muc[cur])){ const j = DOC.muc.map(countIn).findIndex(Boolean); if(j>=0) cur = j; }
+    render(false);
+  }, 150);
+});
+$("clr").onclick = ()=>{ $("q").value = ""; query = ""; render(true); $("q").focus(); };
+const p = new URLSearchParams(location.search);
+if(p.has("muc")){ const d = parseInt(p.get("muc"),10); if(d>=1 && d<=10) cur = d-1; }
+if(p.has("tim")){ $("q").value = p.get("tim"); setQuery(p.get("tim")); }
+render(!query);
+</script>
+</body>
+</html>

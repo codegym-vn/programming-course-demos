@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="820">
+<title>Soát rubric</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .list{max-height:640px;overflow-y:auto;padding-right:2px}
+  .tc{border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:8px}
+  .tc.warn{border-color:var(--cur-bar)}
+  .tc .top{display:flex;gap:6px;align-items:center}
+  .tc .no{font-weight:700;flex:0 0 auto}
+  input,textarea{font:inherit;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-height:38px;min-width:0}
+  input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .tc .nm{flex:1}
+  .pt{width:58px;text-align:right;font-variant-numeric:tabular-nums}
+  .unit{font-size:13px;color:var(--muted)}
+  .lv{display:flex;gap:6px;align-items:flex-start;margin:5px 0}
+  .lv textarea{flex:1;min-height:40px;resize:vertical;line-height:1.35}
+  .lv .pt{margin-top:1px}
+  .x{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;min-width:38px;min-height:38px;cursor:pointer;font:inherit;font-size:16px;line-height:1}
+  .x:hover{color:var(--bad);border-color:var(--bad)}
+  .small{border:1px dashed var(--accent);background:transparent;color:var(--accent);border-radius:8px;padding:4px 10px;min-height:36px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+  .hdr{display:flex;gap:6px;font-size:12px;color:var(--muted);margin:6px 0 0}
+  .hdr span:first-child{width:58px;text-align:right}
+  .chk{font-size:13px;margin-top:5px}
+  .chk div{border-left:3px solid var(--cur-bar);background:var(--cur);border-radius:6px;padding:3px 8px;margin-top:3px}
+  .chk div.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .chk .parsed{font-size:12px;color:var(--muted);border:none;background:none;padding:0 0 0 2px}
+  mark{background:var(--bad-soft);color:inherit;border-bottom:2px solid var(--bad);border-radius:2px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .total{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin:0}
+  .sum{font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin:2px 0 6px;word-break:break-word}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg ul{margin:3px 0 0;padding-left:18px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .note{font-size:12.5px;color:var(--muted);margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+  @media (max-width:480px){.tc .top{flex-wrap:wrap}.tc .nm{flex:1 1 100%;order:2}.tc .no{flex:1 1 auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Rubric mẫu (giả lập, bản AI soạn chưa sửa) cho bài nhóm Khoa học tự nhiên 7 "Đo tốc độ đi bộ trong sân trường". Sửa tên tiêu chí, điểm, mô tả từng mức, hoặc bấm "Xoá trắng" để dán rubric của bạn. Trang cộng điểm tối đa, tô từ ngữ khó quan sát và báo các mức chồng nhau.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="list" id="list"></div>
+      <div class="btns"><button class="small" id="add">+ Thêm tiêu chí</button></div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Tổng điểm tối đa</p>
+      <p class="total" id="total"></p>
+      <p class="sum" id="sum"></p>
+      <div id="side" aria-live="polite"></div>
+      <div class="btns">
+        <button class="btn" id="reset">Khôi phục rubric mẫu</button>
+        <button class="btn" id="clear">Xoá trắng</button>
+      </div>
+      <p class="note">Trang chỉ soát những gì máy soát được: phép cộng, từ ngữ, khoảng số trong mô tả mức. Rubric có chấm đúng điều học sinh làm được hay không, trọng số phần làm tại lớp đã đủ chưa, vẫn do bạn quyết, và nên chấm thử vài bài mẫu trước khi dùng.</p>
+    </div>
+  </div>
+</div>
+<script>
+// Rubric mẫu riêng của trang (khác rubric trong bài 4.2, bài soát cùng huấn luyện viên và dự án cuối khoá).
+// Đã kiểm bằng Python: điểm tối đa 2 + 2 + 2 + 1 + 1 + 1 = 9 (thiếu 1 so với thang 10);
+// tiêu chí 2 có hai mức chồng ở bài sai đúng 2 phép tính ("sai 1 đến 2" và "sai từ 2 trở lên");
+// từ khó quan sát: "hiểu sâu" (tiêu chí 3), "tích cực", "cố gắng" (tiêu chí 4), "sáng tạo" (tiêu chí 3).
+const THANG = 10;
+const SAMPLE = [
+ {t:"Số đo tự thu thập", m:"2", L:[
+   ["2","Bảng số đo gốc ghi quãng đường đo bằng thước dây, thời gian của 3 lần bấm giờ cho mỗi bạn, ngày đo và người đo."],
+   ["1","Có bảng số đo nhưng thiếu một trong các thông tin trên."],
+   ["0","Không có bảng số đo gốc."]]},
+ {t:"Tính tốc độ", m:"2", L:[
+   ["2","Mọi phép tính tốc độ bằng quãng đường chia thời gian đều đúng, ghi đơn vị m/s."],
+   ["1","Sai 1 đến 2 phép tính, hoặc thiếu đơn vị."],
+   ["0","Sai từ 2 phép tính trở lên."]]},
+ {t:"Đồ thị quãng đường - thời gian", m:"2", L:[
+   ["2","Trục có tên và đơn vị, biểu diễn đúng mọi điểm, trình bày sáng tạo, hiểu sâu ý nghĩa của đồ thị."],
+   ["1","Thiếu tên trục hoặc đơn vị, hoặc sai đúng 1 điểm."],
+   ["0","Sai từ 2 điểm."]]},
+ {t:"Tinh thần làm việc nhóm", m:"1", L:[
+   ["1","Cả nhóm tích cực, cố gắng."],
+   ["0","Nhóm chưa tích cực."]]},
+ {t:"Nhật ký quá trình", m:"1", L:[
+   ["1","Ghi ngày làm từng bước và 1 chỗ nhóm đã sửa; nếu dùng AI, ghi câu đã hỏi."],
+   ["0","Không có nhật ký."]]},
+ {t:"Phần tại lớp, cá nhân", m:"1", L:[
+   ["1","Tính đúng tốc độ từ bảng số đo mới và đọc đúng một giá trị trên đồ thị."],
+   ["0","Sai hoặc không làm."]]}
+];
+// Từ ngữ khó quan sát: hai người chấm dễ hiểu khác nhau, học sinh không biết phải làm gì.
+const VAGUE = ["sáng tạo","tích cực","hiểu sâu","cố gắng","có ý thức","nghiêm túc","chăm chỉ","độc đáo","hấp dẫn","sạch đẹp","nắm vững","hiểu rõ","nỗ lực","thể hiện sự"];
+// Tiêu chí chấm việc dùng AI: không quan sát được, nên bỏ.
+const AI_RE = /(không|chưa)\s+(sử\s+dụng|dùng|nhờ)\s+(công\s+cụ\s+)?ai\b/i;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+// Bỏ dấu từng ký tự, giữ độ dài để vị trí khớp trùng chữ gốc.
+const fold = s => Array.from(s.normalize("NFC")).map(ch=>{
+  if(ch==="đ" || ch==="Đ") return "d";
+  const b = ch.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return (b.length===1 ? b : ch).toLowerCase();
+}).join("");
+const clone = a => JSON.parse(JSON.stringify(a));
+const num = v => { const x = parseFloat(String(v).replace(",", ".")); return String(v).trim()!=="" && isFinite(x) && x>=0 ? x : null; };
+const fmt = x => (Math.round(x*100)/100).toLocaleString("vi-VN");
+let C = clone(SAMPLE);
+function vagueHits(text){
+  const f = fold(text), out = [];
+  VAGUE.forEach(w=>{
+    const re = new RegExp("(^|[^a-z0-9])("+fold(w).replace(/ /g,"\\s+")+")(?![a-z0-9])","g");
+    let m; while((m = re.exec(f))){ out.push({a:m.index+m[1].length, b:m.index+m[1].length+m[2].length, w}); }
+  });
+  return out.sort((x,y)=>x.a-y.a);
+}
+// Đọc khoảng số trong mô tả mức: "1 đến 2 phép tính", "từ 2 điểm", "2 ... trở lên", "ít nhất 3", "tối đa 1", "đúng 1".
+// Trả {lo, hi, key, noun}; noun là chữ đầu tiên sau số (key: bản bỏ dấu), để chỉ so các mức nói về cùng một thứ.
+function parseRange(text){
+  const ch = Array.from(text.normalize("NFC")), f = fold(text);
+  const W = "([a-z]+)", S = "\\s+";
+  const P = [
+    [new RegExp("(\\d+)\\s*(?:-|–|den)\\s*(\\d+)"+S+W,"d"), m=>[+m[1], +m[2], 3]],
+    [new RegExp("(?:tu|it"+S+"nhat)"+S+"(\\d+)"+S+W,"d"), m=>[+m[1], Infinity, 2]],
+    [new RegExp("(\\d+)"+S+W+"[a-z ]{0,20}?"+S+"tro"+S+"len","d"), m=>[+m[1], Infinity, 2]],
+    [new RegExp("(?:toi"+S+"da|khong"+S+"qua)"+S+"(\\d+)"+S+W,"d"), m=>[0, +m[1], 2]],
+    [new RegExp("duoi"+S+"(\\d+)"+S+W,"d"), m=>[0, +m[1]-1, 2]],
+    [new RegExp("(?:dung|chi)"+S+"(\\d+)"+S+W,"d"), m=>[+m[1], +m[1], 2]]
+  ];
+  for(const [re, fn] of P){
+    const m = re.exec(f);
+    if(m){
+      const [lo, hi, g] = fn(m); const [x, y] = m.indices[g];
+      // Hiển thị thêm chữ thứ hai nếu nó thuộc danh từ ("phép tính", "nhận xét", "số liệu").
+      const nx = /^\s+([a-z]+)/.exec(f.slice(y));
+      const STOP = ["tro","hoac","va","tren","duoi","thi","la","nhung","co","roi","cua","trong","khi","nhom","sai","dung"];
+      const end = nx && !STOP.includes(nx[1]) ? y + nx[0].length : y;
+      return {lo, hi, key:m[g], noun:ch.slice(x, end).join("")};
+    }
+  }
+  return null;
+}
+const rangeTxt = r => r.hi===Infinity ? "từ "+r.lo+" "+r.noun+" trở lên" : (r.lo===r.hi ? "đúng "+r.lo+" "+r.noun : r.lo+" đến "+r.hi+" "+r.noun);
+function checkCrit(c){
+  const out = [], info = [];
+  const m = num(c.m);
+  if(m===null) out.push("Chưa ghi điểm tối đa.");
+  const pts = c.L.map(l=>num(l[0]));
+  if(pts.some(p=>p===null)) out.push("Có mức chưa ghi điểm.");
+  else if(pts.length){
+    if(m!==null && Math.max(...pts)!==m) out.push("Mức cao nhất được "+fmt(Math.max(...pts))+" điểm, khác điểm tối đa "+fmt(m)+".");
+    if(m!==null && pts.some(p=>p>m)) out.push("Có mức cho điểm lớn hơn điểm tối đa.");
+    for(let k=1;k<pts.length;k++) if(!(pts[k]<pts[k-1])){ out.push("Điểm các mức chưa giảm dần (mức "+(k+1)+" không nhỏ hơn mức "+k+")."); break; }
+  }
+  if(c.L.length<2) out.push("Cần ít nhất hai mức.");
+  const all = c.t+" "+c.L.map(l=>l[1]).join(" ");
+  const vw = [...new Set(vagueHits(all).map(h=>h.w))];
+  if(vw.length) out.push("Từ ngữ khó quan sát: “"+vw.join("”, “")+"”. Viết lại thành thứ nhìn thấy được trong bài, hoặc bỏ.");
+  if(AI_RE.test(all)) out.push("Tiêu chí chấm việc có dùng AI hay không: không quan sát được, nên bỏ; chấm điều học sinh làm được.");
+  // Mức chồng nhau: hai mức cùng nói về một thứ (cùng chữ sau số) mà khoảng số giao nhau.
+  const R = c.L.map(l=>parseRange(l[1]));
+  R.forEach((r,k)=>{ if(r) info.push("Mức "+(k+1)+": "+rangeTxt(r)); });
+  for(let a=0;a<R.length;a++) for(let b=a+1;b<R.length;b++){
+    const x=R[a], y=R[b];
+    if(x && y && x.key===y.key && Math.max(x.lo,y.lo) <= Math.min(x.hi,y.hi)){
+      const lo = Math.max(x.lo,y.lo), hi = Math.min(x.hi,y.hi);
+      out.push("Mức "+(a+1)+" và mức "+(b+1)+" chồng nhau: bài ứng với “"+(lo===hi ? lo : (hi===Infinity ? "từ "+lo : lo+" đến "+hi))+" "+x.noun+"” khớp cả hai mức. Viết lại cho rời nhau.");
+    }
+  }
+  return {out, info};
+}
+function hlArea(text){
+  const hs = vagueHits(text); if(!hs.length) return "";
+  const ch = Array.from(text.normalize("NFC")); let o = "", p = 0;
+  hs.forEach(h=>{ if(h.a<p) return; o += esc(ch.slice(p,h.a).join(""))+"<mark>"+esc(ch.slice(h.a,h.b).join(""))+"</mark>"; p = h.b; });
+  return o + esc(ch.slice(p).join(""));
+}
+function buildList(){
+  $("list").innerHTML = C.map((c,i)=>
+    '<div class="tc" id="c'+i+'"><div class="top"><span class="no">TC '+(i+1)+'</span>'+
+    '<input class="nm" data-i="'+i+'" data-f="t" value="'+esc(c.t)+'" aria-label="Tên tiêu chí '+(i+1)+'" placeholder="Tên tiêu chí">'+
+    '<input class="pt" data-i="'+i+'" data-f="m" inputmode="decimal" value="'+esc(c.m)+'" aria-label="Điểm tối đa tiêu chí '+(i+1)+'"><span class="unit">điểm</span>'+
+    '<button class="x" data-del="'+i+'" aria-label="Bỏ tiêu chí '+(i+1)+'">×</button></div>'+
+    '<div class="hdr"><span>Điểm</span><span>Mô tả mức (từ cao xuống thấp)</span></div>'+
+    c.L.map((l,k)=>'<div class="lv"><input class="pt" data-i="'+i+'" data-k="'+k+'" data-f="lp" inputmode="decimal" value="'+esc(l[0])+'" aria-label="Điểm mức '+(k+1)+'"><textarea data-i="'+i+'" data-k="'+k+'" data-f="ld" aria-label="Mô tả mức '+(k+1)+' tiêu chí '+(i+1)+'">'+esc(l[1])+'</textarea><button class="x" data-i="'+i+'" data-dellv="'+k+'" aria-label="Bỏ mức '+(k+1)+'">×</button></div>').join("")+
+    '<button class="small" data-addlv="'+i+'">+ Thêm mức</button><div class="chk" id="k'+i+'"></div></div>').join("");
+  $("list").querySelectorAll("input,textarea").forEach(el=>el.addEventListener("input",()=>{
+    const i=+el.dataset.i, f=el.dataset.f;
+    if(f==="lp") C[i].L[+el.dataset.k][0]=el.value;
+    else if(f==="ld") C[i].L[+el.dataset.k][1]=el.value;
+    else C[i][f]=el.value;
+    render();
+  }));
+  $("list").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ C.splice(+b.dataset.del,1); buildList(); });
+  $("list").querySelectorAll("[data-dellv]").forEach(b=>b.onclick=()=>{ C[+b.dataset.i].L.splice(+b.dataset.dellv,1); buildList(); });
+  $("list").querySelectorAll("[data-addlv]").forEach(b=>b.onclick=()=>{ C[+b.dataset.addlv].L.push(["",""]); buildList(); });
+  render();
+}
+function render(){
+  const ms = C.map(c=>num(c.m));
+  const total = ms.reduce((p,c)=>p+(c||0),0);
+  const missing = ms.filter(v=>v===null).length;
+  $("total").textContent = fmt(total)+" / "+THANG;
+  $("sum").textContent = C.length ? ms.map(v=>v===null?"?":fmt(v)).join(" + ")+" = "+fmt(total) : "Chưa có tiêu chí nào.";
+  const res = C.map(checkCrit);
+  res.forEach((r,i)=>{
+    let h = r.out.length ? r.out.map(x=>'<div>'+esc(x)+'</div>').join("") : '<div class="ok">Chưa thấy lỗi máy soát được.</div>';
+    const hl = C[i].L.map(l=>hlArea(l[1])).filter(Boolean);
+    if(hl.length) h += hl.map(x=>'<div class="parsed">… '+x+'</div>').join("");
+    if(r.info.length) h += '<div class="parsed">Trang hiểu khoảng số: '+esc(r.info.join("; "))+'.</div>';
+    $("k"+i).innerHTML = h;
+    $("c"+i).classList.toggle("warn", r.out.length>0);
+  });
+  let h = "";
+  if(!C.length) h += '<div class="msg">Bấm "+ Thêm tiêu chí" để nhập rubric của bạn.</div>';
+  else if(missing) h += '<div class="msg warn">'+missing+' tiêu chí chưa ghi điểm tối đa, tổng chưa đủ.</div>';
+  else if(Math.abs(total-THANG)<1e-9) h += '<div class="msg ok">Điểm tối đa cộng đúng '+THANG+'.</div>';
+  else h += '<div class="msg bad">Điểm tối đa cộng '+fmt(total)+', '+(total>THANG?'vượt ':'thiếu ')+fmt(Math.abs(total-THANG))+' so với thang '+THANG+'. Đừng tin dòng "Tổng" có sẵn; chia lại điểm rồi cộng lại.</div>';
+  const pick = f => res.map((r,i)=>r.out.some(f)?i+1:0).filter(Boolean);
+  const items = [];
+  const v = pick(x=>x.startsWith("Từ ngữ")); if(v.length) items.push("Từ ngữ khó quan sát: TC "+v.join(", TC "));
+  const o = pick(x=>x.includes("chồng nhau")); if(o.length) items.push("Mức chồng nhau: TC "+o.join(", TC "));
+  const a = pick(x=>x.startsWith("Tiêu chí chấm việc")); if(a.length) items.push("Chấm việc dùng AI: TC "+a.join(", TC "));
+  const p = pick(x=>/Mức cao nhất|lớn hơn điểm tối đa|giảm dần|chưa ghi điểm|ít nhất hai/.test(x)); if(p.length) items.push("Điểm các mức cần xem lại: TC "+p.join(", TC "));
+  if(items.length) h += '<div class="msg"><b>Cần sửa</b><ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
+  else if(C.length && !missing) h += '<div class="msg ok">Không còn lỗi máy soát được. Bước tiếp theo: chấm thử vài bài mẫu, so điểm với một đồng nghiệp.</div>';
+  $("side").innerHTML = h;
+}
+$("add").onclick = ()=>{ C.push({t:"",m:"",L:[["",""],["",""],["0",""]]}); buildList(); const n=$("list").querySelectorAll(".nm"); n[n.length-1].focus(); };
+$("reset").onclick = ()=>{ C = clone(SAMPLE); buildList(); };
+$("clear").onclick = ()=>{ C = [{t:"",m:"",L:[["",""],["",""],["0",""]]}]; buildList(); };
+buildList();
+</script>
+</body>
+</html>

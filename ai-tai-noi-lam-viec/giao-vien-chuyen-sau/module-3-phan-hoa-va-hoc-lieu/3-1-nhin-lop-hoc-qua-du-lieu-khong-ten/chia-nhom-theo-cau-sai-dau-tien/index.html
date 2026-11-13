@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="820">
+<title>Chia nhóm theo câu sai</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --g0:#e7eefc; --g1:#fde8d7; --g2:#e3f4e8; --g3:#efe6fb; --g4:#eceef1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --g0:#1e2a44; --g1:#3a2716; --g2:#13301f; --g3:#2b2140; --g4:#232832;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:14px}
+  .de{font-size:12.5px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:10px}
+  .tw{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--line);padding:3px 4px;text-align:left;vertical-align:middle}
+  th{color:var(--muted);font-weight:600;font-size:12.5px;white-space:nowrap}
+  td.c,th.c{text-align:center}
+  td.code{font-weight:700;white-space:nowrap}
+  td.nt{font-size:12.5px;color:var(--muted);min-width:120px}
+  input,select{font:inherit;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:7px;min-height:36px;min-width:0}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  input.sc{width:42px;text-align:center;padding:2px}
+  input.sc.bad{border-color:var(--bad);background:var(--bad-soft)}
+  td.full input.sc{border-color:var(--ok)}
+  select.grp{padding:2px 4px;max-width:150px}
+  select.grp.moved{border-color:var(--cur-bar);background:var(--cur)}
+  input.why{width:100%;min-width:150px;padding:3px 6px;font-size:13px}
+  input.why.need{border-color:var(--bad);background:var(--bad-soft)}
+  .auto{font-size:11.5px;color:var(--muted);display:block}
+  tr.rate td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
+  tr.rate td.c{font-size:12.5px;white-space:nowrap}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  @media (max-width:760px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:380px){.board{grid-template-columns:1fr}}
+  .box{border:1.5px solid var(--line);border-radius:9px;padding:6px;min-height:92px;min-width:0}
+  .box.over{border-color:var(--accent);border-style:dashed}
+  .box h5{margin:0 0 2px;font-size:13px}
+  .box .d{font-size:11.5px;color:var(--muted);margin:0 0 4px;line-height:1.3}
+  .chip{display:inline-block;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:1px 8px;margin:2px 2px 0 0;font-size:12.5px;font-weight:600;cursor:grab;user-select:none}
+  .chip.moved{border-color:var(--cur-bar);background:var(--cur)}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Bảng điểm bài 15 phút của một lớp 7 khác (giả lập, 12 em, chỉ có mã). Trang tính tỉ lệ làm đúng hoàn toàn từng câu trên số em đã có điểm câu đó, rồi xếp nhóm theo câu sai đầu tiên. Sửa điểm để thử; đổi nhóm của một em bằng ô "Nhóm" hoặc kéo mã em đó sang ô nhóm khác, và ghi lý do.</p>
+  <p class="de"><b>Đề (đại lượng tỉ lệ thuận):</b> C1 (2đ) y tỉ lệ thuận với x, x = 3 thì y = 12: tìm hệ số tỉ lệ, viết y theo x (k = 4, y = 4x). C2 (2đ) điền bảng x: 2, 5, ?; y: 6, ?, 21 (y = 15, x = 7). C3 (3đ) tìm x, y, z biết x/2 = y/3 = z/4, x + y + z = 45 (10, 15, 20). C4 (3đ) ba tổ trồng 60 cây, số cây tỉ lệ với số bạn 4; 5; 6 (16, 20, 24). Ô trống là chưa có điểm, không phải 0.</p>
+  <div class="card">
+    <div class="tw"><table id="tbl"></table></div>
+  </div>
+  <div class="card">
+    <p class="panel-title">Các nhóm (kéo mã sang ô khác để đổi nhóm)</p>
+    <div class="board" id="board"></div>
+    <div id="side" aria-live="polite"></div>
+    <div class="btns"><button class="btn" id="reset">Khôi phục bảng mẫu</button></div>
+  </div>
+</div>
+<script>
+// Dữ liệu riêng của trang (khác bảng 36 em của bài thực hành). Đã kiểm bằng Python:
+// đúng hoàn toàn C1 8/11 ≈ 72,7%; C2 8/11 ≈ 72,7%; C3 7/11 ≈ 63,6%; C4 4/11 ≈ 36,4% (HS66 vắng, không vào mẫu số).
+// Nhóm theo câu sai đầu tiên: Hệ số tỉ lệ HS62, 64, 69, 71; Dãy tỉ số HS63, 68; Lời văn HS65, 70; Mở rộng HS61, 67, 72; Chưa xếp HS66.
+// Đáp án đề: k = 12 : 3 = 4; C2 k = 3, y = 15, x = 7; C3 45 : 9 = 5 → 10, 15, 20; C4 60 : 15 = 4 → 16, 20, 24.
+const MAX = [2, 2, 3, 3];
+const G = [
+ {k:"he", n:"Hệ số tỉ lệ", d:"Sai câu 1 hoặc câu 2: tìm hệ số, dùng y = kx", c:"--g0"},
+ {k:"day", n:"Dãy tỉ số", d:"Đúng câu 1, 2; chưa đúng câu 3", c:"--g1"},
+ {k:"loi", n:"Lời văn", d:"Đúng câu 1 đến 3; chưa đúng câu 4", c:"--g2"},
+ {k:"mo", n:"Mở rộng", d:"Đúng cả 4 câu", c:"--g3"},
+ {k:"cho", n:"Chưa xếp", d:"Chưa đủ điểm để xếp", c:"--g4"}
+];
+const SAMPLE = [
+ ["HS61",[2, 2, 3, 3],""],
+ ["HS62",[2, 1, 3, 3],"C2 điền đúng y, bỏ trống ô x"],
+ ["HS63",[2, 2, 1, 0],"C3 chia tổng cho 2·3·4"],
+ ["HS64",[1, 1, 0, 0],"C1 tính k = 3/12"],
+ ["HS65",[2, 2, 3, 1],"C4 chia 60 cho 3"],
+ ["HS66",["", "", "", ""],"vắng có phép, làm bù"],
+ ["HS67",[2, 2, 3, 3],""],
+ ["HS68",[2, 2, 2, 1],"C3 đúng hệ số, sai z"],
+ ["HS69",[0, 1, 1, 0],"C1 tính k = 3/12"],
+ ["HS70",[2, 2, 3, 2],"C4 chỉ tính số cây 1 tổ"],
+ ["HS71",[1, 2, 3, 1],"C1 tìm đúng k, quên viết y = 4x"],
+ ["HS72",[2, 2, 3, 3],""]
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+let R;
+function load(){ R = SAMPLE.map(r=>({code:r[0], s:r[1].map(String), note:r[2], move:"", why:""})); }
+const val = (v,q) => { if(String(v).trim()==="") return null; const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) && x>=0 && x<=MAX[q] ? x : NaN; };
+function auto(r){
+  const v = r.s.map(val);
+  if(v.some(x=>Number.isNaN(x))) return "cho";
+  if(v[0]===null || v[1]===null) return "cho";
+  if(v[0]<MAX[0] || v[1]<MAX[1]) return "he";
+  if(v[2]===null) return "cho";
+  if(v[2]<MAX[2]) return "day";
+  if(v[3]===null) return "cho";
+  if(v[3]<MAX[3]) return "loi";
+  return "mo";
+}
+const grpOf = r => r.move || auto(r);
+const gName = k => G.find(g=>g.k===k).n;
+const pct = (a,b) => b ? (Math.round(a/b*1000)/10).toLocaleString("vi-VN")+"%" : "–";
+function buildTable(){
+  let h = '<thead><tr><th>Mã</th>'+MAX.map((m,q)=>'<th class="c">C'+(q+1)+' ('+m+'đ)</th>').join("")+'<th>Ghi chú</th><th>Nhóm</th><th>Lý do đổi nhóm</th></tr></thead><tbody>';
+  R.forEach((r,i)=>{
+    h += '<tr><td class="code">'+r.code+'</td>'+r.s.map((v,q)=>'<td class="c" id="t'+i+'_'+q+'"><input class="sc" data-i="'+i+'" data-q="'+q+'" value="'+esc(v)+'" inputmode="decimal" aria-label="'+r.code+' câu '+(q+1)+'"></td>').join("")+
+      '<td class="nt">'+esc(r.note)+'</td><td><select class="grp" data-i="'+i+'" aria-label="Nhóm của '+r.code+'"></select><span class="auto" id="au'+i+'"></span></td>'+
+      '<td><input class="why" data-i="'+i+'" value="'+esc(r.why)+'" placeholder="Chỉ cần khi đổi nhóm" aria-label="Lý do đổi nhóm của '+r.code+'"></td></tr>';
+  });
+  h += '<tr class="rate"><td>Đúng hết</td>'+MAX.map((m,q)=>'<td class="c" id="rt'+q+'"></td>').join("")+'<td colspan="3" id="rtNote" style="font-weight:400;font-size:12.5px;color:var(--muted)"></td></tr></tbody>';
+  $("tbl").innerHTML = h;
+  $("tbl").querySelectorAll("input.sc").forEach(el=>el.addEventListener("input",()=>{ R[+el.dataset.i].s[+el.dataset.q] = el.value; render(); }));
+  $("tbl").querySelectorAll("select.grp").forEach(el=>el.addEventListener("change",()=>{ setMove(+el.dataset.i, el.value); }));
+  $("tbl").querySelectorAll("input.why").forEach(el=>el.addEventListener("input",()=>{ R[+el.dataset.i].why = el.value; render(); }));
+  render();
+}
+function setMove(i, k){
+  const r = R[i];
+  r.move = (k===auto(r)) ? "" : k;
+  render();
+  if(r.move && !r.why.trim()){ const w = document.querySelector('input.why[data-i="'+i+'"]'); if(w) w.focus(); }
+}
+function render(){
+  // Tỉ lệ đúng hoàn toàn: số em đạt đủ điểm / số em đã có điểm câu đó.
+  MAX.forEach((m,q)=>{
+    let have = 0, full = 0;
+    R.forEach((r,i)=>{
+      const v = val(r.s[q],q), td = $("t"+i+"_"+q), inp = td.querySelector("input");
+      inp.classList.toggle("bad", Number.isNaN(v));
+      td.classList.toggle("full", v===m);
+      if(v!==null && !Number.isNaN(v)){ have++; if(v===m) full++; }
+    });
+    $("rt"+q).innerHTML = full+'/'+have+'<br>'+pct(full,have);
+  });
+  const bad = R.some(r=>r.s.some((v,q)=>Number.isNaN(val(v,q))));
+  $("rtNote").textContent = bad ? "Có ô điểm không hợp lệ (viền đỏ): ô đó chưa được tính." : "Mẫu số chỉ gồm em đã có điểm câu đó.";
+  R.forEach((r,i)=>{
+    const a = auto(r);
+    if(r.move===a) r.move = "";
+    const sel = document.querySelector('select.grp[data-i="'+i+'"]');
+    sel.innerHTML = G.map(g=>'<option value="'+g.k+'"'+(g.k===grpOf(r)?' selected':'')+'>'+g.n+(g.k===a?' (công thức)':'')+'</option>').join("");
+    sel.classList.toggle("moved", !!r.move);
+    $("au"+i).textContent = r.move ? "công thức: "+gName(a) : "";
+    const w = document.querySelector('input.why[data-i="'+i+'"]');
+    w.classList.toggle("need", !!r.move && !r.why.trim());
+  });
+  $("board").innerHTML = G.map(g=>{
+    const mem = R.filter(r=>grpOf(r)===g.k);
+    return '<div class="box" data-g="'+g.k+'" style="background:var('+g.c+')"><h5>'+g.n+' ('+mem.length+')</h5><p class="d">'+g.d+'</p>'+
+      mem.map(r=>'<span class="chip'+(r.move?' moved':'')+'" draggable="true" data-code="'+r.code+'" title="'+(r.move?'Đã đổi từ nhóm '+esc(gName(auto(r))):'Theo công thức')+'">'+r.code+'</span>').join("")+'</div>';
+  }).join("");
+  $("board").querySelectorAll(".chip").forEach(c=>c.addEventListener("dragstart",e=>{ e.dataTransfer.setData("text/plain", c.dataset.code); e.dataTransfer.effectAllowed="move"; }));
+  $("board").querySelectorAll(".box").forEach(b=>{
+    b.addEventListener("dragover",e=>{ e.preventDefault(); b.classList.add("over"); });
+    b.addEventListener("dragleave",()=>b.classList.remove("over"));
+    b.addEventListener("drop",e=>{ e.preventDefault(); b.classList.remove("over"); const code = e.dataTransfer.getData("text/plain"); const i = R.findIndex(r=>r.code===code); if(i>=0) setMove(i, b.dataset.g); });
+  });
+  const moved = R.filter(r=>r.move), noWhy = moved.filter(r=>!r.why.trim());
+  let h = "";
+  if(!moved.length) h += '<div class="msg">Đây mới là lượt xếp của công thức, chỉ nhìn điểm. Đọc cột ghi chú: em nào chỉ sót một ý mà bị xếp vào nhóm ôn kiến thức nền? Em nào "Chưa xếp" và khi nào xếp được?</div>';
+  else {
+    h += '<div class="msg '+(noWhy.length?'warn':'ok')+'">Đã đổi nhóm '+moved.length+' em: '+moved.map(r=>esc(r.code)+' ('+esc(gName(auto(r)))+' → '+esc(gName(r.move))+')').join("; ")+'. ';
+    h += noWhy.length ? 'Còn '+noWhy.length+' em chưa ghi lý do: '+noWhy.map(r=>r.code).join(", ")+'.' : 'Em nào cũng có lý do. Trước khi chốt, mở lại bài làm gốc của các em này.';
+    h += '</div>';
+  }
+  const cho = R.filter(r=>grpOf(r)==="cho");
+  if(cho.length) h += '<div class="msg warn">Chưa xếp: '+cho.map(r=>r.code).join(", ")+'. Xếp sau khi có đủ điểm, không đoán từ ô trống.</div>';
+  $("side").innerHTML = h;
+}
+$("reset").onclick = ()=>{ load(); buildTable(); };
+load(); buildTable();
+</script>
+</body>
+</html>
