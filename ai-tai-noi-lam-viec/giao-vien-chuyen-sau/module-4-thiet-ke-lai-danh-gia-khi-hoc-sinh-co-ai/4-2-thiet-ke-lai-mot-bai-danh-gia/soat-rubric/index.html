@@ -139,7 +139,7 @@ function vagueHits(text){
   return out.sort((x,y)=>x.a-y.a);
 }
 // Đọc khoảng số trong mô tả mức: "1 đến 2 phép tính", "từ 2 điểm", "2 ... trở lên", "ít nhất 3", "tối đa 1", "đúng 1".
-// Trả {lo, hi, key, noun}; noun là chữ đầu tiên sau số (key: bản bỏ dấu), để chỉ so các mức nói về cùng một thứ.
+// Trả {lo, hi, key, noun}; key = chữ đứng trước + danh từ sau số (bỏ dấu), để chỉ so các mức nói về cùng một thứ.
 function parseRange(text){
   const ch = Array.from(text.normalize("NFC")), f = fold(text);
   const W = "([a-z]+)", S = "\\s+";
@@ -159,7 +159,9 @@ function parseRange(text){
       const nx = /^\s+([a-z]+)/.exec(f.slice(y));
       const STOP = ["tro","hoac","va","tren","duoi","thi","la","nhung","co","roi","cua","trong","khi","nhom","sai","dung"];
       const end = nx && !STOP.includes(nx[1]) ? y + nx[0].length : y;
-      return {lo, hi, key:m[g], noun:ch.slice(x, end).join("")};
+      // Chữ đứng ngay trước cụm số ("sai", "lệch"...): chỉ so hai mức cùng chữ này và cùng danh từ.
+      const pv = /([a-z]+)\s*$/.exec(f.slice(0, m.index));
+      return {lo, hi, key:(pv ? pv[1] : "")+"|"+m[g], noun:ch.slice(x, end).join("")};
     }
   }
   return null;
