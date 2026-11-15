@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Động lực học Nạp chồng Toán tử trong C++</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;overflow-x:auto;padding:6px 0;max-height:260px;overflow-y:auto}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12.5px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:13px;padding:2px 8px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-val.err{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng động lực học nạp chồng toán tử (Operator Overloading) trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-chain-assign" onclick="setMode('chain-assign')">Chuỗi gán (a += b) += c</button>
+        <button class="tab" id="tab-inc-dec" onclick="setMode('inc-dec')">Tiền tố ++obj vs Hậu tố obj++</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/4</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Biến & Đối tượng</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'chain-assign': {
+    lead: 'Toán tử gán ghép operator+= phải trả về tham chiếu T& để cho phép gọi chuỗi (a += b) += c đúng ngữ nghĩa toán học chuẩn của C++.',
+    code: [
+      {ln: 1, text: '<span class="com">// Chuẩn C++: trả về T&</span>'},
+      {ln: 2, text: '<span class="type">Rational</span>& <span class="type">Rational</span>::<span class="kw">operator</span>+=('},
+      {ln: 3, text: '    <span class="kw">const</span> <span class="type">Rational</span>& rhs) {'},
+      {ln: 4, text: '    num = num * rhs.den + rhs.num * den;'},
+      {ln: 5, text: '    den *= rhs.den;'},
+      {ln: 6, text: '    <span class="kw">return</span> *<span class="kw">this</span>;  <span class="com">// Trả về Rational&</span>'},
+      {ln: 7, text: '}'},
+      {ln: 8, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 9, text: '    <span class="type">Rational</span> a(<span class="num">1</span>,<span class="num">2</span>), b(<span class="num">1</span>,<span class="num">4</span>), c(<span class="num">1</span>,<span class="num">8</span>);'},
+      {ln: 10, text: '    (a += b) += c;  <span class="com">// Chuỗi gán ghép liên hoàn</span>'},
+      {ln: 11, text: '}'}
+    ],
+    steps: [
+      {
+        line: 9,
+        mem: [
+          {name: 'a', val: '1/2', state: 'Đối tượng đích', cls: 'active'},
+          {name: 'b', val: '1/4', state: 'Đối số 1', cls: ''},
+          {name: 'c', val: '1/8', state: 'Đối số 2', cls: ''}
+        ],
+        status: 'Khởi tạo 3 phân số a = 1/2, b = 1/4, c = 1/8. Chuẩn bị thực thi biểu thức (a += b) += c;',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'a', val: '6/8 (tức 3/4)', state: 'a được cập nhật lần 1', cls: 'ok'},
+          {name: 'Kết quả (a += b)', val: 'Rational& (chính là a)', state: 'Trả về *this theo tham chiếu', cls: 'ok'}
+        ],
+        status: 'Thực thi vế trong ngoặc (a += b): num và den của a được cộng dồn với b (1/2 + 1/4 = 3/4). Hàm return *this trả về tham chiếu Rational& trỏ thẳng vào a!',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'a', val: '28/32 (tức 7/8)', state: 'a tiếp tục cộng dồn c!', cls: 'ok'},
+          {name: 'Tổng kết quả a', val: '7/8', state: 'Chính xác 100%', cls: 'ok'}
+        ],
+        status: 'Tiếp tục += c trên kết quả tham chiếu: vì kết quả chính là a, phép toán += c tiếp tục cộng dồn 1/8 vào a -> a = 7/8. Hoàn toàn đúng chuẩn!',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Nếu trả về Rational (theo trị)', val: 'TẠO BẢN SAO TẠM', state: 'Bẫy thiết kế!', cls: 'err'},
+          {name: 'Kết quả a', val: 'Chỉ là 3/4', state: 'Bị mất phép cộng c!', cls: 'err'}
+        ],
+        status: '⚠️ BẪY: Nếu operator+= trả về Rational (theo giá trị thay vì Rational&), (a += b) tạo ra một đối tượng tạm thời mang giá trị 3/4. Sau đó += c cộng vào đối tượng tạm đó rồi huỷ nó, a chỉ còn là 3/4!',
+        cls: 'warn'
+      }
+    ]
+  },
+  'inc-dec': {
+    lead: 'Tiền tố (++obj) vs Hậu tố (obj++): Tiền tố trả về T& (tăng ngay, không tốn bộ nhớ tạm); Hậu tố trả về T (phải tạo bản sao tạm giá trị cũ trước khi tăng).',
+    code: [
+      {ln: 1, text: '<span class="com">// 1. Tiền tố (++obj): Tăng rồi trả về tham chiếu</span>'},
+      {ln: 2, text: '<span class="type">Counter</span>& <span class="type">Counter</span>::<span class="kw">operator</span>++() {'},
+      {ln: 3, text: '    val++;'},
+      {ln: 4, text: '    <span class="kw">return</span> *<span class="kw">this</span>;  <span class="com">// Trả về Counter& (0 bản sao tạm)</span>'},
+      {ln: 5, text: '}'},
+      {ln: 6, text: '<span class="com">// 2. Hậu tố (obj++): Lưu bản sao cũ rồi mới tăng</span>'},
+      {ln: 7, text: '<span class="type">Counter</span> <span class="type">Counter</span>::<span class="kw">operator</span>++(<span class="type">int</span>) {'},
+      {ln: 8, text: '    <span class="type">Counter</span> old = *<span class="kw">this</span>;  <span class="com">// Tạo bản sao tạm!</span>'},
+      {ln: 9, text: '    ++(*<span class="kw">this</span>);             <span class="com">// Gọi tiền tố tăng val</span>'},
+      {ln: 10, text: '    <span class="kw">return</span> old;            <span class="com">// Trả về giá trị cũ</span>'},
+      {ln: 11, text: '}'}
+    ],
+    steps: [
+      {
+        line: 1,
+        mem: [
+          {name: 'c.val', val: '10', state: 'Giá trị ban đầu', cls: ''},
+          {name: 'Bản sao tạm', val: '0', state: 'Chưa có', cls: ''}
+        ],
+        status: 'Bắt đầu từ Counter c(10). So sánh quy trình thực thi giữa ++c và c++.',
+        cls: ''
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'c.val', val: '11', state: 'Tăng trực tiếp val', cls: 'ok'},
+          {name: 'return', val: 'Counter& (*this)', state: 'Tham chiếu đối tượng gốc', cls: 'ok'},
+          {name: 'Chi phí', val: '0 bản sao tạm (Tối ưu)', state: 'Nhanh nhất', cls: 'ok'}
+        ],
+        status: 'Gọi ++c (tiền tố): val tăng trực tiếp từ 10 lên 11. Hàm trả về tham chiếu Counter& chính là c. Hiệu năng tối đa, không phát sinh bất kỳ bản sao nào!',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'c.val', val: '11', state: 'Chưa tăng', cls: ''},
+          {name: 'old.val (bản sao)', val: '11', state: 'Lưu giá trị cũ vào Stack', cls: 'warn'}
+        ],
+        status: 'Gọi c++ (hậu tố): Bước 1 tạo một đối tượng tạm thời Counter old sao chép giá trị 11 hiện tại.',
+        cls: 'warn'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'c.val', val: '12', state: 'Đã tăng lên 12', cls: 'ok'},
+          {name: 'Biểu thức nhận', val: '11 (giá trị cũ từ old)', state: 'Hậu tố hoàn tất', cls: 'ok'},
+          {name: 'Chi phí', val: '1 Constructor + 1 Destructor', state: 'Tốn tài nguyên hơn', cls: 'warn'}
+        ],
+        status: '✓ Bước 2: c tăng lên 12, nhưng biểu thức nhận giá trị cũ 11. Lời khuyên vàng C++: Luôn ưu tiên dùng ++it / ++obj trừ khi bắt buộc cần giá trị cũ!',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'chain-assign';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-chain-assign').classList.toggle('active', currentMode === 'chain-assign');
+  document.getElementById('tab-inc-dec').classList.toggle('active', currentMode === 'inc-dec');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

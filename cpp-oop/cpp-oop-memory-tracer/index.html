@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Quản lý Bộ nhớ Heap, RAII & Rule of Five trong C++</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:3.5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:680px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;overflow-x:auto;padding:6px 0;max-height:260px;overflow-y:auto}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-val.err{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng quản lý tài nguyên Heap, nguyên lý RAII và Rule of Five trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-double-free" onclick="setMode('double-free')">Shallow Copy & Double Free</button>
+        <button class="tab" id="tab-copy-and-swap" onclick="setMode('copy-and-swap')">Copy-and-Swap O(1)</button>
+        <button class="tab" id="tab-move-semantics" onclick="setMode('move-semantics')">Move Semantics & noexcept</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/4</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Phân bố Bộ nhớ (Stack & Heap)</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'double-free': {
+    lead: 'Bẫy Sao chép Nông (Shallow Copy): Hai đối tượng cùng trỏ vào một vùng nhớ Heap; đối tượng thứ nhất giải phóng khiến đối tượng thứ hai trở thành Dangling Pointer và gây lỗi sập Double Free!',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Buffer</span> {'},
+      {ln: 2, text: '    <span class="type">int</span>* data;'},
+      {ln: 3, text: '<span class="kw">public</span>:'},
+      {ln: 4, text: '    <span class="fn">Buffer</span>(<span class="type">int</span> val) : <span class="fn">data</span>(<span class="kw">new</span> <span class="type">int</span>(val)) {}'},
+      {ln: 5, text: '    ~<span class="fn">Buffer</span>() { <span class="kw">delete</span> data; } <span class="com">// Destructor thu hồi</span>'},
+      {ln: 6, text: '};'},
+      {ln: 7, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 8, text: '    <span class="type">Buffer</span> b1(<span class="num">100</span>);'},
+      {ln: 9, text: '    <span class="type">Buffer</span> b2 = b1;  <span class="com">// Sao chép nông mặc định!</span>'},
+      {ln: 10, text: '}  <span class="com">// Thoát hàm: b2 huỷ trước, b1 huỷ sau</span>'}
+    ],
+    steps: [
+      {
+        line: 8,
+        mem: [
+          {name: 'b1.data (Stack)', val: '0x10a0', state: 'Con trỏ trỏ Heap', cls: 'ok'},
+          {name: 'Heap [0x10a0]', val: '100', state: 'Vùng nhớ mới cấp phát', cls: 'ok'},
+          {name: 'b2.data', val: 'chưa tạo', state: 'Chưa khởi tạo', cls: ''}
+        ],
+        status: 'Khởi tạo b1(100): b1.data cấp phát ô nhớ Heap 0x10a0 lưu giá trị 100. Quyền sở hữu duy nhất thuộc về b1.',
+        cls: ''
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'b1.data (Stack)', val: '0x10a0', state: 'Cùng trỏ 0x10a0', cls: 'warn'},
+          {name: 'b2.data (Stack)', val: '0x10a0', state: 'Sao chép bitwise!', cls: 'warn'},
+          {name: 'Heap [0x10a0]', val: '100', state: 'Bị trỏ kép!', cls: 'warn'}
+        ],
+        status: '⚠️ SAO CHÉP NÔNG: b2 = b1 sao chép từng bit giá trị con trỏ! Cả b1.data và b2.data đều trỏ vào CÙNG một địa chỉ 0x10a0 trên Heap.',
+        cls: 'warn'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'b2 (huỷ trước)', val: 'ĐÃ HUỶ', state: 'delete data [0x10a0]', cls: 'err'},
+          {name: 'Heap [0x10a0]', val: 'ĐÃ GIẢI PHÓNG', state: 'Bộ nhớ trả về OS', cls: 'err'},
+          {name: 'b1.data (Stack)', val: '0x10a0 (TREO!)', state: 'Dangling Pointer!', cls: 'err'}
+        ],
+        status: 'Thoát hàm: b2 bị huỷ trước theo quy tắc LIFO. Destructor b2 gọi delete 0x10a0. Ô nhớ 0x10a0 bị thu hồi. b1.data trở thành Dangling Pointer (con trỏ treo)!',
+        cls: 'err'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: 'b1 (huỷ sau)', val: 'CRASH!', state: 'delete 0x10a0 lần 2!', cls: 'err'},
+          {name: 'Hệ điều hành', val: 'SIGABRT', state: 'double free or corruption', cls: 'err'}
+        ],
+        status: '💥 DOUBLE FREE CRASH: Đến lượt b1 huỷ, destructor gọi delete trên 0x10a0 đã bị giải phóng! Chương trình lập tức sập với lỗi nghiêm trọng: double free or corruption!',
+        cls: 'err'
+      }
+    ]
+  },
+  'copy-and-swap': {
+    lead: 'Kỹ thuật Copy-and-Swap (Rule of Three): Tận dụng truyền tham trị để tạo bản sao tự động, tráo đổi con trỏ trong O(1) và tự động dọn bộ nhớ cũ.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">String</span> {'},
+      {ln: 2, text: '    <span class="type">char</span>* data;'},
+      {ln: 3, text: '<span class="kw">public</span>:'},
+      {ln: 4, text: '    <span class="com">// Copy constructor (Deep Copy)</span>'},
+      {ln: 5, text: '    <span class="fn">String</span>(<span class="kw">const</span> <span class="type">String</span>& other) : <span class="fn">data</span>(<span class="fn">clone</span>(other.data)) {}'},
+      {ln: 6, text: '    <span class="com">// Copy assignment dùng copy-and-swap</span>'},
+      {ln: 7, text: '    <span class="type">String</span>& <span class="kw">operator</span>=(<span class="type">String</span> other) {  <span class="com">// Truyền trị!</span>'},
+      {ln: 8, text: '        <span class="fn">swap</span>(data, other.data);  <span class="com">// Tráo O(1)</span>'},
+      {ln: 9, text: '        <span class="kw">return</span> *<span class="kw">this</span>;'},
+      {ln: 10, text: '    }  <span class="com">// other tự huỷ, dọn bộ nhớ cũ!</span>'},
+      {ln: 11, text: '};'}
+    ],
+    steps: [
+      {
+        line: 7,
+        mem: [
+          {name: 'this->data (s1)', val: '0x1000 ("Hello")', state: 'Vùng nhớ cũ của s1', cls: 'ok'},
+          {name: 'other.data (bản sao)', val: '0x2000 ("World")', state: 'Tự sinh bởi tham trị', cls: 'active'}
+        ],
+        status: 'Lệnh s1 = s2 gọi operator=(String other). Vì other truyền theo giá trị, copy constructor tự động nhân bản "World" vào Heap mới 0x2000.',
+        cls: ''
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'this->data (s1)', val: '0x2000 ("World")', state: 'ĐÃ NHẬN DỮ LIỆU MỚI', cls: 'ok'},
+          {name: 'other.data', val: '0x1000 ("Hello")', state: 'ĐÃ NHẬN DỮ LIỆU CŨ', cls: 'warn'},
+          {name: 'Thời gian tráo', val: 'O(1) vài nano giây', state: 'Chỉ tráo 2 địa chỉ', cls: 'ok'}
+        ],
+        status: 'Thao tác swap(this->data, other.data): Hai con trỏ thô được tráo đổi giá trị trong O(1). s1 nhận ngay 0x2000, other cầm 0x1000 cũ.',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 's1.data', val: '0x2000 ("World")', state: 'Bảo toàn hoàn hảo', cls: 'ok'},
+          {name: 'other (biến cục bộ)', val: 'TỰ ĐỘNG HUỶ', state: 'delete other.data [0x1000]', cls: 'ok'},
+          {name: 'Vùng 0x1000 cũ', val: 'ĐÃ THU HỒI SẠCH SẼ', state: 'Không rò rỉ byte nào', cls: 'ok'}
+        ],
+        status: '✓ Khi thoát hàm operator=, biến tạm other đi ra khỏi phạm vi. Destructor của other tự động giải phóng 0x1000 (vùng nhớ cũ của s1). Sạch sẽ tuyệt đối!',
+        cls: 'ok'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'An toàn ngoại lệ', val: 'STRONG GUARANTEE', state: 'Nếu cấp phát lỗi, s1 không đổi', cls: 'ok'},
+          {name: 'Tự gán s1 = s1', val: 'AN TOÀN TUYỆT ĐỐI', state: 'Không bao giờ tự huỷ sớm', cls: 'ok'}
+        ],
+        status: '✓ Kết luận: Copy-and-Swap đạt an toàn ngoại lệ mạnh mẽ, an toàn tuyệt đối với tự gán (self-assignment) và tái sử dụng 100% mã nguồn.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'move-semantics': {
+    lead: 'Ngữ nghĩa Di chuyển (Move Semantics): Thay vì nhân bản sâu tốn kém, Move Constructor chuyển nhượng quyền sở hữu con trỏ trong O(1) và reset đối tượng nguồn về nullptr.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Vector</span> {'},
+      {ln: 2, text: '    <span class="type">int</span>* data;'},
+      {ln: 3, text: '    <span class="type">size_t</span> sz;'},
+      {ln: 4, text: '<span class="kw">public</span>:'},
+      {ln: 5, text: '    <span class="com">// Move constructor noexcept!</span>'},
+      {ln: 6, text: '    <span class="fn">Vector</span>(<span class="type">Vector</span>&& other) <span class="kw">noexcept</span>'},
+      {ln: 7, text: '        : <span class="fn">data</span>(other.data), <span class="fn">sz</span>(other.sz) {'},
+      {ln: 8, text: '        other.data = <span class="kw">nullptr</span>;  <span class="com">// Chiếm quyền sở hữu!</span>'},
+      {ln: 9, text: '        other.sz = <span class="num">0</span>;'},
+      {ln: 10, text: '    }'},
+      {ln: 11, text: '};'}
+    ],
+    steps: [
+      {
+        line: 6,
+        mem: [
+          {name: 'src.data (Rvalue)', val: '0x30a0 (1.000.000 phần tử)', state: 'Đối tượng nguồn sắp huỷ', cls: 'warn'},
+          {name: 'dest.data', val: 'chưa cấp', state: 'Đối tượng đích', cls: ''}
+        ],
+        status: 'Khởi tạo Vector dest = std::move(src);. src là một Rvalue (đối tượng tạm thời hoặc sắp bị huỷ).',
+        cls: ''
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'dest.data', val: '0x30a0', state: 'Nhận thẳng địa chỉ Heap', cls: 'ok'},
+          {name: 'dest.sz', val: '1.000.000', state: 'Nhận kích thước', cls: 'ok'},
+          {name: 'Chi phí cấp phát', val: '0 byte Heap mới', state: 'O(1) tức thì', cls: 'ok'}
+        ],
+        status: 'dest.data nhận thẳng địa chỉ 0x30a0. Không cần cấp phát lại 1 triệu phần tử, không cần sao chép từng byte! Tốc độ tăng hàng ngàn lần.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'src.data', val: 'nullptr', state: 'TRẠNG THÁI MOVED-FROM', cls: 'ok'},
+          {name: 'src.sz', val: '0', state: 'An toàn khi huỷ', cls: 'ok'},
+          {name: 'dest.data', val: '0x30a0 (sở hữu độc quyền)', state: 'Chủ sở hữu mới', cls: 'ok'}
+        ],
+        status: 'Dòng 8: other.data = nullptr! Ngắt quyền sở hữu của src. Khi src bị huỷ, delete nullptr là lệnh vô hại, 0x30a0 không bị huỷ nhầm.',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'noexcept', val: 'BẮT BUỘC KHAI BÁO', state: 'std::vector::push_back kiểm tra', cls: 'ok'},
+          {name: 'Tối ưu hoá Realloc', val: 'Move thay vì Deep Copy', state: 'Hiệu năng tối đa', cls: 'ok'}
+        ],
+        status: '✓ noexcept đảm bảo Move không ném ngoại lệ. std::vector khi tăng sức chứa (reallocation) sẽ di chuyển phần tử thay vì sao chép sâu.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'double-free';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  ['double-free', 'copy-and-swap', 'move-semantics'].forEach(m => {
+    const el = document.getElementById(`tab-${m}`);
+    if(el) el.classList.toggle('active', currentMode === m);
+  });
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

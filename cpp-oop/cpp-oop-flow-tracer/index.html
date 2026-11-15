@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Luồng Khởi tạo Lớp & Constructor trong C++</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;overflow-x:auto;padding:6px 0}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:24px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:10px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12.5px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:13px;padding:2px 8px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.init{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng lần vết cơ chế khởi tạo Constructor và thứ tự thực thi trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-init-order" onclick="setMode('init-order')">Bẫy thứ tự khai báo</button>
+        <button class="tab" id="tab-delegating" onclick="setMode('delegating')">Delegating Constructor</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/4</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Đối tượng & Bộ nhớ</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'init-order': {
+    lead: 'Bẫy kinh điển: Biến thành viên LUÔN được khởi tạo theo THỨ TỰ KHAI BÁO trong thân lớp, hoàn toàn KHÔNG phụ thuộc vào thứ tự viết trong Member Initializer List.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Pair</span> {'},
+      {ln: 2, text: '    <span class="type">int</span> a;  <span class="com">// Khai báo TRƯỚC -> Khởi tạo TRƯỚC</span>'},
+      {ln: 3, text: '    <span class="type">int</span> b;  <span class="com">// Khai báo SAU   -> Khởi tạo SAU</span>'},
+      {ln: 4, text: '<span class="kw">public</span>:'},
+      {ln: 5, text: '    <span class="com">// Viết b(val) trước, a(b) sau: BẪY NGUY HIỂM!</span>'},
+      {ln: 6, text: '    <span class="fn">Pair</span>(<span class="type">int</span> val) : <span class="fn">b</span>(val), <span class="fn">a</span>(b) {'},
+      {ln: 7, text: '        <span class="com">// Thân constructor rỗng</span>'},
+      {ln: 8, text: '    }'},
+      {ln: 9, text: '};'},
+      {ln: 10, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 11, text: '    <span class="type">Pair</span> p(<span class="num">42</span>);'},
+      {ln: 12, text: '}'}
+    ],
+    steps: [
+      {
+        line: 11,
+        mem: [
+          {name: 'p.a', val: 'chưa cấp', state: 'Chưa khởi tạo', cls: ''},
+          {name: 'p.b', val: 'chưa cấp', state: 'Chưa khởi tạo', cls: ''}
+        ],
+        status: 'Hàm main() bắt đầu gọi lệnh khởi tạo Pair p(42). Đối số val = 42 được truyền vào constructor.',
+        cls: ''
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'p.a', val: '0x7fff (rác)', state: 'Nhận giá trị rác của b!', cls: 'garbage'},
+          {name: 'p.b', val: 'chưa cấp', state: 'Chưa khởi tạo', cls: ''}
+        ],
+        status: '⚠️ BẪY THỰC THI: Vì biến "a" được khai báo ở dòng 2 (trước b), trình biên dịch khởi tạo a(b) TRƯỚC! Lúc này "b" chưa hề được khởi tạo (đang chứa rác bộ nhớ). Biến "a" nhận giá trị rác!',
+        cls: 'err'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'p.a', val: '0x7fff (rác)', state: 'Giá trị rác không đổi', cls: 'garbage'},
+          {name: 'p.b', val: '42', state: 'Khởi tạo b(val = 42)', cls: 'init'}
+        ],
+        status: 'Trình biên dịch tiếp tục khởi tạo biến "b" theo dòng 3: b nhận giá trị val = 42. Nhưng biến "a" đã nhận rác từ trước và không thể tự sửa lại!',
+        cls: 'warn'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'p.a', val: '0x7fff (rác)', state: 'Lỗi logic âm thầm', cls: 'garbage'},
+          {name: 'p.b', val: '42', state: 'Khởi tạo thành công', cls: 'init'}
+        ],
+        status: '✓ Kết thúc Constructor: p.b = 42, p.a = RÁC. Trình biên dịch hiện cảnh báo [-Wreorder-ctor]. Quy tắc vàng: Luôn viết danh sách khởi tạo theo đúng thứ tự khai báo thành viên!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'delegating': {
+    lead: 'Luồng thực thi Delegating Constructor (C++11/C++20): Constructor uỷ quyền gọi Constructor mục tiêu trước, sau khi mục tiêu hoàn thành mới thực thi thân của mình.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Point</span> {'},
+      {ln: 2, text: '    <span class="type">int</span> x, y;'},
+      {ln: 3, text: '<span class="kw">public</span>:'},
+      {ln: 4, text: '    <span class="fn">Point</span>(<span class="type">int</span> x, <span class="type">int</span> y) : <span class="fn">x</span>(x), <span class="fn">y</span>(y) {'},
+      {ln: 5, text: '        <span class="com">// Target constructor body</span>'},
+      {ln: 6, text: '    }'},
+      {ln: 7, text: '    <span class="fn">Point</span>() : <span class="fn">Point</span>(<span class="num">0</span>, <span class="num">0</span>) {  <span class="com">// Uỷ quyền cho Point(0, 0)</span>'},
+      {ln: 8, text: '        <span class="com">// Delegating constructor body</span>'},
+      {ln: 9, text: '    }'},
+      {ln: 10, text: '};'},
+      {ln: 11, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 12, text: '    <span class="type">Point</span> pt;'},
+      {ln: 13, text: '}'}
+    ],
+    steps: [
+      {
+        line: 12,
+        mem: [
+          {name: 'pt.x', val: 'chưa cấp', state: 'Chưa khởi tạo', cls: ''},
+          {name: 'pt.y', val: 'chưa cấp', state: 'Chưa khởi tạo', cls: ''}
+        ],
+        status: 'Hàm main() gọi Point pt; kích hoạt default constructor không tham số Point().',
+        cls: ''
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'pt.x', val: 'chưa cấp', state: 'Chuyển giao luồng', cls: ''},
+          {name: 'pt.y', val: 'chưa cấp', state: 'Chuyển giao luồng', cls: ''}
+        ],
+        status: 'Constructor uỷ quyền Point() chuyển quyền ngay lập tức sang Constructor mục tiêu Point(0, 0). Initializer list của Point() không được chứa thêm bất kỳ thành viên nào khác.',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'pt.x', val: '0', state: 'Khởi tạo x(0)', cls: 'init'},
+          {name: 'pt.y', val: '0', state: 'Khởi tạo y(0)', cls: 'init'}
+        ],
+        status: 'Constructor mục tiêu Point(int, int) chạy: danh sách khởi tạo x(0), y(0) gán giá trị cho 2 toạ độ, sau đó thực thi thân hàm dòng 5.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'pt.x', val: '0', state: 'Đã hoàn tất', cls: 'init'},
+          {name: 'pt.y', val: '0', state: 'Đã hoàn tất', cls: 'init'}
+        ],
+        status: '✓ Luồng điều khiển quay trở về thực thi thân constructor uỷ quyền dòng 8. Đối tượng pt hoàn tất việc kiến tạo với toạ độ (0, 0).',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'init-order';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-init-order').classList.toggle('active', currentMode === 'init-order');
+  document.getElementById('tab-delegating').classList.toggle('active', currentMode === 'delegating');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>
