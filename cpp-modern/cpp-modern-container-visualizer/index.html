@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Bộ chứa STL & Iterator trong C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Khám phá kiến trúc 5 phân cấp Iterator và động thái quản lý bộ nhớ của STL Containers trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-iterator-categories" onclick="setMode('iterator-categories')">5 Phân cấp Iterator</button>
+        <button class="tab" id="tab-vector-growth-memory" onclick="setMode('vector-growth-memory')">Tăng trưởng vector & Vô hiệu hoá</button>
+        <button class="tab" id="tab-list-vs-deque" onclick="setMode('list-vs-deque')">vector vs list vs deque</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Bố cục Bộ nhớ & Hành vi STL</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'iterator-categories': {
+    lead: 'STL định nghĩa 5 phân cấp Iterator với tập toán tử mở rộng dần: Input -> Forward -> Bidirectional -> Random Access -> Contiguous.',
+    code: [
+      {ln: 1, text: '<span class="com">// 1. Input: chỉ đọc tiến 1 lần (*it, ++)</span>'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">istream_iterator</span>&lt;<span class="type">int</span>&gt; in_it(cin);'},
+      {ln: 3, text: '<span class="com">// 2. Forward: đọc/ghi tiến nhiều lần (*it, ++)</span>'},
+      {ln: 4, text: '<span class="type">std</span>::<span class="type">forward_list</span>&lt;<span class="type">int</span>&gt; fl = {<span class="num">1</span>, <span class="num">2</span>};'},
+      {ln: 5, text: '<span class="com">// 3. Bidirectional: tiến và lùi (++, --)</span>'},
+      {ln: 6, text: '<span class="type">std</span>::<span class="type">list</span>&lt;<span class="type">int</span>&gt; lst = {<span class="num">10</span>, <span class="num">20</span>};'},
+      {ln: 7, text: '<span class="com">// 4. Random Access: nhảy bước O(1) (+, -, [])</span>'},
+      {ln: 8, text: '<span class="type">std</span>::<span class="type">deque</span>&lt;<span class="type">int</span>&gt; dq = {<span class="num">100</span>, <span class="num">200</span>};'},
+      {ln: 9, text: '<span class="com">// 5. Contiguous: mảng vật lý liên tục (C++20)</span>'},
+      {ln: 10, text: '<span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; vec = {<span class="num">1000</span>, <span class="num">2000</span>};'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Cấp 1: Input Iterator', val: 'istream_iterator', state: 'Chỉ đọc luồng tuần tự', cls: 'warn'},
+          {name: 'Toán tử cho phép', val: '*it (đọc), ++', state: 'Không thể lùi, không thể ghi đè', cls: ''}
+        ],
+        status: 'Cấp 1 (Input Iterator): Dùng để đọc dòng dữ liệu từ bàn phím hoặc tệp. Sau khi ++it, dữ liệu cũ trôi qua và không đọc lại được.',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Cấp 2: Forward Iterator', val: 'std::forward_list', state: 'Danh sách liên kết đơn', cls: 'ok'},
+          {name: 'Toán tử cho phép', val: '*it, ++, đa lượt đọc/ghi', state: 'Chưa hỗ trợ toán tử lùi --', cls: ''}
+        ],
+        status: 'Cấp 2 (Forward Iterator): Cho phép duyệt tiến nhiều lần và ghi đè giá trị, nhưng chỉ có con trỏ next nên không thể lùi ngược (--it).',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Cấp 3: Bidirectional Iterator', val: 'std::list, map, set', state: 'Danh sách liên kết đôi & Cây RB', cls: 'ok'},
+          {name: 'Toán tử cho phép', val: '++ và --', state: 'Không thể nhảy it + 5 trong O(1)', cls: 'ok'}
+        ],
+        status: 'Cấp 3 (Bidirectional): Hỗ trợ cả tiến ++ và lùi -- nhờ node có cả 2 con trỏ next và prev. Tuy nhiên muốn nhảy k bước phải bước từng bước O(k).',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Cấp 4: Random Access', val: 'std::deque', state: 'Mảng phân đoạn', cls: 'ok'},
+          {name: 'Toán tử cho phép', val: 'it + k, it - k, it[k], <, >', state: 'Nhảy trực tiếp trong O(1)', cls: 'ok'}
+        ],
+        status: 'Cấp 4 (Random Access): Cho phép nhảy tức thời O(1) đến bất kỳ vị trí nào qua toán tử it + n hoặc it[n], so sánh thứ tự <, > giữa 2 iterator.',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'Cấp 5: Contiguous (C++20)', val: 'vector, array, string', state: 'Bộ nhớ vật lý liền kề', cls: 'ok'},
+          {name: 'Đặc tính phần cứng', val: '*(it + n) == *(addr + n)', state: 'Tối ưu tuyệt đối CPU Cache Line', cls: 'ok'}
+        ],
+        status: 'Cấp 5 (Contiguous - C++20): Đảm bảo các phần tử nằm liên tục cạnh nhau từng byte trong RAM. Tương thích 100% với con trỏ C và tối đa hoá bộ nhớ đệm CPU Cache.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'vector-growth-memory': {
+    lead: 'std::vector tự động nhân đôi Capacity khi hết chỗ. Quá trình tái cấp phát di dời mảng sang địa chỉ Heap mới và VÔ HIỆU HOÁ toàn bộ con trỏ / iterator hiện có!',
+    code: [
+      {ln: 1, text: '<span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; v;'},
+      {ln: 2, text: 'v.<span class="fn">push_back</span>(<span class="num">10</span>); <span class="com">// size=1, cap=1</span>'},
+      {ln: 3, text: '<span class="kw">auto</span> it = v.<span class="fn">begin</span>(); <span class="com">// Trỏ tới phần tử 10</span>'},
+      {ln: 4, text: 'v.<span class="fn">push_back</span>(<span class="num">20</span>); <span class="com">// size=2, cap=2 (TÁI CẤP PHÁT!)</span>'},
+      {ln: 5, text: '<span class="com">// *it; // NGUY HIỂM: it đã bị vô hiệu hoá (Dangling)!</span>'},
+      {ln: 6, text: 'v.<span class="fn">push_back</span>(<span class="num">30</span>); <span class="com">// size=3, cap=4 (TÁI CẤP PHÁT!)</span>'},
+      {ln: 7, text: 'v.<span class="fn">push_back</span>(<span class="num">40</span>); <span class="com">// size=4, cap=4 (Không cấp phát)</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Vùng nhớ Heap @ 0x1000', val: '[ 10 ]', state: 'Được cấp phát 1 ô', cls: 'ok'},
+          {name: 'v.size() / v.capacity()', val: 'size = 1, cap = 1', state: 'Đầy bộ đệm hiện tại', cls: ''}
+        ],
+        status: 'push_back(10): Cấp phát mảng dung lượng 1 tại địa chỉ 0x1000. Vector đạt size = 1, capacity = 1.',
+        cls: ''
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'Iterator it', val: 'Trỏ tới 0x1000 (giá trị 10)', state: 'Hợp lệ', cls: 'ok'},
+          {name: 'Địa chỉ lưu trữ', val: '0x1000', state: 'Đang theo dõi phần tử đầu', cls: ''}
+        ],
+        status: 'Khởi tạo iterator it = v.begin(). Lúc này it đang trỏ chính xác vào ô nhớ 0x1000.',
+        cls: 'ok'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Vùng Heap mới @ 0x2000', val: '[ 10, 20 ]', state: 'Nhân đôi: Capacity = 2', cls: 'ok'},
+          {name: 'Vùng Heap cũ @ 0x1000', val: 'ĐÃ BỊ GIẢI PHÓNG (delete)', state: 'Thu hồi bộ nhớ cũ', cls: 'err'},
+          {name: 'v.size() / v.capacity()', val: 'size = 2, cap = 2', state: 'Tái cấp phát thành công', cls: ''}
+        ],
+        status: 'push_back(20): Vì capacity=1 đã đầy, vector cấp phát vùng mới 0x2000 (cap=2), copy số 10 sang, thêm 20, và giải phóng ô nhớ cũ 0x1000.',
+        cls: 'warn'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: 'Iterator it ban đầu', val: 'Vẫn trỏ tới 0x1000 (rác)', state: 'CON TRỎ LƠ LỬNG (DANGLING)', cls: 'err'},
+          {name: 'Hậu quả nếu dùng *it', val: 'UNDEFINED BEHAVIOR', state: 'Crash phần mềm hoặc đọc rác!', cls: 'err'}
+        ],
+        status: '⚠️ BẪY VÔ HIỆU HOÁ: Ô nhớ 0x1000 đã bị delete, nhưng biến "it" vẫn lưu địa chỉ 0x1000. Truy cập *it lúc này là lỗi Undefined Behavior cực kỳ nguy hiểm!',
+        cls: 'err'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Vùng Heap mới @ 0x3000', val: '[ 10, 20, 30, _ ]', state: 'Nhân đôi tiếp: Capacity = 4', cls: 'ok'},
+          {name: 'v.size() / v.capacity()', val: 'size = 3, cap = 4', state: 'Còn dư 1 ô trống', cls: 'ok'}
+        ],
+        status: 'push_back(30): Lại thiếu chỗ, vector nhân đôi capacity lên 4 tại địa chỉ mới 0x3000. Lời khuyên: Luôn dùng v.reserve(N) nếu biết trước số lượng phần tử!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'list-vs-deque': {
+    lead: 'Mỗi container tối ưu cho một cấu trúc bộ nhớ vật lý: vector (mảng liên tục), list (node liên kết đôi rải rác) và deque (mảng các khối đệm phân đoạn).',
+    code: [
+      {ln: 1, text: '<span class="com">// 1. vector: Mảng liên tục (Continuous RAM)</span>'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};'},
+      {ln: 3, text: '<span class="com">// 2. list: Chuỗi node rải rác kèm prev & next</span>'},
+      {ln: 4, text: '<span class="type">std</span>::<span class="type">list</span>&lt;<span class="type">int</span>&gt; l = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};'},
+      {ln: 5, text: '<span class="com">// 3. deque: Bản đồ các khối đệm phân đoạn</span>'},
+      {ln: 6, text: '<span class="type">std</span>::<span class="type">deque</span>&lt;<span class="type">int</span>&gt; d = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Cấu trúc std::vector', val: 'Một mảng phẳng [ 1 | 2 | 3 ]', state: 'Địa chỉ: 0x1000, 0x1004, 0x1008', cls: 'ok'},
+          {name: 'Hiệu năng CPU Cache', val: 'CACHE HIT CỰC CAO', state: 'Nạp cả khối vào L1/L2 Cache', cls: 'ok'},
+          {name: 'Chèn/Xoá ở đầu (push_front)', val: 'O(N) - Chậm', state: 'Phải dời toàn bộ phần tử sang phải', cls: 'warn'}
+        ],
+        status: 'std::vector: Lưu trữ mảng liên tục. Tận dụng tối đa bộ nhớ đệm CPU Cache, truy cập v[i] trong O(1). Nhược điểm: không có push_front(), chèn đầu tốn O(N).',
+        cls: 'ok'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Cấu trúc std::list', val: 'NodeA(1) <-> NodeB(2) <-> NodeC(3)', state: 'Rải rác tại 0x5100, 0x8200, 0x3400', cls: 'warn'},
+          {name: 'Overhead bộ nhớ', val: '+16 Bytes con trỏ / node', state: 'prev (8B) + next (8B) trên 64-bit', cls: 'err'},
+          {name: 'Chèn/Xoá ở vị trí bất kỳ', val: 'O(1) - Không dời mảng', state: 'Chỉ đổi lại 4 con trỏ', cls: 'ok'}
+        ],
+        status: 'std::list: Danh sách liên kết đôi. Chèn/xoá tại iterator chỉ mất O(1) và không làm vô hiệu hoá iterator khác. Nhược điểm: Tốn 16 bytes overhead cho mỗi số int 4 bytes và trượt cache liên tục!',
+        cls: 'warn'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Cấu trúc std::deque', val: 'Map Array -> [Chunk 1] [Chunk 2]', state: 'Mỗi chunk chứa 512 bytes', cls: 'ok'},
+          {name: 'Thao tác 2 đầu', val: 'push_front() & push_back() O(1)', state: 'Không cần di dời mảng lớn', cls: 'ok'},
+          {name: 'Truy cập ngẫu nhiên', val: 'd[i] trong O(1)', state: 'Tính toán 2 lần giải mã con trỏ', cls: 'ok'}
+        ],
+        status: 'std::deque: Kết hợp ưu điểm của cả hai! Hỗ trợ thêm/xoá ở CẢ HAI ĐẦU (front & back) trong O(1) mà không phải sao chép toàn bộ mảng như vector.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'iterator-categories';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-iterator-categories').classList.toggle('active', currentMode === 'iterator-categories');
+  document.getElementById('tab-vector-growth-memory').classList.toggle('active', currentMode === 'vector-growth-memory');
+  document.getElementById('tab-list-vs-deque').classList.toggle('active', currentMode === 'list-vs-deque');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

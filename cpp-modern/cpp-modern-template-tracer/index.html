@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Lập trình Tổng quát Templates trong C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Trực quan hoá cơ chế khởi tạo mã biên dịch (Instantiation) và phân giải khuôn mẫu trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-template-instantiation" onclick="setMode('template-instantiation')">Khởi tạo Template</button>
+        <button class="tab" id="tab-template-specialization" onclick="setMode('template-specialization')">Chuyên biệt hoá (Specialization)</button>
+        <button class="tab" id="tab-non-type-template" onclick="setMode('non-type-template')">Tham số NTTP (size_t N)</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Quá trình Biên dịch & Mã thực thi</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'template-instantiation': {
+    lead: 'Function Template là bản thiết kế trừu tượng. Tại thời điểm biên dịch (Compile-time), compiler suy luận kiểu đối số và tự động sinh mã hàm thực tế (Instantiation) cho từng kiểu cụ thể.',
+    code: [
+      {ln: 1, text: '<span class="kw">template</span> &lt;<span class="kw">typename</span> <span class="type">T</span>&gt;'},
+      {ln: 2, text: '<span class="type">T</span> <span class="fn">my_max</span>(<span class="type">T</span> a, <span class="type">T</span> b) {'},
+      {ln: 3, text: '    <span class="kw">return</span> (a &gt; b) ? a : b;'},
+      {ln: 4, text: '}'},
+      {ln: 5, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 6, text: '    <span class="kw">auto</span> r1 = <span class="fn">my_max</span>(<span class="num">10</span>, <span class="num">25</span>);        <span class="com">// T = int</span>'},
+      {ln: 7, text: '    <span class="kw">auto</span> r2 = <span class="fn">my_max</span>(<span class="num">3.14</span>, <span class="num">2.71</span>);    <span class="com">// T = double</span>'},
+      {ln: 8, text: '    <span class="kw">auto</span> r3 = <span class="fn">my_max</span>&lt;<span class="type">std</span>::<span class="type">string</span>&gt;(<span class="str">"A"</span>, <span class="str">"B"</span>);'},
+      {ln: 9, text: '}'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Template Blueprint', val: 'template <typename T>', state: 'Chưa sinh mã nhị phân trong .text', cls: 'warn'},
+          {name: 'Mã máy sinh ra', val: '0 Byte', state: 'Chưa có lời gọi cụ thể', cls: ''}
+        ],
+        status: 'Khai báo template: Trình biên dịch chỉ kiểm tra cú pháp cơ bản và lưu trữ mẫu thiết kế. Chưa có bất kỳ đoạn mã máy (machine code) nào được tạo ra.',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Suy luận kiểu (Deduction)', val: 'T = int', state: 'Đối số 10 và 25 là số nguyên', cls: 'ok'},
+          {name: 'Hàm thực tế sinh ra #1', val: 'int my_max<int>(int, int)', state: 'Tự động tạo mã máy thực thi', cls: 'ok'},
+          {name: 'Kết quả r1', val: '25', state: 'So sánh int', cls: 'ok'}
+        ],
+        status: 'Lời gọi my_max(10, 25): Compiler suy luận T = int và tự động sinh bản thể int my_max(int a, int b) trong file nhị phân.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Suy luận kiểu (Deduction)', val: 'T = double', state: 'Đối số 3.14 và 2.71 là số thực', cls: 'ok'},
+          {name: 'Hàm thực tế sinh ra #2', val: 'double my_max<double>(...)', state: 'Sinh mã máy dấu phẩy động', cls: 'ok'},
+          {name: 'Kết quả r2', val: '3.14', state: 'So sánh double', cls: 'ok'}
+        ],
+        status: 'Lời gọi my_max(3.14, 2.71): Compiler nhận diện kiểu double và sinh tiếp bản thể độc lập thứ 2: double my_max(double, double).',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Chỉ định tường minh', val: 'T = std::string', state: 'Người lập trình ghi rõ <std::string>', cls: 'ok'},
+          {name: 'Hàm thực tế sinh ra #3', val: 'string my_max<string>(...)', state: 'Gọi toán tử so sánh chuỗi >', cls: 'ok'},
+          {name: 'Hiệu năng Runtime', val: 'Không có chi phí overhead', state: 'Tốc độ tương đương hàm viết tay', cls: 'ok'}
+        ],
+        status: 'Chỉ định kiểu tường minh: Compiler sinh bản thể thứ 3 cho std::string. Tất cả diễn ra ở compile-time, chi phí thời gian chạy bằng 0 (Zero-overhead principle)!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'template-specialization': {
+    lead: 'Thứ tự ưu tiên phân giải lời gọi hàm trong C++: 1. Hàm thông thường (Non-template) > 2. Chuyên biệt hoá toàn phần (Full Specialization) > 3. Template tổng quát (Primary Template).',
+    code: [
+      {ln: 1, text: '<span class="com">// 1. Template tổng quát (Primary Template)</span>'},
+      {ln: 2, text: '<span class="kw">template</span> &lt;<span class="kw">typename</span> <span class="type">T</span>&gt; <span class="type">void</span> <span class="fn">show</span>(<span class="type">T</span> val);'},
+      {ln: 3, text: '<span class="com">// 2. Chuyên biệt hoá toàn phần cho con trỏ const char*</span>'},
+      {ln: 4, text: '<span class="kw">template</span> &lt;&gt; <span class="type">void</span> <span class="fn">show</span>&lt;<span class="kw">const</span> <span class="type">char</span>*&gt;(<span class="kw">const</span> <span class="type">char</span>* str);'},
+      {ln: 5, text: '<span class="com">// 3. Hàm thông thường không dùng template</span>'},
+      {ln: 6, text: '<span class="type">void</span> <span class="fn">show</span>(<span class="type">int</span> val);'},
+      {ln: 7, text: '<span class="com">// Kiểm tra lời gọi:</span>'},
+      {ln: 8, text: '<span class="fn">show</span>(<span class="num">42</span>);        <span class="com">// Chọn Hàm thông thường!</span>'},
+      {ln: 9, text: '<span class="fn">show</span>(<span class="str">"CodeGym"</span>); <span class="com">// Chọn Chuyên biệt hoá!</span>'},
+      {ln: 10, text: '<span class="fn">show</span>(<span class="num">3.14</span>);      <span class="com">// Chọn Primary Template!</span>'}
+    ],
+    steps: [
+      {
+        line: 8,
+        mem: [
+          {name: 'Đối số truyền vào', val: '42 (int)', state: 'Tìm hàm phù hợp trong tập ứng viên', cls: ''},
+          {name: 'Ứng viên #1', val: 'show(int)', state: 'Hàm thông thường -> ƯU TIÊN SỐ 1', cls: 'ok'},
+          {name: 'Kết quả phân giải', val: 'GỌI HÀM THƯỜNG', state: 'Bỏ qua template', cls: 'ok'}
+        ],
+        status: 'show(42): Cả hàm thường show(int) và template show<T> đều khớp. Quy tắc phân giải ưu tiên hàm thông thường trước nhất!',
+        cls: 'ok'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'Đối số truyền vào', val: '"CodeGym" (const char*)', state: 'Chuỗi ký tự C-style', cls: ''},
+          {name: 'Ứng viên #1', val: 'show(int)', state: 'Không khớp kiểu', cls: 'warn'},
+          {name: 'Ứng viên #2', val: 'template <> show<const char*>', state: 'Chuyên biệt hoá toàn phần', cls: 'ok'},
+          {name: 'Kết quả phân giải', val: 'GỌI BẢN CHUYÊN BIỆT HOÁ', state: 'Xử lý chuỗi C-style an toàn', cls: 'ok'}
+        ],
+        status: 'show("CodeGym"): Không có hàm thường cho const char*. Trình biên dịch chọn bản chuyên biệt hoá toàn phần để in nội dung chuỗi thay vì in địa chỉ con trỏ thô.',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'Đối số truyền vào', val: '3.14 (double)', state: 'Số thực dấu phẩy động', cls: ''},
+          {name: 'Ứng viên #1 & #2', val: 'show(int), const char*', state: 'Đều không khớp', cls: 'warn'},
+          {name: 'Ứng viên #3', val: 'template <typename T>', state: 'Template tổng quát (Fallback)', cls: 'ok'},
+          {name: 'Kết quả phân giải', val: 'GỌI PRIMARY TEMPLATE', state: 'Sinh show<double>(double)', cls: 'ok'}
+        ],
+        status: 'show(3.14): Không có hàm thường lẫn bản chuyên biệt hoá cho double. Compiler kích hoạt Primary Template tổng quát làm giải pháp bao quát (fallback).',
+        cls: 'ok'
+      }
+    ]
+  },
+  'non-type-template': {
+    lead: 'Non-type Template Parameter (NTTP) cho phép truyền giá trị hằng số (như size_t N) vào template. Mảng có kích thước N được cấp phát tĩnh ngay trên Stack, loại bỏ hoàn toàn phân mảnh Heap.',
+    code: [
+      {ln: 1, text: '<span class="kw">template</span> &lt;<span class="kw">typename</span> <span class="type">T</span>, <span class="type">size_t</span> <span class="type">N</span>&gt;'},
+      {ln: 2, text: '<span class="kw">class</span> <span class="type">StaticArray</span> {'},
+      {ln: 3, text: '    <span class="type">T</span> data[<span class="type">N</span>]; <span class="com">// Mảng liên tục trên Stack!</span>'},
+      {ln: 4, text: '<span class="kw">public</span>:'},
+      {ln: 5, text: '    <span class="type">size_t</span> <span class="fn">size</span>() <span class="kw">const</span> { <span class="kw">return</span> <span class="type">N</span>; }'},
+      {ln: 6, text: '};'},
+      {ln: 7, text: '<span class="type">StaticArray</span>&lt;<span class="type">int</span>, <span class="num">5</span>&gt; a1;  <span class="com">// Kiểu #1 (5 phần tử int)</span>'},
+      {ln: 8, text: '<span class="type">StaticArray</span>&lt;<span class="type">int</span>, <span class="num">10</span>&gt; a2; <span class="com">// Kiểu #2 (10 phần tử int)</span>'},
+      {ln: 9, text: '<span class="com">// a1 = a2; // LỖI BIÊN DỊCH: Khác biệt kiểu dữ liệu!</span>'}
+    ],
+    steps: [
+      {
+        line: 7,
+        mem: [
+          {name: 'Đối tượng a1', val: 'Kiểu: StaticArray<int, 5>', state: 'Cấp phát Stack liên tục', cls: 'ok'},
+          {name: 'Kích thước sizeof(a1)', val: '5 * 4 = 20 Bytes', state: 'N = 5 cố định ở compile-time', cls: 'ok'},
+          {name: 'Phân mảnh Heap', val: '0 Byte', state: 'Không cấp phát động', cls: 'ok'}
+        ],
+        status: 'Khởi tạo a1 với N = 5: Mảng 5 phần tử int được cấp phát liên tục trực tiếp trong Stack Frame của hàm.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Đối tượng a2', val: 'Kiểu: StaticArray<int, 10>', state: 'Kiểu dữ liệu RIÊNG BIỆT hoàn toàn', cls: 'warn'},
+          {name: 'Kích thước sizeof(a2)', val: '10 * 4 = 40 Bytes', state: 'N = 10 cố định ở compile-time', cls: 'ok'}
+        ],
+        status: 'Khởi tạo a2 với N = 10: Điểm cốt lõi trong C++: StaticArray<int, 5> và StaticArray<int, 10> là HAI KIỂU DỮ LIỆU HOÀN TOÀN KHÁC NHAU đối với compiler!',
+        cls: 'warn'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'Thao tác gán a1 = a2', val: 'LỖI BIÊN DỊCH', state: 'no viable overloaded \'=\'', cls: 'err'},
+          {name: 'Bảo vệ an toàn kiểu', val: 'Compile-Time Safety', state: 'Chặn đứng lỗi gán lệch kích thước mảng', cls: 'ok'}
+        ],
+        status: '🛡️ BẢO VỆ MẠNH MẼ: Compiler ngăn cấm gán a1 = a2 ngay từ lúc biên dịch. Bạn không thể vô tình sao chép mảng 10 phần tử vào mảng 5 phần tử gây tràn bộ nhớ!',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'template-instantiation';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-template-instantiation').classList.toggle('active', currentMode === 'template-instantiation');
+  document.getElementById('tab-template-specialization').classList.toggle('active', currentMode === 'template-specialization');
+  document.getElementById('tab-non-type-template').classList.toggle('active', currentMode === 'non-type-template');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Thuật toán STL & Lambda trong C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng động lực học cây Đỏ-Đen trong std::map, cơ chế bắt biến Lambda và chuỗi xử lý thuật toán STL trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-map-tree-lookup" onclick="setMode('map-tree-lookup')">std::map & Bẫy operator[]</button>
+        <button class="tab" id="tab-lambda-capture-scope" onclick="setMode('lambda-capture-scope')">Lambda Capture [=] vs [&]</button>
+        <button class="tab" id="tab-algorithm-pipeline" onclick="setMode('algorithm-pipeline')">Đường ống Thuật toán STL</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Cây / Closure & Dữ liệu</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'map-tree-lookup': {
+    lead: 'Bẫy kinh điển: operator[] tự động chèn phần tử mới với giá trị mặc định nếu khoá chưa tồn tại! Hãy dùng find() hoặc contains() để tra cứu an toàn mà không làm biến đổi map.',
+    code: [
+      {ln: 1, text: '<span class="type">std</span>::<span class="type">map</span>&lt;<span class="type">std</span>::<span class="type">string</span>, <span class="type">int</span>&gt; scores;'},
+      {ln: 2, text: 'scores[<span class="str">"Alice"</span>] = <span class="num">95</span>;'},
+      {ln: 3, text: 'scores[<span class="str">"Bob"</span>] = <span class="num">80</span>;'},
+      {ln: 4, text: '<span class="com">// 1. Tra cứu an toàn với find()</span>'},
+      {ln: 5, text: '<span class="kw">auto</span> it = scores.<span class="fn">find</span>(<span class="str">"Charlie"</span>); <span class="com">// it == scores.end()</span>'},
+      {ln: 6, text: '<span class="com">// 2. BẪY NGUY HIỂM: Tra cứu qua operator[]</span>'},
+      {ln: 7, text: '<span class="type">int</span> c = scores[<span class="str">"Charlie"</span>]; <span class="com">// TỰ ĐỘNG CHÈN {"Charlie", 0}!</span>'},
+      {ln: 8, text: '<span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; scores.<span class="fn">size</span>(); <span class="com">// Bị tăng từ 2 lên 3!</span>'}
+    ],
+    steps: [
+      {
+        line: 3,
+        mem: [
+          {name: 'Cấu trúc Cây Đỏ-Đen', val: '2 Nodes: {"Alice": 95}, {"Bob": 80}', state: 'Cân bằng O(log N)', cls: 'ok'},
+          {name: 'scores.size()', val: '2', state: 'Hai học viên', cls: 'ok'}
+        ],
+        status: 'Khởi tạo std::map với 2 phần tử. Map duy trì cây nhị phân tìm kiếm cân bằng Đỏ-Đen (Red-Black Tree), các khoá luôn được sắp xếp theo bảng chữ cái.',
+        cls: 'ok'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: 'Tìm kiếm scores.find("Charlie")', val: 'KHÔNG TÌM THẤY', state: 'Trả về scores.end()', cls: 'warn'},
+          {name: 'scores.size()', val: '2 (không đổi)', state: 'BẢO TOÀN NGUYÊN VẸN', cls: 'ok'},
+          {name: 'Tính an toàn', val: 'READ-ONLY SAFE', state: 'Không làm biến đổi map', cls: 'ok'}
+        ],
+        status: 'scores.find("Charlie") duyệt cây theo O(log N). Vì "Charlie" chưa có, hàm trả về iterator end(). Cây và kích thước map hoàn toàn nguyên vẹn.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Toán tử scores["Charlie"]', val: 'TỰ ĐỘNG CHÈN NODE MỚI', state: 'Mặc định gán Value = 0', cls: 'err'},
+          {name: 'Node mới chèn vào Cây', val: '{"Charlie", 0}', state: 'Tự động tạo giá trị default int() = 0', cls: 'err'},
+          {name: 'scores.size()', val: '3 (BỊ TĂNG BẤT NGỜ!)', state: 'Thay đổi trạng thái map ngoài ý muốn', cls: 'err'}
+        ],
+        status: '⚠️ BẪY XUẤT HIỆN: Khi gọi scores["Charlie"], vì khoá chưa có, operator[] ngầm định chèn một node mới {"Charlie", 0} vào cây! Kích thước map tự động tăng lên 3.',
+        cls: 'err'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Giá trị trả về biến c', val: 'c = 0', state: 'Nhận giá trị mặc định', cls: ''},
+          {name: 'Cây Đỏ-Đen', val: '3 Nodes: Alice, Bob, Charlie', state: 'Đã tự cân bằng lại nhánh', cls: 'ok'},
+          {name: 'Lời khuyên C++20', val: 'scores.contains("Charlie")', state: 'Phương thức an toàn, trả về bool', cls: 'ok'}
+        ],
+        status: 'scores.size() in ra 3 thay vì 2! Kết luận: Để kiểm tra sự tồn tại trong map, hãy dùng scores.contains("...") (C++20) hoặc scores.find() thay vì operator[].',
+        cls: 'warn'
+      }
+    ]
+  },
+  'lambda-capture-scope': {
+    lead: 'Biểu thức Lambda tạo ra một Closure Object ẩn. Capture by Value [=] tạo bản sao độc lập (mặc định const); Capture by Reference [&] tham chiếu trực tiếp đến biến bên ngoài.',
+    code: [
+      {ln: 1, text: '<span class="type">int</span> x = <span class="num">10</span>;'},
+      {ln: 2, text: '<span class="type">int</span> y = <span class="num">20</span>;'},
+      {ln: 3, text: '<span class="com">// Bắt x theo giá trị, bắt y theo tham chiếu</span>'},
+      {ln: 4, text: '<span class="kw">auto</span> f = [x, &y]() <span class="kw">mutable</span> {'},
+      {ln: 5, text: '    x += <span class="num">5</span>; <span class="com">// Sửa bản sao cục bộ bên trong f</span>'},
+      {ln: 6, text: '    y += <span class="num">5</span>; <span class="com">// Sửa trực tiếp biến y ngoài hàm!</span>'},
+      {ln: 7, text: '};'},
+      {ln: 8, text: '<span class="fn">f</span>();'},
+      {ln: 9, text: '<span class="com">// x ngoài hàm VẪN LÀ 10; y ngoài hàm THÀNH 25!</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Biến cục bộ x (Stack)', val: '10', state: 'Địa chỉ 0xFA00', cls: 'ok'},
+          {name: 'Biến cục bộ y (Stack)', val: '20', state: 'Địa chỉ 0xFA04', cls: 'ok'}
+        ],
+        status: 'Khởi tạo hai biến nguyên x = 10 và y = 20 trên Stack của hàm.',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Closure Object f (Ẩn)', val: 'Struct do compiler tạo', state: 'Chứa 2 trường thành viên', cls: 'ok'},
+          {name: 'Trường f.__x (Bản sao)', val: '10 (Giá trị độc lập)', state: 'Copy từ x lúc định nghĩa', cls: 'ok'},
+          {name: 'Trường f.__y (Tham chiếu)', val: '&y (Trỏ tới 0xFA04)', state: 'Chia sẻ địa chỉ với y ngoài hàm', cls: 'warn'}
+        ],
+        status: 'Định nghĩa lambda [x, &y]: Trình biên dịch tạo struct closure ẩn. f.__x nhận bản sao giá trị 10, trong khi f.__y lưu tham chiếu trỏ thẳng vào biến y bên ngoài.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Thực thi f(): dòng 5', val: 'f.__x = 10 + 5 = 15', state: 'Chỉ thay đổi bên trong closure', cls: 'ok'},
+          {name: 'Thực thi f(): dòng 6', val: '*(&y) = 20 + 5 = 25', state: 'Ghi đè trực tiếp ô nhớ 0xFA04!', cls: 'err'}
+        ],
+        status: 'Gọi f(): Phép cộng x += 5 chỉ cập nhật bản sao nội tại f.__x = 15. Nhưng y += 5 ghi trực tiếp vào biến y gốc bên ngoài qua tham chiếu!',
+        cls: 'warn'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'Biến x ngoài hàm', val: '10 (NGUYÊN VẸN)', state: 'Được bảo vệ tuyệt đối nhờ Capture by Value', cls: 'ok'},
+          {name: 'Biến y ngoài hàm', val: '25 (ĐÃ BỊ BIẾN ĐỔI)', state: 'Bị thay đổi bởi Capture by Reference', cls: 'err'},
+          {name: 'Cảnh báo an toàn', val: 'Dangling Reference', state: 'Không trả về lambda bắt [&] biến cục bộ!', cls: 'err'}
+        ],
+        status: 'Kết quả: x vẫn là 10 (không đổi), y đã thành 25! ⚠️ LƯU Ý: Không bao giờ trả về lambda bắt tham chiếu [&] từ một hàm, vì biến cục bộ sẽ bị huỷ tạo ra con trỏ lơ lửng!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'algorithm-pipeline': {
+    lead: 'Đường ống xử lý dữ liệu với STL: copy_if lọc dữ liệu -> transform biến đổi -> sort sắp xếp -> accumulate tính tổng tích luỹ.',
+    code: [
+      {ln: 1, text: '<span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; src = {<span class="num">5</span>, <span class="num">12</span>, <span class="num">3</span>, <span class="num">8</span>, <span class="num">15</span>, <span class="num">2</span>};'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; evens;'},
+      {ln: 3, text: '<span class="com">// 1. Lọc số chẵn: copy_if</span>'},
+      {ln: 4, text: '<span class="type">std</span>::<span class="fn">copy_if</span>(src.<span class="fn">begin</span>(), src.<span class="fn">end</span>(), <span class="type">std</span>::<span class="fn">back_inserter</span>(evens), [](int n){ return n % 2 == 0; });'},
+      {ln: 5, text: '<span class="com">// 2. Nhân đôi giá trị: transform</span>'},
+      {ln: 6, text: '<span class="type">std</span>::<span class="fn">transform</span>(evens.<span class="fn">begin</span>(), evens.<span class="fn">end</span>(), evens.<span class="fn">begin</span>(), [](int n){ return n * 2; });'},
+      {ln: 7, text: '<span class="com">// 3. Sắp xếp tăng dần: sort</span>'},
+      {ln: 8, text: '<span class="type">std</span>::<span class="fn">sort</span>(evens.<span class="fn">begin</span>(), evens.<span class="fn">end</span>());'},
+      {ln: 9, text: '<span class="com">// 4. Tính tổng: accumulate</span>'},
+      {ln: 10, text: '<span class="type">int</span> sum = <span class="type">std</span>::<span class="fn">accumulate</span>(evens.<span class="fn">begin</span>(), evens.<span class="fn">end</span>(), <span class="num">0</span>);'}
+    ],
+    steps: [
+      {
+        line: 1,
+        mem: [
+          {name: 'Mảng nguồn src', val: '[ 5, 12, 3, 8, 15, 2 ]', state: '6 phần tử ban đầu', cls: 'ok'},
+          {name: 'Mảng kết quả evens', val: '[ ]', state: 'Rỗng', cls: ''}
+        ],
+        status: 'Khởi tạo mảng số nguyên src. Chuẩn bị chạy dữ liệu qua chuỗi đường ống 4 thuật toán STL.',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Thuật toán copy_if', val: 'Predicate: n % 2 == 0', state: 'Dùng std::back_inserter', cls: 'ok'},
+          {name: 'Mảng evens sau lọc', val: '[ 12, 8, 2 ]', state: 'Lọc ra 3 số chẵn', cls: 'ok'}
+        ],
+        status: 'copy_if duyệt src và đẩy các số chẵn {12, 8, 2} vào evens. Chú ý: Cần dùng std::back_inserter vì STL algorithms không tự cấp phát bộ nhớ mảng đích!',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Thuật toán transform', val: 'n -> n * 2', state: 'Biến đổi tại chỗ (in-place)', cls: 'ok'},
+          {name: 'Mảng evens sau nhân', val: '[ 24, 16, 4 ]', state: '12*2=24, 8*2=16, 2*2=4', cls: 'ok'}
+        ],
+        status: 'std::transform áp dụng phép nhân đôi lên từng phần tử: 12 -> 24, 8 -> 16, 2 -> 4.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Thuật toán sort', val: 'std::sort(evens)', state: 'Sắp xếp IntroSort O(N log N)', cls: 'ok'},
+          {name: 'Mảng evens sau sắp xếp', val: '[ 4, 16, 24 ]', state: 'Thứ tự tăng dần hoàn tất', cls: 'ok'}
+        ],
+        status: 'std::sort sắp xếp mảng evens theo thứ tự tăng dần [4, 16, 24] với độ phức tạp tối ưu O(N log N).',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'Thuật toán accumulate', val: 'Initial value = 0', state: '0 + 4 + 16 + 24', cls: 'ok'},
+          {name: 'Biến tổng sum', val: '44', state: 'Kết quả cuối cùng của pipeline', cls: 'ok'}
+        ],
+        status: 'std::accumulate tích luỹ toàn bộ phần tử trong khoảng [begin, end) với giá trị khởi tạo 0: tổng cuối cùng = 44! Toàn bộ chuỗi thao tác hoàn toàn tái sử dụng các thuật toán chuẩn của STL.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'map-tree-lookup';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-map-tree-lookup').classList.toggle('active', currentMode === 'map-tree-lookup');
+  document.getElementById('tab-lambda-capture-scope').classList.toggle('active', currentMode === 'lambda-capture-scope');
+  document.getElementById('tab-algorithm-pipeline').classList.toggle('active', currentMode === 'algorithm-pipeline');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>
