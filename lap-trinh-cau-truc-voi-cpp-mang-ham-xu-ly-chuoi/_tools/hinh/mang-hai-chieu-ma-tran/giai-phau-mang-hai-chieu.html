@@ -1,0 +1,28 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.code{background:#0f172a;border-radius:16px;padding:30px 20px 20px;text-align:center;font:800 38px ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb}
+.t{display:inline-block;padding:2px 8px;border-radius:8px;margin:0 2px}
+.k{background:rgba(96,165,250,.25);color:#93c5fd}.n{background:rgba(253,186,116,.25);color:#fdba74}.r{background:rgba(110,231,183,.25);color:#6ee7b7}.c{background:rgba(196,161,255,.28);color:#d8b4fe}.e{color:#e5e7eb}
+.labels{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.lb{border-top:5px solid;border-radius:6px;background:#f6f7f9;padding:10px 12px}.lb b{display:block;font-size:16px}.lb span{font-size:13.5px;color:#5d6676}
+.l1{border-color:#3b82f6}.l2{border-color:#ea580c}.l3{border-color:#15803d}.l4{border-color:#9333ea}
+.tbl{margin-top:20px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+table{border-collapse:separate;border-spacing:6px}
+th{font-size:15px;padding:6px 10px;color:#fff;border-radius:8px;white-space:nowrap}th.hc{background:#9333ea}th.hr{background:#15803d;white-space:nowrap}th.x{background:transparent}
+td{width:64px;height:48px;text-align:center;font:800 20px ui-monospace,Menlo,monospace;background:#eef4ff;border:2px solid #3b82f6;border-radius:9px}
+.txt{font-size:16px}.txt p{margin:0 0 10px}
+</style></head><body><div id="art">
+<h3>Giải phẫu khai báo mảng hai chiều</h3><p class="sub">Mảng hai chiều giống một bảng tính: mỗi hàng là một học sinh, mỗi cột là một môn học</p>
+<div class="code"><span class="t k">int</span> <span class="t n">diem</span><span class="t r">[3]</span><span class="t c">[4]</span>;</div>
+<div class="labels">
+<div class="lb l1"><b>int</b><span>Kiểu của mọi ô trong bảng</span></div>
+<div class="lb l2"><b>diem</b><span>Tên của cả ma trận</span></div>
+<div class="lb l3"><b>[3]</b><span>Số hàng (ví dụ 3 học sinh)</span></div>
+<div class="lb l4"><b>[4]</b><span>Số cột (ví dụ 4 môn học)</span></div></div>
+<div class="tbl">
+<table><tr><th class="x"></th><th class="hc">Môn 0</th><th class="hc">Môn 1</th><th class="hc">Môn 2</th><th class="hc">Môn 3</th></tr>
+<tr><th class="hr">Học sinh 0</th><td>8</td><td>9</td><td>7</td><td>10</td></tr>
+<tr><th class="hr">Học sinh 1</th><td>6</td><td>5</td><td>8</td><td>9</td></tr>
+<tr><th class="hr">Học sinh 2</th><td>7</td><td>8</td><td>6</td><td>10</td></tr></table>
+<div class="txt"><p>Có <b>3 x 4 = 12</b> ô, đánh số từ 0.</p><p>Mỗi hàng thực chất là một mảng một chiều 4 phần tử; ba hàng xếp chồng lên nhau.</p></div>
+</div>
+</div></body></html>

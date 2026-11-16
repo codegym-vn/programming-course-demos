@@ -60,6 +60,7 @@ Người dùng dán bài đọc hiện có vào cột "Nội dung cũ" của Exc
 | `references/csharp-facts.md` | Thông điệp lỗi, hành vi .NET cần giữ đúng |
 | `references/cpp-facts.md` | Sự thật C++ (khác C#: tràn số, chia 0, cout 6 chữ số, switch...) |
 | `scripts/ghi_excel_ngoai.py` | Ghi đường dẫn/link/trạng thái/nội dung mới/link hình vào Excel nằm ngoài repo (course.json: excel_source); tự ghi bản sao nếu Excel đang mở |
+| `scripts/them_sheet_link.py` | Sau ghi_excel_ngoai.py: thêm sheet "Danh sach link" và "Huong dan chen" (khung [CHÈN ẢNH n]/[CHÈN MÔ PHỎNG]) |
 | `scripts/render_image.js` | Vẽ hình minh họa cho bài đọc: HTML (#art) → PNG đặt cạnh trang mô phỏng |
 | `references/thu-vien-hinh.json` | Danh mục 24 thành phần hình minh họa (mã H01-H24) |
 | `assets/mau-phan-tich-mo-phong.xlsx` | File Excel mẫu (2 dòng ví dụ thật + sheet Huong dan) để giới thiệu cho người dùng mới |

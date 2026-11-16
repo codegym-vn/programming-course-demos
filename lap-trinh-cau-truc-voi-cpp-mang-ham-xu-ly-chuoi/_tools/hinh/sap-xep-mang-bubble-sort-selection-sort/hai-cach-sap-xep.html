@@ -1,0 +1,25 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{border-radius:16px;border:2px solid;padding:18px 20px;background:#fff}
+.b{border-color:#2563eb}.s{border-color:#9333ea}
+.card h4{margin:0 0 2px;font-size:21px}.b h4{color:#1d4ed8}.s h4{color:#7e22ce}
+.tag{font-size:15px;color:#5d6676;margin:0 0 12px}
+.demo{background:#f6f7f9;border-radius:12px;padding:16px 10px 10px;text-align:center;margin-bottom:12px}
+.row{display:flex;justify-content:center;gap:8px}
+.cell{width:46px;height:46px;border-radius:9px;border:2px solid #9aa3b2;background:#fff;font:800 20px ui-monospace,Menlo,monospace;display:flex;align-items:center;justify-content:center}
+.hi{background:#fff3c4;border-color:#d4a006}.min{background:#fde2e2;border-color:#dc2626}
+.cap{font-size:14px;color:#5d6676;margin-top:8px}
+ul{margin:0;padding-left:20px;font-size:16px}li{margin:6px 0}
+.foot{margin-top:16px;border-left:5px solid #15803d;background:#effaf3;border-radius:8px;padding:10px 14px;font-size:16px}
+</style></head><body><div id="art">
+<h3>Hai cách sắp xếp: so cặp liền kề và chọn số nhỏ nhất</h3><p class="sub">Cùng mục tiêu xếp mảng tăng dần, nhưng cách làm và số lần đổi chỗ khác nhau</p>
+<div class="cols">
+<div class="card b"><h4>Bubble Sort (nổi bọt)</h4><p class="tag">Giống bọt khí nổi dần lên mặt nước</p>
+<div class="demo"><div class="row"><div class="cell hi">5</div><div class="cell hi">2</div><div class="cell">9</div></div><div class="cap">Chỉ nhìn hai ô sát nhau, sai thứ tự thì đổi</div></div>
+<ul><li>Luôn so <b>cặp liền kề</b> arr[j] và arr[j+1]</li><li>Đổi chỗ <b>nhiều lần</b> trong một lượt</li><li>Cuối mỗi lượt, số lớn nhất còn lại nằm đúng chỗ ở cuối</li><li>Dừng sớm được nếu một lượt không đổi gì</li></ul></div>
+<div class="card s"><h4>Selection Sort (chọn)</h4><p class="tag">Giống chọn bạn thấp nhất trong hàng rồi mời lên đầu</p>
+<div class="demo"><div class="row"><div class="cell">5</div><div class="cell">2</div><div class="cell">9</div><div class="cell min">1</div></div><div class="cap">Nhìn cả đoạn chưa xếp để tìm ô nhỏ nhất</div></div>
+<ul><li>Quét <b>cả đoạn chưa xếp</b> để tìm số nhỏ nhất</li><li>Đổi chỗ <b>đúng một lần</b> ở cuối mỗi lượt</li><li>Cuối mỗi lượt, số nhỏ nhất còn lại nằm đúng chỗ ở đầu</li><li>Nếu số nhỏ nhất đã đúng chỗ thì không cần đổi</li></ul></div>
+</div>
+<div class="foot"><b>Giống nhau:</b> cả hai đều dùng hai vòng lặp lồng nhau và so sánh khoảng n(n-1)/2 cặp. <b>Khác nhau chính:</b> số lần đổi chỗ.</div>
+</div></body></html>

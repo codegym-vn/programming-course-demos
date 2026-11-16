@@ -1,0 +1,35 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.top{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:stretch}
+.code{background:#0f172a;border-radius:16px;padding:22px 22px;font:700 19px/1.75 ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb;white-space:pre}
+.code .c{color:#9ca3af;font-weight:500}.code .k{color:#93c5fd}
+.n1{display:inline-block;width:26px;height:26px;border-radius:50%;text-align:center;line-height:26px;font:800 15px system-ui;color:#fff;margin-right:6px}
+.a1{background:#2563eb}.a2{background:#9333ea}.a3{background:#15803d}
+.steps{display:flex;flex-direction:column;gap:12px}
+.st{border-left:6px solid;border-radius:8px;background:#f6f7f9;padding:12px 14px}.st b{font-size:17px}.st>span{display:block;font-size:15px;color:#5d6676;margin-top:2px}
+.s1{border-color:#2563eb}.s2{border-color:#9333ea}.s3{border-color:#15803d}
+table{width:100%;border-collapse:collapse;margin-top:18px;font-size:16px}
+th{background:#1d2330;color:#fff;text-align:left;padding:10px 14px;font-size:15px}
+td{padding:10px 14px;border-bottom:1px solid #e3e6ec}td.m{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700}
+.ini{background:#eef4ff}.upd{background:#f5eeff}
+</style></head><body><div id="art">
+<h3>Khuôn mẫu "biến tích lũy" cho mọi phép tính trên mảng</h3><p class="sub">Bài toán nào cũng đi qua 3 bước giống nhau; chỉ khác giá trị khởi tạo và cách cập nhật</p>
+<div class="top">
+<div class="code"><span class="c">// Bước 1: khởi tạo</span>
+<span class="k">kieu</span> ketQua = giaTriKhoiTao;
+
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; n; i++) {
+    <span class="c">// Bước 2: cập nhật ketQua</span>
+    <span class="c">// dựa trên arr[i]</span>
+}
+<span class="c">// Bước 3: ketQua là đáp án</span></div>
+<div class="steps">
+<div class="st s1"><b><span class="n1 a1">1</span>Khởi tạo trước vòng lặp</b><span>Chọn giá trị xuất phát sao cho không làm sai kết quả.</span></div>
+<div class="st s2"><b><span class="n1 a2">2</span>Cập nhật sau mỗi ô</b><span>Mỗi lượt xét một arr[i] rồi sửa biến tích lũy.</span></div>
+<div class="st s3"><b><span class="n1 a3">3</span>Đọc kết quả sau vòng lặp</b><span>Biến tích lũy lúc này giữ đáp án cuối cùng.</span></div>
+</div></div>
+<table><tr><th>Bài toán</th><th>Bước 1: khởi tạo</th><th>Bước 2: cập nhật mỗi ô</th></tr>
+<tr><td>Tổng</td><td class="m ini">tong = 0</td><td class="m upd">tong += arr[i]</td></tr>
+<tr><td>Đếm theo điều kiện</td><td class="m ini">dem = 0</td><td class="m upd">if (điều kiện) dem++</td></tr>
+<tr><td>Số lớn nhất</td><td class="m ini">maxVal = arr[0]</td><td class="m upd">if (arr[i] &gt; maxVal) maxVal = arr[i]</td></tr>
+<tr><td>Số nhỏ nhất</td><td class="m ini">minVal = arr[0]</td><td class="m upd">if (arr[i] &lt; minVal) minVal = arr[i]</td></tr></table>
+</div></body></html>

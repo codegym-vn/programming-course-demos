@@ -1,0 +1,26 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:6px}
+.c{text-align:center}
+.ord{font-size:14px;color:#5d6676;margin-bottom:6px}
+.box{border:3px solid #2563eb;background:#eef4ff;border-radius:12px;padding:12px 0;font:800 28px ui-monospace,Menlo,Consolas,monospace}
+.idx{margin-top:8px;font:800 20px ui-monospace,Menlo,Consolas,monospace;color:#9333ea}
+.step{margin-top:4px;font-size:14px;color:#5d6676}
+.bar{margin:16px 0 0;position:relative;height:34px}
+.bar i{position:absolute;left:10%;right:10%;top:12px;height:5px;background:#9333ea;border-radius:3px}
+.bar i:after{content:"";position:absolute;right:-12px;top:-6px;border:8px solid transparent;border-left:14px solid #9333ea}
+.bar span{position:absolute;left:10%;top:-6px;font:700 14px system-ui;color:#9333ea;background:#fff;padding:0 6px}
+.cards{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{border-radius:12px;padding:12px 16px;background:#f6f7f9;border-left:5px solid}
+.c1{border-color:#2563eb}.c2{border-color:#9333ea}.card b{display:block;font-size:17px}.card span{color:#5d6676;font-size:14.5px}
+</style></head><body><div id="art">
+<h3>Chỉ số là "cách ô đầu bao nhiêu ô"</h3><p class="sub">Vì vậy ô đầu tiên có chỉ số 0: nó cách chính nó 0 ô</p>
+<div class="row">
+<div class="c"><div class="ord">ô thứ 1</div><div class="box">8</div><div class="idx">[0]</div><div class="step">cách 0 ô</div></div>
+<div class="c"><div class="ord">ô thứ 2</div><div class="box">9</div><div class="idx">[1]</div><div class="step">cách 1 ô</div></div>
+<div class="c"><div class="ord">ô thứ 3</div><div class="box">7</div><div class="idx">[2]</div><div class="step">cách 2 ô</div></div>
+<div class="c"><div class="ord">ô thứ 4</div><div class="box">10</div><div class="idx">[3]</div><div class="step">cách 3 ô</div></div>
+<div class="c"><div class="ord">ô thứ 5</div><div class="box">6</div><div class="idx">[4]</div><div class="step">cách 4 ô</div></div></div>
+<div class="bar"><span>đi thêm 1 ô, chỉ số tăng 1</span><i></i></div>
+<div class="cards"><div class="card c1"><b>Thứ tự đếm của người</b><span>1, 2, 3, 4, 5 (ô thứ mấy)</span></div>
+<div class="card c2"><b>Chỉ số của C++</b><span>0, 1, 2, 3, 4 (cách ô đầu mấy ô). Mảng 5 ô thì ô cuối là [4] = 5 - 1</span></div></div>
+</div></body></html>

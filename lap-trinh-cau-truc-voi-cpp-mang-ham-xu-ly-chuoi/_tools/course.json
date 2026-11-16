@@ -1,0 +1,14 @@
+{
+ "course_name": "Lập trình Cấu trúc với C++: Mảng, Hàm & Xử lý Chuỗi",
+ "modules": [
+  "Module 1. Mảng một chiều",
+  "Module 2. Kỹ thuật xử lý mảng và thuật toán cơ bản",
+  "Module 3. Hàm (Function)",
+  "Module 4. (không có bài đọc)",
+  "Module 5. Xử lý chuỗi"
+ ],
+ "excel": "phan-tich-mo-phong-lap-trinh-cau-truc-cpp.xlsx",
+ "code_title": "Mã nguồn C++",
+ "language": "C++",
+ "excel_source": "~/Downloads/phan-tich-mo-phong-lap-trinh-cau-truc-cpp.xlsx"
+}

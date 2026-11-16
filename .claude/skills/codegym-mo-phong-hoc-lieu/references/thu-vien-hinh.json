@@ -208,5 +208,59 @@
   "name": "Công tắc chế độ mở file",
   "fn": "vModes",
   "desc": "Công tắc ios::in / ios::out / ios::app; ghép vText để thấy nội dung tệp trước/sau."
+ },
+ {
+  "code": "H47",
+  "name": "Dải ô mảng",
+  "fn": "vArray",
+  "desc": "Ô có chỉ số [i], ô chưa khởi tạo '?', vùng kẻ sọc ngoài mảng, con trỏ ▲ i/j, biến thể cột (bars) cho sắp xếp, done = phần đã sắp."
+ },
+ {
+  "code": "H48",
+  "name": "Lưới ma trận 2 chiều",
+  "fn": "vGrid2D",
+  "desc": "Lưới hàng × cột có chỉ số, mũi tên hàng/cột chỉ ô giao đang xét."
+ },
+ {
+  "code": "H49",
+  "name": "Biến tích lũy",
+  "fn": "vAcc",
+  "desc": "Hộp tong/dem/maxVal kèm phép tính vừa làm, vương miện cho kỷ lục."
+ },
+ {
+  "code": "H50",
+  "name": "Đối số → tham số → return",
+  "fn": "vArgs",
+  "desc": "Lời gọi với chip đối số đánh số, khung hàm có ô tham số (mặc định xám nghiêng, tham chiếu là nhãn cam), dòng return thay chỗ lời gọi hoặc bị bỏ."
+ },
+ {
+  "code": "H51",
+  "name": "Băng bộ đệm bàn phím",
+  "fn": "vInBuf",
+  "desc": "Ký tự đã gõ, ␣ và ↵, con trỏ đọc ▲, đoạn đang lấy vàng, ↵ sót lại nhấp nháy."
+ },
+ {
+  "code": "H52",
+  "name": "So khớp từng ký tự",
+  "fn": "vCharCmp",
+  "desc": "Hai chuỗi thẳng cột kèm mã ASCII; cột giống xanh, cột khác đầu tiên vàng kèm kết luận; '(hết)' khi chuỗi ngắn hơn."
+ },
+ {
+  "code": "H53",
+  "name": "Dải ký tự chuỗi",
+  "fn": "vChars",
+  "desc": "Ô ký tự có chỉ số, '\\0' tím cho char[], khay cố định cap, substr (sel), find, npos, tràn sang biến bên cạnh (spill)."
+ },
+ {
+  "code": "H54",
+  "name": "Máy chọn hàm nạp chồng",
+  "fn": "vOverload",
+  "desc": "Các cửa chữ ký: khớp chính xác xanh, cần đổi kiểu vàng, không khớp mờ; kết quả chọn/mơ hồ/trùng."
+ },
+ {
+  "code": "H55",
+  "name": "Danh bạ hàm khi biên dịch",
+  "fn": "vScanTop",
+  "desc": "Danh bạ hàm đã khai báo/có thân; kiểm tra lời gọi; bước liên kết (undefined reference)."
  }
 ]

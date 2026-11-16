@@ -1,0 +1,16 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.step{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center;border-radius:14px;padding:12px 16px;margin-bottom:12px;border:2px solid}
+.n{font:800 30px system-ui;text-align:center}
+.s1{background:#e1f5e9;border-color:#15803d}.s1 .n{color:#15803d}
+.s2{background:#fff4c9;border-color:#d4a106}.s2 .n{color:#a16207}
+.s3{background:#fdeaea;border-color:#c2410c}.s3 .n{color:#c2410c}
+.step b{font-size:18px;display:block}.step span{font-size:15.5px;color:#3b4252}
+.mono{font-weight:700}
+.tip{margin-top:6px;border-left:5px solid #2563eb;background:#eef4ff;border-radius:8px;padding:10px 14px;font-size:15.5px}
+</style></head><body><div id="art">
+<h3>Máy chọn hàm theo thứ hạng khớp</h3><p class="sub">Máy thử đối số với từng phiên bản và chọn phiên bản khớp tốt nhất</p>
+<div class="step s1"><div class="n">1</div><div><b>Khớp chính xác</b><span>Đối số đúng kiểu tham số. Ví dụ <span class="mono">5.0</span> (double) vào tham số double.</span></div></div>
+<div class="step s2"><div class="n">2</div><div><b>Thăng cấp (tăng lên kiểu lớn hơn cùng loại)</b><span>Ví dụ float lên double, char lên int.</span></div></div>
+<div class="step s3"><div class="n">3</div><div><b>Chuyển đổi kiểu</b><span>Ví dụ int sang float hoặc int sang double. Hai cách này ngang hạng nhau.</span></div></div>
+<div class="tip"><b>Có một phiên bản thắng rõ ràng:</b> máy gọi nó. <b>Hai phiên bản ngang hạng cao nhất:</b> lỗi gọi mơ hồ.</div>
+</div></body></html>

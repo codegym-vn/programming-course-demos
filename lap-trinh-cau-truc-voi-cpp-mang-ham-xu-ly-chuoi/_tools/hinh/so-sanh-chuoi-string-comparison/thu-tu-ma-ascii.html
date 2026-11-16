@@ -1,0 +1,23 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.bar{display:flex;gap:0;margin:6px 0 0}
+.seg{padding:14px 10px 10px;text-align:center;border:2px solid #1d2330;margin-left:-2px}
+.seg:first-child{border-radius:12px 0 0 12px;margin-left:0}.seg:last-child{border-radius:0 12px 12px 0}
+.seg b{display:block;font:800 24px ui-monospace,Menlo,Consolas,monospace}
+.seg span{display:block;font-size:15px;margin-top:4px;color:#1d2330}
+.seg small{display:block;font:700 15px ui-monospace,Menlo,Consolas,monospace;margin-top:6px;color:#5d6676}
+.s1{background:#f3f4f6;width:12%}.s2{background:#fff7ed;width:22%}.s3{background:#e8f0ff;width:33%}.s4{background:#e7f6ec;width:33%}
+.arrow{margin:14px 0 6px;font:800 17px system-ui;color:#5d6676;display:flex;align-items:center}
+.arrow i{flex:1;border-top:3px solid #5d6676;margin:0 12px}
+.eg{margin:18px 0 0;font-size:17px;line-height:1.9}
+.eg code{font:700 17px ui-monospace,Menlo,Consolas,monospace;background:#f3f4f6;padding:2px 8px;border-radius:6px}
+</style></head><body><div id="art">
+<h3>Thứ tự mã ASCII: chữ HOA đứng trước chữ thường</h3><p class="sub">C++ so chuỗi theo mã của ký tự, từ nhỏ đến lớn</p>
+<div class="arrow"><span>nhỏ</span><i></i><span>lớn</span></div>
+<div class="bar">
+<div class="seg s1"><b>&#9251;</b><span>dấu cách</span><small>32</small></div>
+<div class="seg s2"><b>0 ... 9</b><span>chữ số</span><small>48 ... 57</small></div>
+<div class="seg s3"><b>A ... Z</b><span>chữ HOA</span><small>65 ... 90</small></div>
+<div class="seg s4"><b>a ... z</b><span>chữ thường</span><small>97 ... 122</small></div>
+</div>
+<div class="eg">Nên <code>"Zebra"</code> &lt; <code>"apple"</code>, và <code>"Nam Anh"</code> &lt; <code>"Namo"</code> (dấu cách có mã 32, nhỏ hơn mọi chữ cái).</div>
+</div></body></html>

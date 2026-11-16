@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.code{background:#0f172a;border-radius:16px;padding:26px 24px;font:700 30px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb;white-space:pre}
+.t{display:inline-block;padding:0 7px;border-radius:8px}
+.k{color:#93c5fd}.a{background:rgba(110,231,183,.25);color:#6ee7b7}.b{background:rgba(253,186,116,.25);color:#fdba74}.c{background:rgba(196,161,255,.28);color:#d8b4fe}.d{background:rgba(250,204,21,.25);color:#fde047}.e{color:#e5e7eb}
+.labels{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.lb{border-top:5px solid;border-radius:6px;background:#f6f7f9;padding:10px 12px}.lb b{display:block;font-size:17px;font-family:ui-monospace,Menlo,Consolas,monospace}.lb span{font-size:14.5px;color:#5d6676}
+.l1{border-color:#15803d}.l2{border-color:#ea580c}.l3{border-color:#9333ea}.l4{border-color:#ca8a04}
+.warn{margin-top:16px;border-left:5px solid #2563eb;background:#eef4ff;border-radius:8px;padding:10px 14px;font-size:15.5px}
+</style></head><body><div id="art">
+<h3>Vòng for khớp với chỉ số của mảng</h3><p class="sub">Mảng n phần tử có chỉ số 0, 1, ..., n - 1. Vòng for dưới đây cho i chạy đúng các số đó</p>
+<div class="code"><span class="k">for</span> (<span class="k">int</span> <span class="t a">i = 0</span>; <span class="t b">i &lt; n</span>; <span class="t c">i++</span>) {
+    cin &gt;&gt; <span class="t d">diem[i]</span>;
+}</div>
+<div class="labels">
+<div class="lb l1"><b>i = 0</b><span>Bắt đầu ở chỉ số của ô đầu tiên</span></div>
+<div class="lb l2"><b>i &lt; n</b><span>Còn lặp khi i nhỏ hơn n. Dừng khi i = n, vì ô [n] không có</span></div>
+<div class="lb l3"><b>i++</b><span>Sau mỗi lượt, sang ô kế tiếp</span></div>
+<div class="lb l4"><b>diem[i]</b><span>Ô số i, nơi cin đặt giá trị vừa gõ</span></div></div>
+<div class="warn">Muốn <b>xuất</b> mảng, giữ nguyên phần <span class="mono">for (...)</span> và chỉ đổi thân vòng lặp thành <span class="mono">cout &lt;&lt; diem[i];</span></div>
+</div></body></html>

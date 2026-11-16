@@ -1,0 +1,24 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 250px 1fr;gap:10px;align-items:center}
+.box{border-radius:14px;padding:16px 14px;text-align:center}
+.num{background:#eef4ff;border:2px solid #3b82f6}.str{background:#f3ecff;border:2px solid #9333ea}
+.box b{display:block;font-size:20px}.box span{font-size:15px;color:#5d6676}
+.mid{display:flex;flex-direction:column;gap:12px}
+.arr{border-radius:10px;padding:9px 10px;text-align:center;font-size:15px}
+.arr code{display:block;font:800 16px ui-monospace,Menlo,Consolas,monospace;margin-bottom:2px}
+.go{background:#ecfdf3;border:2px solid #15803d}.back{background:#fff7ed;border:2px solid #ea580c}
+.pick{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pk{border-left:5px solid;border-radius:8px;background:#f6f7f9;padding:10px 14px;font-size:15.5px}
+.p1{border-color:#3b82f6}.p2{border-color:#c2410c}
+</style></head><body><div id="art">
+<h3>Hai chiều chuyển đổi, ba hàm</h3><p class="sub">Cần đi hướng nào thì chọn hàm hướng đó</p>
+<div class="row">
+<div class="box num"><b>Số</b><span class="mono">int, double</span><br><span>để tính toán</span></div>
+<div class="mid">
+<div class="arr go"><code>to_string(số)</code>số → chuỗi, để ghép vào câu</div>
+<div class="arr back"><code>stoi(chuỗi) / stod(chuỗi)</code>chuỗi → số, để tính toán</div></div>
+<div class="box str"><b>Chuỗi</b><span class="mono">string</span><br><span>để hiển thị, ghép câu</span></div></div>
+<div class="pick">
+<div class="pk p1"><b class="mono">stoi</b> cho kết quả <b>int</b> (số nguyên).<br><b class="mono">stod</b> cho kết quả <b>double</b> (số thực).</div>
+<div class="pk p2"><b>Không</b> viết <span class="mono">"Tuoi: " + tuoi</span> với <span class="mono">tuoi</span> là số. Hãy viết <span class="mono">"Tuoi: " + to_string(tuoi)</span>.</div></div>
+</div></body></html>

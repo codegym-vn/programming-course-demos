@@ -1,0 +1,19 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{border-radius:16px;padding:16px 18px}
+.a{background:#eef4ff;border:2px solid #2563eb}.b{background:#e7f6ec;border:2px solid #15803d}
+.big{font:800 22px ui-monospace,Menlo,Consolas,monospace;margin-bottom:4px}
+.a .big{color:#2563eb}.b .big{color:#15803d}
+.when{font-weight:700;margin:10px 0 4px;color:#5d6676;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+ul{margin:0;padding:0;list-style:none;font-size:17px}li{padding:3px 0}
+.q{margin-top:12px;font-size:17px;border-top:2px dashed #c9ced8;padding-top:10px}
+</style></head><body><div id="art">
+<h3>Chọn cin &gt;&gt; hay getline?</h3><p class="sub">Hỏi một câu: dữ liệu cần nhập có thể có dấu cách không?</p>
+<div class="row">
+<div class="card a"><div class="big">cin &gt;&gt; x</div><div>Đọc một &quot;từ&quot;</div>
+<div class="when">Dùng cho</div><ul><li>Một con số</li><li>Một lựa chọn menu</li><li>Một từ đơn: An, Binh</li></ul>
+<div class="q">Không có dấu cách bên trong.</div></div>
+<div class="card b"><div class="big">getline(cin, x)</div><div>Đọc cả dòng</div>
+<div class="when">Dùng cho</div><ul><li>Họ tên đầy đủ</li><li>Địa chỉ: 123 Le Loi, Ha Noi</li><li>Một câu bất kỳ</li></ul>
+<div class="q">Có thể có dấu cách và dấu phẩy.</div></div>
+</div></div></body></html>

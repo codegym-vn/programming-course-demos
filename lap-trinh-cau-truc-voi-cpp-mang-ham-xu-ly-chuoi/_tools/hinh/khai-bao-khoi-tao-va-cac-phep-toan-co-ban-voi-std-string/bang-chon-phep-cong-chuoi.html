@@ -1,0 +1,19 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+table{border-collapse:separate;border-spacing:0 8px;width:100%}
+td{padding:10px 14px;font-size:17px;vertical-align:middle}
+td.c{font:700 18px ui-monospace,Menlo,Consolas,monospace;border-radius:10px 0 0 10px;width:46%}
+td.r{font-weight:800;width:11%;text-align:center;font-size:20px}
+td.n{border-radius:0 10px 10px 0;color:#1d2330}
+tr.ok td{background:#e7f6ec}tr.ok td.c,tr.ok td.r{color:#15803d}
+tr.no td{background:#fdecec}tr.no td.c,tr.no td.r{color:#b91c1c}
+.tag{display:inline-block;font:700 13px system-ui;padding:2px 8px;border-radius:6px;background:#fff;border:1px solid #c9ced8;margin-right:6px}
+</style></head><body><div id="art">
+<h3>Phép + có dùng được không?</h3><p class="sub">Quy tắc: ít nhất một vế phải là std::string (s là một biến string)</p>
+<table>
+<tr class="ok"><td class="c">s + s</td><td class="r">&#10003;</td><td class="n">Hai std::string</td></tr>
+<tr class="ok"><td class="c">s + "abc"</td><td class="r">&#10003;</td><td class="n">Một vế là std::string</td></tr>
+<tr class="ok"><td class="c">"abc" + s</td><td class="r">&#10003;</td><td class="n">Vế phải là std::string cũng được</td></tr>
+<tr class="ok"><td class="c">s + 'x'</td><td class="r">&#10003;</td><td class="n">Nối thêm một ký tự</td></tr>
+<tr class="no"><td class="c">"abc" + "def"</td><td class="r">&#10007;</td><td class="n">Hai chuỗi kiểu C: lỗi biên dịch</td></tr>
+<tr class="no"><td class="c">s + 5</td><td class="r">&#10007;</td><td class="n">Số không tự thành chữ: dùng <span class="mono">to_string(5)</span></td></tr>
+</table></div></body></html>
