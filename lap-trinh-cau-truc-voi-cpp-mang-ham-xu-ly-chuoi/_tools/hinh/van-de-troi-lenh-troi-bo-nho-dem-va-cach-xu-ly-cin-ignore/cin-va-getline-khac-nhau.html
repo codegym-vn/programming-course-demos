@@ -1,0 +1,25 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cd{border-radius:14px;border:2px solid;padding:14px 16px;background:#f9fafb}
+.c1{border-color:#3b82f6}.c2{border-color:#9333ea}
+.cd h4{margin:0 0 8px;font:800 20px ui-monospace,Menlo,Consolas,monospace}
+.c1 h4{color:#1d4ed8}.c2 h4{color:#7e22ce}
+.cd ul{margin:0;padding-left:20px;font-size:16px}.cd li{margin:4px 0}
+.buf{margin:12px 0 4px;display:flex;gap:4px;font:800 18px ui-monospace,Menlo,Consolas,monospace}
+.b{width:34px;height:38px;border-radius:8px;border:2px solid #94a3b8;background:#fff;display:flex;align-items:center;justify-content:center}
+.g{background:#dcfce7;border-color:#16a34a}.r{background:#fef9c3;border-color:#ca8a04}
+.cap{font-size:14px;color:#5d6676}
+.warn{margin-top:16px;border-left:5px solid #c2410c;background:#fff7ed;border-radius:8px;padding:10px 14px;font-size:16px}
+</style></head><body><div id="art">
+<h3>cin &gt;&gt; và getline dừng ở đâu?</h3><p class="sub">Hai lệnh đọc kết thúc khác nhau, nên ký tự ↵ (phím Enter) bị bỏ lại hay bị lấy đi.</p>
+<div class="cols">
+<div class="cd c1"><h4>cin &gt;&gt; tuoi</h4>
+<ul><li>Bỏ qua khoảng trắng ở đầu</li><li>Đọc tới khi gặp dấu cách hoặc ↵</li><li><b>Không lấy</b> ký tự dừng đó</li></ul>
+<div class="buf"><div class="b g">2</div><div class="b g">0</div><div class="b r">↵</div></div>
+<div class="cap">20 được lấy; ↵ ở lại trong bộ đệm</div></div>
+<div class="cd c2"><h4>getline(cin, ten)</h4>
+<ul><li>Đọc cả dòng, kể cả dấu cách</li><li>Dừng khi gặp ↵</li><li><b>Lấy ↵ ra và bỏ đi</b></li></ul>
+<div class="buf"><div class="b g">A</div><div class="b g">n</div><div class="b g">␣</div><div class="b g">B</div><div class="b r">↵</div></div>
+<div class="cap">cả dòng được lấy; ↵ bị bỏ đi</div></div></div>
+<div class="warn"><b>Vì vậy:</b> cin &gt;&gt; để lại ↵, rồi getline gặp ↵ đó đầu tiên và trả về chuỗi rỗng. Cần dọn ↵ ở giữa hai lệnh.</div>
+</div></body></html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="780">
+<title>Cộng thời gian tiết học</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1.45fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .list{max-height:610px;overflow-y:auto;padding-right:2px}
+  .act{border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:8px}
+  .act.warn{border-color:var(--cur-bar)}
+  .act .top{display:flex;gap:6px;align-items:center}
+  .act .no{font-weight:700;flex:0 0 auto}
+  input,textarea{font:inherit;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-height:38px;min-width:0}
+  input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .act .nm{flex:1}
+  .min{width:62px;text-align:right;font-variant-numeric:tabular-nums}
+  .unit{font-size:13px;color:var(--muted)}
+  .lab{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+  textarea{width:100%;min-height:52px;resize:vertical;line-height:1.35}
+  .steps{margin:0;padding:0;list-style:none}
+  .steps li{display:flex;gap:6px;align-items:center;margin:4px 0}
+  .steps li input.st{flex:1}
+  .x{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;min-width:38px;min-height:38px;cursor:pointer;font:inherit;font-size:16px;line-height:1}
+  .x:hover{color:var(--bad);border-color:var(--bad)}
+  .small{border:1px dashed var(--accent);background:transparent;color:var(--accent);border-radius:8px;padding:4px 10px;min-height:36px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+  .chk{font-size:13px;margin-top:5px}
+  .chk div{border-left:3px solid var(--cur-bar);background:var(--cur);border-radius:6px;padding:3px 8px;margin-top:3px}
+  .chk div.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .total{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin:0}
+  .sum{font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin:2px 0 6px;word-break:break-word}
+  .bar{position:relative;height:22px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin:4px 0 2px}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;display:flex}
+  .bar .seg{height:100%;border-right:1px solid var(--card)}
+  .bar .mark45{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text)}
+  .scale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .msg ul{margin:3px 0 0;padding-left:18px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .note{font-size:12.5px;color:var(--muted);margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+  @media (max-width:480px){.act .top{flex-wrap:wrap}.act .nm{flex:1 1 100%;order:2}.act .no{flex:1 1 auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Kế hoạch mẫu (giả lập): Toán 7, tiết 1 bài "Hai đại lượng tỉ lệ thuận", tiết 45 phút. Sửa số phút của hoạt động và của từng bước, sửa phần sản phẩm, hoặc bấm "Xoá trắng" để nhập kế hoạch AI soạn cho bạn. Trang cộng lại và nhắc chỗ cần kiểm; trang không chấm kế hoạch.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="list" id="list"></div>
+      <div class="btns">
+        <button class="small" id="add">+ Thêm hoạt động</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="panel-title">Tổng thời gian các hoạt động</p>
+      <p class="total" id="total"></p>
+      <p class="sum" id="sum"></p>
+      <div class="bar" id="bar"></div>
+      <div class="scale"><span>0</span><span id="scaleMid"></span><span id="scaleMax"></span></div>
+      <div id="side" aria-live="polite"></div>
+      <div class="btns">
+        <button class="btn" id="reset">Khôi phục kế hoạch mẫu</button>
+        <button class="btn" id="clear">Xoá trắng</button>
+      </div>
+      <p class="note">Trang chỉ làm việc cộng và soi chữ. Sản phẩm có "nhìn thấy, chấm được" hay không, hoạt động có làm được với lớp của bạn hay không, vẫn do bạn đọc và quyết định.</p>
+    </div>
+  </div>
+</div>
+<script>
+// Kế hoạch mẫu riêng của trang (khác bài "Tỉ lệ thức" của lab và kế hoạch KHTN của cô Ngọc Ánh).
+// Đã kiểm bằng Python: hoạt động 5 + 17 + 13 + 8 + 3 = 46 phút (vượt 1); bước HĐ1 1 + 3 + 1 = 5 (khớp);
+// HĐ2 2 + 6 + 4 + 4 = 16 (ghi 17); HĐ3 7 + 2 + 4 = 13 (khớp); HĐ4 5 + 3 = 8 (khớp); HĐ5 không ghi bước.
+// Bảng giá trị trong sản phẩm HĐ2: y = 8x với x = 1, 2, 3, 4 cho y = 8, 16, 24, 32 (tỉ số y/x đều bằng 8).
+const TIET = 45;
+const SAMPLE = [
+ {t:"Mở đầu: mua vở, số vở và số tiền", m:5,
+  p:"Câu trả lời của 3 cặp cho câu hỏi: mua số vở gấp đôi thì số tiền thay đổi thế nào, vì sao.",
+  s:[["Giáo viên nêu tình huống trên ti vi",1],["Học sinh trao đổi theo cặp",3],["Giáo viên dẫn vào bài",1]]},
+ {t:"Hình thành kiến thức: định nghĩa và tính chất", m:17,
+  p:"Bảng giá trị trên phiếu (x = 1, 2, 3, 4; y = 8, 16, 24, 32), tỉ số y/x của từng cột, và câu kết luận về hệ số tỉ lệ do từng cặp viết.",
+  s:[["Phát phiếu, nêu yêu cầu",2],["Cặp điền bảng, tính tỉ số y/x",6],["Hai cặp báo cáo, cả lớp nhận xét",4],["Giáo viên chốt định nghĩa và tính chất",4]]},
+ {t:"Luyện tập: phiếu 3 bài", m:13,
+  p:"Học sinh nắm được cách tìm hệ số tỉ lệ và hiểu tính chất của hai đại lượng tỉ lệ thuận.",
+  s:[["Học sinh làm cá nhân",7],["Hai bạn cùng bàn đổi phiếu, đối chiếu",2],["Giáo viên gọi học sinh chữa, chốt lỗi hay gặp",4]]},
+ {t:"Vận dụng: lượng bột và số chiếc bánh", m:8,
+  p:"",
+  s:[["Nhóm 4 em giải bài trên bảng nhóm",5],["Hai nhóm trình bày",3]]},
+ {t:"Hướng dẫn về nhà", m:3, p:"", s:[]}
+];
+// Từ ngữ cho thấy "sản phẩm" là điều nằm trong đầu học sinh, giáo viên không nhìn thấy.
+const VAGUE = ["hiểu","nắm được","nắm vững","biết được","có ý thức","yêu thích","hứng thú","cảm nhận","ghi nhớ","hình thành được","tích cực"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"d").toLowerCase();
+const clone = a => JSON.parse(JSON.stringify(a));
+let A = clone(SAMPLE);
+const num = v => { const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) && x >= 0 ? x : null; };
+const fmt = x => (Math.round(x*100)/100).toLocaleString("vi-VN");
+function vagueIn(p){
+  const f = " "+fold(p)+" ";
+  return VAGUE.filter(w => new RegExp("[^a-z]"+fold(w).replace(/ /g,"\\s+")+"[^a-z]").test(f));
+}
+function checks(a){
+  const out = [];
+  const m = num(a.m);
+  if(m===null || a.m==="") out.push("Chưa ghi số phút của hoạt động.");
+  const st = a.s.filter(x=>x[0].trim()!=="" || x[1]!=="");
+  if(!st.length) out.push("Chưa chia bước tổ chức thực hiện (ai làm gì, mấy phút).");
+  else {
+    const vals = st.map(x=>num(x[1]));
+    if(vals.some(v=>v===null)) out.push("Có bước chưa ghi số phút.");
+    else {
+      const ss = vals.reduce((p,c)=>p+c,0);
+      if(m!==null && Math.abs(ss-m)>1e-9) out.push("Các bước cộng "+vals.map(fmt).join(" + ")+" = "+fmt(ss)+" phút, nhưng hoạt động ghi "+fmt(m)+" phút.");
+    }
+  }
+  if(a.p.trim()==="") out.push("Chưa có sản phẩm: học sinh để lại gì để bạn biết hoạt động đạt mục tiêu?");
+  else { const v = vagueIn(a.p); if(v.length) out.push("Sản phẩm dùng từ khó nhìn thấy: “"+v.join("”, “")+"”. Ghi thứ học sinh viết, làm ra mà bạn chấm được."); }
+  return out;
+}
+function buildList(){
+  $("list").innerHTML = A.map((a,i)=>
+    '<div class="act" id="a'+i+'"><div class="top"><span class="no">HĐ '+(i+1)+'</span>'+
+    '<input class="nm" data-i="'+i+'" data-f="t" value="'+esc(a.t)+'" aria-label="Tên hoạt động '+(i+1)+'" placeholder="Tên hoạt động">'+
+    '<input class="min" data-i="'+i+'" data-f="m" inputmode="decimal" value="'+esc(a.m)+'" aria-label="Số phút hoạt động '+(i+1)+'"><span class="unit">phút</span>'+
+    '<button class="x" data-del="'+i+'" title="Bỏ hoạt động này" aria-label="Bỏ hoạt động '+(i+1)+'">×</button></div>'+
+    '<span class="lab">Sản phẩm</span><textarea data-i="'+i+'" data-f="p" aria-label="Sản phẩm hoạt động '+(i+1)+'" placeholder="Học sinh để lại gì mà bạn nhìn thấy, chấm được?">'+esc(a.p)+'</textarea>'+
+    '<span class="lab">Tổ chức thực hiện (từng bước, số phút)</span><ul class="steps">'+
+    a.s.map((s,k)=>'<li><input class="st" data-i="'+i+'" data-k="'+k+'" data-f="sn" value="'+esc(s[0])+'" aria-label="Bước '+(k+1)+'"><input class="min" data-i="'+i+'" data-k="'+k+'" data-f="sm" inputmode="decimal" value="'+esc(s[1])+'" aria-label="Số phút bước '+(k+1)+'"><span class="unit">ph</span><button class="x" data-i="'+i+'" data-delstep="'+k+'" aria-label="Bỏ bước '+(k+1)+'">×</button></li>').join("")+
+    '</ul><button class="small" data-addstep="'+i+'">+ Thêm bước</button>'+
+    '<div class="chk" id="c'+i+'"></div></div>').join("");
+  $("list").querySelectorAll("input,textarea").forEach(el=>el.addEventListener("input",()=>{
+    const i=+el.dataset.i, f=el.dataset.f;
+    if(f==="sn") A[i].s[+el.dataset.k][0]=el.value;
+    else if(f==="sm") A[i].s[+el.dataset.k][1]=el.value;
+    else A[i][f]=el.value;
+    render();
+  }));
+  $("list").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ A.splice(+b.dataset.del,1); buildList(); });
+  $("list").querySelectorAll("[data-delstep]").forEach(b=>b.onclick=()=>{ A[+b.dataset.i].s.splice(+b.dataset.delstep,1); buildList(); });
+  $("list").querySelectorAll("[data-addstep]").forEach(b=>b.onclick=()=>{ A[+b.dataset.addstep].s.push(["",""]); buildList(); });
+  render();
+}
+const COLORS = ["#2563eb","#0d9488","#d97706","#7c3aed","#db2777","#4b5563","#65a30d","#0891b2"];
+function render(){
+  const ms = A.map(a=>num(a.m));
+  const total = ms.reduce((p,c)=>p+(c||0),0);
+  $("total").textContent = fmt(total)+" phút";
+  $("sum").textContent = A.length ? ms.map(v=>v===null?"?":fmt(v)).join(" + ")+" = "+fmt(total)+" (tiết học "+TIET+" phút)" : "Chưa có hoạt động nào.";
+  const max = Math.max(TIET*1.2, total);
+  let fill = '<div class="fill">'+ms.map((v,i)=>v? '<div class="seg" title="HĐ '+(i+1)+': '+fmt(v)+' phút" style="width:'+(v/max*100)+'%;background:'+COLORS[i%COLORS.length]+'"></div>' : '').join("")+'</div>';
+  $("bar").innerHTML = fill+'<div class="mark45" style="left:calc('+(TIET/max*100)+'% - 1px)" title="45 phút"></div>';
+  $("scaleMid").textContent = "vạch đen: "+TIET+" phút";
+  $("scaleMax").textContent = fmt(max);
+  let h = "";
+  const missing = ms.filter(v=>v===null).length;
+  const diff = total - TIET;
+  if(!A.length) h += '<div class="msg">Bấm "+ Thêm hoạt động" để nhập kế hoạch của bạn.</div>';
+  else if(missing) h += '<div class="msg warn">'+missing+' hoạt động chưa ghi số phút, tổng ở trên chưa đủ.</div>';
+  else if(Math.abs(diff)<1e-9) h += '<div class="msg ok">Tổng đúng '+TIET+' phút.</div>';
+  else if(diff>0) h += '<div class="msg bad">Vượt '+fmt(diff)+' phút. Quyết định bớt ở đâu theo mục tiêu: thường bớt một bài luyện tập, giữ thời gian cho hoạt động hình thành kiến thức.</div>';
+  else h += '<div class="msg warn">Thiếu '+fmt(-diff)+' phút so với '+TIET+' phút. Có hoạt động nào bị ghi thiếu, hay phần chuyển tiếp, báo cáo chưa tính?</div>';
+  const per = A.map(checks);
+  per.forEach((c,i)=>{
+    const box = $("c"+i); if(!box) return;
+    box.innerHTML = c.length ? c.map(x=>'<div>'+esc(x)+'</div>').join("") : '<div class="ok">Đủ số phút, các bước cộng khớp, có sản phẩm.</div>';
+    $("a"+i).classList.toggle("warn", c.length>0);
+  });
+  const noProd = A.map((a,i)=>a.p.trim()===""?i+1:0).filter(Boolean);
+  const vag = A.map((a,i)=>a.p.trim()!=="" && vagueIn(a.p).length?i+1:0).filter(Boolean);
+  const stepOff = A.map((a,i)=>checks(a).some(x=>x.startsWith("Các bước cộng"))?i+1:0).filter(Boolean);
+  const items = [];
+  if(noProd.length) items.push("Hoạt động chưa có sản phẩm: HĐ "+noProd.join(", HĐ ")+". Nếu là phần dặn dò không cần sản phẩm, vẫn kiểm nó có nằm trong "+TIET+" phút không.");
+  if(vag.length) items.push("Sản phẩm khó nhìn thấy, khó chấm: HĐ "+vag.join(", HĐ ")+".");
+  if(stepOff.length) items.push("Số phút các bước không khớp số phút hoạt động: HĐ "+stepOff.join(", HĐ ")+".");
+  if(items.length) h += '<div class="msg"><b>Cần kiểm thêm</b><ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
+  else if(A.length && !missing) h += '<div class="msg ok">Mọi hoạt động đều có sản phẩm và số phút các bước khớp.</div>';
+  $("side").innerHTML = h;
+}
+$("add").onclick = ()=>{ A.push({t:"",m:"",p:"",s:[["",""]]}); buildList(); const n=$("list").querySelectorAll(".nm"); n[n.length-1].focus(); };
+$("reset").onclick = ()=>{ A = clone(SAMPLE); buildList(); };
+$("clear").onclick = ()=>{ A = [{t:"",m:"",p:"",s:[["",""]]}]; buildList(); };
+buildList();
+</script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Trạng thái & Cơ chế Tinh chỉnh Lớp trong C++</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:3.5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:10px}
+  @media (max-width:680px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;overflow-x:auto;padding:6px 0;max-height:260px;overflow-y:auto}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:220px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12.5px;padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .interactive-bar{display:flex;gap:6px;align-items:center;margin-top:6px;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+  .interactive-bar button{padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:11.5px;cursor:pointer}
+  .interactive-bar button:hover{background:var(--accent-soft);border-color:var(--accent)}
+
+  .status-box{margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng trạng thái và cơ chế hoạt động của các thành viên lớp trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-date-rollover" onclick="setMode('date-rollover')">Date Rollover</button>
+        <button class="tab" id="tab-method-chaining" onclick="setMode('method-chaining')">Method Chaining</button>
+        <button class="tab" id="tab-composition-ctor" onclick="setMode('composition-ctor')">Composition Ctor</button>
+        <button class="tab" id="tab-mutable-cache" onclick="setMode('mutable-cache')">mutable Cache</button>
+        <button class="tab" id="tab-include-guard" onclick="setMode('include-guard')">Include Guard</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/4</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Đối tượng & Bộ nhớ</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'date-rollover': {
+    lead: 'Lớp Date: Phương thức add_one_day() bảo vệ bất biến lịch, tự động xử lý cuộn ngày sang tháng mới và cuộn năm (kể cả năm nhuận).',
+    code: [
+      {ln: 1, text: '<span class="kw">void</span> <span class="type">Date</span>::<span class="fn">add_one_day</span>() {'},
+      {ln: 2, text: '    <span class="kw">if</span> (day &lt; <span class="fn">days_in_month</span>(year, month)) {'},
+      {ln: 3, text: '        day++;'},
+      {ln: 4, text: '    } <span class="kw">else</span> {'},
+      {ln: 5, text: '        day = <span class="num">1</span>;'},
+      {ln: 6, text: '        <span class="kw">if</span> (month &lt; <span class="num">12</span>) { month++; }'},
+      {ln: 7, text: '        <span class="kw">else</span> { month = <span class="num">1</span>; year++; }'},
+      {ln: 8, text: '    }'},
+      {ln: 9, text: '}'}
+    ],
+    steps: [
+      {
+        line: 1,
+        mem: [
+          {name: 'd.day', val: '28', state: 'Ngày hiện tại', cls: 'active'},
+          {name: 'd.month', val: '2 (Feb)', state: 'Tháng hai', cls: ''},
+          {name: 'd.year', val: '2024', state: 'Năm nhuận (chia hết cho 4)', cls: 'ok'}
+        ],
+        status: 'Bắt đầu từ ngày 28/02/2024 (năm nhuận có 29 ngày). Gọi d.add_one_day().',
+        cls: ''
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'd.day', val: '29', state: 'day tăng lên 29', cls: 'ok'},
+          {name: 'd.month', val: '2 (Feb)', state: 'Giữ nguyên', cls: ''},
+          {name: 'd.year', val: '2024', state: 'Năm nhuận', cls: 'ok'}
+        ],
+        status: 'Kiểm tra: 28 < 29 (days_in_month). Tăng day++ thành 29/02/2024. Bất biến ngày hợp lệ được đảm bảo.',
+        cls: 'ok'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'd.day', val: '1', state: 'Cuộn về ngày 1', cls: 'warn'},
+          {name: 'd.month', val: '3 (Mar)', state: 'Cuộn sang tháng 3', cls: 'warn'},
+          {name: 'd.year', val: '2024', state: 'Năm 2024', cls: 'ok'}
+        ],
+        status: 'Gọi add_one_day() lần nữa: 29 đạt giới hạn tháng! Nhảy vào nhánh else: day = 1, month tăng lên 3 (01/03/2024).',
+        cls: 'warn'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'd.day', val: '1', state: 'Đầu năm mới', cls: 'ok'},
+          {name: 'd.month', val: '1 (Jan)', state: 'Tháng 1', cls: 'ok'},
+          {name: 'd.year', val: '2025', state: 'Năm mới 2025!', cls: 'active'}
+        ],
+        status: '✓ Khi chạm mốc 31/12/2024, lệnh add_one_day() cuộn cả 3 thành phần: day = 1, month = 1, year = 2025.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'method-chaining': {
+    lead: 'Kỹ thuật Method Chaining: Trả về tham chiếu Screen& (*this) cho phép gọi chuỗi phương thức liên hoàn trên CÙNG một đối tượng mà không tạo bản sao tạm.',
+    code: [
+      {ln: 1, text: '<span class="type">Screen</span>& <span class="type">Screen</span>::<span class="fn">move</span>(<span class="type">int</span> r, <span class="type">int</span> c) {'},
+      {ln: 2, text: '    cursor = r * width + c;'},
+      {ln: 3, text: '    <span class="kw">return</span> *<span class="kw">this</span>;  <span class="com">// Trả về Screen&</span>'},
+      {ln: 4, text: '}'},
+      {ln: 5, text: '<span class="type">Screen</span>& <span class="type">Screen</span>::<span class="fn">set</span>(<span class="type">char</span> ch) {'},
+      {ln: 6, text: '    contents[cursor] = ch;'},
+      {ln: 7, text: '    <span class="kw">return</span> *<span class="kw">this</span>;'},
+      {ln: 8, text: '}'},
+      {ln: 9, text: '<span class="com">// main: myScreen.move(4, 0).set(\'#\');</span>'}
+    ],
+    steps: [
+      {
+        line: 9,
+        mem: [
+          {name: 'myScreen.cursor', val: '0', state: 'Vị trí ban đầu', cls: ''},
+          {name: 'myScreen.contents[0]', val: '\' \'', state: 'Ký tự trống', cls: ''},
+          {name: 'Địa chỉ đối tượng', val: '0x7ffd (gốc)', state: 'Đối tượng trong main', cls: 'ok'}
+        ],
+        status: 'Bắt đầu biểu thức: myScreen.move(4, 0).set(\'#\'); trên đối tượng gốc tại 0x7ffd.',
+        cls: ''
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'myScreen.cursor', val: '40 (hàng 4, cột 0)', state: 'Đã cập nhật cursor', cls: 'active'},
+          {name: 'con trỏ this', val: '0x7ffd', state: 'Trỏ tới myScreen', cls: 'ok'},
+          {name: 'return *this', val: 'Screen& (0x7ffd)', state: 'Tham chiếu đối tượng gốc', cls: 'ok'}
+        ],
+        status: 'move(4, 0) cập nhật cursor = 40. Lệnh return *this trả về tham chiếu Screen& chính là myScreen (0x7ffd).',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'myScreen.cursor', val: '40', state: 'Vị trí con trỏ', cls: ''},
+          {name: 'myScreen.contents[40]', val: '\'#\'', state: 'Ghi ký tự mới', cls: 'ok'},
+          {name: 'Địa chỉ thao tác', val: '0x7ffd', state: 'Cùng một đối tượng', cls: 'ok'}
+        ],
+        status: 'set(\'#\') được gọi tiếp trên kết quả tham chiếu! contents[40] được ghi đè bằng \'#\'. Đối tượng gốc được cập nhật trực tiếp.',
+        cls: 'ok'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'Nếu trả về Screen (theo trị)', val: 'TẠO BẢN SAO TẠM', state: 'Bẫy nghiêm trọng!', cls: 'warn'},
+          {name: 'myScreen gốc', val: 'KHÔNG đổi contents', state: 'Chỉ bản sao bị sửa', cls: 'err'}
+        ],
+        status: '⚠️ CẢNH BÁO: Nếu hàm trả về Screen (theo giá trị thay vì Screen&), C++ tạo ra một bản sao tạm trên Stack. Phương thức tiếp theo sẽ sửa trên bản sao tạm rồi huỷ bỏ, đối tượng gốc myScreen hoàn toàn không thay đổi!',
+        cls: 'warn'
+      }
+    ]
+  },
+  'composition-ctor': {
+    lead: 'Thành phần Đối tượng (Composition): Constructor của các đối tượng thành viên (member object) LUÔN chạy trước thân constructor của lớp bao chứa.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Segment</span> {'},
+      {ln: 2, text: '    <span class="type">Point</span> start;  <span class="com">// Thành viên 1</span>'},
+      {ln: 3, text: '    <span class="type">Point</span> end;    <span class="com">// Thành viên 2</span>'},
+      {ln: 4, text: '<span class="kw">public</span>:'},
+      {ln: 5, text: '    <span class="fn">Segment</span>(<span class="type">int</span> x1, <span class="type">int</span> y1, <span class="type">int</span> x2, <span class="type">int</span> y2)'},
+      {ln: 6, text: '        : <span class="fn">start</span>(x1, y1), <span class="fn">end</span>(x2, y2) {'},
+      {ln: 7, text: '        <span class="com">// Thân constructor Segment</span>'},
+      {ln: 8, text: '    }'},
+      {ln: 9, text: '};'}
+    ],
+    steps: [
+      {
+        line: 5,
+        mem: [
+          {name: 'start', val: 'chưa tạo', state: 'Point member 1', cls: ''},
+          {name: 'end', val: 'chưa tạo', state: 'Point member 2', cls: ''},
+          {name: 'Segment', val: 'đang khởi tạo', state: 'Lớp bao chứa', cls: 'active'}
+        ],
+        status: 'Khởi tạo Segment seg(0, 0, 10, 20). Tiến trình kiến tạo bắt đầu từ danh sách thành viên.',
+        cls: ''
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'start', val: 'Point(0, 0)', state: 'Khởi tạo THÀNH CÔNG', cls: 'ok'},
+          {name: 'end', val: 'chưa tạo', state: 'Chờ đến lượt', cls: ''},
+          {name: 'Segment', val: 'chờ thành viên', state: 'Thân chưa chạy', cls: ''}
+        ],
+        status: 'Bước 1: start là thành viên khai báo đầu tiên -> Constructor Point(0, 0) chạy hoàn tất.',
+        cls: 'ok'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'start', val: 'Point(0, 0)', state: 'Đã sẵn sàng', cls: 'ok'},
+          {name: 'end', val: 'Point(10, 20)', state: 'Khởi tạo THÀNH CÔNG', cls: 'ok'},
+          {name: 'Segment', val: 'chuẩn bị chạy thân', state: 'Thành viên đủ', cls: 'active'}
+        ],
+        status: 'Bước 2: end là thành viên khai báo thứ hai -> Constructor Point(10, 20) chạy hoàn tất.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'seg.start', val: '(0, 0)', state: 'Hợp lệ', cls: 'ok'},
+          {name: 'seg.end', val: '(10, 20)', state: 'Hợp lệ', cls: 'ok'},
+          {name: 'seg', val: 'HOÀN THÀNH', state: 'Đối tượng sẵn sàng dùng', cls: 'ok'}
+        ],
+        status: '✓ Bước 3: Sau khi TẤT CẢ thành viên đã được kiến tạo, thân constructor của Segment (dòng 7) mới được thực thi. Đối tượng sẵn sàng sử dụng.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'mutable-cache': {
+    lead: 'Từ khoá mutable: Cho phép sửa đổi biến thành viên phục vụ bộ đệm (lazy cache) hoặc bộ đếm kỹ thuật ngay bên trong phương thức const.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Shape</span> {'},
+      {ln: 2, text: '    <span class="kw">mutable</span> <span class="type">int</span> access_count = <span class="num">0</span>;'},
+      {ln: 3, text: '    <span class="kw">mutable</span> <span class="type">double</span> cached_area = <span class="num">-1.0</span>;'},
+      {ln: 4, text: '<span class="kw">public</span>:'},
+      {ln: 5, text: '    <span class="type">double</span> <span class="fn">get_area</span>() <span class="kw">const</span> {'},
+      {ln: 6, text: '        access_count++;  <span class="com">// Hợp lệ nhờ mutable!</span>'},
+      {ln: 7, text: '        <span class="kw">if</span> (cached_area &lt; <span class="num">0</span>) {'},
+      {ln: 8, text: '            cached_area = <span class="fn">heavy_calc</span>();'},
+      {ln: 9, text: '        }'},
+      {ln: 10, text: '        <span class="kw">return</span> cached_area;'},
+      {ln: 11, text: '    }'},
+      {ln: 12, text: '};'}
+    ],
+    steps: [
+      {
+        line: 5,
+        mem: [
+          {name: 'access_count', val: '0', state: 'Bộ đếm số lần gọi', cls: ''},
+          {name: 'cached_area', val: '-1.0', state: 'Chưa tính (chưa có cache)', cls: 'warn'},
+          {name: 'Hợp đồng const', val: 'ĐỐI TƯỢNG HẰNG', state: 'Dữ liệu logic không đổi', cls: 'ok'}
+        ],
+        status: 'Gọi shape.get_area() lần đầu trên một đối tượng const Shape&. Dù phương thức là const, từ khoá mutable mở ngoại lệ hợp lệ.',
+        cls: ''
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'access_count', val: '1', state: 'Tăng lên 1', cls: 'ok'},
+          {name: 'cached_area', val: '153.86 (tính thật)', state: 'heavy_calc() chạy', cls: 'active'},
+          {name: 'Chi phí tính toán', val: '100% CPU', state: 'Tính lần đầu', cls: 'warn'}
+        ],
+        status: 'Lần 1: cached_area < 0 -> gọi heavy_calc() tính diện tích thật 153.86 và lưu vào cache. access_count tăng lên 1.',
+        cls: 'ok'
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'access_count', val: '2', state: 'Tăng lên 2', cls: 'ok'},
+          {name: 'cached_area', val: '153.86 (lấy từ cache)', state: 'KHÔNG tính lại!', cls: 'ok'},
+          {name: 'Thời gian đáp ứng', val: 'O(1) tức thì', state: 'Tận dụng cache', cls: 'ok'}
+        ],
+        status: 'Lần 2: Gọi tiếp get_area(). Nhờ có cache (cached_area >= 0), hàm bỏ qua heavy_calc() và trả về ngay trong O(1)! access_count = 2.',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Tính bất biến logic', val: 'BẢO TOÀN', state: 'Bán kính, toạ độ không đổi', cls: 'ok'},
+          {name: 'Tính bất biến bit', val: 'NGOẠI LỆ HỢP PHÁP', state: 'Chỉ sửa biến mutable', cls: 'ok'}
+        ],
+        status: '✓ Kết luận: mutable phân tách giữa "bất biến logic" (hình dạng không đổi) và "bất biến bit" (bộ nhớ đệm kỹ thuật bên trong).',
+        cls: 'ok'
+      }
+    ]
+  },
+  'include-guard': {
+    lead: 'Include Guard (#ifndef): Ngăn chặn lỗi định nghĩa lặp (ODR violation) khi cùng một tệp header được bao đóng nhiều lần qua cấu trúc hình thoi (diamond include).',
+    code: [
+      {ln: 1, text: '<span class="com">// File: person.h</span>'},
+      {ln: 2, text: '<span class="kw">#ifndef</span> PERSON_H'},
+      {ln: 3, text: '<span class="kw">#define</span> PERSON_H'},
+      {ln: 4, text: '<span class="kw">class</span> <span class="type">Person</span> { <span class="com">/* định nghĩa lớp */</span> };'},
+      {ln: 5, text: '<span class="kw">#endif</span>'},
+      {ln: 6, text: '<span class="com">// student.h includes person.h</span>'},
+      {ln: 7, text: '<span class="com">// teacher.h includes person.h</span>'},
+      {ln: 8, text: '<span class="com">// main.cpp includes student.h AND teacher.h</span>'}
+    ],
+    steps: [
+      {
+        line: 8,
+        mem: [
+          {name: 'PERSON_H', val: 'chưa định nghĩa', state: 'Macro rỗng', cls: ''},
+          {name: 'Trình tiền xử lý', val: 'Đọc student.h', state: 'Bao đóng lần 1', cls: 'active'}
+        ],
+        status: 'main.cpp #include "student.h". student.h tiếp tục #include "person.h".',
+        cls: ''
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'PERSON_H', val: 'ĐÃ ĐỊNH NGHĨA', state: '#define PERSON_H', cls: 'ok'},
+          {name: 'class Person', val: 'ĐƯỢC NẠP LẦN 1', state: 'Nạp vào bộ dịch', cls: 'ok'}
+        ],
+        status: 'Lần 1: Macro PERSON_H chưa có -> đi vào khối #ifndef, định nghĩa #define PERSON_H và nạp class Person.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'PERSON_H', val: 'ĐÃ TỒN TẠI', state: 'Từ lần nạp trước', cls: 'ok'},
+          {name: 'Trình tiền xử lý', val: 'Đọc teacher.h', state: 'Bao đóng lần 2', cls: 'warn'}
+        ],
+        status: 'main.cpp tiếp tục #include "teacher.h". teacher.h lại yêu cầu #include "person.h" lần 2!',
+        cls: 'warn'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: '#ifndef PERSON_H', val: 'FALSE (bỏ qua)', state: 'Nhảy thẳng tới #endif', cls: 'ok'},
+          {name: 'Lỗi ODR', val: 'ĐÃ NGĂN CHẶN 100%', state: 'Không bị định nghĩa lặp', cls: 'ok'}
+        ],
+        status: '✓ Bảo vệ thành công: Kiểm tra #ifndef PERSON_H trả về false! Toàn bộ nội dung person.h bị bỏ qua. Tránh hoàn toàn lỗi biên dịch "redefinition of class Person".',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'date-rollover';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  ['date-rollover', 'method-chaining', 'composition-ctor', 'mutable-cache', 'include-guard'].forEach(m => {
+    const el = document.getElementById(`tab-${m}`);
+    if(el) el.classList.toggle('active', currentMode === m);
+  });
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

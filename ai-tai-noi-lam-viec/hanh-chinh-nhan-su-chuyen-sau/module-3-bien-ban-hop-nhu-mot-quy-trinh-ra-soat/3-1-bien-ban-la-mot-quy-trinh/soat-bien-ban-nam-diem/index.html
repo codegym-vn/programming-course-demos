@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="1000">
+<title>Soát biên bản năm điểm</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:10px;align-items:start}
+  .grid>div{min-width:0}
+  @media (min-width:781px){.grid>.card:first-child{position:sticky;top:8px}}
+  @media (max-width:780px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:10px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .meta{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+  ol.tr{margin:0;padding-left:0;list-style:none;font-size:13.5px}
+  ol.tr li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:4px;padding:3px 0;border-bottom:1px solid var(--line)}
+  ol.tr li:last-child{border-bottom:none}
+  .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px}
+  .item{border:1px solid var(--line);border-radius:9px;padding:7px 8px;margin-bottom:8px}
+  .item .q{font-size:14px;margin:0 0 6px}
+  .item .q b{color:var(--muted);font-weight:600;margin-right:4px}
+  .pts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  @media (max-width:520px){.pts{grid-template-columns:1fr}}
+  .pt{border:1px solid var(--line);border-radius:8px;padding:3px 4px;min-width:0}
+  @media (max-width:520px){.pt{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}}
+  .pt .lab{font-size:12px;color:var(--muted);line-height:1.25;margin-bottom:3px}
+  @media (max-width:520px){.pt .lab{margin:0;font-size:13px}}
+  .seg{display:flex;gap:3px}
+  @media (min-width:521px){.seg{flex-direction:column}.seg button{min-width:0;min-height:32px}}
+  .seg button{flex:1;min-height:36px;min-width:44px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:6px;font:inherit;font-size:12.5px;cursor:pointer;padding:2px 4px}
+  .seg button[aria-pressed="true"].y{background:var(--ok-soft);border-color:var(--ok);font-weight:700}
+  .seg button[aria-pressed="true"].n{background:var(--bad-soft);border-color:var(--bad);font-weight:700}
+  .pt.right{box-shadow:0 0 0 2px var(--ok)}
+  .pt.wrongc{box-shadow:0 0 0 2px var(--bad)}
+  .pt.empty{box-shadow:0 0 0 2px var(--cur-bar)}
+  .why{display:none;font-size:13px;margin-top:6px;border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:5px 8px}
+  .item.show .why{display:block}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:6px}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Một cuộc họp khác (giả lập). Đọc ghi chép, rồi soát sáu dòng kết luận AI soạn theo năm điểm: với mỗi dòng, chọn <b>Ổn</b> hoặc <b>Sai/thiếu</b> cho từng điểm. Điểm nào dòng đó không vướng thì chọn Ổn. Xong bấm "So với đáp án".</p>
+  <div class="grid">
+    <div class="card">
+      <p class="panel-title">Ghi chép của thư ký</p>
+      <p class="meta">Họp chuẩn bị hội thao công nhân, thứ Tư 10/03/2027, 09:00-09:40, phòng họp văn phòng. Chủ trì: chị Thanh. Dự: anh Khôi, chị Trang, chị Hà, chị Ngân, anh Bình (công đoàn).</p>
+      <ol class="tr" id="tr"></ol>
+    </div>
+    <div>
+      <div class="card">
+        <p class="panel-title">Kết luận trong bản nháp AI soạn</p>
+        <div id="items"></div>
+        <div class="btns"><button class="btn" id="cmp">So với đáp án</button><button class="btn" id="reset">Làm lại</button></div>
+        <div id="res" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Thứ - ngày đã kiểm bằng Python: 10/03/2027 thứ Tư; "thứ Ba tuần sau" = 16/03/2027; 24/03/2027 thứ Tư; 27/03/2027 thứ Bảy.
+// Cuộc họp, người, việc khác bài thử bảng kiểm, quiz, bài thực hành và bài soát biên bản giao ban.
+const TR = [
+ ["Chị Thanh","Hội thao năm nay tổ chức sáng thứ Bảy 27/03 ở sân Nhà máy, như kế hoạch anh Đức đã duyệt."],
+ ["Anh Khôi","Em đề xuất thêm môn kéo co nam nữ phối hợp."],
+ ["Chị Thanh","Được, thêm kéo co. Khôi lập danh sách đội của các tổ, gửi chị trước thứ Ba tuần sau."],
+ ["Chị Trang","Kinh phí giải thưởng em tính khoảng 15 triệu... à em sửa: 12 triệu, vì bỏ môn cờ tướng. Nhưng phải trình chị Mai duyệt đã."],
+ ["Chị Ngân","Ca 3 đêm thứ Sáu ra ca lúc 6 giờ sáng thứ Bảy. Bắt các bạn ấy dự thì không ai được nghỉ."],
+ ["Anh Bình","Công đoàn đề nghị hội thao tự nguyện, người làm ca 3 đêm thứ Sáu thì không xếp thi đấu. Tôi đề nghị ghi vào biên bản."],
+ ["Chị Thanh","Chốt: hội thao tự nguyện. Hà đặt nước uống và thuê loa, xong trước thứ Tư 24/03."],
+ ["Anh Khôi","Em thấy nên mời cả gia đình công nhân."],
+ ["Chị Thanh","Cái này chị không tự quyết được, phải hỏi anh Đức đã."]
+];
+const P = ["1. Ai nói","2. Ai làm","3. Hạn nào","4. Đã chốt?","5. Ý kiến khác"];
+// key: 1 = ổn, 0 = sai/thiếu
+const D = [
+ {t:"Thêm môn kéo co nam nữ phối hợp theo đề xuất của chị Hà.", k:[0,1,1,1,1],
+  w:"Điểm 1: đề xuất là của anh Khôi [2]. Việc thêm kéo co đã được chị Thanh chốt [3], nên điểm 4 ổn."},
+ {t:"Anh Khôi lập danh sách đội của các tổ, gửi chị Thanh trước ngày 17/03/2027.", k:[1,1,0,1,1],
+  w:"Điểm 3: họp thứ Tư 10/03/2027, \"thứ Ba tuần sau\" là 16/03/2027 [3]; 17/03 là thứ Tư. Người làm và người nhận đúng."},
+ {t:"Thống nhất kinh phí giải thưởng 15 triệu đồng.", k:[1,1,1,0,1],
+  w:"Điểm 4: chị Trang mới đề xuất và nói phải trình chị Mai duyệt [4], nên ghi vào việc chưa chốt. Ngoài năm điểm: con số đã được sửa thành 12 triệu, lấy số cuối đã xác nhận."},
+ {t:"Hội thao tổ chức theo hình thức tự nguyện.", k:[1,1,1,1,0],
+  w:"Điểm 5: anh Bình đề nghị người làm ca 3 đêm thứ Sáu không xếp thi đấu và đề nghị ghi vào biên bản [6]; chị Thanh mới chốt phần tự nguyện [7]. Ý kiến này phải có trong biên bản, kèm việc ai trả lời đề nghị đó."},
+ {t:"Chị Trang đặt nước uống và thuê loa, xong trước thứ Tư 24/03/2027.", k:[1,0,1,1,1],
+  w:"Điểm 2: việc giao chị Hà [7], không phải chị Trang. Hạn 24/03/2027 đúng là thứ Tư."},
+ {t:"Theo đề xuất của chị Thanh, hội thao mời gia đình công nhân cùng dự.", k:[0,1,1,0,1],
+  w:"Điểm 1: người đề xuất là anh Khôi [8]. Điểm 4: chị Thanh nói không tự quyết được, phải hỏi anh Đức [9], nên đây là việc chưa chốt, ghi người theo dõi và khi nào báo lại."}
+];
+const $ = id => document.getElementById(id);
+let A;
+function init(){ A = D.map(()=>[null,null,null,null,null]); }
+function build(){
+  $("tr").innerHTML = TR.map((r,i)=>'<li><span class="no">['+(i+1)+']</span><span><b>'+r[0]+':</b> '+r[1]+'</span></li>').join("");
+  $("items").innerHTML = D.map((d,i)=>'<div class="item" id="it'+i+'"><p class="q"><b>Dòng '+(i+1)+'.</b>'+d.t+'</p><div class="pts">'+
+    P.map((p,j)=>'<div class="pt" id="c'+i+'_'+j+'"><div class="lab">'+p+'</div><div class="seg" role="group" aria-label="Dòng '+(i+1)+', '+p+'">'+
+      '<button class="y" data-i="'+i+'" data-j="'+j+'" data-v="1" aria-pressed="false">Ổn</button><button class="n" data-i="'+i+'" data-j="'+j+'" data-v="0" aria-pressed="false">Sai/thiếu</button></div></div>').join("")+
+    '</div><div class="why">'+d.w+'</div></div>').join("");
+  $("items").querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+    const i=+b.dataset.i, j=+b.dataset.j, v=+b.dataset.v;
+    A[i][j] = (A[i][j]===v) ? null : v;
+    paint(i,j);
+    if(shown) compare();
+  }));
+}
+function paint(i,j){
+  document.querySelectorAll('.seg button[data-i="'+i+'"][data-j="'+j+'"]').forEach(b=>b.setAttribute("aria-pressed", String(A[i][j]===+b.dataset.v)));
+}
+let shown = false;
+function compare(){
+  shown = true;
+  let match = 0, empty = 0, miss = 0, extra = 0;
+  D.forEach((d,i)=>{
+    d.k.forEach((v,j)=>{
+      const c = $("c"+i+"_"+j); c.classList.remove("right","wrongc","empty");
+      const a = A[i][j];
+      if(a===null){ empty++; c.classList.add("empty"); }
+      else if(a===v){ match++; c.classList.add("right"); }
+      else { c.classList.add("wrongc"); if(v===0) miss++; else extra++; }
+    });
+    $("it"+i).classList.add("show");
+  });
+  const total = D.length*5;
+  let h = '<div class="msg '+(match===total?'ok':'warn')+'">Khớp '+match+'/'+total+' ô.';
+  if(empty) h += ' Còn '+empty+' ô chưa chọn (viền vàng).';
+  if(miss) h += ' Bỏ sót '+miss+' chỗ sai (bạn chọn Ổn).';
+  if(extra) h += ' Báo nhầm '+extra+' chỗ (bạn chọn Sai/thiếu nhưng dòng đó ổn ở điểm này).';
+  h += '</div>';
+  if(A[3][4]!==0) h += '<div class="msg">Dòng 4 dễ lọt nhất: không có dòng nào trong bản nháp để đối chiếu ý kiến của công đoàn. Đọc riêng ghi chép một lượt chỉ để tìm chỗ "đề nghị ghi vào biên bản", "không đồng ý".</div>';
+  $("res").innerHTML = h;
+}
+$("cmp").onclick = compare;
+$("reset").onclick = ()=>{ init(); shown=false; $("res").innerHTML=""; build(); };
+init(); build();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.col{border-radius:16px;padding:16px 18px;border:2px solid}
+.a{background:#eef4ff;border-color:#2563eb}.b{background:#fff7ed;border-color:#ea580c}
+.cap{font:800 14px system-ui;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.a .cap{color:#1d4ed8}.b .cap{color:#c2410c}
+.big{font:800 22px ui-monospace,Menlo,Consolas,monospace;margin:6px 0 10px}
+.doc{display:inline-block;background:#fff;border:3px solid;border-radius:8px;padding:8px 16px;font:700 18px ui-monospace,Menlo,Consolas,monospace;margin:4px 6px 4px 0}
+.a .doc{border-color:#2563eb}.b .doc{border-color:#ea580c}
+.col p{margin:8px 0 0;font-size:16px}
+.code{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.code div{background:#0f172a;color:#e5e7eb;border-radius:12px;padding:12px 16px;font:700 20px ui-monospace,Menlo,Consolas,monospace;text-align:center}
+.code i{font-style:normal;color:#fdba74;background:rgba(253,186,116,.25);border-radius:6px;padding:0 6px}
+</style></head><body><div id="art">
+<h3>Đưa tài liệu cho người khác: photo hay chia sẻ?</h3><p class="sub">Dấu &amp; quyết định hàm nhận bản photo hay nhận chính tài liệu gốc</p>
+<div class="row">
+<div class="col a"><div class="cap">Truyền theo giá trị</div><div class="big">Đưa bản photo</div><span class="doc">gốc</span><span class="doc">bản sao</span><p>Người nhận gạch xóa thoải mái trên bản sao. Tài liệu gốc vẫn nguyên vẹn.</p></div>
+<div class="col b"><div class="cap">Truyền theo tham chiếu</div><div class="big">Chia sẻ chính tài liệu</div><span class="doc">gốc</span><p>Chỉ có một tài liệu duy nhất. Người nhận sửa gì thì tài liệu gốc đổi theo.</p></div></div>
+<div class="code"><div>void f(int x)</div><div>void f(int <i>&amp;</i>x)</div></div>
+</div></body></html>

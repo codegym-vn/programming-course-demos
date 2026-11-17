@@ -1,0 +1,28 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 70px 1fr;align-items:stretch}
+.card{border-radius:16px;padding:16px 18px}
+.def{background:#f6ecff;border:2px solid #7c3aed}.call{background:#eef4ff;border:2px solid #2563eb}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:6px}
+.big{font:800 20px system-ui;margin-bottom:10px}
+.def .big{color:#7c3aed}.call .big{color:#2563eb}
+.form{background:#fff;border-radius:12px;padding:10px 14px;border:1px solid #d7dbe3}
+.f{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:18px}.f+.f{border-top:1px dashed #d7dbe3}
+.f b{width:84px;font:700 18px ui-monospace,Menlo,Consolas,monospace}
+.blank{flex:1;height:34px;border-bottom:3px solid #7c3aed;color:#a78bfa;font:600 14px system-ui;display:flex;align-items:flex-end;padding-bottom:2px}
+.fill{flex:1;height:34px;border-radius:8px;background:#dbeafe;border:2px solid #2563eb;font:800 18px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;padding:0 12px}
+.arrow{display:flex;align-items:center;justify-content:center;font:800 30px system-ui;color:#5d6676}
+.code{margin-top:10px;background:#0f172a;color:#e5e7eb;border-radius:10px;padding:10px 14px;font:700 14px ui-monospace,Menlo,Consolas,monospace}
+.code i{font-style:normal;color:#c4b5fd}.code u{text-decoration:none;color:#93c5fd}
+.tip{margin-top:16px;border-left:5px solid #c2410c;background:#fff7ed;border-radius:8px;padding:10px 14px;font-size:16px}
+</style></head><body><div id="art">
+<h3>Tham số giống ô trống trên tờ đơn</h3><p class="sub">Tờ đơn in sẵn các ô trống có nhãn. Bạn điền thông tin thật vào từng ô</p>
+<div class="row">
+<div class="card def"><div class="cap">Nơi định nghĩa hàm</div><div class="big">Tham số = ô trống</div>
+<div class="form"><div class="f"><b>ten</b><div class="blank">chờ điền</div></div><div class="f"><b>tuoi</b><div class="blank">chờ điền</div></div></div>
+<div class="code">inThongTin(<i>string ten, int tuoi</i>)</div></div>
+<div class="arrow">&rarr;</div>
+<div class="card call"><div class="cap">Nơi gọi hàm</div><div class="big">Đối số = thông tin thật</div>
+<div class="form"><div class="f"><b>ten</b><div class="fill">"An"</div></div><div class="f"><b>tuoi</b><div class="fill">16</div></div></div>
+<div class="code">inThongTin(<u>"An", 16</u>)</div></div></div>
+<div class="tip"><b>Chú ý:</b> thông tin được điền theo <b>thứ tự các ô</b>, không theo tên bạn đặt cho nó.</div>
+</div></body></html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="780">
+<title>Giờ đồng hồ hay giờ làm việc</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+    --s1:#8b5cf6; --s2:#f0a43c; --s3:#2a9d8f; --band:#eef2f7; --wkend:#e4e7ec;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+      --s1:#a78bfa; --s2:#e0a040; --s3:#3cc0b0; --band:#1f2531; --wkend:#262b35;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 8px;font-size:14px}
+  .seg{display:inline-flex;border:1px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:8px;max-width:100%}
+  .seg button{border:0;background:transparent;color:var(--accent);font:inherit;font-size:14px;font-weight:600;padding:6px 12px;min-height:40px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:var(--card)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;margin-bottom:10px}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .tl{position:relative}
+  .row{display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:center;margin-bottom:6px;cursor:pointer;border-radius:8px}
+  .row:hover .track,.row.sel .track{outline:2px solid var(--accent);outline-offset:1px}
+  .row .nm{font-size:13px;font-weight:700}
+  .row .nm small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+  .track{position:relative;height:26px;background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .band{position:absolute;top:0;bottom:0;background:var(--band)}
+  .band.we{background:var(--wkend)}
+  .pc{position:absolute;top:5px;bottom:5px}
+  .pc.off{top:11px;bottom:11px;opacity:.45}
+  .axis{display:grid;grid-template-columns:52px 1fr;gap:6px}
+  .axis .ticks{position:relative;height:16px;font-size:11px;color:var(--muted)}
+  .axis .ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2>*{min-width:0}
+  @media (max-width:720px){.grid2{grid-template-columns:1fr}}
+  .bars{display:flex;flex-direction:column;gap:7px}
+  .bar-row .lbl{font-size:13px;display:flex;justify-content:space-between;gap:6px}
+  .bar-row .lbl b{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bar{height:18px;border-radius:5px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+  .bar div{height:100%;transition:width .3s}
+  .bar-row.max .lbl span{font-weight:700}
+  .tag{font-size:11.5px;font-weight:700;border-radius:9px;padding:0 6px;background:var(--cur);border:1px solid var(--cur-bar);margin-left:4px}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  td.r,th.r{text-align:right}
+  td.on{font-weight:700}
+  .pieces{font-size:12.5px;color:var(--muted);margin:2px 0 0;padding-left:16px}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .note{font-size:12px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Năm yêu cầu bảo hành của một tuần giả lập, mỗi yêu cầu đi qua bốn mốc: tiếp nhận, phân loại, chuyển trung tâm bảo hành, báo khách. Đổi cách tính để xem bước chờ lâu nhất có đổi không. Bấm vào một yêu cầu để xem cách tính từng đoạn.</p>
+  <div class="seg" role="group" aria-label="Cách tính thời gian chờ">
+    <button id="mClock" aria-pressed="false">Giờ đồng hồ</button>
+    <button id="mWork" aria-pressed="true">Giờ làm việc (8:00-17:00, thứ Hai-thứ Sáu)</button>
+  </div>
+  <div class="card">
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Chờ phân loại</span>
+      <span><i style="background:var(--s2)"></i>Chờ chuyển trung tâm</span>
+      <span><i style="background:var(--s3)"></i>Chờ báo khách</span>
+      <span><i style="background:var(--band);border:1px solid var(--line)"></i>Giờ làm việc</span>
+      <span id="offLg"><i style="background:var(--muted);height:4px;vertical-align:3px"></i>Ngoài giờ, không tính</span>
+    </div>
+    <div class="tl" id="tl"></div>
+    <div class="axis"><span></span><div class="ticks" id="ticks"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <p class="panel-title" id="avgTitle"></p>
+      <div class="bars" id="bars"></div>
+      <div id="sum"></div>
+    </div>
+    <div class="card">
+      <p class="panel-title" id="detTitle"></p>
+      <div id="det" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+<script>
+// 5 yêu cầu riêng của trang (khác nhật ký 20 yêu cầu trong bài). Mốc tính bằng phút từ 0:00 thứ Hai.
+// Đã kiểm bằng Python. Giờ làm việc, trung bình: chờ phân loại 4 giờ 36 phút (lâu nhất), chờ chuyển 4 giờ 5 phút,
+// chờ báo khách 1 giờ 30 phút; 4/5 yêu cầu vượt 9 giờ làm việc. Giờ đồng hồ: 22 giờ 9 phút, 4 giờ 5 phút,
+// 26 giờ 6 phút (báo khách thành lâu nhất); 5/5 vượt 9 giờ.
+const DAY = ["Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy","Chủ nhật","Thứ Hai tuần sau","Thứ Ba tuần sau"];
+const DAYS = ["T2","T3","T4","T5","T6","T7","CN","T2","T3"];
+const m = (d,hm) => { const [h,mi] = hm.split(":").map(Number); return d*1440 + h*60 + mi; };
+const R = [
+  {id:"YC 1", sp:"Quạt điện", kenh:"Tổng đài, chiều thứ Năm", t:[m(3,"15:40"), m(4,"10:20"), m(4,"16:30"), m(7,"09:10")]},
+  {id:"YC 2", sp:"Nồi cơm", kenh:"Fanpage, khách nhắn buổi tối", t:[m(0,"20:15"), m(1,"11:30"), m(1,"16:30"), m(2,"08:45")]},
+  {id:"YC 3", sp:"Ấm siêu tốc", kenh:"Tổng đài, sáng thứ Ba", t:[m(1,"09:05"), m(1,"15:20"), m(1,"16:30"), m(2,"08:20")]},
+  {id:"YC 4", sp:"Máy lọc nước", kenh:"Email, cuối chiều thứ Tư", t:[m(2,"16:20"), m(3,"13:40"), m(3,"16:30"), m(4,"10:05")]},
+  {id:"YC 5", sp:"Bếp từ", kenh:"Tổng đài trực thứ Bảy", t:[m(5,"10:00"), m(7,"11:15"), m(7,"16:30"), m(8,"08:40")]}
+];
+const STEP = ["Chờ phân loại","Chờ chuyển trung tâm","Chờ báo khách"];
+const COL = ["var(--s1)","var(--s2)","var(--s3)"];
+const MOC = ["Tiếp nhận","Phân loại","Chuyển trung tâm","Báo khách"];
+const A0 = m(0,"06:00"), A1 = m(8,"14:00"), SPAN = A1 - A0;
+const $ = id => document.getElementById(id);
+let mode = "work", sel = 0;
+const isWorkDay = d => (d % 7) < 5;
+const hm = x => { const h = Math.floor(x/60)%24, mi = x%60; return h+":"+String(mi).padStart(2,"0"); };
+const when = x => DAY[Math.floor(x/1440)]+" "+hm(x);
+function dur(min){ const h = Math.floor(min/60), mi = Math.round(min - h*60); return (h ? h+" giờ" : "") + (h && mi ? " " : "") + (mi || !h ? mi+" phút" : ""); }
+// Chia đoạn [a,b) thành các mảnh trong giờ làm việc và ngoài giờ.
+function pieces(a,b){
+  const out = []; let cur = a;
+  while(cur < b){
+    const d = Math.floor(cur/1440), s = d*1440 + 480, e = d*1440 + 1020, next = Math.min(b, (d+1)*1440);
+    if(isWorkDay(d)){
+      if(cur < s){ const y = Math.min(next, s); out.push([cur, y, false]); cur = y; continue; }
+      if(cur < e){ const y = Math.min(next, e); out.push([cur, y, true]); cur = y; continue; }
+    }
+    out.push([cur, next, false]); cur = next;
+  }
+  return out;
+}
+const workMin = (a,b) => pieces(a,b).filter(p=>p[2]).reduce((s,p)=>s+p[1]-p[0],0);
+const val = (a,b) => mode==="work" ? workMin(a,b) : b-a;
+const pct = x => ((x - A0)/SPAN*100);
+function bands(){
+  let h = "";
+  for(let d=0; d<9; d++){
+    if(isWorkDay(d)) h += '<div class="band" style="left:'+pct(d*1440+480)+'%;width:'+(540/SPAN*100)+'%"></div>';
+    else h += '<div class="band we" style="left:'+pct(Math.max(A0,d*1440))+'%;width:'+(1440/SPAN*100)+'%;opacity:.55"></div>';
+  }
+  return h;
+}
+function drawTimeline(){
+  const bg = bands();
+  $("tl").innerHTML = R.map((r,i)=>{
+    let h = '<div class="row'+(i===sel?' sel':'')+'" data-i="'+i+'" role="button" tabindex="0" aria-label="'+r.id+'"><div class="nm">'+r.id+'<small>'+r.sp+'</small></div><div class="track">'+bg;
+    for(let k=0;k<3;k++){
+      pieces(r.t[k], r.t[k+1]).forEach(p=>{
+        const off = mode==="work" && !p[2];
+        h += '<div class="pc'+(off?' off':'')+'" style="left:'+pct(p[0])+'%;width:'+((p[1]-p[0])/SPAN*100)+'%;background:'+COL[k]+'"></div>';
+      });
+    }
+    return h + '</div></div>';
+  }).join("");
+  $("tl").querySelectorAll(".row").forEach(el=>{
+    const go = ()=>{ sel = +el.dataset.i; render(); };
+    el.onclick = go; el.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  let t = "";
+  for(let d=0; d<9; d++){ const x = d*1440+720; if(x>A0 && x<A1) t += '<span style="left:'+pct(x)+'%">'+DAYS[d]+'</span>'; }
+  $("ticks").innerHTML = t;
+  $("offLg").style.display = mode==="work" ? "" : "none";
+}
+function render(){
+  $("mWork").setAttribute("aria-pressed", mode==="work");
+  $("mClock").setAttribute("aria-pressed", mode==="clock");
+  drawTimeline();
+  const avg = [0,1,2].map(k => R.reduce((s,r)=>s+val(r.t[k],r.t[k+1]),0)/R.length);
+  const mx = Math.max(...avg), top = avg.indexOf(mx);
+  $("avgTitle").textContent = "Thời gian chờ trung bình, tính theo " + (mode==="work" ? "giờ làm việc" : "giờ đồng hồ");
+  $("bars").innerHTML = avg.map((a,k)=>'<div class="bar-row'+(k===top?' max':'')+'"><div class="lbl"><span>'+STEP[k]+(k===top?'<span class="tag">lâu nhất</span>':'')+'</span><b>'+dur(a)+'</b></div><div class="bar"><div style="width:'+(a/mx*100)+'%;background:'+COL[k]+'"></div></div></div>').join("");
+  const over = R.filter(r=>val(r.t[0],r.t[3]) > 540).length;
+  let s = '<div class="msg">Từ tiếp nhận đến báo khách vượt '+(mode==="work"?'9 giờ làm việc (mốc 01 ngày làm việc, nếu phòng quy ước như vậy)':'9 giờ đồng hồ')+': <b>'+over+'/5</b> yêu cầu.</div>';
+  s += mode==="work"
+    ? '<div class="msg warn">Theo giờ làm việc, chỗ chờ lâu nhất là <b>chờ phân loại</b>. Đây là chỗ nên xem lại khi thiết kế lại quy trình.</div>'
+    : '<div class="msg warn">Theo giờ đồng hồ, <b>chờ báo khách</b> thành lâu nhất chỉ vì gần như yêu cầu nào cũng qua đêm hoặc qua cuối tuần trước khi báo khách. Con số lớn nhưng không chỉ đúng chỗ đội có thể sửa.</div>';
+  $("sum").innerHTML = s;
+  const r = R[sel];
+  $("detTitle").textContent = r.id+" · "+r.sp+" · "+r.kenh;
+  let h = '<table><tr><th>Đoạn</th><th class="r">Đồng hồ</th><th class="r">Làm việc</th></tr>';
+  for(let k=0;k<3;k++){
+    const a=r.t[k], b=r.t[k+1];
+    const ps = pieces(a,b).filter(p=>p[2]);
+    h += '<tr><td><b style="color:'+COL[k]+'">'+STEP[k]+'</b><br>'+when(a)+' → '+when(b)+
+      (mode==="work" ? '<ul class="pieces">'+(ps.length? ps.map(p=>'<li>'+DAY[Math.floor(p[0]/1440)]+' '+hm(p[0])+'-'+hm(p[1])+': '+dur(p[1]-p[0])+'</li>').join("") : '<li>không có giờ làm việc</li>')+'</ul>' : '')+
+      '</td><td class="r'+(mode==="clock"?' on':'')+'">'+dur(b-a)+'</td><td class="r'+(mode==="work"?' on':'')+'">'+dur(workMin(a,b))+'</td></tr>';
+  }
+  h += '<tr><td><b>Tiếp nhận → báo khách</b></td><td class="r'+(mode==="clock"?' on':'')+'">'+dur(r.t[3]-r.t[0])+'</td><td class="r'+(mode==="work"?' on':'')+'">'+dur(workMin(r.t[0],r.t[3]))+'</td></tr></table>';
+  if(r.t[0] % 1440 < 480 || r.t[0] % 1440 >= 1020 || !isWorkDay(Math.floor(r.t[0]/1440))) h += '<p class="note">Mốc tiếp nhận rơi ngoài giờ làm việc: theo giờ làm việc, thời gian chờ tính từ 8:00 của ngày làm việc kế tiếp.</p>';
+  $("det").innerHTML = h;
+}
+$("mWork").onclick = ()=>{ mode="work"; render(); };
+$("mClock").onclick = ()=>{ mode="clock"; render(); };
+render();
+</script>
+</body>
+</html>

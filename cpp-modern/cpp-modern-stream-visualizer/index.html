@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Vùng đệm Luồng & Con trỏ Tệp trong C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .stream-ruler{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px;overflow-x:auto}
+  .ruler-byte{flex:1;min-width:32px;text-align:center;border:1px solid var(--line);border-radius:4px;padding:4px 2px}
+  .ruler-byte.active{background:var(--cur);border-color:var(--cur-border);font-weight:700}
+  .ruler-idx{font-size:9.5px;color:var(--muted);display:block}
+  .ruler-char{font-family:var(--mono);font-size:12px;font-weight:600}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng vùng đệm bộ nhớ và các thao tác điều khiển luồng Vào/Ra trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-stringstream-buffer" onclick="setMode('stringstream-buffer')">Vùng đệm stringstream</button>
+        <button class="tab" id="tab-stream-states" onclick="setMode('stream-states')">Cờ bit & Bẫy eof()</button>
+        <button class="tab" id="tab-file-seek-pointer" onclick="setMode('file-seek-pointer')">Con trỏ seekg / seekp</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Bộ đệm & Con trỏ</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'stringstream-buffer': {
+    lead: 'std::istringstream duy trì con trỏ đọc (gptr) di chuyển qua từng token trong chuỗi bộ đệm, tự động bỏ qua khoảng trắng và trích xuất đúng kiểu dữ liệu.',
+    code: [
+      {ln: 1, text: '<span class="type">std</span>::<span class="type">string</span> raw = <span class="str">"100  3.14  Alpha"</span>;'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">istringstream</span> iss(raw);'},
+      {ln: 3, text: '<span class="type">int</span> id;'},
+      {ln: 4, text: '<span class="type">double</span> pi;'},
+      {ln: 5, text: '<span class="type">std</span>::<span class="type">string</span> tag;'},
+      {ln: 6, text: 'iss &gt;&gt; id;   <span class="com">// Đọc số nguyên</span>'},
+      {ln: 7, text: 'iss &gt;&gt; pi;   <span class="com">// Đọc số thực</span>'},
+      {ln: 8, text: 'iss &gt;&gt; tag;  <span class="com">// Đọc chuỗi ký tự</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Bộ đệm iss.str()', val: '"100  3.14  Alpha"', state: 'Độ dài 18 ký tự', cls: 'ok'},
+          {name: 'Con trỏ đọc (get pointer)', val: 'Vị trí 0 (\'1\')', state: 'Sẵn sàng trích xuất token', cls: ''},
+          {name: 'Biến kết quả', val: 'id=?, pi=?, tag=""', state: 'Chưa gán giá trị', cls: ''}
+        ],
+        status: 'Khởi tạo luồng istringstream với chuỗi dữ liệu. Con trỏ đọc nằm tại byte đầu tiên (chỉ số 0).',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Token trích xuất #1', val: '100 (int)', state: 'Nhận diện chuỗi "100"', cls: 'ok'},
+          {name: 'Biến id', val: '100', state: 'Gán thành công vào kiểu int', cls: 'ok'},
+          {name: 'Con trỏ đọc (gptr)', val: 'Vị trí 3 (khoảng trắng)', state: 'Đã đọc xong token 1', cls: 'warn'}
+        ],
+        status: 'Toán tử >> trích xuất token "100", ép kiểu vào biến nguyên id = 100. Con trỏ dừng lại ngay sau ký tự \'0\'.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Bỏ qua whitespace', val: '\' \' \' \'', state: 'Bỏ qua 2 dấu cách liên tiếp', cls: ''},
+          {name: 'Token trích xuất #2', val: '3.14 (double)', state: 'Nhận diện chuỗi "3.14"', cls: 'ok'},
+          {name: 'Biến pi', val: '3.14', state: 'Gán thành công vào kiểu double', cls: 'ok'},
+          {name: 'Con trỏ đọc (gptr)', val: 'Vị trí 9', state: 'Sau ký tự \'4\'', cls: 'warn'}
+        ],
+        status: 'Toán tử >> tự động bỏ qua 2 khoảng trắng liên tiếp, đọc chuỗi "3.14" và chuyển đổi thành số thực pi = 3.14.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Token trích xuất #3', val: '"Alpha"', state: 'Chuỗi không chứa khoảng trắng', cls: 'ok'},
+          {name: 'Biến tag', val: '"Alpha"', state: 'std::string hoàn tất', cls: 'ok'},
+          {name: 'Con trỏ đọc (gptr)', val: 'Vị trí 17 (EOF)', state: 'Đã chạm cuối chuỗi dữ liệu', cls: 'ok'}
+        ],
+        status: 'Đọc token cuối cùng "Alpha" vào biến tag. Con trỏ đọc chạm tới cuối bộ đệm (EOF), cờ eofbit được bật.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'stream-states': {
+    lead: 'Bẫy kinh điển: Không bao giờ dùng while (!file.eof()) để kiểm tra dừng đọc tệp! Cờ eofbit chỉ được bật SAU KHI một thao tác đọc thất bại do chạm mốc tệp.',
+    code: [
+      {ln: 1, text: '<span class="com">// Tệp data.txt chứa đúng 2 số: "10 20"</span>'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">ifstream</span> fin(<span class="str">"data.txt"</span>);'},
+      {ln: 3, text: '<span class="type">int</span> x;'},
+      {ln: 4, text: '<span class="com">// BẪY SAI: Kiểm tra eof() trước khi đọc!</span>'},
+      {ln: 5, text: '<span class="kw">while</span> (!fin.<span class="fn">eof</span>()) {'},
+      {ln: 6, text: '    fin &gt;&gt; x;'},
+      {ln: 7, text: '    <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; x &lt;&lt; <span class="str">" "</span>; <span class="com">// Bị in thừa 20!</span>'},
+      {ln: 8, text: '}'},
+      {ln: 9, text: '<span class="com">// CÁCH ĐÚNG C++20: while (fin >> x) { ... }</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Dữ liệu tệp data.txt', val: '"10 20"', state: 'Chứa đúng 2 số nguyên', cls: ''},
+          {name: 'Cờ goodbit', val: '1 (true)', state: 'Luồng mở tệp thành công', cls: 'ok'},
+          {name: 'Cờ eofbit / failbit', val: '0 / 0', state: 'Chưa có lỗi', cls: ''}
+        ],
+        status: 'Mở tệp thành công. Cờ goodbit = 1, eofbit = 0. Vòng lặp while (!fin.eof()) bắt đầu kiểm tra điều kiện.',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Lần đọc #1 (fin >> x)', val: 'x = 10', state: 'Đọc số 10 thành công', cls: 'ok'},
+          {name: 'In ra màn hình', val: '10', state: 'Hợp lệ', cls: ''},
+          {name: 'Cờ fin.eof()', val: 'false (0)', state: 'Vẫn còn số 20 phía sau', cls: ''}
+        ],
+        status: 'Lần lặp 1: fin >> x đọc được số 10. In ra "10". Cờ eof() là false nên vòng lặp tiếp tục.',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Lần đọc #2 (fin >> x)', val: 'x = 20', state: 'Đọc số 20 thành công', cls: 'ok'},
+          {name: 'In ra màn hình', val: '10 20', state: 'Hợp lệ', cls: ''},
+          {name: 'Cờ fin.eof()', val: 'false (0)', state: 'CHƯA BẬT EOF vì vừa đọc xong 20!', cls: 'warn'}
+        ],
+        status: 'Lần lặp 2: Đọc được số 20 và in "20". Điểm chết người: con trỏ vừa đọc xong số 20 nhưng CHƯA ĐỌC VƯỢT QUA EOF, do đó fin.eof() VẪN LÀ FALSE!',
+        cls: 'warn'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: 'Vòng while kiểm tra', val: '!fin.eof() -> TRUE!', state: 'Vòng lặp bị lừa chạy tiếp lần 3', cls: 'err'},
+          {name: 'Biến x hiện tại', val: '20', state: 'Giá trị cũ của lần đọc trước', cls: 'garbage'}
+        ],
+        status: '⚠️ BẪY XUẤT HIỆN: Vì fin.eof() vẫn là false, vòng lặp while chạy tiếp lần thứ 3 mặc dù tệp không còn số nào!',
+        cls: 'err'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Lần đọc #3 (fin >> x)', val: 'THẤT BẠI', state: 'Chạm cuối tệp -> failbit=1, eofbit=1', cls: 'err'},
+          {name: 'Giá trị biến x', val: '20 (không đổi)', state: 'Ghi đè thất bại, giữ nguyên giá trị cũ', cls: 'err'},
+          {name: 'Kết quả in ra', val: '"10 20 20"', state: 'BỊ IN THỪA SỐ 20 HAI LẦN!', cls: 'err'}
+        ],
+        status: '❌ LỖI NGHIÊM TRỌNG: Thao tác fin >> x thất bại, failbit bật lên nhưng biến x vẫn mang giá trị 20 cũ. Lệnh cout in thêm một số 20 nữa! Kết luận: Luôn viết "while (fin >> x)".',
+        cls: 'err'
+      }
+    ]
+  },
+  'file-seek-pointer': {
+    lead: 'Phương thức seekg (get pointer) và seekp (put pointer) cho phép di chuyển con trỏ tệp đến vị trí byte bất kỳ dựa trên 3 mốc: ios::beg (đầu), ios::cur (hiện tại), ios::end (cuối).',
+    code: [
+      {ln: 1, text: '<span class="com">// Tệp nhị phân records.dat (kích thước 24 bytes)</span>'},
+      {ln: 2, text: '<span class="type">std</span>::<span class="type">ifstream</span> fin(<span class="str">"records.dat"</span>, <span class="type">std</span>::<span class="type">ios</span>::<span class="type">binary</span>);'},
+      {ln: 3, text: '<span class="com">// 1. Nhảy tới byte thứ 8 từ đầu tệp (Record #2)</span>'},
+      {ln: 4, text: 'fin.<span class="fn">seekg</span>(<span class="num">8</span>, <span class="type">std</span>::<span class="type">ios</span>::<span class="type">beg</span>);'},
+      {ln: 5, text: '<span class="com">// 2. Dịch tiếp 8 bytes từ vị trí hiện tại (Record #3)</span>'},
+      {ln: 6, text: 'fin.<span class="fn">seekg</span>(<span class="num">8</span>, <span class="type">std</span>::<span class="type">ios</span>::<span class="type">cur</span>);'},
+      {ln: 7, text: '<span class="com">// 3. Lùi lại 8 bytes tính từ cuối tệp</span>'},
+      {ln: 8, text: 'fin.<span class="fn">seekg</span>(-<span class="num">8</span>, <span class="type">std</span>::<span class="type">ios</span>::<span class="type">end</span>);'},
+      {ln: 9, text: '<span class="type">std</span>::<span class="type">streampos</span> pos = fin.<span class="fn">tellg</span>(); <span class="com">// Đọc vị trí</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Kích thước tệp', val: '24 Bytes', state: 'Gồm 3 bản ghi [R1: 0..7] [R2: 8..15] [R3: 16..23]', cls: 'ok'},
+          {name: 'Vị trí con trỏ tellg()', val: 'Byte 0 (ios::beg)', state: 'Đầu tệp', cls: ''}
+        ],
+        status: 'Mở tệp nhị phân records.dat. Con trỏ đọc mặc định nằm ở byte thứ 0 (ios::beg).',
+        cls: ''
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Lệnh điều hướng', val: 'seekg(8, ios::beg)', state: 'Quy chiếu mốc bắt đầu', cls: 'ok'},
+          {name: 'Vị trí con trỏ tellg()', val: 'Byte 8', state: 'Bắt đầu Bản ghi #2', cls: 'ok'}
+        ],
+        status: 'Lệnh seekg(8, ios::beg) đưa con trỏ nhảy trực tiếp từ mốc đầu tệp đến byte số 8 (bắt đầu bản ghi số 2).',
+        cls: 'ok'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Lệnh điều hướng', val: 'seekg(8, ios::cur)', state: 'Cộng dồn từ vị trí hiện tại (8 + 8)', cls: 'ok'},
+          {name: 'Vị trí con trỏ tellg()', val: 'Byte 16', state: 'Bắt đầu Bản ghi #3', cls: 'ok'}
+        ],
+        status: 'Lệnh seekg(8, ios::cur) dịch thêm 8 byte từ vị trí 8 -> vị trí mới là byte 16 (bắt đầu bản ghi số 3).',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Lệnh điều hướng', val: 'seekg(-8, ios::end)', state: 'Offset âm: lùi từ cuối tệp (24 - 8)', cls: 'warn'},
+          {name: 'Vị trí con trỏ tellg()', val: 'Byte 16', state: 'Vẫn tại byte 16 (bản ghi áp chót)', cls: 'ok'}
+        ],
+        status: 'Lệnh seekg(-8, ios::end) dùng offset âm để lùi 8 byte từ mốc cuối tệp (24 bytes), định vị chính xác bản ghi cuối cùng.',
+        cls: 'ok'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'Hàm fin.tellg()', val: '16', state: 'Trả về toạ độ byte hiện tại', cls: 'ok'},
+          {name: 'Trạng thái luồng', val: 'ios::goodbit (1)', state: 'Không lỗi biên', cls: 'ok'}
+        ],
+        status: 'Phương thức tellg() trả về toạ độ byte hiện tại là 16. Thao tác sẵn sàng để fin.read(...) đọc trực tiếp bản ghi #3 vào bộ nhớ.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'stringstream-buffer';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-stringstream-buffer').classList.toggle('active', currentMode === 'stringstream-buffer');
+  document.getElementById('tab-stream-states').classList.toggle('active', currentMode === 'stream-states');
+  document.getElementById('tab-file-seek-pointer').classList.toggle('active', currentMode === 'file-seek-pointer');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

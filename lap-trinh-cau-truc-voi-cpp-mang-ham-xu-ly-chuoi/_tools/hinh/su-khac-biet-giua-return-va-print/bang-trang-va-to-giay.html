@@ -1,0 +1,25 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{border-radius:16px;padding:16px 18px}
+.out{background:#fff7ed;border:2px solid #c2410c}.ret{background:#e7f6ec;border:2px solid #15803d}
+.cap{font:700 13px system-ui;letter-spacing:.04em;text-transform:uppercase;color:#5d6676;margin-bottom:6px}
+.big{font:800 21px ui-monospace,Menlo,Consolas,monospace;margin-bottom:10px}
+.out .big{color:#c2410c}.ret .big{color:#15803d}
+.scene{height:130px;border-radius:12px;background:#fff;border:1px solid #d7dbe3;display:flex;align-items:center;justify-content:center;gap:14px}
+.board{width:150px;height:88px;border:4px solid #92400e;border-radius:8px;background:#fafafa;display:flex;align-items:center;justify-content:center;font:800 40px ui-monospace,Menlo,Consolas,monospace;color:#c2410c}
+.paper{width:92px;height:84px;border:3px solid #15803d;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font:800 38px ui-monospace,Menlo,Consolas,monospace;color:#15803d;transform:rotate(-4deg)}
+.box{width:96px;border:3px solid #2563eb;border-radius:10px;background:#eef4ff;text-align:center;padding:4px 0}
+.box b{display:block;font:800 26px ui-monospace,Menlo,Consolas,monospace}.box span{font:600 13px ui-monospace,Menlo,Consolas,monospace;color:#5d6676}
+.arr{font:800 28px system-ui;color:#5d6676}
+.pts{margin:12px 0 0;padding:0;list-style:none;font-size:16px}.pts li{padding:4px 0}
+.x{color:#b91c1c;font-weight:800}.v{color:#15803d;font-weight:800}
+</style></head><body><div id="art">
+<h3>cout giống viết lên bảng, return giống đưa tờ giấy kết quả</h3><p class="sub">Cùng tính ra số 8, nhưng số đó đi hai hướng khác nhau</p>
+<div class="row">
+<div class="card out"><div class="cap">Dùng cout</div><div class="big">cout &lt;&lt; a + b</div>
+<div class="scene"><div class="board">8</div></div>
+<ul class="pts"><li><span class="v">&#10003;</span> Người xem đọc được số 8</li><li><span class="x">&#10007;</span> Người gọi hàm không cầm số 8 đi được</li></ul></div>
+<div class="card ret"><div class="cap">Dùng return</div><div class="big">return a + b</div>
+<div class="scene"><div class="paper">8</div><div class="arr">&rarr;</div><div class="box"><b>8</b><span>ketQua</span></div></div>
+<ul class="pts"><li><span class="v">&#10003;</span> Tờ giấy trao tận tay người gọi hàm</li><li><span class="v">&#10003;</span> Cất vào biến, dùng tiếp được</li></ul></div></div>
+</div></body></html>

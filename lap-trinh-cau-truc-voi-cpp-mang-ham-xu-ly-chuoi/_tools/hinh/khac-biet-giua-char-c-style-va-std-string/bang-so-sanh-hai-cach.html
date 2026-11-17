@@ -1,0 +1,18 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:16px}
+th{padding:10px 12px;text-align:left;color:#fff;font-size:17px}
+th:first-child{background:#475569;border-radius:10px 0 0 0;width:150px}th.c{background:#9333ea}th.s{background:#15803d;border-radius:0 10px 0 0}
+td{padding:10px 12px;border-bottom:1px solid #e3e6ec;vertical-align:top}
+td:first-child{font-weight:700;background:#f6f7f9}
+td code{font:700 15px ui-monospace,Menlo,Consolas,monospace}
+td small{display:block;color:#5d6676;font-size:13.5px;margin-top:2px}
+.bad{color:#b91c1c}
+</style></head><body><div id="art">
+<h3>char[] và std::string: dùng khác nhau thế nào</h3><p class="sub">Cùng một việc, hai cách viết</p>
+<table><tr><th>Việc cần làm</th><th class="c">char[]</th><th class="s">std::string</th></tr>
+<tr><td>Cỡ</td><td>Cố định ngay khi khai báo<small>chữ + 1 ô cho \0</small></td><td>Tự co giãn</td></tr>
+<tr><td>Độ dài</td><td><code>strlen(ten)</code></td><td><code>s.length()</code></td></tr>
+<tr><td>Gán lại</td><td><code>strcpy(ten, "An");</code><small class="bad">không dùng ten = "An"; sau khi khai báo</small></td><td><code>s = "An";</code></td></tr>
+<tr><td>So sánh</td><td><code>strcmp(a, b) == 0</code><small class="bad">a == b chỉ so địa chỉ</small></td><td><code>a == b</code></td></tr>
+<tr><td>Nối</td><td><code>strcat(ho, " An");</code><small>tự lo khay đủ chỗ</small></td><td><code>ho + " An"</code></td></tr>
+</table></div></body></html>

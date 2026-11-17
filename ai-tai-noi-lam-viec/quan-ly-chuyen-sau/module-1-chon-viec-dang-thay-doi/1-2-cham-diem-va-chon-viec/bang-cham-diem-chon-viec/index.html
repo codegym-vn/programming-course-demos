@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="760">
+<title>Bảng chấm điểm chọn việc</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1d2330; --muted:#5d6676; --line:#e2e5eb;
+    --accent:#2563eb; --accent-soft:#e7eefc; --cur:#fff1b8; --cur-bar:#e0a800;
+    --ok:#15803d; --ok-soft:#e3f4e8; --bad:#b42318; --bad-soft:#fbe9e7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#181c24; --text:#e6e9ef; --muted:#9aa3b2; --line:#2a303b;
+      --accent:#6ea0ff; --accent-soft:#1e2a44; --cur:#3d3412; --cur-bar:#e0b400;
+      --ok:#4ade80; --ok-soft:#13301f; --bad:#f87171; --bad-soft:#3a1717;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:10px 12px 12px}
+  .lead{color:var(--muted);margin:0 0 6px;font-size:14px}
+  .scale{font-size:12.5px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;align-items:start}
+  .grid>*{min-width:0}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .list{max-height:580px;overflow-y:auto;padding-right:2px}
+  .job{border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px;background:var(--card)}
+  .job.later{border-style:dashed}
+  .job .top{display:flex;gap:6px;align-items:baseline;justify-content:space-between}
+  .job .nm{font-weight:700;min-width:0}
+  .job .sc{flex:0 0 auto;font-size:12.5px;font-weight:700;border-radius:10px;padding:0 8px;background:var(--bg);border:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .job .sc.later{background:var(--cur);border-color:var(--cur-bar)}
+  .job .meta{font-size:13px;color:var(--muted);margin:2px 0 3px;font-variant-numeric:tabular-nums}
+  .job .note{font-size:13px;margin:0 0 5px}
+  .sel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  @media (max-width:420px){.sel{grid-template-columns:1fr 1fr}}
+  .sel label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);min-width:0}
+  select{font:inherit;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 6px;min-height:38px;width:100%;min-width:0}
+  .hint{font-size:12px;color:var(--bad);font-weight:600;min-height:0}
+  select.diff{border-color:var(--bad);background:var(--bad-soft)}
+  select.same{border-color:var(--ok)}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 6px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12.5px}
+  td.r,th.r{text-align:right}
+  tr.top3 td{background:var(--ok-soft)}
+  .sub{font-size:12.5px;color:var(--muted);margin:8px 0 3px;font-weight:700}
+  .later-list{font-size:13.5px;margin:0;padding-left:18px}
+  .btn{border:1px solid var(--accent);background:transparent;color:var(--accent);padding:6px 12px;min-height:40px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;font-size:14px}
+  .btn.pri{background:var(--accent);color:var(--card)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .msg{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .msg.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .msg.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .msg.warn{border-color:var(--cur-bar);background:var(--cur)}
+  .ready{font-size:13px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+  .ready ul{margin:3px 0 0;padding-left:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">Tám việc lặp lại của tổ Kho và giao nhận (giả lập, một tháng). Đọc ghi chú từng việc, chọn mức cho ba cột. Trang tự tính giờ/tháng, điểm giá trị, lọc việc cần dữ liệu khách ra "để sau" và xếp hạng các việc còn lại.</p>
+  <p class="scale"><b>Thang:</b> giá trị theo giờ/tháng (từ 40 giờ: 3; từ 10 đến dưới 40: 2; dưới 10: 1) · rủi ro theo hậu quả nếu sai (thấp 3, vừa 2, cao 1) · đo được (có 3, một phần 2, không 1). Việc cần đưa dữ liệu khách hàng vào AI: để sau, dù điểm cao.</p>
+  <div class="grid">
+    <div class="card"><div class="list" id="list"></div></div>
+    <div class="card">
+      <p class="panel-title">Xếp hạng theo cách bạn chấm</p>
+      <div id="rank" aria-live="polite"></div>
+      <div class="btns">
+        <button class="btn pri" id="cmp">So với gợi ý chấm</button>
+        <button class="btn" id="reset">Chấm lại từ đầu</button>
+      </div>
+      <div id="side"></div>
+      <div class="ready"><b>Mức sẵn sàng không chấm điểm.</b> Trước khi chốt việc nào, hỏi:
+        <ul><li>Người làm có thời gian học trong tháng tới không, kể cả mùa cao điểm?</li><li>Ai kèm, ai soát kết quả?</li><li>Người làm đã được hỏi ý kiến chưa?</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// 8 việc riêng của trang (tổ Kho và giao nhận, khác danh mục 14 việc trong bài). Đã kiểm bằng Python:
+// giờ/tháng 40; 34,67; 18,33; 10; 6; 16,67; 8; 15 (tổng 148,67). Gợi ý chấm: tổng 8, 7, 7, 7, 6, 5, 6, 8;
+// để sau việc 2 và 6; xét chọn xếp: 1 và 8 (8 điểm), 3 và 4 (7 điểm, hoà), 5 và 7 (6 điểm).
+const J = [
+ {t:"Soạn phiếu xuất kho theo đơn của đại lý", n:800, p:3, note:"Đơn đại lý chỉ có mã đại lý, mã hàng, số lượng. Sai thì kho soạn nhầm hàng, thủ kho kiểm lại trước khi giao. Đếm được số phiếu phải sửa.", s:["Không","Vừa","Có"]},
+ {t:"Lập lịch giao hàng tận nhà cho khách mua trực tuyến", n:520, p:4, note:"Cần tên, số điện thoại, địa chỉ của khách để xếp tuyến. Sai thì giao trễ nhưng gọi lại kịp. Đếm được số chuyến giao lại.", s:["Có","Vừa","Có"]},
+ {t:"Đối chiếu tồn kho cuối ngày với phần mềm kho", n:22, p:50, note:"Số liệu từ phần mềm, không có thông tin khách. Lệch thì kế toán kho kiểm lại hôm sau. Có số dòng lệch mỗi ngày làm mốc.", s:["Không","Vừa","Có"]},
+ {t:"Soạn email báo đại lý hàng về chậm", n:75, p:8, note:"Thư gửi đại lý về một lô hàng, không có khách lẻ. Sai ngày thì đại lý hẹn nhầm với khách của họ. Đếm được số thư phải gửi lại.", s:["Không","Vừa","Có"]},
+ {t:"Soạn hướng dẫn đóng gói cho mẫu sản phẩm mới", n:3, p:120, note:"Tổ trưởng kho đọc và sửa trước khi in, sai thì sửa dễ. Chỉ đo được thời gian soạn, khó đếm lỗi đóng gói do bản hướng dẫn.", s:["Không","Thấp","Một phần"]},
+ {t:"Xử lý khiếu nại hàng giao bị vỡ, móp", n:40, p:25, note:"Cần ảnh, tên và số điện thoại khách; có thể kèm cam kết đền bù. Chỉ đo được một phần (khách có hài lòng hay không).", s:["Có","Cao","Một phần"]},
+ {t:"Báo cáo tuần hàng tồn quá 90 ngày", n:4, p:120, note:"Số tổng hợp từ phần mềm. Sai thì trưởng phòng đề xuất xả nhầm mã hàng. Có mốc thời gian làm và số dòng sai.", s:["Không","Vừa","Có"]},
+ {t:"Trả lời nhân viên bán hàng hỏi tồn kho theo mã sản phẩm", n:300, p:3, note:"Chỉ cần mã sản phẩm, số tồn có sẵn trong phần mềm; nhân viên bán hàng tự xem lại trước khi báo khách. Đếm được số câu trả lời sai.", s:["Không","Thấp","Có"]}
+];
+const COLS = [
+ {k:"Dữ liệu khách vào AI?", o:["Không","Có"]},
+ {k:"Hậu quả nếu sai", o:["Thấp","Vừa","Cao"], pts:{"Thấp":3,"Vừa":2,"Cao":1}},
+ {k:"Đo được?", o:["Có","Một phần","Không"], pts:{"Có":3,"Một phần":2,"Không":1}}
+];
+const $ = id => document.getElementById(id);
+const num = x => (Math.round(x*100)/100).toLocaleString("vi-VN");
+let pick = J.map(()=>["","",""]), shown = false;
+const hours = j => j.n*j.p/60;
+const vPts = h => h>=40 ? 3 : h>=10 ? 2 : 1;
+function score(i, lv){
+  const L = lv || pick[i];
+  if(L[1]==="" || L[2]==="") return null;
+  return vPts(hours(J[i])) + COLS[1].pts[L[1]] + COLS[2].pts[L[2]];
+}
+function buildList(){
+  $("list").innerHTML = J.map((j,i)=>
+    '<div class="job" id="j'+i+'"><div class="top"><span class="nm">'+(i+1)+'. '+j.t+'</span><span class="sc" id="sc'+i+'"></span></div>'+
+    '<div class="meta">'+j.n.toLocaleString("vi-VN")+' lần × '+j.p+' phút ÷ 60 = <b>'+num(hours(j))+' giờ/tháng</b> → giá trị '+vPts(hours(j))+'</div>'+
+    '<p class="note">'+j.note+'</p><div class="sel">'+
+    COLS.map((c,k)=>'<label>'+c.k+'<select data-i="'+i+'" data-k="'+k+'"><option value="">Chọn…</option>'+c.o.map(o=>'<option>'+o+'</option>').join("")+'</select><span class="hint" id="h'+i+'_'+k+'"></span></label>').join("")+
+    '</div></div>').join("");
+  $("list").querySelectorAll("select").forEach(s=>s.onchange=()=>{ pick[+s.dataset.i][+s.dataset.k]=s.value; render(); });
+}
+function render(){
+  const rows = J.map((j,i)=>({i, s:score(i), later:pick[i][0]==="Có", done:pick[i].every(x=>x!=="")}));
+  rows.forEach(r=>{
+    const el=$("sc"+r.i), card=$("j"+r.i);
+    card.classList.toggle("later", r.later);
+    el.className = "sc"+(r.later?" later":"");
+    el.textContent = r.later ? "Để sau"+(r.s!==null?" · "+r.s+" điểm":"") : (r.s===null ? "chưa đủ" : r.s+" điểm");
+  });
+  const nDone = rows.filter(r=>r.done).length;
+  const cand = rows.filter(r=>r.done && !r.later).sort((a,b)=>b.s-a.s || a.i-b.i);
+  const later = rows.filter(r=>r.later);
+  let h = '<p style="margin:0 0 4px;font-size:13px;color:var(--muted)">Đã chấm đủ '+nDone+'/8 việc.</p>';
+  if(cand.length){
+    h += '<div class="sub">Xét chọn (sắp theo tổng điểm)</div><table><tr><th>Việc</th><th class="r">Giờ</th><th class="r">Tổng</th></tr>';
+    const cut = cand.length>=3 ? cand[2].s : -1;
+    cand.forEach((r,k)=>{ h += '<tr class="'+(k<3?'top3':'')+'"><td>'+(r.i+1)+'. '+J[r.i].t+'</td><td class="r">'+num(hours(J[r.i]))+'</td><td class="r"><b>'+r.s+'</b></td></tr>'; });
+    h += '</table>';
+    if(cand.length>3 && cand[3].s===cut) h += '<div class="msg warn">Vị trí thứ 3 đang hoà điểm ('+cut+' điểm). Điểm không chọn hộ bạn: chọn bằng lý do (việc nào có người kèm, đo dễ hơn) và câu hỏi sẵn sàng.</div>';
+  }
+  if(later.length) h += '<div class="sub">Để sau: cần dữ liệu khách hàng</div><ul class="later-list">'+later.map(r=>'<li>'+(r.i+1)+'. '+J[r.i].t+(r.s!==null?' ('+r.s+' điểm)':'')+'</li>').join("")+'</ul>';
+  const hiLater = later.filter(r=>r.s!==null && cand.length && r.s>=cand[Math.min(2,cand.length-1)].s);
+  if(hiLater.length) h += '<div class="msg">Việc '+hiLater.map(r=>r.i+1).join(", ")+' điểm không thấp hơn nhóm được chọn nhưng vẫn để sau: điều kiện dữ liệu đứng trước điểm.</div>';
+  $("rank").innerHTML = h;
+  if(shown) compare();
+}
+function compare(){
+  shown = true;
+  let diff = 0, empty = 0;
+  $("list").querySelectorAll("select").forEach(s=>{
+    const i=+s.dataset.i, k=+s.dataset.k, want=J[i].s[k];
+    const hint = $("h"+i+"_"+k);
+    s.classList.remove("diff","same"); hint.textContent = "";
+    if(s.value===""){ empty++; return; }
+    if(s.value===want) s.classList.add("same"); else { s.classList.add("diff"); diff++; hint.textContent = "Gợi ý: "+want; }
+  });
+  const g = J.map((j,i)=>({i, s:score(i,j.s), later:j.s[0]==="Có"}));
+  const top = g.filter(r=>!r.later).sort((a,b)=>b.s-a.s||a.i-b.i);
+  let h = '<div class="msg '+(diff===0 && empty===0 ? 'ok' : diff ? 'bad' : 'warn')+'">';
+  h += empty ? 'Còn '+empty+' ô chưa chọn. ' : '';
+  h += diff ? diff+' ô khác gợi ý (viền đỏ, mức gợi ý ghi ngay dưới ô). Khác không hẳn là sai nếu bạn có lý do, nhưng hãy đọc lại ghi chú của việc đó.' : (empty ? '' : 'Mọi ô khớp gợi ý.');
+  h += '</div><div class="msg">Gợi ý chấm: để sau việc '+g.filter(r=>r.later).map(r=>r.i+1).join(" và ")+' (cần dữ liệu khách). Xét chọn: '+top.map(r=>'việc '+(r.i+1)+' ('+r.s+')').join(", ")+'. Hai việc 8 điểm chọn trước; chỗ thứ 3 là việc 3 hay việc 4 tuỳ lý do và câu hỏi sẵn sàng.</div>';
+  $("side").innerHTML = h;
+}
+$("cmp").onclick = compare;
+$("reset").onclick = ()=>{ pick = J.map(()=>["","",""]); shown=false; $("side").innerHTML=""; buildList(); render(); };
+buildList(); render();
+</script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="520">
+<title>Mô phỏng Con trỏ Thông minh & Quản lý Tài nguyên C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Trực quan hoá quyền sở hữu, bộ đếm tham chiếu và giải phóng bộ nhớ thông minh trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-unique-ptr-move" onclick="setMode('unique-ptr-move')">unique_ptr & std::move</button>
+        <button class="tab" id="tab-shared-ptr-refcount" onclick="setMode('shared-ptr-refcount')">shared_ptr use_count</button>
+        <button class="tab" id="tab-weak-ptr-cycle-break" onclick="setMode('weak-ptr-cycle-break')">weak_ptr phá chu trình</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Con trỏ & Bộ nhớ Heap</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'unique-ptr-move': {
+    lead: 'std::unique_ptr thực thi quyền sở hữu ĐỘC QUYỀN. Toán tử gán và hàm tạo sao chép bị xoá (= delete); chỉ cho phép chuyển quyền sở hữu qua std::move().',
+    code: [
+      {ln: 1, text: '<span class="com">// 1. Khởi tạo đối tượng Heap qua make_unique</span>'},
+      {ln: 2, text: '<span class="kw">auto</span> p1 = <span class="type">std</span>::<span class="fn">make_unique</span>&lt;<span class="type">int</span>&gt;(<span class="num">42</span>);'},
+      {ln: 3, text: '<span class="com">// 2. Thử sao chép: BỊ CẤM HOÀN TOÀN!</span>'},
+      {ln: 4, text: '<span class="com">// auto p2 = p1; // LỖI: call to deleted copy ctor</span>'},
+      {ln: 5, text: '<span class="com">// 3. Chuyển quyền sở hữu bằng std::move</span>'},
+      {ln: 6, text: '<span class="kw">auto</span> p2 = <span class="type">std</span>::<span class="fn">move</span>(p1);'},
+      {ln: 7, text: '<span class="com">// 4. Thoát scope: p2 tự huỷ tài nguyên</span>'}
+    ],
+    steps: [
+      {
+        line: 2,
+        mem: [
+          {name: 'Con trỏ p1 (Stack)', val: 'Trỏ tới 0x7A00', state: 'Nắm giữ quyền sở hữu độc quyền', cls: 'ok'},
+          {name: 'Vùng nhớ Heap 0x7A00', val: 'Giá trị 42', state: 'Cấp phát an toàn', cls: 'ok'},
+          {name: 'Con trỏ p2', val: 'Chưa khai báo', state: '---', cls: ''}
+        ],
+        status: 'Khởi tạo std::make_unique<int>(42). Con trỏ p1 trên Stack sở hữu độc quyền địa chỉ Heap 0x7A00.',
+        cls: 'ok'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Thao tác copy', val: 'p2 = p1', state: 'BỊ CHẶN Ở MỨC BIÊN DỊCH', cls: 'err'},
+          {name: 'Quy tắc C++', val: 'unique_ptr(const unique_ptr&) = delete', state: 'Chống đúp con trỏ (Double-Free)', cls: 'err'}
+        ],
+        status: '⚠️ Trình biên dịch báo lỗi nếu cố ý sao chép p2 = p1. Điều này ngăn ngừa triệt để lỗi giải phóng đúp (Double-Free) đặc trưng của con trỏ thô!',
+        cls: 'err'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Con trỏ p1 (Stack)', val: 'nullptr', state: 'Đã bị tước quyền sở hữu rỗng', cls: 'warn'},
+          {name: 'Con trỏ p2 (Stack)', val: 'Trỏ tới 0x7A00', state: 'Tiếp quản quyền sở hữu độc quyền mới', cls: 'ok'},
+          {name: 'Vùng nhớ Heap 0x7A00', val: 'Giá trị 42', state: 'Vẫn nguyên vẹn trên Heap, chi phí chuyển O(1)', cls: 'ok'}
+        ],
+        status: 'std::move(p1) chuyển giao con trỏ trong O(1): p2 nhận địa chỉ 0x7A00, còn p1 bị reset về nullptr an toàn.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Vùng nhớ Heap 0x7A00', val: 'ĐÃ GIẢI PHÓNG', state: '~unique_ptr() gọi delete tự động', cls: 'ok'},
+          {name: 'Con trỏ p1', val: 'nullptr', state: 'Huỷ không gây lỗi', cls: ''},
+          {name: 'Rò rỉ bộ nhớ (Leak)', val: '0 Byte', state: 'Bảo toàn RAII', cls: 'ok'}
+        ],
+        status: 'Khi ra khỏi phạm vi, Destructor của p2 tự động thu hồi vùng nhớ 0x7A00 trên Heap. Destructor của p1 kiểm tra nullptr nên không làm gì. Tuyệt đối không rò rỉ bộ nhớ!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'shared-ptr-refcount': {
+    lead: 'std::shared_ptr cho phép đồng sở hữu một tài nguyên Heap. Một Control Block dùng chung duy trì biến use_count; tài nguyên chỉ bị delete khi use_count chạm đúng mốc 0.',
+    code: [
+      {ln: 1, text: '<span class="kw">auto</span> s1 = <span class="type">std</span>::<span class="fn">make_shared</span>&lt;<span class="type">int</span>&gt;(<span class="num">99</span>);'},
+      {ln: 2, text: '<span class="kw">auto</span> s2 = s1; <span class="com">// Chia sẻ quyền sở hữu</span>'},
+      {ln: 3, text: '{'},
+      {ln: 4, text: '    <span class="kw">auto</span> s3 = s2; <span class="com">// use_count = 3</span>'},
+      {ln: 5, text: '} <span class="com">// s3 bị huỷ -> use_count = 2</span>'},
+      {ln: 6, text: 's1.<span class="fn">reset</span>(); <span class="com">// use_count = 1</span>'},
+      {ln: 7, text: 's2.<span class="fn">reset</span>(); <span class="com">// use_count = 0 -> DELETE HEAP!</span>'}
+    ],
+    steps: [
+      {
+        line: 1,
+        mem: [
+          {name: 'Con trỏ s1', val: 'Trỏ tới 0x9000', state: 'Chủ sở hữu #1', cls: 'ok'},
+          {name: 'Control Block', val: 'use_count = 1', state: 'Được cấp phát cùng đối tượng', cls: 'ok'},
+          {name: 'Vùng Heap 0x9000', val: 'Giá trị 99', state: 'Đang tồn tại', cls: 'ok'}
+        ],
+        status: 'Khởi tạo s1 qua make_shared. Control Block được tạo kèm với use_count = 1.',
+        cls: 'ok'
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'Con trỏ s1, s2', val: 'Cùng trỏ 0x9000', state: 'Đồng sở hữu', cls: 'ok'},
+          {name: 'Control Block', val: 'use_count = 2', state: 'Tăng thêm 1 khi copy con trỏ', cls: 'ok'}
+        ],
+        status: 'Lệnh gán s2 = s1 tạo thêm một bản sao tham chiếu. use_count tự động tăng lên 2.',
+        cls: 'ok'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Con trỏ s3 (Local)', val: 'Trỏ 0x9000', state: 'Khởi tạo trong scope con', cls: 'ok'},
+          {name: 'Control Block', val: 'use_count = 3', state: 'Ba con trỏ đang cùng trỏ tới Heap', cls: 'ok'}
+        ],
+        status: 'Trong scope cục bộ, con trỏ s3 = s2 tiếp tục tăng use_count lên 3.',
+        cls: 'ok'
+      },
+      {
+        line: 5,
+        mem: [
+          {name: 'Con trỏ s3', val: 'Bị huỷ khỏi Stack', state: 'Ra khỏi scope {}', cls: 'warn'},
+          {name: 'Control Block', val: 'use_count = 2', state: 'Giảm 1 vì s3 ra khỏi scope', cls: 'ok'},
+          {name: 'Vùng Heap 0x9000', val: 'Giá trị 99', state: 'Vẫn tồn tại an toàn', cls: 'ok'}
+        ],
+        status: 'Khi thoát khỏi khối ngoặc nhọn, s3 bị giải phóng khỏi Stack. Destructor của s3 giảm use_count về 2; đối tượng Heap vẫn được bảo toàn cho s1 và s2.',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 's1.reset()', val: 's1 = nullptr', state: 's1 buông bỏ quyền sở hữu', cls: 'warn'},
+          {name: 'Control Block', val: 'use_count = 1', state: 'Chỉ còn duy nhất s2 sở hữu', cls: 'warn'}
+        ],
+        status: 'Hàm s1.reset() ngắt liên kết của s1, use_count giảm còn 1. Đối tượng heap vẫn sống nhờ con trỏ s2.',
+        cls: 'warn'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 's2.reset()', val: 's2 = nullptr', state: 's2 buông bỏ quyền sở hữu', cls: 'err'},
+          {name: 'Control Block', val: 'use_count = 0', state: 'Kích hoạt thu hồi Heap!', cls: 'err'},
+          {name: 'Vùng Heap 0x9000', val: 'ĐÃ GIẢI PHÓNG', state: 'delete đối tượng & xoá Control Block', cls: 'ok'}
+        ],
+        status: 'Khi s2.reset() được gọi, use_count chạm đúng mốc 0! Control Block lập tức tự động delete đối tượng 99 trên Heap và dọn dẹp chính nó. Tài nguyên được giải phóng chính xác.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'weak-ptr-cycle-break': {
+    lead: 'Bẫy chu trình (Circular Reference): Khi 2 đối tượng chứa shared_ptr trỏ chéo lẫn nhau, use_count không bao giờ về 0. Giải pháp C++20: Dùng std::weak_ptr để phá vỡ vòng liên kết!',
+    code: [
+      {ln: 1, text: '<span class="kw">struct</span> <span class="type">Node</span>;'},
+      {ln: 2, text: '<span class="kw">struct</span> <span class="type">Node</span> {'},
+      {ln: 3, text: '    <span class="type">std</span>::<span class="type">weak_ptr</span>&lt;<span class="type">Node</span>&gt; prev; <span class="com">// weak_ptr: KHÔNG tăng use_count!</span>'},
+      {ln: 4, text: '    <span class="type">std</span>::<span class="type">shared_ptr</span>&lt;<span class="type">Node</span>&gt; next;'},
+      {ln: 5, text: '};'},
+      {ln: 6, text: '<span class="kw">auto</span> a = <span class="type">std</span>::<span class="fn">make_shared</span>&lt;<span class="type">Node</span>&gt;();'},
+      {ln: 7, text: '<span class="kw">auto</span> b = <span class="type">std</span>::<span class="fn">make_shared</span>&lt;<span class="type">Node</span>&gt;();'},
+      {ln: 8, text: 'a-&gt;next = b;   <span class="com">// b->use_count = 2</span>'},
+      {ln: 9, text: 'b-&gt;prev = a;   <span class="com">// a->use_count VẪN LÀ 1 (nhờ weak_ptr)!</span>'},
+      {ln: 10, text: '<span class="com">// Truy cập an toàn qua lock():</span>'},
+      {ln: 11, text: '<span class="kw">if</span> (<span class="kw">auto</span> s = b-&gt;prev.<span class="fn">lock</span>()) { <span class="com">/* dùng s */</span> }'}
+    ],
+    steps: [
+      {
+        line: 7,
+        mem: [
+          {name: 'Node a (Heap)', val: 'use_count = 1', state: 'Con trỏ a ngoài stack trỏ tới', cls: 'ok'},
+          {name: 'Node b (Heap)', val: 'use_count = 1', state: 'Con trỏ b ngoài stack trỏ tới', cls: 'ok'}
+        ],
+        status: 'Khởi tạo 2 node A và B độc lập. Mỗi node có use_count ban đầu là 1.',
+        cls: ''
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'a->next = b', val: 'shared_ptr gán sang b', state: 'Tăng use_count của B', cls: 'ok'},
+          {name: 'Node b (Heap)', val: 'use_count = 2', state: 'Được b (stack) và a->next trỏ tới', cls: 'ok'}
+        ],
+        status: 'Gán a->next = b. Con trỏ shared_ptr tăng use_count của Node B lên 2.',
+        cls: 'ok'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'b->prev = a', val: 'weak_ptr gán từ a', state: 'ĐẶC BIỆT: KHÔNG tăng use_count!', cls: 'ok'},
+          {name: 'Node a (Heap)', val: 'use_count = 1 (không đổi!)', state: 'weak_count = 1', cls: 'ok'}
+        ],
+        status: '⭐ GIẢI PHÁP ĐỘT PHÁ: Vì prev là std::weak_ptr, use_count của Node A vẫn giữ nguyên là 1 (chỉ có weak_count tăng). Vòng chu trình chết người đã bị phá vỡ!',
+        cls: 'ok'
+      },
+      {
+        line: 11,
+        mem: [
+          {name: 'b->prev.lock()', val: 'Tạo shared_ptr tạm thời', state: 'use_count của A tăng tạm thời thành 2', cls: 'ok'},
+          {name: 'Kiểm tra tồn tại', val: 'if (s) -> TRUE', state: 'Đối tượng A vẫn còn sống', cls: 'ok'}
+        ],
+        status: 'Khi muốn thao tác qua weak_ptr, gọi phương thức .lock(). Nếu đối tượng còn sống, lock() trả về một shared_ptr tạm thời hợp lệ; nếu đã bị giải phóng, lock() trả về nullptr an toàn.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'unique-ptr-move';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-unique-ptr-move').classList.toggle('active', currentMode === 'unique-ptr-move');
+  document.getElementById('tab-shared-ptr-refcount').classList.toggle('active', currentMode === 'shared-ptr-refcount');
+  document.getElementById('tab-weak-ptr-cycle-break').classList.toggle('active', currentMode === 'weak-ptr-cycle-break');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

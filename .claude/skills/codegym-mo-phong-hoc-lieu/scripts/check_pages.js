@@ -55,7 +55,7 @@ function findExe() {
         await page.click(`.tab[data-ex="${t}"]`);
         let n = 0, maxW = 0; const log = [];
         const scan = async () => {
-          const m = await page.evaluate(() => { const x = document.body.innerText.match(/\[object Object\]|\bundefined\b|\bNaN\b/); return x ? x[0] : null; });
+          const m = await page.evaluate(() => { const x = document.body.innerText.match(/\[object Object\]|\bundefined\b(?! reference)|\bNaN\b/); return x ? x[0] : null; });
           if (m) problem(`${name} [${t}] ${vw}px bước ${n}: chữ hỏng "${m}"`);
         };
         await scan();

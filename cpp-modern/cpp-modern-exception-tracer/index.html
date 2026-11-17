@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Cơ chế Ngoại lệ & An toàn Tài nguyên C++20</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px;min-height:36px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:12px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:11.5px;overflow-x:auto;padding:6px 0;max-height:280px}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:280px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.garbage{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .stack-frame{border:1px dashed var(--accent);border-radius:6px;padding:6px;margin-bottom:4px;background:var(--card)}
+  .stack-title{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px}
+
+  .status-box{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .str{color:#10b981}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Trực quan hoá cơ chế bắt ném ngoại lệ và giải phóng ngăn xếp trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-try-catch-flow" onclick="setMode('try-catch-flow')">Luồng try-catch</button>
+        <button class="tab" id="tab-exception-hierarchy" onclick="setMode('exception-hierarchy')">Phân cấp std::exception</button>
+        <button class="tab" id="tab-stack-unwinding" onclick="setMode('stack-unwinding')">Stack Unwinding (LIFO)</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi lại</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/5</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Bước tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Trạng thái Thực thi & Ngăn xếp</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'try-catch-flow': {
+    lead: 'Khi gặp lỗi nghiêm trọng, lệnh throw lập tức dừng hàm hiện tại, bỏ qua toàn bộ câu lệnh phía dưới và nhảy trực tiếp đến khối catch phù hợp nhất.',
+    code: [
+      {ln: 1, text: '<span class="type">double</span> <span class="fn">divide</span>(<span class="type">double</span> a, <span class="type">double</span> b) {'},
+      {ln: 2, text: '    <span class="kw">if</span> (b == <span class="num">0</span>) {'},
+      {ln: 3, text: '        <span class="kw">throw</span> <span class="type">std</span>::<span class="type">invalid_argument</span>(<span class="str">"Chia cho 0!"</span>);'},
+      {ln: 4, text: '    }'},
+      {ln: 5, text: '    <span class="kw">return</span> a / b; <span class="com">// Bị bỏ qua khi throw!</span>'},
+      {ln: 6, text: '}'},
+      {ln: 7, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 8, text: '    <span class="kw">try</span> {'},
+      {ln: 9, text: '        <span class="type">double</span> r = <span class="fn">divide</span>(<span class="num">10.0</span>, <span class="num">0.0</span>);'},
+      {ln: 10, text: '        <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; r; <span class="com">// Bị bỏ qua!</span>'},
+      {ln: 11, text: '    } <span class="kw">catch</span> (<span class="kw">const</span> <span class="type">std</span>::<span class="type">invalid_argument</span>& e) {'},
+      {ln: 12, text: '        <span class="type">std</span>::<span class="fn">cerr</span> &lt;&lt; e.<span class="fn">what</span>();'},
+      {ln: 13, text: '    }'},
+      {ln: 14, text: '    <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; <span class="str">"Tiếp tục chạy an toàn."</span>;'},
+      {ln: 15, text: '}'}
+    ],
+    steps: [
+      {
+        line: 9,
+        mem: [
+          {name: 'main()', val: 'gọi divide(10, 0)', state: 'Khối try bắt đầu', cls: ''},
+          {name: 'divide(a, b)', val: 'a=10.0, b=0.0', state: 'Tham số truyền vào', cls: ''}
+        ],
+        status: 'Hàm main() thực thi bên trong khối try và gọi hàm divide(10.0, 0.0).',
+        cls: ''
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'Điều kiện kiểm tra', val: 'b == 0 (true)', state: 'Phát hiện đối số không hợp lệ', cls: 'warn'},
+          {name: 'Luồng thực thi', val: 'Vào nhánh if', state: 'Chuẩn bị ném ngoại lệ', cls: ''}
+        ],
+        status: 'Trong divide(), điều kiện b == 0 được thoả mãn. Luồng điều khiển đi vào khối if để kích hoạt ngoại lệ.',
+        cls: 'warn'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'Ngoại lệ khởi tạo', val: 'invalid_argument', state: '"Chia cho 0!"', cls: 'err'},
+          {name: 'Trạng thái divide()', val: 'NGẮT LUỒNG NGAY', state: 'Dòng 5 bị huỷ hoàn toàn', cls: 'err'}
+        ],
+        status: 'Lệnh throw được kích hoạt! Khung hàm divide() dừng lại tức thì, biểu thức "return a / b;" ở dòng 5 không bao giờ được thực hiện.',
+        cls: 'err'
+      },
+      {
+        line: 11,
+        mem: [
+          {name: 'Khối try trong main', val: 'Dòng 10 bị bỏ qua', state: 'Không in r', cls: 'warn'},
+          {name: 'Catch Handler', val: 'MATCH: invalid_argument', state: 'Bắt được theo tham chiếu const&', cls: 'ok'}
+        ],
+        status: 'Ngoại lệ bay ra khỏi divide() và rơi vào khối catch phù hợp kiểu dữ liệu trong main(). Dòng 10 trong try bị bỏ qua hoàn toàn.',
+        cls: 'ok'
+      },
+      {
+        line: 14,
+        mem: [
+          {name: 'e.what()', val: '"Chia cho 0!"', state: 'Thông điệp lỗi đã in ra std::cerr', cls: ''},
+          {name: 'Trạng thái chương trình', val: 'Phục hồi thành công', state: 'Tiếp tục chạy bình thường', cls: 'ok'}
+        ],
+        status: 'Sau khi xử lý catch ở dòng 12, chương trình thoát khỏi cụm try-catch và tiếp tục thực thi dòng 14 một cách an toàn mà không bị crash!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'exception-hierarchy': {
+    lead: 'Các ngoại lệ chuẩn C++ kế thừa từ std::exception. Luôn đặt khối catch lớp con (Derived) TRƯỚC lớp cha (Base) để tránh hiện tượng che khuất handler!',
+    code: [
+      {ln: 1, text: '<span class="kw">try</span> {'},
+      {ln: 2, text: '    <span class="type">std</span>::<span class="type">vector</span>&lt;<span class="type">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};'},
+      {ln: 3, text: '    v.<span class="fn">at</span>(<span class="num">10</span>); <span class="com">// Ném std::out_of_range</span>'},
+      {ln: 4, text: '} <span class="kw">catch</span> (<span class="kw">const</span> <span class="type">std</span>::<span class="type">overflow_error</span>& e) {'},
+      {ln: 5, text: '    <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; <span class="str">"Bắt lỗi tràn số"</span>;'},
+      {ln: 6, text: '} <span class="kw">catch</span> (<span class="kw">const</span> <span class="type">std</span>::<span class="type">out_of_range</span>& e) {'},
+      {ln: 7, text: '    <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; <span class="str">"Bắt out_of_range: "</span> &lt;&lt; e.<span class="fn">what</span>();'},
+      {ln: 8, text: '} <span class="kw">catch</span> (<span class="kw">const</span> <span class="type">std</span>::<span class="type">exception</span>& e) {'},
+      {ln: 9, text: '    <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; <span class="str">"Bắt lớp cha tổng quát: "</span> &lt;&lt; e.<span class="fn">what</span>();'},
+      {ln: 10, text: '}'}
+    ],
+    steps: [
+      {
+        line: 3,
+        mem: [
+          {name: 'Đối tượng vector', val: 'size = 3 (0..2)', state: 'Bộ nhớ stack', cls: ''},
+          {name: 'Thao tác gọi', val: 'v.at(10)', state: 'Chỉ số 10 ngoài phạm vi!', cls: 'err'},
+          {name: 'Ngoại lệ phát sinh', val: 'std::out_of_range', state: 'Kế thừa logic_error -> exception', cls: 'err'}
+        ],
+        status: 'Phương thức v.at(10) kiểm tra biên và phát hiện chỉ số 10 vượt quá kích thước 3, ném ra ngoại lệ std::out_of_range.',
+        cls: 'err'
+      },
+      {
+        line: 4,
+        mem: [
+          {name: 'Handler 1', val: 'std::overflow_error', state: 'Khác nhánh runtime_error', cls: ''},
+          {name: 'So khớp kiểu', val: 'KHÔNG KHỚP', state: 'Bỏ qua handler này', cls: 'warn'}
+        ],
+        status: 'Trình biên dịch kiểm tra catch đầu tiên (std::overflow_error). Vì out_of_range không thuộc cây overflow_error, khối này bị bỏ qua.',
+        cls: 'warn'
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Handler 2', val: 'std::out_of_range', state: 'Trùng khớp chính xác kiểu ngoại lệ', cls: 'ok'},
+          {name: 'So khớp kiểu', val: 'KHỚP CHÍNH XÁC', state: 'Kích hoạt khối xử lý này!', cls: 'ok'}
+        ],
+        status: 'Trình biên dịch kiểm tra catch thứ hai (std::out_of_range). Kiểu trùng khớp hoàn toàn, luồng điều khiển nhảy vào dòng 7.',
+        cls: 'ok'
+      },
+      {
+        line: 8,
+        mem: [
+          {name: 'Handler 3', val: 'std::exception', state: 'Lớp cha bao quát (Fallback)', cls: ''},
+          {name: 'Trạng thái', val: 'BỎ QUA', state: 'Ngoại lệ đã được bắt ở Handler 2', cls: ''}
+        ],
+        status: 'Khối catch(const std::exception&) ở dòng 8 không được gọi vì ngoại lệ đã xử lý xong. QUY TẮC VÀNG: Nếu đặt catch(std::exception&) lên đầu, nó sẽ nuốt chửng mọi lớp con!',
+        cls: ''
+      }
+    ]
+  },
+  'stack-unwinding': {
+    lead: 'Khi một ngoại lệ được ném, cơ chế Stack Unwinding tự động dọn dẹp các khung ngăn xếp và gọi Destructor của mọi đối tượng cục bộ theo thứ tự ngược LIFO (Last In First Out).',
+    code: [
+      {ln: 1, text: '<span class="kw">struct</span> <span class="type">Resource</span> {'},
+      {ln: 2, text: '    <span class="type">std</span>::<span class="type">string</span> tag;'},
+      {ln: 3, text: '    ~<span class="fn">Resource</span>() { <span class="type">std</span>::<span class="fn">cout</span> &lt;&lt; <span class="str">"Huỷ "</span> &lt;&lt; tag; }'},
+      {ln: 4, text: '};'},
+      {ln: 5, text: '<span class="type">void</span> <span class="fn">funcC</span>() {'},
+      {ln: 6, text: '    <span class="type">Resource</span> r3{<span class="str">"R3 (funcC)"</span>};'},
+      {ln: 7, text: '    <span class="kw">throw</span> <span class="type">std</span>::<span class="type">runtime_error</span>(<span class="str">"Lỗi tại C"</span>);'},
+      {ln: 8, text: '}'},
+      {ln: 9, text: '<span class="type">void</span> <span class="fn">funcB</span>() {'},
+      {ln: 10, text: '    <span class="type">Resource</span> r2{<span class="str">"R2 (funcB)"</span>};'},
+      {ln: 11, text: '    <span class="fn">funcC</span>();'},
+      {ln: 12, text: '}'},
+      {ln: 13, text: '<span class="type">void</span> <span class="fn">funcA</span>() {'},
+      {ln: 14, text: '    <span class="kw">try</span> {'},
+      {ln: 15, text: '        <span class="type">Resource</span> r1{<span class="str">"R1 (funcA)"</span>};'},
+      {ln: 16, text: '        <span class="fn">funcB</span>();'},
+      {ln: 17, text: '    } <span class="kw">catch</span> (...) { <span class="com">/* Bắt mọi lỗi */</span> }'},
+      {ln: 18, text: '}'}
+    ],
+    steps: [
+      {
+        line: 15,
+        mem: [
+          {name: 'Stack Frame: funcA', val: 'Resource r1', state: 'Khởi tạo R1', cls: 'ok'}
+        ],
+        status: 'Hàm funcA() khởi tạo r1 trên ngăn xếp, sau đó gọi funcB().',
+        cls: ''
+      },
+      {
+        line: 10,
+        mem: [
+          {name: 'Stack Frame: funcB', val: 'Resource r2', state: 'Khởi tạo R2', cls: 'ok'},
+          {name: 'Stack Frame: funcA', val: 'Resource r1', state: 'Đang đợi funcB() trả về', cls: ''}
+        ],
+        status: 'Hàm funcB() được đẩy vào ngăn xếp, tạo tiếp đối tượng r2, rồi gọi funcC().',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Stack Frame: funcC', val: 'Resource r3', state: 'Khởi tạo R3', cls: 'ok'},
+          {name: 'Stack Frame: funcB', val: 'Resource r2', state: 'Đang đợi funcC() trả về', cls: ''},
+          {name: 'Stack Frame: funcA', val: 'Resource r1', state: 'Đang đợi funcB() trả về', cls: ''}
+        ],
+        status: 'Hàm funcC() được đẩy vào đỉnh ngăn xếp và tạo đối tượng r3.',
+        cls: ''
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'funcC() throw lỗi', val: 'std::runtime_error', state: 'Bắt đầu quá trình Stack Unwinding!', cls: 'err'},
+          {name: 'Destructor gọi LIFO #1', val: '~Resource() R3', state: 'r3 tự huỷ giải phóng bộ nhớ', cls: 'warn'}
+        ],
+        status: 'Lỗi phát sinh tại funcC()! Ngăn xếp lập tức kích hoạt Stack Unwinding: r3 là đối tượng tạo sau cùng nên Destructor ~Resource() của r3 được gọi ĐẦU TIÊN (LIFO).',
+        cls: 'warn'
+      },
+      {
+        line: 11,
+        mem: [
+          {name: 'Khung funcC', val: 'Đã giải phóng hoàn tất', state: 'Rút khỏi Call Stack', cls: ''},
+          {name: 'Destructor gọi LIFO #2', val: '~Resource() R2', state: 'r2 tự huỷ giải phóng bộ nhớ', cls: 'warn'},
+          {name: 'Stack Frame: funcA', val: 'Resource r1', state: 'Đang tìm catch handler', cls: ''}
+        ],
+        status: 'Ngoại lệ bay ngược về funcB(). Vì funcB() không có khối try-catch, khung hàm funcB() bị thu dọn và Destructor của r2 tự động được gọi.',
+        cls: 'warn'
+      },
+      {
+        line: 17,
+        mem: [
+          {name: 'Destructor gọi LIFO #3', val: '~Resource() R1', state: 'r1 tự huỷ khi thoát try', cls: 'warn'},
+          {name: 'Bắt ngoại lệ', val: 'catch(...) tại funcA', state: 'Dừng quá trình Unwinding', cls: 'ok'},
+          {name: 'Bộ nhớ tổng thể', val: '0 Byte Rò Rỉ!', state: 'An toàn tuyệt đối nhờ RAII', cls: 'ok'}
+        ],
+        status: 'Ngoại lệ về đến funcA() và được bắt tại catch(...). Destructor của r1 được gọi. Toàn bộ tài nguyên được dọn dẹp sạch sẽ theo đúng trật tự LIFO (R3 -> R2 -> R1), không rò rỉ 1 byte nào!',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'try-catch-flow';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  document.getElementById('tab-try-catch-flow').classList.toggle('active', currentMode === 'try-catch-flow');
+  document.getElementById('tab-exception-hierarchy').classList.toggle('active', currentMode === 'exception-hierarchy');
+  document.getElementById('tab-stack-unwinding').classList.toggle('active', currentMode === 'stack-unwinding');
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>

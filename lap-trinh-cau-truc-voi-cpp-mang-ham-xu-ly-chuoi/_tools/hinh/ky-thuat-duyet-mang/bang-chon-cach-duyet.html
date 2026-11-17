@@ -1,0 +1,21 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:16px}
+th{background:#1d2330;color:#fff;text-align:left;padding:10px 12px;font-size:14.5px}
+th:first-child{border-radius:10px 0 0 0}th:last-child{border-radius:0 10px 0 0}
+td{padding:11px 12px;border-bottom:1px solid #e3e7ee;vertical-align:middle}
+.q{font-weight:700}
+.tag{display:inline-block;border-radius:999px;padding:2px 12px;font-weight:700;font-size:14.5px;white-space:nowrap}
+.xu{background:#e0edff;color:#1d4ed8}.ng{background:#f3e8ff;color:#7e22ce}
+.br{background:#dcfce7;color:#15803d}.nb{background:#fee2e2;color:#b91c1c}
+.mono{font-size:14px;color:#5d6676}
+.tip{margin-top:14px;border-left:5px solid #ca8a04;background:#fefce8;border-radius:8px;padding:10px 14px;font-size:15.5px}
+</style></head><body><div id="art">
+<h3>Chọn cách duyệt cho từng bài toán</h3><p class="sub">Hai câu hỏi: duyệt từ đầu hay từ cuối? Có được dừng sớm bằng break không?</p>
+<table><tr><th>Bài toán</th><th>Hướng duyệt</th><th>break?</th></tr>
+<tr><td class="q">In mảng từ đầu đến cuối</td><td><span class="tag xu">xuôi</span></td><td>không cần</td></tr>
+<tr><td class="q">In mảng từ cuối về đầu</td><td><span class="tag ng">ngược</span></td><td>không cần</td></tr>
+<tr><td class="q">Tìm phần tử <u>đầu tiên</u> thỏa điều kiện</td><td><span class="tag xu">xuôi</span></td><td><span class="tag br">có, dừng sớm</span></td></tr>
+<tr><td class="q">Tìm phần tử <u>cuối cùng</u> thỏa điều kiện</td><td><span class="tag ng">ngược</span></td><td><span class="tag br">có, dừng sớm</span></td></tr>
+<tr><td class="q">Đếm, cộng tổng, tìm lớn nhất</td><td><span class="tag xu">xuôi</span> <span class="mono">hoặc</span> <span class="tag ng">ngược</span></td><td><span class="tag nb">không, phải duyệt hết</span></td></tr></table>
+<div class="tip"><b>Câu hỏi chốt:</b> bài toán cần <b>một</b> kết quả hay kết quả <b>tổng hợp</b> từ cả mảng?</div>
+</div></body></html>

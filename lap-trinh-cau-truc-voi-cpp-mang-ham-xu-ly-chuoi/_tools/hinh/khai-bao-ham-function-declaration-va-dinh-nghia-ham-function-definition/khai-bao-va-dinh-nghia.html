@@ -1,0 +1,23 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><link rel="stylesheet" href="../_style.css"><style>
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.card{border-radius:16px;padding:16px 18px;border:2px solid}
+.a{background:#fff7ed;border-color:#ea580c}.d{background:#ecfdf5;border-color:#15803d}
+.cap{font:800 18px system-ui;margin-bottom:2px}.a .cap{color:#c2410c}.d .cap{color:#15803d}
+.say{font-size:15px;color:#5d6676;margin-bottom:10px}
+.code{background:#0f172a;border-radius:12px;padding:16px;font:700 16.5px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#e5e7eb;white-space:pre}
+.hl{background:rgba(251,146,60,.35);color:#fdba74;border-radius:6px;padding:0 4px}.hg{background:rgba(110,231,183,.22);color:#6ee7b7;border-radius:6px;padding:0 4px}
+ul{margin:12px 0 0;padding-left:20px;font-size:16px}li{margin:4px 0}
+.tip{margin-top:16px;border-left:5px solid #2563eb;background:#eef4ff;border-radius:8px;padding:10px 14px;font-size:16px}
+</style></head><body><div id="art">
+<h3>Khai báo và định nghĩa: khác nhau ở đâu?</h3><p class="sub">Cùng một hàm tinhTong, viết theo hai kiểu</p>
+<div class="row">
+<div class="card a"><div class="cap">Khai báo (prototype)</div><div class="say">"Có một hàm như thế này"</div>
+<div class="code">int tinhTong(int a, int b)<span class="hl">;</span></div>
+<ul><li>Kết thúc bằng dấu <b>;</b></li><li><b>Không có</b> thân hàm</li><li>Chỉ cần kiểu tham số, tên có thể bỏ</li></ul></div>
+<div class="card d"><div class="cap">Định nghĩa (definition)</div><div class="say">"Đây là cách hàm làm việc"</div>
+<div class="code">int tinhTong(int a, int b) <span class="hg">{
+    return a + b;
+}</span></div>
+<ul><li>Có thân hàm trong <b>{ }</b></li><li>Mỗi hàm chỉ định nghĩa <b>một lần</b></li><li>Cũng đã tính là khai báo</li></ul></div></div>
+<div class="tip">Gọi hàm được khi trình biên dịch đã thấy <b>một trong hai</b> ở phía trên chỗ gọi.</div>
+</div></body></html>

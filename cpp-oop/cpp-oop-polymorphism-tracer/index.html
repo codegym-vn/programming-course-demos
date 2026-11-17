@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="embed-height" content="540">
+<title>Mô phỏng Đa hình Động & Bảng hàm ảo trong C++</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --accent:#2563eb; --accent-soft:#eff6ff; --accent-dark:#1d4ed8;
+    --ok:#16a34a; --ok-soft:#f0fdf4;
+    --warn:#d97706; --warn-soft:#fefce8;
+    --err:#dc2626; --err-soft:#fef2f2;
+    --code-bg:#f1f5f9; --cur:#fef08a; --cur-border:#eab308;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --line:#334155;
+      --accent:#3b82f6; --accent-soft:#1e3a8a; --accent-dark:#60a5fa;
+      --ok:#22c55e; --ok-soft:#14532d;
+      --warn:#f59e0b; --warn-soft:#451a03;
+      --err:#ef4444; --err-soft:#450a0a;
+      --code-bg:#090d16; --cur:#422006; --cur-border:#f59e0b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  .wrap{max-width:880px;margin:0 auto;padding:10px 12px}
+  .lead{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+  
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:3.5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn-grp{display:flex;gap:4px;align-items:center}
+  .btn{padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn:disabled{opacity:0.4;cursor:not-allowed}
+  .step-lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin:0 4px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:680px){.grid{grid-template-columns:1fr}}
+
+  .pane-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px}
+  
+  .code-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;overflow-x:auto;padding:6px 0;max-height:260px;overflow-y:auto}
+  .code-line{display:flex;align-items:center;padding:2px 8px;line-height:1.4}
+  .code-line.active{background:var(--cur);border-left:3px solid var(--cur-border)}
+  .ln{width:22px;color:var(--muted);user-select:none;font-size:11px;text-align:right;margin-right:8px}
+  .code-txt{flex:1;white-space:pre}
+
+  .mem-box{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .mem-cell{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+  .mem-name{font-family:var(--mono);font-size:12px;font-weight:700}
+  .mem-val{font-family:var(--mono);font-size:12px;padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+  .mem-val.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+  .mem-val.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok);font-weight:700}
+  .mem-val.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+  .mem-val.err{background:var(--err-soft);color:var(--err);border-color:var(--err);font-weight:700}
+  .mem-state{font-size:11px;color:var(--muted)}
+
+  .status-box{margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12px}
+  .status-box.err{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .status-box.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .status-box.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .kw{color:#8b5cf6;font-weight:600}
+  .type{color:#0ea5e9;font-weight:600}
+  .fn{color:#2563eb;font-weight:600}
+  .num{color:#f97316}
+  .com{color:#64748b;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead" id="lead">Mô phỏng đa hình động (Dynamic Polymorphism), vtable và mẫu thiết kế trong C++20.</p>
+  
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab active" id="tab-vtable-lookup" onclick="setMode('vtable-lookup')">vptr & vtable Lookup</button>
+        <button class="tab" id="tab-virtual-destructor" onclick="setMode('virtual-destructor')">Hàm huỷ ảo (virtual dtor)</button>
+        <button class="tab" id="tab-patterns" onclick="setMode('patterns')">Adapter & Strategy Pattern</button>
+      </div>
+      <div class="btn-grp">
+        <button class="btn" id="btn-prev" onclick="step(-1)">◀ Lùi</button>
+        <span class="step-lbl" id="step-lbl">Bước 1/4</span>
+        <button class="btn" id="btn-next" onclick="step(1)">Tiếp ▶</button>
+        <button class="btn" onclick="reset()">Làm lại</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="pane-title">Mã nguồn C++</div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+      <div>
+        <div class="pane-title" id="mem-title">Bố cục Con trỏ vptr & Bảng vtable</div>
+        <div class="mem-box" id="mem-box"></div>
+      </div>
+    </div>
+
+    <div class="status-box" id="status-box"></div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  'vtable-lookup': {
+    lead: 'Cơ chế Đa hình Động: Con trỏ Base* p gọi p->speak() kích hoạt tra cứu vptr -> vtable -> nhảy đúng vào phương thức Dog::speak() lúc chạy.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Animal</span> {'},
+      {ln: 2, text: '<span class="kw">public</span>:'},
+      {ln: 3, text: '    <span class="kw">virtual void</span> <span class="fn">speak</span>() { std::cout &lt;&lt; <span class="com">"..."</span>; }'},
+      {ln: 4, text: '};'},
+      {ln: 5, text: '<span class="kw">class</span> <span class="type">Dog</span> : <span class="kw">public</span> <span class="type">Animal</span> {'},
+      {ln: 6, text: '<span class="kw">public</span>:'},
+      {ln: 7, text: '    <span class="kw">void</span> <span class="fn">speak</span>() <span class="kw">override</span> { std::cout &lt;&lt; <span class="com">"Gâu!"</span>; }'},
+      {ln: 8, text: '};'},
+      {ln: 9, text: '<span class="type">int</span> <span class="fn">main</span>() {'},
+      {ln: 10, text: '    <span class="type">Animal</span>* p = <span class="kw">new</span> <span class="type">Dog</span>();'},
+      {ln: 11, text: '    p-&gt;<span class="fn">speak</span>();  <span class="com">// Đa hình động lúc chạy!</span>'},
+      {ln: 12, text: '}'}
+    ],
+    steps: [
+      {
+        line: 10,
+        mem: [
+          {name: 'Con trỏ Base* p', val: '0x2000 (trỏ Heap)', state: 'Kiểu tĩnh Animal*', cls: 'active'},
+          {name: 'Đối tượng tại 0x2000', val: 'instance of Dog', state: 'Kiểu thực tế (động)', cls: 'ok'},
+          {name: 'offset 0: __vptr', val: '&Dog_vtable', state: 'Con trỏ ẩn trình biên dịch chèn', cls: 'ok'}
+        ],
+        status: 'Khởi tạo Animal* p = new Dog(). Kiểu tĩnh là Animal*, nhưng đối tượng thực tế trên Heap là Dog. Đầu đối tượng chứa con trỏ ẩn __vptr trỏ tới bảng Dog_vtable.',
+        cls: ''
+      },
+      {
+        line: 11,
+        mem: [
+          {name: 'Bước 1: p->__vptr', val: 'Truy xuất địa chỉ vtable', state: 'Lấy từ đầu đối tượng Dog', cls: 'active'},
+          {name: 'Dog_vtable[0]', val: '&Dog::speak', state: 'Slot hàm ảo 0', cls: 'ok'}
+        ],
+        status: 'Bước 1: Khi gọi p->speak(), máy đọc con trỏ __vptr tại offset 0 của đối tượng. vptr dẫn tới bảng hàm ảo Dog_vtable được nạp trong bộ nhớ tĩnh.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Địa chỉ hàm thực thi', val: 'Dog::speak()', state: 'Được ghi đè (override)', cls: 'ok'},
+          {name: 'Kết quả in ra', val: '"Gâu!"', state: 'Đa hình thành công!', cls: 'ok'}
+        ],
+        status: 'Bước 2: Máy trỏ vào slot 0 của bảng hàm ảo -> lấy được con trỏ hàm Dog::speak(). Nhảy tới địa chỉ hàm và in ra "Gâu!".',
+        cls: 'ok'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'Nếu không có virtual', val: 'Animal::speak()', state: 'Liên kết tĩnh lúc biên dịch', cls: 'warn'},
+          {name: 'Chi phí virtual', val: '1 con trỏ/đối tượng + 1 bước tra cứu', state: 'Cực kỳ nhẹ', cls: 'ok'}
+        ],
+        status: '✓ Nếu không có từ khoá virtual, trình biên dịch liên kết tĩnh theo kiểu của con trỏ p (Animal*) và sẽ in nhầm "...". Nhờ virtual, hành vi đúng được gọi lúc chạy!',
+        cls: 'ok'
+      }
+    ]
+  },
+  'virtual-destructor': {
+    lead: 'Hàm huỷ ảo (virtual destructor): Bắt buộc trong lớp cơ sở có hàm ảo để đảm bảo giải phóng toàn bộ vùng nhớ Heap của lớp dẫn xuất khi delete qua con trỏ Base*.',
+    code: [
+      {ln: 1, text: '<span class="kw">class</span> <span class="type">Base</span> {'},
+      {ln: 2, text: '<span class="kw">public</span>:'},
+      {ln: 3, text: '    <span class="kw">virtual</span> ~<span class="fn">Base</span>() { std::cout &lt;&lt; <span class="com">"~Base "</span>; }'},
+      {ln: 4, text: '};'},
+      {ln: 5, text: '<span class="kw">class</span> <span class="type">Derived</span> : <span class="kw">public</span> <span class="type">Base</span> {'},
+      {ln: 6, text: '    <span class="type">int</span>* heap_arr;'},
+      {ln: 7, text: '<span class="kw">public</span>:'},
+      {ln: 8, text: '    <span class="fn">Derived</span>() : <span class="fn">heap_arr</span>(<span class="kw">new</span> <span class="type">int</span>[<span class="num">1000</span>]) {}'},
+      {ln: 9, text: '    ~<span class="fn">Derived</span>() <span class="kw">override</span> { <span class="kw">delete</span>[] heap_arr; }'},
+      {ln: 10, text: '};'},
+      {ln: 11, text: '<span class="com">// Base* p = new Derived(); delete p;</span>'}
+    ],
+    steps: [
+      {
+        line: 11,
+        mem: [
+          {name: 'p (Base*)', val: 'trỏ đối tượng Derived', state: 'Cấp phát đa hình', cls: 'active'},
+          {name: 'heap_arr (Heap)', val: '1000 ints tại 0x5000', state: 'Tài nguyên Derived sở hữu', cls: 'ok'}
+        ],
+        status: 'Khởi tạo Base* p = new Derived(). Đối tượng Derived cấp phát mảng 1000 phần tử trên Heap.',
+        cls: ''
+      },
+      {
+        line: 3,
+        mem: [
+          {name: 'Nếu ~Base KHÔNG CÓ virtual', val: 'CHỈ GỌI ~Base()', state: 'Bẫy rò rỉ bộ nhớ!', cls: 'err'},
+          {name: 'heap_arr [0x5000]', val: 'BỊ RÒ RỈ HOÀN TOÀN', state: 'Không bao giờ được delete[]', cls: 'err'}
+        ],
+        status: '❌ NGUY HIỂM: Nếu ~Base() không có virtual, lệnh delete p chỉ gọi ~Base(). ~Derived() bị bỏ qua hoàn toàn -> mảng heap_arr bị rò rỉ vĩnh viễn (Memory Leak)!',
+        cls: 'err'
+      },
+      {
+        line: 9,
+        mem: [
+          {name: 'Có virtual ~Base()', val: 'Tra cứu đa hình qua vtable', state: 'Gọi ~Derived() TRƯỚC', cls: 'ok'},
+          {name: 'delete[] heap_arr', val: 'GIẢI PHÓNG THÀNH CÔNG', state: '1000 ints được thu hồi', cls: 'ok'}
+        ],
+        status: '✓ Khi có virtual ~Base(), delete p tra cứu vtable và gọi ~Derived() trước! Mảng heap_arr được delete[] sạch sẽ.',
+        cls: 'ok'
+      },
+      {
+        line: 3,
+        mem: [
+          {name: '~Base() chạy tiếp', val: 'Thu hồi phần cơ sở', state: 'Đúng chuẩn trật tự dtor', cls: 'ok'},
+          {name: 'Bộ nhớ Heap', val: '0 BYTE RÒ RỈ', state: 'Thu hồi hoàn hảo', cls: 'ok'}
+        ],
+        status: '✓ Sau khi ~Derived() xong, ~Base() tự động chạy tiếp. Toàn bộ tài nguyên được thu hồi hoàn hảo, không còn rò rỉ.',
+        cls: 'ok'
+      }
+    ]
+  },
+  'patterns': {
+    lead: 'Mẫu thiết kế (Design Patterns): Adapter Pattern (chuyển đổi tương thích giao diện) và Strategy Pattern (hoán đổi thuật toán lúc chạy).',
+    code: [
+      {ln: 1, text: '<span class="com">// Strategy Pattern: hoán đổi thuật toán lúc chạy</span>'},
+      {ln: 2, text: '<span class="kw">class</span> <span class="type">SortStrategy</span> {'},
+      {ln: 3, text: '<span class="kw">public</span>:'},
+      {ln: 4, text: '    <span class="kw">virtual void</span> <span class="fn">sort</span>(std::vector&lt;<span class="type">int</span>&gt;&amp; v) = <span class="num">0</span>;'},
+      {ln: 5, text: '};'},
+      {ln: 6, text: '<span class="kw">class</span> <span class="type">QuickSort</span> : <span class="kw">public</span> <span class="type">SortStrategy</span> { <span class="com">/* O(N log N) */</span> };'},
+      {ln: 7, text: '<span class="kw">class</span> <span class="type">BubbleSort</span> : <span class="kw">public</span> <span class="type">SortStrategy</span> { <span class="com">/* O(N^2) */</span> };'}
+    ],
+    steps: [
+      {
+        line: 4,
+        mem: [
+          {name: 'Context: Sorter', val: 'Chứa SortStrategy*', state: 'Không phụ thuộc thuật toán cụ thể', cls: 'active'},
+          {name: 'Chiến lược hiện tại', val: 'nullptr', state: 'Chưa nạp chiến lược', cls: ''}
+        ],
+        status: 'Lớp Sorter nắm giữ con trỏ trừu tượng SortStrategy*. Thiết kế tuân thủ nguyên lý Đóng/Mở (Open/Closed Principle).',
+        cls: ''
+      },
+      {
+        line: 6,
+        mem: [
+          {name: 'Nạp QuickSort', val: 'sorter.set_strategy(new QuickSort())', state: 'Thuật toán nhanh', cls: 'ok'},
+          {name: 'Hiệu năng', val: 'O(N log N)', state: 'Thích hợp dữ liệu lớn', cls: 'ok'}
+        ],
+        status: 'Nạp chiến lược QuickSort: Khi dữ liệu lớn, sorter.execute_sort() sử dụng QuickSort để đạt hiệu năng tối đa.',
+        cls: 'ok'
+      },
+      {
+        line: 7,
+        mem: [
+          {name: 'Đổi sang BubbleSort', val: 'sorter.set_strategy(new BubbleSort())', state: 'Hoán đổi lúc chạy!', cls: 'warn'},
+          {name: 'Mã nguồn Sorter', val: 'KHÔNG CẦN VIẾT LẠI 1 DÒNG', state: 'Tách rời tuyệt đối', cls: 'ok'}
+        ],
+        status: 'Hoán đổi sang BubbleSort: Có thể thay đổi chiến lược ngay lúc runtime mà không cần sửa đổi bất kỳ dòng mã nguồn nào của Sorter!',
+        cls: 'ok'
+      },
+      {
+        line: 2,
+        mem: [
+          {name: 'Adapter Pattern', val: 'Chuyển giao diện cũ -> mới', state: 'Bọc lớp Legacy trong Adapter', cls: 'ok'},
+          {name: 'Strategy Pattern', val: 'Hoán đổi hành vi linh hoạt', state: 'Tách biệt giải thuật khỏi ngữ cảnh', cls: 'ok'}
+        ],
+        status: '✓ Kết luận: Cả hai mẫu đều khai thác sức mạnh của hàm ảo và tính đa hình để xây dựng hệ thống phần mềm mở rộng, dễ bảo trì.',
+        cls: 'ok'
+      }
+    ]
+  }
+};
+
+let currentMode = 'vtable-lookup';
+let currentStep = 0;
+
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function init(){
+  const vd = getUrlParam('vd');
+  if(vd && SCENARIOS[vd]) currentMode = vd;
+  const buoc = parseInt(getUrlParam('buoc'), 10);
+  if(!isNaN(buoc)) currentStep = buoc;
+  renderMode();
+}
+
+function setMode(mode){
+  currentMode = mode;
+  currentStep = 0;
+  renderMode();
+}
+
+function renderMode(){
+  ['vtable-lookup', 'virtual-destructor', 'patterns'].forEach(m => {
+    const el = document.getElementById(`tab-${m}`);
+    if(el) el.classList.toggle('active', currentMode === m);
+  });
+  document.getElementById('lead').textContent = SCENARIOS[currentMode].lead;
+  
+  const sc = SCENARIOS[currentMode];
+  const codeBox = document.getElementById('code-box');
+  codeBox.innerHTML = sc.code.map(l => 
+    `<div class="code-line" id="line-${l.ln}"><span class="ln">${l.ln}</span><span class="code-txt">${l.text}</span></div>`
+  ).join('');
+
+  renderStep();
+}
+
+function renderStep(){
+  const sc = SCENARIOS[currentMode];
+  const st = sc.steps[currentStep];
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const activeLine = document.getElementById(`line-${st.line}`);
+  if(activeLine) activeLine.classList.add('active');
+
+  const memBox = document.getElementById('mem-box');
+  memBox.innerHTML = st.mem.map(m => `
+    <div class="mem-cell">
+      <div>
+        <div class="mem-name">${m.name}</div>
+        <div class="mem-state">${m.state}</div>
+      </div>
+      <div class="mem-val ${m.cls}">${m.val}</div>
+    </div>
+  `).join('');
+
+  const statusBox = document.getElementById('status-box');
+  statusBox.className = `status-box ${st.cls}`;
+  statusBox.innerHTML = st.status;
+
+  document.getElementById('step-lbl').textContent = `Bước ${currentStep + 1}/${sc.steps.length}`;
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === sc.steps.length - 1);
+}
+
+function step(delta){
+  const sc = SCENARIOS[currentMode];
+  const next = currentStep + delta;
+  if(next >= 0 && next < sc.steps.length){
+    currentStep = next;
+    renderStep();
+  }
+}
+
+function reset(){
+  currentStep = 0;
+  renderStep();
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') step(1);
+  if(e.key === 'ArrowLeft') step(-1);
+});
+
+init();
+</script>
+</body>
+</html>
