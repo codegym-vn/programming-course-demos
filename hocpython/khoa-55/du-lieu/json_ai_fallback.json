@@ -1,0 +1,49 @@
+{
+  "cv_01_nguyen_minh_anh.pdf": {
+    "ho_ten": "Nguyễn Minh Anh",
+    "vi_tri": "Chuyên viên Phân tích Dữ liệu & Báo cáo",
+    "so_nam_kinh_nghiem": 4,
+    "ky_nang": [
+      "Python",
+      "Excel",
+      "SQL",
+      "Power BI",
+      "Streamlit"
+    ],
+    "muc_luong_vnd": 22000000
+  },
+  "cv_02_tran_quoc_bao.pdf": {
+    "ho_ten": "Trần Quốc Bảo",
+    "vi_tri": "Lập trình viên Tự động hoá",
+    "so_nam_kinh_nghiem": 2,
+    "ky_nang": [
+      "Python 3",
+      "pdfplumber",
+      "Regex",
+      "Pandas",
+      "OpenPyXL"
+    ],
+    "muc_luong_vnd": 18000000
+  },
+  "hop_dong_01_dich_vu_cntt.pdf": {
+    "so_hop_dong": "HĐ-DV-2026-08",
+    "ben_a": "Công ty CP Thương mại An Bình",
+    "ben_b": "Công ty TNHH Phần mềm Minh Quang",
+    "gia_tri_vnd": 180000000,
+    "ngay_ky": "2025-12-01",
+    "ngay_het_han": "2026-11-30",
+    "dieu_khoan_rui_ro": [
+      "Tự động gia hạn 12 tháng nếu không báo trước 30 ngày",
+      "Phạt chậm thanh toán 0,1%/ngày"
+    ]
+  },
+  "hop_dong_02_thue_kho.pdf": {
+    "so_hop_dong": "HĐ-TK-2026-15",
+    "ben_a": "Công ty CP Thương mại An Bình",
+    "ben_b": "Công ty Kho vận Đông Nam",
+    "gia_tri_vnd": 360000000,
+    "ngay_ky": "2026-03-15",
+    "ngay_het_han": "2027-03-15",
+    "dieu_khoan_rui_ro": []
+  }
+}
